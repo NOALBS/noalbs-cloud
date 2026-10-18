@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its running checks; runs on main always finish.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -90,6 +95,9 @@ jobs:
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          # Only main saves the cache, so pull requests don't push its entries out.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -162,6 +170,9 @@ jobs:
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          # Only main saves the cache, so pull requests don't push its entries out.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4

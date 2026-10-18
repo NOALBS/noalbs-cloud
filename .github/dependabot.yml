@@ -1,0 +1,13 @@
+# Keeps the workflows' actions up to date, in one pull request a month.
+# Cargo and npm dependencies are updated by hand (`cargo update`, `pnpm update`),
+# since those need the checks in CONTRIBUTING.md and a look at what changed.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - "*"

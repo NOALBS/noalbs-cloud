@@ -39,6 +39,9 @@ jobs:
   # source. The dashboard image is the static app + browser source behind
   # Caddy; see deploy/README.md.
   changes:
+    # Only main is released: a manual run from another branch would push its
+    # images as :latest. Skipping this job skips the ones that need it.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     outputs:
