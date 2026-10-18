@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Terms of service · NOALBS Cloud</title>
+    <meta name="description" content="The rules for using NOALBS Cloud: your account, plans and billing, what you may and may not do, and what we promise." />
+    <script>
+      // Apply the theme before first paint to avoid a flash (same as the dashboard): the
+      // saved choice, or on Auto the browser's setting, following it when it changes.
+      try {
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+        const apply = () => {
+          const saved = localStorage.getItem("noalbs-theme");
+          document.documentElement.dataset.theme =
+            saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+        };
+        apply();
+        media.addEventListener("change", apply);
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto flex max-w-3xl flex-col px-5 sm:px-8">
+      <header class="flex h-18 items-center justify-between gap-4">
+        <a href="/" class="flex items-center gap-2 font-mono text-lg font-bold tracking-wide">
+          <svg viewBox="0 0 260 262" class="size-[1.3em]" aria-hidden="true">
+            <g fill="#5576DA" stroke="#0B0D10" stroke-width="6" stroke-linejoin="round">
+              <path d="M22 62 L90 169 L90 243 L22 243 Z" />
+              <path d="M24 17 L93 17 L238 245 L169 245 Z" />
+              <path d="M169 17 L237 17 L237 204 L169 97 Z" />
+            </g>
+          </svg>
+          NOALBS
+        </a>
+        <a href="/login" class="rounded-lg border border-border-strong px-3.5 py-2 text-sm font-medium hover:bg-surface-2">Sign in</a>
+      </header>
+
+      <main class="legal flex flex-col gap-10 pt-10 pb-20">
+        <div class="flex flex-col gap-3">
+          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Terms of service</h1>
+          <p class="text-muted-foreground">Last updated 18 October 2026</p>
+          <p>
+            These terms are the agreement between you and us about using NOALBS Cloud. By signing in
+            or using NOALBS Cloud you agree to them. If you use it for a team or an organisation, you
+            confirm you may agree on its behalf. If you don’t agree, please don’t use it.
+          </p>
+          <p>
+            Where these terms mention a <strong>consumer</strong>, they mean someone using NOALBS
+            Cloud outside their trade or business. Consumers have rights that no contract can take
+            away, and nothing here tries to.
+          </p>
+        </div>
+
+        <section>
+          <h2>Who we are</h2>
+          <p>
+            NOALBS Cloud is made and run by Brian Spit, known as 715209, from the Netherlands (“we”,
+            “us”). You can reach us at
+            <a href="mailto:support@noalbs.com">support@noalbs.com</a>. How we handle personal data
+            is described in the <a href="/privacy">privacy policy</a>.
+          </p>
+        </section>
+
+        <section>
+          <h2>What NOALBS Cloud is</h2>
+          <p>
+            NOALBS Cloud watches the stats of the stream server your encoder pushes to and switches
+            your OBS between scenes (LIVE, LOW, BRB) based on the thresholds you set. It also offers
+            a dashboard to control OBS remotely, stream history, a chat bot for Twitch, Kick and
+            YouTube, and optional remote control of a BELABOX or Moblin. It reaches your OBS through
+            a browser source that you add to OBS yourself.
+          </p>
+          <p>
+            It is an automation aid, not a guarantee. Networks, servers, OBS and your encoder can all
+            fail, and so can we. A scene switch can come late or not at all, so keep an eye on your
+            stream and keep a way to switch scenes or stop it by hand. Settings you change on a
+            BELABOX or a phone through NOALBS Cloud (WiFi, modems, the hotspot) can cut it off from
+            us, and then we can’t undo them: keep a way to reach your device without us.
+          </p>
+        </section>
+
+        <section>
+          <h2>Your account</h2>
+          <ul>
+            <li>
+              You sign in with a Twitch, Kick or YouTube account. You need to be at least 16. If
+              you aren’t an adult where you live, you need a parent or guardian’s permission to use
+              NOALBS Cloud, and they have to agree to anything you buy.
+            </li>
+            <li>
+              Don’t share your sign-in; invite people to your workspace instead. You are
+              responsible for what happens under your account, until you tell us it was misused.
+            </li>
+            <li>
+              Browser source links, BELABOX secret URLs and Moblin passwords give access to your
+              setup. Keep them private and replace them (or tell us) if they leak.
+            </li>
+            <li>
+              A workspace holds switchers, members and the plan. Its owner is responsible for it,
+              for paying for it, and for what its members do in it. Owners and admins decide who
+              joins and which role they get.
+            </li>
+            <li>
+              You can delete your account under Account, and owners can delete a workspace in its
+              settings, at any time. Read “Plans and payment” before deleting a paid workspace.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What you may do</h2>
+          <p>You may use NOALBS Cloud for your own streams and those of your team. You agree not to:</p>
+          <ul>
+            <li>break the law, or the rules of Twitch, Kick, YouTube, Stripe, OBS or anyone else whose service you use through NOALBS Cloud;</li>
+            <li>
+              point stream servers, stats URLs or the connection test at systems you don’t own or
+              have no permission to query, or use them to scan networks or attack anything;
+            </li>
+            <li>
+              try to get around plan limits, rate limits or permissions, for instance by spreading
+              one setup over several free workspaces, or use far more resources than normal use
+              needs;
+            </li>
+            <li>
+              probe, overload or break NOALBS Cloud, access other people’s workspaces or data, or
+              reverse engineer it beyond what the law allows (we’d welcome a responsible
+              report of a security problem at
+              <a href="mailto:support@noalbs.com">support@noalbs.com</a>);
+            </li>
+            <li>resell NOALBS Cloud or its access to others without our written agreement.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Your content and setup</h2>
+          <p>
+            What you put in is yours: your settings, scene names, stream server details, markers,
+            chat command changes and your stream history. You let us store and process it, and act
+            on it (switch your scenes, start and stop your stream and your devices, post in the chat
+            channels you linked), only to run NOALBS Cloud for you, to help you when you ask, and to
+            keep the service safe. That ends when you delete it, apart from what the
+            <a href="/privacy">privacy policy</a> says we keep longer.
+          </p>
+          <p>
+            You are responsible for your streams and for everything NOALBS Cloud does on your
+            instructions or those of the people you let in: the thresholds you chose, the scenes you
+            set, the commands and roles you gave your chat, the timeouts and the “stop on raid”
+            option you turned on, and what your members and moderators do. A switch, a stop or a
+            chat reply that follows your settings is NOALBS Cloud working as set, not a fault.
+          </p>
+        </section>
+
+        <section>
+          <h2>Plans and payment</h2>
+          <ul>
+            <li>
+              NOALBS Cloud has a free plan and paid plans and add-ons, with the limits and prices
+              shown on the plan page when you choose them. Limits (switchers, stream servers,
+              members, history) apply to the whole workspace.
+            </li>
+            <li>
+              Payments are handled by Stripe. Paid plans and add-ons renew automatically each month
+              or year until cancelled, and you pay in advance for each period. Prices for consumers
+              include any VAT we have to charge.
+            </li>
+            <li>
+              <strong>Upgrading</strong> and adding add-ons is charged right away for what isn’t
+              already paid this period. <strong>Lowering</strong> a plan or add-on, or cancelling,
+              takes effect at the end of the period you paid for; you keep what you paid for until
+              then.
+            </li>
+            <li>
+              <strong>Deleting a paid workspace</strong> ends its subscription at once, and the rest
+              of the period isn’t refunded. To keep it until the end of the period, cancel first
+              and delete the workspace after.
+            </li>
+            <li>
+              <strong>14 days to change your mind:</strong> if you’re a consumer, you can withdraw
+              within 14 days of starting a paid subscription, without giving a reason. Tell us at
+              <a href="mailto:support@noalbs.com">support@noalbs.com</a> (for instance: “I withdraw
+              from my NOALBS Cloud subscription for workspace …”), and we refund everything you paid
+              for it within 14 days, even though you could use it meanwhile. The workspace then goes
+              back to the free plan.
+            </li>
+            <li>
+              Otherwise we don’t refund periods that have started, except where the law says we
+              must, or where we choose to, for instance when we failed to provide the service for a
+              long time. If you think something was charged wrongly, write to us.
+            </li>
+            <li>
+              If a payment fails, Stripe retries it for a while and your plan keeps working in the
+              meantime. If it still fails, the subscription ends and the workspace goes back to the
+              free plan.
+            </li>
+            <li>
+              A new price applies to new purchases; your subscription keeps the price it has. If we
+              ever have to change the price of a running subscription, we tell you in the dashboard
+              at least 30 days before your next renewal, the new price applies only from then on,
+              and you can cancel before it does.
+            </li>
+            <li>
+              When a workspace goes over its plan’s limits, for example after a downgrade, the
+              switchers beyond the limit are paused (newest first); stream servers and members beyond
+              it keep working, but you can’t add more. Stream history older than the plan’s
+              retention is removed, as the privacy policy describes.
+            </li>
+            <li>
+              Ownership of a paid workspace can be handed to an admin. When it is, we remove the
+              previous owner’s payment details from the workspace’s customer at Stripe, the period
+              already paid runs on without a refund, and the new owner adds their own card and pays
+              from the next renewal.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Workspaces managed by an organization</h2>
+          <ul>
+            <li>
+              An organization (a streaming host, an agency) can run workspaces for its customers.
+              We set up the organization and give it a pool of switchers and other limits; the
+              organization is responsible for how it uses them, for the workspaces it creates, for
+              the chat bot it connects for them and for what its team does in them. What it charges
+              its customers is between them and the organization.
+            </li>
+            <li>
+              A workspace an organization manages belongs to the organization and is paid for by
+              it. If you join one with an invite link, you are an admin there: you can run it, but
+              you never get billing, and you can’t delete it or hand it over. The organization’s
+              team can see and run everything in it, as the privacy policy says, and can remove you
+              from it. You can leave at any time.
+            </li>
+            <li>
+              Joining a managed workspace doesn’t change your own workspaces. You can still create
+              workspaces of your own on a plan of your own, and no organization can see them.
+            </li>
+            <li>
+              The organization’s limits apply to its workspaces together. A limit only stops new
+              switchers from being added; it never stops one that is running, and we don’t set an
+              organization’s pool below the switchers it already has. If we suspend the
+              organization, every switcher in all of its workspaces pauses.
+            </li>
+            <li>
+              If the organization is deleted or stops running a workspace, we may delete that
+              workspace, or give you the chance to take what you need, where we reasonably can.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Third-party services</h2>
+          <p>
+            NOALBS Cloud works with services we don’t control: Twitch, Kick, YouTube, Stripe, OBS,
+            BELABOX Cloud, Moblin and the stream servers you connect. You need accounts with them and
+            must follow their terms. By using NOALBS Cloud with YouTube you also agree to the
+            <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>. We aren’t
+            responsible for these services, for changes they make that break a feature, or for
+            action they take against your account. Features that depend on them can change or stop
+            if they do.
+          </p>
+        </section>
+
+        <section>
+          <h2>When we can pause or end access</h2>
+          <p>
+            We can pause switchers, suspend a workspace or an organization, sign an account out or
+            disable it, unlink a chat channel, or end the service for you, when we reasonably believe that you broke
+            these terms, that your account or setup is a risk to others or to the service, or when
+            the law or a platform requires it. We do what’s in proportion: usually the least that
+            stops the problem. Unless it would defeat the purpose, we tell you why and what to do
+            about it, and we keep the reason. You can ask us to reconsider by writing to
+            <a href="mailto:support@noalbs.com">support@noalbs.com</a>.
+          </p>
+          <p>
+            NOALBS staff only open your workspace with the permission you give or in the emergency
+            cases described in the privacy policy, and everything they do is logged for you.
+          </p>
+          <p>
+            You can stop at any time by cancelling your plan or deleting your account or workspace.
+            We can end the service for everyone, or a part of it, with at least 30 days’ notice
+            unless something outside our control forces us to go faster; if you prepaid for a
+            period we can’t provide, or we end your access without you having broken these terms,
+            we refund the rest of it.
+          </p>
+        </section>
+
+        <section>
+          <h2>No promises beyond these</h2>
+          <p>
+            We work hard to keep NOALBS Cloud running and correct, but we provide it “as is” and
+            “as available”. We don’t promise that it will be uninterrupted or free of errors, that
+            it switches at the right moment, or that it fits your stream. We may change, add or
+            remove features, especially while NOALBS Cloud is still young. We also don’t promise
+            that third-party services behave as NOALBS Cloud expects.
+          </p>
+          <p>
+            If you’re a consumer, this doesn’t affect your legal right to a service that does what
+            we said it does. If a paid feature doesn’t, tell us and we’ll fix it or, if we can’t,
+            lower the price or refund it.
+          </p>
+        </section>
+
+        <section>
+          <h2>Our liability</h2>
+          <p>
+            Nothing here limits liability that the law doesn’t allow us to limit, such as for
+            intent, gross negligence, death or injury.
+          </p>
+          <p>
+            Otherwise, we are not liable for indirect or consequential loss: lost viewers,
+            sponsorships, revenue or reputation, a stream that ended or switched at the wrong
+            moment, content that went out that you didn’t mean to show, or data that was lost. Our
+            total liability to you for anything related to NOALBS Cloud is limited to what you paid
+            us in the 12 months before the event. On the free plan that is nothing.
+          </p>
+          <p>
+            You are responsible for what you broadcast and for the consequences of your own
+            settings. If someone makes a claim against us because you broke these terms or the law,
+            or because of content you streamed, you cover the damage and reasonable costs that
+            causes us, as far as it was your fault.
+          </p>
+        </section>
+
+        <section>
+          <h2>Our software and your feedback</h2>
+          <p>
+            NOALBS Cloud’s source code is open source under the GNU Affero General Public License
+            v3.0 or later, on <a href="https://github.com/NOALBS/noalbs-cloud">GitHub</a>; that licence, not
+            these terms, says what you may do with the code. These terms are about the service we
+            run. The software NOALBS Cloud is built with is credited on our
+            <a href="/licenses">Licenses</a> page. If you send us ideas or suggestions, we may use
+            them without owing you anything.
+          </p>
+        </section>
+
+        <section>
+          <h2>Changes to these terms</h2>
+          <p>
+            We may change these terms, for instance when we add features or the law changes. We
+            always update the date at the top. When a change matters to you, we tell you in the
+            dashboard (and on Discord) at least 30 days before it takes effect, unless the law or a
+            security problem makes us move faster. If you don’t agree with a change, you can cancel
+            or delete your account before it takes effect; if you keep using NOALBS Cloud after
+            that, the new terms apply. A change that raises what you pay or takes away something
+            you paid for applies only from your next renewal.
+          </p>
+        </section>
+
+        <section>
+          <h2>Law and disputes</h2>
+          <p>
+            Dutch law applies to these terms. If you’re a consumer living in another country, you
+            also keep the protection that country’s law gives you and that can’t be set aside by a
+            contract. Disputes go to the competent court in the Netherlands, unless the law gives
+            you, as a consumer, the right to go to a court where you live. We’ll always try to sort
+            it out together first: write to <a href="mailto:support@noalbs.com">support@noalbs.com</a>.
+          </p>
+          <p>
+            If part of these terms turns out to be unenforceable, the rest still applies. If we don’t
+            insist on something right away, we can still do so later. You may not transfer your
+            rights under these terms to someone else without our written permission. We may
+            transfer this agreement to a company that takes over running NOALBS Cloud, for instance
+            one we set up for it, as long as your rights under these terms stay the same; we’ll
+            tell you when that happens.
+          </p>
+        </section>
+      </main>
+
+      <footer class="flex flex-col gap-4 border-t border-divider py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span class="font-mono font-bold tracking-wide text-foreground">NOALBS</span>
+        <nav class="flex flex-wrap gap-x-6 gap-y-2">
+          <a href="https://discord.gg/efWu5HWM2u" class="hover:text-foreground">Discord</a>
+          <a href="https://x.com/noalbs" class="hover:text-foreground">X</a>
+          <a href="https://github.com/NOALBS" class="hover:text-foreground">GitHub</a>
+          <a href="/privacy" class="hover:text-foreground">Privacy</a>
+          <a href="/terms" class="hover:text-foreground">Terms</a>
+          <a href="/licenses" class="hover:text-foreground">Licenses</a>
+        </nav>
+      </footer>
+    </div>
+    <script type="module" src="/src/legal/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Open source licenses · NOALBS Cloud</title>
+    <meta name="description" content="The open source software NOALBS Cloud is built with, and its licenses." />
+    <script>
+      // Apply the theme before first paint to avoid a flash (same as the dashboard): the
+      // saved choice, or on Auto the browser's setting, following it when it changes.
+      try {
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+        const apply = () => {
+          const saved = localStorage.getItem("noalbs-theme");
+          document.documentElement.dataset.theme =
+            saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+        };
+        apply();
+        media.addEventListener("change", apply);
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto flex max-w-3xl flex-col px-5 sm:px-8">
+      <header class="flex h-18 items-center justify-between gap-4">
+        <a href="/" class="flex items-center gap-2 font-mono text-lg font-bold tracking-wide">
+          <svg viewBox="0 0 260 262" class="size-[1.3em]" aria-hidden="true">
+            <g fill="#5576DA" stroke="#0B0D10" stroke-width="6" stroke-linejoin="round">
+              <path d="M22 62 L90 169 L90 243 L22 243 Z" />
+              <path d="M24 17 L93 17 L238 245 L169 245 Z" />
+              <path d="M169 17 L237 17 L237 204 L169 97 Z" />
+            </g>
+          </svg>
+          NOALBS
+        </a>
+        <a href="/login" class="rounded-lg border border-border-strong px-3.5 py-2 text-sm font-medium hover:bg-surface-2">Sign in</a>
+      </header>
+
+
+      <main class="legal flex flex-col gap-10 pt-10 pb-20">
+        <div class="flex flex-col gap-3">
+          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Open source licenses</h1>
+          <p>
+            NOALBS Cloud stands on the work of a lot of open source projects. Thank you to everyone
+            who builds and maintains them. This page lists what we use and under which licenses.
+          </p>
+        </div>
+
+        <section>
+          <h2>NOALBS Cloud</h2>
+          <p>
+            NOALBS Cloud is open source too, under the
+            <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License v3.0</a>
+            or later.
+            The source code of what runs here is on
+            <a href="https://github.com/NOALBS/noalbs-cloud">GitHub</a>. Copyright © 2026 Brian Spit and
+            contributors.
+          </p>
+        </section>
+
+        <section>
+          <h2>The dashboard and the OBS browser source</h2>
+          <p>
+            The code your browser runs, with the full license text of every library:
+            <a href="/third-party-licenses.txt">third-party-licenses.txt</a>. It includes the
+            Geist and Geist Mono fonts, which are licensed under the SIL Open Font License 1.1.
+          </p>
+        </section>
+
+        <section>
+          <h2>The servers</h2>
+          <p>
+            The Rust crates our servers are built from, with the license each one declares:
+            <a href="/rust-licenses.txt">rust-licenses.txt</a>. Where a crate offers a choice (for
+            example “MIT OR Apache-2.0”) we use it under whichever of the two we like. Their source
+            and full license texts are in the repositories linked there.
+          </p>
+        </section>
+
+        <section>
+          <h2>BELABOX and Moblin</h2>
+          <p>
+            NOALBS Cloud can remote control a BELABOX and a phone running Moblin. Those parts of our
+            servers speak the protocols of these projects, written from their source code. Thank you to
+            both.
+          </p>
+          <p>
+            <a href="https://belabox.net/">BELABOX</a> (<a href="https://github.com/BELABOX/belaUI">belaUI</a>
+            and BELABOX Cloud’s remote protocol): Copyright © 2020–2022 BELABOX project, licensed under
+            the GNU General Public License v3.0.
+          </p>
+          <p>
+            <a href="https://moblin.app/">Moblin</a> (<a href="https://github.com/eerimoq/moblin">source</a>,
+            its remote control): Copyright © 2023 Erik Moqvist, licensed under the MIT License.
+          </p>
+          <p>
+            The notices and license texts: <a href="/third-party-notices.txt">third-party-notices.txt</a>.
+          </p>
+        </section>
+
+        <section>
+          <h2>NOALBS</h2>
+          <p>
+            NOALBS is open source too. Its code and licenses are on
+            <a href="https://github.com/NOALBS">GitHub</a>.
+          </p>
+        </section>
+      </main>
+
+      <footer class="flex flex-col gap-4 border-t border-divider py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span class="font-mono font-bold tracking-wide text-foreground">NOALBS</span>
+        <nav class="flex flex-wrap gap-x-6 gap-y-2">
+          <a href="https://discord.gg/efWu5HWM2u" class="hover:text-foreground">Discord</a>
+          <a href="https://x.com/noalbs" class="hover:text-foreground">X</a>
+          <a href="https://github.com/NOALBS" class="hover:text-foreground">GitHub</a>
+          <a href="/privacy" class="hover:text-foreground">Privacy</a>
+          <a href="/terms" class="hover:text-foreground">Terms</a>
+          <a href="/licenses" class="hover:text-foreground">Licenses</a>
+        </nav>
+      </footer>
+    </div>
+    <script type="module" src="/src/legal/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>NOALBS Cloud: your IRL stream, on autopilot</title>
+    <meta
+      name="description"
+      content="NOALBS switches OBS to LOW or BRB when your IRL signal drops and back to LIVE when it recovers. Hosted, nothing to install, with remote control from your phone, BELABOX and Moblin control, and Twitch and Kick chat commands."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NOALBS Cloud" />
+    <meta property="og:title" content="NOALBS Cloud: your IRL stream, on autopilot" />
+    <meta
+      property="og:description"
+      content="Automatic scene switching for IRL streams."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@noalbs" />
+    <script>
+      // Apply the theme before first paint to avoid a flash (same as the dashboard): the
+      // saved choice, or on Auto the browser's setting, following it when it changes.
+      try {
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+        const apply = () => {
+          const saved = localStorage.getItem("noalbs-theme");
+          document.documentElement.dataset.theme =
+            saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+        };
+        apply();
+        media.addEventListener("change", apply);
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
+  </head>
+  <body>
+    <header class="sticky top-0 z-20 border-b border-transparent bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+      <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+        <a href="/" class="flex items-center gap-2 font-mono text-lg font-bold tracking-wide">
+          <svg viewBox="0 0 260 262" class="size-[1.3em]" aria-hidden="true">
+            <g fill="#5576DA" stroke="#0B0D10" stroke-width="6" stroke-linejoin="round">
+              <path d="M22 62 L90 169 L90 243 L22 243 Z" />
+              <path d="M24 17 L93 17 L238 245 L169 245 Z" />
+              <path d="M169 17 L237 17 L237 204 L169 97 Z" />
+            </g>
+          </svg>
+          NOALBS
+        </a>
+        <nav class="flex items-center gap-1 text-sm font-medium">
+          <a href="#features" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">Features</a>
+          <a href="#devices" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">BELABOX &amp; Moblin</a>
+          <a href="#chat" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">Chat</a>
+          <a href="#faq" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">FAQ</a>
+          <a href="https://discord.gg/efWu5HWM2u" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground lg:block">Discord</a>
+          <a href="/login" class="ml-2 rounded-lg border border-border-strong px-3.5 py-2 hover:bg-surface-2">Sign in</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="mx-auto flex max-w-6xl flex-col px-5 sm:px-8">
+      <main>
+        <!-- Hero: the pitch, then the product doing its job. -->
+        <section class="flex flex-col gap-12 pt-12 pb-20 lg:gap-14 lg:pt-20 lg:pb-24">
+          <div class="flex flex-col gap-8">
+            <div class="flex max-w-5xl flex-col gap-6">
+              <h1 class="text-[2.6rem] leading-[1.02] font-bold tracking-tight text-balance sm:text-6xl lg:text-[4.5rem]">
+                Automatic scene switching<br />
+                <span class="text-primary">for IRL streams.</span>
+              </h1>
+              <p class="max-w-2xl text-lg leading-relaxed text-muted-foreground">
+                NOALBS Cloud watches your stream server every second and puts OBS on LOW or BRB
+                when the signal goes, then back to LIVE when it returns. Everything else is on your
+                phone: scenes, sources, audio, your BELABOX or Moblin, and your chat.
+              </p>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap items-center gap-3">
+                <a
+                  href="/login"
+                  class="flex h-12 items-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground hover:bg-primary-strong"
+                  >Start for free</a
+                >
+                <a
+                  href="#how"
+                  class="flex h-12 items-center rounded-xl border border-border-strong px-6 font-semibold hover:bg-surface-2"
+                  >How it works</a
+                >
+              </div>
+              <p class="text-sm text-muted-foreground">
+                Sign in with Twitch or Kick. Nothing to install.
+              </p>
+            </div>
+          </div>
+
+          <!--
+            The Live page in miniature (markup from `routes/…/live.tsx` and `components/live/`),
+            run by `src/landing/main.ts`: a made-up stream loses signal and gets it back. This
+            markup is its still LIVE frame, which is also what reduced motion and no JS show.
+          -->
+          <figure class="flex flex-col gap-3">
+            <div
+              id="demo"
+              class="relative rounded-[1.4rem] border border-border-strong bg-sunken p-2.5 shadow-[0_30px_80px_-30px_rgb(0_0_0/0.45)] sm:p-4"
+              aria-hidden="true"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-3 px-1.5 pt-1 pb-3.5">
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-lg font-bold">Live</span>
+                  <span class="truncate text-xs text-muted-foreground">Main switcher · BELABOX Cloud → OBS</span>
+                </div>
+                <div class="hidden items-center gap-2 md:flex">
+                  <span class="flex h-8 items-center gap-2 rounded-full border px-3 text-xs text-muted-foreground">
+                    <span class="size-1.5 rounded-full bg-live"></span>Browser source
+                  </span>
+                  <span class="flex h-8 items-center gap-2 rounded-full border px-3 text-xs text-muted-foreground">
+                    <span class="size-1.5 rounded-full bg-live"></span>OBS
+                  </span>
+                  <span class="flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" /></svg>
+                    Fix feed
+                  </span>
+                  <span class="flex h-8 items-center gap-1.5 rounded-lg bg-offline/14 px-3 text-xs font-semibold text-offline">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3 fill-current"><rect width="18" height="18" x="3" y="3" rx="2" /></svg>
+                    Stop stream
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-2.5 sm:gap-3 lg:grid-cols-12">
+                <section data-demo="status-card" class="flex flex-col gap-4 rounded-2xl border border-live/35 bg-card p-4 lg:col-span-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <span data-demo="pill" class="flex h-8 items-center gap-2 rounded-full bg-live/12 pr-3.5 pl-3 text-xs font-bold tracking-widest text-live">
+                      <span data-demo="pill-dot" class="size-2 rounded-full bg-live"></span>
+                      <span data-demo="pill-label">LIVE</span>
+                    </span>
+                    <span data-demo="uptime" class="font-mono text-sm text-muted-foreground tabular">1:24:07</span>
+                  </div>
+                  <div class="flex items-end justify-between gap-4 lg:hidden">
+                    <span class="flex flex-col gap-1">
+                      <span class="text-xs tracking-wider text-muted-foreground uppercase">Bitrate · BELABOX Cloud</span>
+                      <span class="font-mono leading-none font-semibold tabular"><span data-demo="kbps" class="text-[40px]">6,180</span><span class="text-base font-normal text-muted-foreground"> kbps</span></span>
+                    </span>
+                    <span class="flex flex-col gap-1">
+                      <span class="text-xs tracking-wider text-muted-foreground uppercase">RTT</span>
+                      <span class="font-mono leading-none font-semibold tabular"><span data-demo="rtt" class="text-2xl">94</span><span class="text-sm font-normal text-muted-foreground"> ms</span></span>
+                    </span>
+                  </div>
+                  <div class="flex flex-col gap-1 max-lg:flex-row max-lg:items-center max-lg:justify-between max-lg:border-t max-lg:border-divider max-lg:pt-3.5">
+                    <span class="text-xs tracking-wider text-muted-foreground uppercase">On air</span>
+                    <span data-demo="scene" class="text-base font-semibold lg:text-3xl lg:font-bold">IRL cam</span>
+                  </div>
+                  <div class="mt-auto hidden items-center justify-between rounded-xl border border-divider px-3 py-2.5 lg:flex">
+                    <span class="flex flex-col">
+                      <span class="text-sm font-semibold">Auto switch</span>
+                      <span class="text-xs text-muted-foreground">LIVE, LOW and BRB follow the feed</span>
+                    </span>
+                    <span class="flex h-5 w-9 items-center rounded-full bg-primary p-0.5"><span class="ml-auto size-4 rounded-full bg-primary-foreground"></span></span>
+                  </div>
+                </section>
+
+                <section class="hidden flex-col gap-3 rounded-2xl border bg-card p-4 md:flex lg:col-span-8">
+                  <div class="flex flex-wrap items-end justify-between gap-4">
+                    <div class="flex items-end gap-8">
+                      <span class="flex flex-col gap-1">
+                        <span class="text-xs tracking-wider text-muted-foreground uppercase">Bitrate</span>
+                        <span class="font-mono leading-none font-semibold tabular"><span data-demo="kbps" class="text-5xl">6,180</span><span class="text-base font-normal text-muted-foreground"> kbps</span></span>
+                      </span>
+                      <span class="flex flex-col gap-1">
+                        <span class="text-xs tracking-wider text-muted-foreground uppercase">RTT</span>
+                        <span class="font-mono leading-none font-semibold tabular"><span data-demo="rtt" class="text-2xl">94</span><span class="text-sm font-normal text-muted-foreground"> ms</span></span>
+                      </span>
+                    </div>
+                    <div class="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span class="flex items-center gap-1.5"><span class="w-3.5 border-t border-dashed border-low"></span>Low 2,500</span>
+                      <span class="flex items-center gap-1.5"><span class="w-3.5 border-t border-dashed border-offline"></span>Offline 300</span>
+                      <span>Last 60 s</span>
+                    </div>
+                  </div>
+                  <svg aria-hidden="true" data-demo="chart" viewBox="0 0 760 150" preserveAspectRatio="none" class="h-[150px] w-full text-live">
+                    <line data-demo="low-line" x1="0" x2="760" y1="101" y2="101" class="stroke-low" stroke-dasharray="4 5" stroke-width="1" vector-effect="non-scaling-stroke" />
+                    <line data-demo="offline-line" x1="0" x2="760" y1="139" y2="139" class="stroke-offline" stroke-dasharray="4 5" stroke-width="1" vector-effect="non-scaling-stroke" />
+                    <polygon data-demo="area" points="" class="fill-current opacity-10" />
+                    <polyline data-demo="line" points="" class="fill-none stroke-current" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                  </svg>
+                </section>
+
+                <section class="hidden flex-col gap-2.5 sm:flex lg:col-span-4">
+                  <h2 class="px-0.5 text-sm font-semibold">Stream servers</h2>
+                  <div class="flex flex-col gap-2 rounded-2xl border border-primary-soft-border bg-card p-3.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="flex min-w-0 items-center gap-2">
+                        <span class="rounded-md border px-1.5 font-mono text-[11px] text-muted-foreground">P1</span>
+                        <span class="truncate text-sm font-semibold">BELABOX Cloud</span>
+                      </span>
+                      <span class="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold tracking-wider text-primary-soft-foreground uppercase">BELABOX</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="w-28 shrink-0 font-mono text-xl font-semibold tabular"><span data-demo="kbps">6,180</span><span class="text-xs font-normal text-muted-foreground"> kbps</span></span>
+                      <svg aria-hidden="true" data-demo="spark" viewBox="0 0 760 34" preserveAspectRatio="none" class="h-[34px] min-w-0 flex-1 text-live">
+                        <polygon data-demo="spark-area" points="" class="fill-current opacity-10" />
+                        <polyline data-demo="spark-line" points="" class="fill-none stroke-current" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                      </svg>
+                    </div>
+                    <span class="flex items-center gap-2 font-mono text-xs text-muted-foreground tabular">
+                      <span data-demo="server-status">RTT 94 ms · live</span>
+                      <span class="rounded bg-primary px-1.5 font-sans text-[10px] font-bold text-primary-foreground">IN USE</span>
+                    </span>
+                  </div>
+                  <div class="flex flex-col gap-2 rounded-2xl border bg-card p-3.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="flex min-w-0 items-center gap-2">
+                        <span class="rounded-md border px-1.5 font-mono text-[11px] text-muted-foreground">P2</span>
+                        <span class="truncate text-sm font-semibold">Home SRT</span>
+                      </span>
+                      <span class="rounded-md bg-primary-soft px-2 py-0.5 text-[10px] font-semibold tracking-wider text-primary-soft-foreground uppercase">SRT Live Server</span>
+                    </div>
+                    <span class="font-mono text-xl font-semibold">—<span class="text-xs font-normal text-muted-foreground"> kbps</span></span>
+                    <span class="font-mono text-xs text-muted-foreground">No feed</span>
+                  </div>
+                </section>
+
+                <section class="flex flex-col gap-2.5 lg:col-span-5">
+                  <div class="flex items-center justify-between px-0.5">
+                    <h2 class="text-sm font-semibold">Scenes</h2>
+                    <span class="text-xs text-muted-foreground">Tap to switch</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div data-tile="IRL cam" data-role="LIVE SCENE" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border-2 border-primary bg-primary-soft p-3 text-left">
+                      <span class="text-sm font-semibold">IRL cam</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-offline"><span class="size-1.5 rounded-full bg-offline"></span>ON AIR</span>
+                    </div>
+                    <div data-tile="Low bitrate" data-role="LOW SCENE" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border bg-card p-3 text-left">
+                      <span class="text-sm font-semibold">Low bitrate</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground">LOW SCENE</span>
+                    </div>
+                    <div data-tile="BRB" data-role="BRB SCENE" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border bg-card p-3 text-left">
+                      <span class="text-sm font-semibold">BRB</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground">BRB SCENE</span>
+                    </div>
+                    <div data-tile="Starting soon" data-role="STARTING" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border bg-card p-3 text-left">
+                      <span class="text-sm font-semibold">Starting soon</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground">STARTING</span>
+                    </div>
+                    <div data-tile="Just chatting" data-role="SCENE" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border bg-card p-3 text-left max-sm:hidden">
+                      <span class="text-sm font-semibold">Just chatting</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground">SCENE</span>
+                    </div>
+                    <div data-tile="Ending" data-role="ENDING" class="flex min-h-17 flex-col items-start justify-between gap-1.5 rounded-xl border bg-card p-3 text-left max-sm:hidden">
+                      <span class="text-sm font-semibold">Ending</span>
+                      <span data-tag class="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground">ENDING</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="flex flex-col gap-2.5 lg:col-span-3">
+                  <h2 class="px-0.5 text-sm font-semibold">Activity</h2>
+                  <!-- Out of the flow, so new entries never resize the row (and move the page). -->
+                  <div class="relative h-[11.5rem] lg:h-auto lg:min-h-48 lg:flex-1">
+                    <ol data-demo="activity" class="absolute inset-0 flex flex-col overflow-hidden rounded-2xl border bg-card">
+                      <li class="flex flex-col gap-0.5 border-b border-divider px-3.5 py-2.5 last:border-b-0">
+                        <span class="flex items-baseline justify-between gap-2">
+                          <span class="text-sm font-semibold">Starting soon → IRL cam</span>
+                          <span class="font-mono text-[11px] text-muted-foreground tabular">20:41:12</span>
+                        </span>
+                        <span class="text-xs text-muted-foreground">by mod_sam (Twitch chat)</span>
+                      </li>
+                      <li class="flex flex-col gap-0.5 border-b border-divider px-3.5 py-2.5 last:border-b-0">
+                        <span class="flex items-baseline justify-between gap-2">
+                          <span class="text-sm font-semibold">Stream started</span>
+                          <span class="font-mono text-[11px] text-muted-foreground tabular">20:40:58</span>
+                        </span>
+                        <span class="text-xs text-muted-foreground">by you</span>
+                      </li>
+                    </ol>
+                  </div>
+                </section>
+              </div>
+            </div>
+            <figcaption class="flex flex-wrap justify-between gap-x-6 gap-y-1 px-1 font-mono text-xs text-muted-foreground">
+              <span>A demo stream: downtown, up the hill, through a tunnel, out the other side.</span>
+              <span>LOW below 2,500 kbps · BRB below 300 kbps · 2 retry attempts</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <section id="how" class="scroll-mt-20 border-t border-divider py-20 lg:py-24">
+          <div class="grid gap-12 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-16">
+            <div class="flex flex-col gap-4">
+              <h2 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Set up in ten minutes. Then stop thinking about it.</h2>
+              <p class="leading-relaxed text-muted-foreground">
+                The switching rules are NOALBS’s own, the ones IRL streamers have run on their own PCs
+                for years.
+              </p>
+            </div>
+            <ol class="grid gap-10 md:grid-cols-3 md:gap-8">
+              <li class="flex flex-col gap-3 border-t border-border-strong pt-5">
+                <span class="font-mono text-sm text-muted-foreground">1</span>
+                <h3 class="text-lg font-semibold">Add one browser source</h3>
+                <p class="leading-relaxed text-muted-foreground">
+                  Paste your link into OBS. It talks to OBS on your PC and connects out to us, so
+                  there are no ports to open and nothing else to run.
+                </p>
+              </li>
+              <li class="flex flex-col gap-3 border-t border-border-strong pt-5">
+                <span class="font-mono text-sm text-muted-foreground">2</span>
+                <h3 class="text-lg font-semibold">Add your stream server</h3>
+                <p class="leading-relaxed text-muted-foreground">
+                  BELABOX Cloud, SRT Live Server, MediaMTX, NGINX and eight more. Test connection tells
+                  you right away if the stats URL works.
+                </p>
+              </li>
+              <li class="flex flex-col gap-3 border-t border-border-strong pt-5">
+                <span class="font-mono text-sm text-muted-foreground">3</span>
+                <h3 class="text-lg font-semibold">Pick scenes and triggers</h3>
+                <p class="leading-relaxed text-muted-foreground">
+                  Your LIVE, LOW and BRB scenes, bitrate and RTT triggers, backup servers by priority,
+                  retry attempts. Then go live and walk.
+                </p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section id="features" class="scroll-mt-20 border-t border-divider py-20 lg:py-24">
+          <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+            Everything you’d otherwise run back to your PC for.
+          </h2>
+
+          <div class="mt-12 grid gap-4 lg:grid-cols-5">
+            <div class="flex flex-col gap-5 rounded-2xl border bg-card p-6 lg:col-span-3">
+              <div class="flex flex-col gap-1.5">
+                <h3 class="text-lg font-semibold">Stream history</h3>
+                <p class="max-w-lg leading-relaxed text-muted-foreground">
+                  Bitrate, RTT and every switch of every stream, so you can see what happened on that
+                  mountain. Drag across a chart to zoom in to ten seconds.
+                </p>
+              </div>
+              <div class="flex flex-col gap-2">
+                <svg id="history-sketch" viewBox="0 0 600 140" class="w-full" aria-label="A stream's bitrate over three hours, with its LIVE, LOW and offline stretches">
+                  <line data-history="low" x1="0" x2="600" y1="80" y2="80" class="stroke-low" stroke-dasharray="4 5" stroke-width="1" />
+                  <polygon data-history="band" points="" class="fill-live opacity-15" />
+                  <polyline data-history="line" points="" class="fill-none stroke-live" stroke-width="2" stroke-linejoin="round" />
+                  <g data-history="strip"></g>
+                </svg>
+                <div class="flex justify-between font-mono text-[11px] text-muted-foreground tabular">
+                  <span>0:00</span><span>1:00</span><span>2:00</span><span>3:00</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-5 rounded-2xl border bg-card p-6 lg:col-span-2">
+              <div class="flex flex-col gap-1.5">
+                <h3 class="text-lg font-semibold">OBS’s audio mixer</h3>
+                <p class="leading-relaxed text-muted-foreground">
+                  Mute the mic or pull the music down from your phone, with live meters.
+                </p>
+              </div>
+              <ul class="flex flex-col gap-3.5" aria-label="Example mixer">
+                <li class="flex flex-col gap-1.5">
+                  <span class="flex justify-between text-sm"><span class="font-medium">Mic</span><span class="font-mono text-xs text-muted-foreground tabular">0.0 dB</span></span>
+                  <span class="relative h-2 overflow-hidden rounded-full bg-surface-2"><span class="absolute inset-y-0 left-0 w-[72%] rounded-full bg-[linear-gradient(90deg,var(--live)_0_66%,var(--low)_66%_85%,var(--offline)_85%)] [background-size:calc(100%/0.72)_100%]"></span></span>
+                </li>
+                <li class="flex flex-col gap-1.5">
+                  <span class="flex justify-between text-sm"><span class="font-medium">Music</span><span class="font-mono text-xs text-muted-foreground tabular">−14.2 dB</span></span>
+                  <span class="relative h-2 overflow-hidden rounded-full bg-surface-2"><span class="absolute inset-y-0 left-0 w-[41%] rounded-full bg-live"></span></span>
+                </li>
+                <li class="flex flex-col gap-1.5 opacity-60">
+                  <span class="flex justify-between text-sm"><span class="font-medium">Desktop audio</span><span class="font-mono text-xs text-muted-foreground">Muted</span></span>
+                  <span class="relative h-2 overflow-hidden rounded-full bg-surface-2"><span class="absolute inset-y-0 left-0 w-[28%] rounded-full bg-idle"></span></span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <dl class="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
+                Remote control
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                Switch scenes, start and stop the stream or recording, show and hide sources in
+                nested scenes and groups, with a live preview of what’s on air.
+              </dd>
+            </div>
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" /></svg>
+                Fix a frozen feed
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                One tap, or <span class="font-mono text-sm text-foreground">!fix</span> in chat,
+                reconnects the media sources playing your SRT or RTMP feed.
+              </dd>
+            </div>
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528" /></svg>
+                Markers for your editor
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                Flag a moment from the dashboard or with
+                <span class="font-mono text-sm text-foreground">!marker</span>, then copy the list:
+                <span class="font-mono text-sm text-foreground">1:02:05 the bridge</span>.
+              </dd>
+            </div>
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" /></svg>
+                Ends the stream for you
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                After too long on BRB or on your Ending scene, or when you raid someone on Twitch or
+                Kick. Your BELABOX or Moblin can stop with it.
+              </dd>
+            </div>
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></svg>
+                Room for your team
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                Invite mods and editors as operators or admins. The activity feed says who switched
+                what.
+              </dd>
+            </div>
+            <div class="flex flex-col gap-2">
+              <dt class="flex items-center gap-2.5 font-semibold">
+                <svg viewBox="0 0 24 24" class="size-5 fill-none stroke-primary" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></svg>
+                Safe to show on stream
+              </dt>
+              <dd class="leading-relaxed text-muted-foreground">
+                Stream keys, stats URLs and your browser-source link stay hidden until you reveal
+                them, so the dashboard can sit on screen.
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section id="devices" class="scroll-mt-20 border-t border-divider py-20 lg:py-24">
+          <div class="flex max-w-2xl flex-col gap-4">
+            <h2 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">The encoder in your backpack, on the same screen.</h2>
+            <p class="text-lg leading-relaxed text-muted-foreground">
+              Connect BELABOX Cloud or Moblin and control them next to OBS. Optional, on every plan.
+            </p>
+          </div>
+
+          <div class="mt-12 grid gap-4 lg:grid-cols-2">
+            <article class="flex min-w-0 flex-col gap-6 rounded-2xl border bg-card p-4 sm:p-6">
+              <div class="flex flex-col gap-1.5">
+                <h3 class="text-xl font-semibold">BELABOX</h3>
+                <p class="leading-relaxed text-muted-foreground">Through BELABOX Cloud with your remote key.</p>
+              </div>
+              <!-- components/live/belabox-card.tsx, streaming, as a controller. -->
+              <div class="rounded-xl sm:bg-sunken sm:p-4" aria-hidden="true">
+                <div class="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="flex min-w-0 items-center gap-2">
+                      <span class="text-sm font-semibold">BELABOX</span>
+                      <span class="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-live"><span class="size-1.5 rounded-full bg-live"></span>STREAMING</span>
+                    </span>
+                    <div class="flex shrink-0 items-center gap-1.5">
+                      <span class="inline-flex size-8 items-center justify-center rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" /></svg>
+                      </span>
+                      <span class="inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs dark:border-input dark:bg-input/30">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /></svg>
+                        Stop
+                      </span>
+                    </div>
+                  </div>
+
+                  <span class="font-mono text-xl font-semibold tabular">7,420<span class="text-xs font-normal text-muted-foreground"> kbps sent</span></span>
+
+                  <div class="flex items-center justify-between gap-2 rounded-xl border border-divider px-3 py-2">
+                    <span class="text-xs tracking-wider text-muted-foreground uppercase">Max bitrate</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="inline-flex size-8 items-center justify-center rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg></span>
+                      <span class="flex h-8 w-20 items-center justify-center rounded-md border border-input font-mono text-sm shadow-xs tabular dark:bg-input/30">8000</span>
+                      <span class="inline-flex size-8 items-center justify-center rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14" /></svg></span>
+                      <span class="text-xs text-muted-foreground">kbps</span>
+                    </div>
+                  </div>
+
+                  <ul class="flex flex-col divide-y divide-divider border-y border-divider">
+                    <li class="flex flex-col gap-0.5 py-2">
+                      <div class="flex items-center gap-3">
+                        <span class="w-20 shrink-0 font-mono text-sm font-semibold">usb0</span>
+                        <svg aria-hidden="true" data-spark="3120" viewBox="0 0 760 28" preserveAspectRatio="none" class="h-7 min-w-0 flex-1 text-live"></svg>
+                        <span class="w-14 shrink-0 text-right font-mono text-sm tabular">3,120</span>
+                        <span class="inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full bg-primary"><span class="block size-4 translate-x-[calc(100%-2px)] rounded-full bg-background dark:bg-primary-foreground"></span></span>
+                      </div>
+                      <span class="text-[11px] text-muted-foreground">Vodafone · LTE · 54%</span>
+                    </li>
+                    <li class="flex flex-col gap-0.5 py-2">
+                      <div class="flex items-center gap-3">
+                        <span class="w-20 shrink-0 font-mono text-sm font-semibold">usb1</span>
+                        <svg aria-hidden="true" data-spark="2610" viewBox="0 0 760 28" preserveAspectRatio="none" class="h-7 min-w-0 flex-1 text-live"></svg>
+                        <span class="w-14 shrink-0 text-right font-mono text-sm tabular">2,610</span>
+                        <span class="inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full bg-primary"><span class="block size-4 translate-x-[calc(100%-2px)] rounded-full bg-background dark:bg-primary-foreground"></span></span>
+                      </div>
+                      <span class="text-[11px] text-muted-foreground">T-Mobile · 5G · 71%</span>
+                    </li>
+                    <li class="flex flex-col gap-0.5 py-2">
+                      <div class="flex items-center gap-3">
+                        <span class="w-20 shrink-0 font-mono text-sm font-semibold">wlan0</span>
+                        <svg aria-hidden="true" data-spark="1690" viewBox="0 0 760 28" preserveAspectRatio="none" class="h-7 min-w-0 flex-1 text-live"></svg>
+                        <span class="w-14 shrink-0 text-right font-mono text-sm tabular">1,690</span>
+                        <span class="inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full bg-primary"><span class="block size-4 translate-x-[calc(100%-2px)] rounded-full bg-background dark:bg-primary-foreground"></span></span>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div class="flex min-w-0 flex-col"><dt class="text-muted-foreground">SoC temperature</dt><dd class="font-mono tabular">48.2 °C</dd></div>
+                    <div class="flex min-w-0 flex-col"><dt class="text-muted-foreground">SoC voltage</dt><dd class="font-mono tabular">5.012 V</dd></div>
+                    <div class="flex min-w-0 flex-col"><dt class="text-muted-foreground">SRT latency</dt><dd class="font-mono tabular">2,000 ms</dd></div>
+                    <div class="flex min-w-0 flex-col"><dt class="text-muted-foreground">SoC current</dt><dd class="font-mono tabular">1.402 A</dd></div>
+                  </dl>
+                </div>
+              </div>
+              <ul class="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
+                <li>Start and stop it, by hand or together with the OBS stream</li>
+                <li>Change the max bitrate and turn modems or WiFi on and off</li>
+                <li>Join WiFi networks, run a hotspot, set a modem’s APN and network type</li>
+                <li>
+                  belabot’s commands in chat:
+                  <span class="font-mono text-foreground">!bbstart</span>,
+                  <span class="font-mono text-foreground">!bbb 6000</span>,
+                  <span class="font-mono text-foreground">!bbt usb0</span>,
+                  <span class="font-mono text-foreground">!bbs</span>
+                </li>
+              </ul>
+            </article>
+
+            <article class="flex min-w-0 flex-col gap-6 rounded-2xl border bg-card p-4 sm:p-6">
+              <div class="flex flex-col gap-1.5">
+                <h3 class="text-xl font-semibold">Moblin</h3>
+                <p class="leading-relaxed text-muted-foreground">NOALBS is Moblin’s remote control assistant. Paste one URL and a password.</p>
+              </div>
+              <!-- components/live/moblin-card.tsx, live, as a controller (connection priorities left out). -->
+              <div class="rounded-xl sm:bg-sunken sm:p-4" aria-hidden="true">
+                <div class="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="flex min-w-0 items-center gap-2">
+                      <span class="text-sm font-semibold">Moblin</span>
+                      <span class="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-live"><span class="size-1.5 rounded-full bg-live"></span>LIVE</span>
+                    </span>
+                    <span class="inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs dark:border-input dark:bg-input/30">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /></svg>
+                      Stop
+                    </span>
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="font-mono text-xl font-semibold tabular">6.2 Mbps, 3904 MB</span>
+                    <span class="text-xs text-muted-foreground">Live for 1:24:07</span>
+                  </div>
+
+                  <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    <div class="flex min-w-0 flex-col"><dt class="text-muted-foreground">Battery</dt><dd class="font-mono tabular">76%</dd></div>
+                    <div class="flex min-w-0 flex-col">
+                      <dt class="text-muted-foreground">Heat</dt>
+                      <dd class="font-mono tabular"><svg aria-hidden="true" viewBox="0 0 24 24" class="mr-1 inline size-3.5 fill-none stroke-current align-[-2px]" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>Normal</dd>
+                    </div>
+                    <div class="col-span-2 flex min-w-0 flex-col"><dt class="text-muted-foreground">Phone</dt><dd class="font-mono tabular">CPU 41% (Moblin 17%) · 312 MB</dd></div>
+                  </dl>
+
+                  <div class="flex flex-col gap-1 text-xs">
+                    <span class="text-muted-foreground">Bonding</span>
+                    <ul class="flex flex-col gap-1">
+                      <li class="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2">
+                        <span class="font-semibold">Cellular</span>
+                        <span class="flex items-center gap-1.5"><span class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><span class="block h-full w-[62%] rounded-full bg-live"></span></span><span class="w-8 text-right font-mono tabular">62%</span></span>
+                        <span class="text-right font-mono text-muted-foreground tabular">84 ms</span>
+                      </li>
+                      <li class="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2">
+                        <span class="font-semibold">WiFi</span>
+                        <span class="flex items-center gap-1.5"><span class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><span class="block h-full w-[38%] rounded-full bg-live"></span></span><span class="w-8 text-right font-mono tabular">38%</span></span>
+                        <span class="text-right font-mono text-muted-foreground tabular">41 ms</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs dark:border-input dark:bg-input/30">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2"><circle cx="12" cy="12" r="10" /></svg>Record
+                    </span>
+                    <span class="inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs dark:border-input dark:bg-input/30">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19v3M19 10v2a7 7 0 0 1-14 0v-2" /><rect x="9" y="2" width="6" height="13" rx="3" /></svg>Mute
+                    </span>
+                    <span class="inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs dark:border-input dark:bg-input/30">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></svg>Stealth
+                    </span>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs tracking-wider text-muted-foreground uppercase">Zoom</span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="inline-flex size-8 items-center justify-center rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg></span>
+                        <span class="w-14 text-center font-mono text-sm font-semibold tabular">1x</span>
+                        <span class="inline-flex size-8 items-center justify-center rounded-md border bg-background shadow-xs dark:border-input dark:bg-input/30"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14" /></svg></span>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 font-mono text-xs font-medium">
+                      <span class="inline-flex h-7 items-center rounded-md border bg-background px-2.5 shadow-xs dark:border-input dark:bg-input/30">0.5x</span>
+                      <span class="inline-flex h-7 items-center rounded-md bg-secondary px-2.5 text-secondary-foreground">1x</span>
+                      <span class="inline-flex h-7 items-center rounded-md border bg-background px-2.5 shadow-xs dark:border-input dark:bg-input/30">3x</span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div class="flex min-w-0 flex-col gap-1">
+                      <span class="text-xs text-muted-foreground">Scene</span>
+                      <span class="flex h-9 items-center justify-between gap-2 rounded-md border border-input px-3 text-sm shadow-xs dark:bg-input/30">Main<svg aria-hidden="true" viewBox="0 0 24 24" class="size-4 fill-none stroke-current opacity-50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></span>
+                    </div>
+                    <div class="flex min-w-0 flex-col gap-1">
+                      <span class="text-xs text-muted-foreground">Bitrate preset</span>
+                      <span class="flex h-9 items-center justify-between gap-2 rounded-md border border-input px-3 text-sm shadow-xs dark:bg-input/30">6,000 kbps<svg aria-hidden="true" viewBox="0 0 24 24" class="size-4 fill-none stroke-current opacity-50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ul class="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
+                <li>Go live, stop, record and mute, by hand or with the OBS stream</li>
+                <li>Pick scenes and bitrate presets, zoom and stealth mode</li>
+                <li>Battery, heat and each bonded connection’s share and RTT</li>
+                <li>
+                  In chat:
+                  <span class="font-mono text-foreground">!mstart</span>,
+                  <span class="font-mono text-foreground">!mscene</span>,
+                  <span class="font-mono text-foreground">!mbitrate</span>,
+                  <span class="font-mono text-foreground">!mstats</span>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="chat" class="scroll-mt-20 grid gap-12 border-t border-divider py-20 lg:grid-cols-2 lg:gap-16 lg:py-24">
+          <div class="flex flex-col gap-8">
+            <div class="flex flex-col gap-4">
+              <h2 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Your hands are busy. Your mods aren’t.</h2>
+              <p class="text-lg leading-relaxed text-muted-foreground">
+                NOALBS’s chat commands on Twitch and Kick, through our bot or, on Pro, your own.
+                Choose who may run each one, add aliases, and get a message in chat when it
+                switches.
+              </p>
+            </div>
+            <dl class="flex flex-col gap-4 text-sm">
+              <div class="grid gap-1.5 sm:grid-cols-[6.5rem_1fr]">
+                <dt class="pt-1 text-muted-foreground">Stream</dt>
+                <dd class="flex flex-wrap gap-1.5 font-mono"><span class="rounded-md bg-surface-2 px-2 py-1">!start</span><span class="rounded-md bg-surface-2 px-2 py-1">!stop</span><span class="rounded-md bg-surface-2 px-2 py-1">!record</span><span class="rounded-md bg-surface-2 px-2 py-1">!marker</span><span class="rounded-md bg-surface-2 px-2 py-1">!autostop</span></dd>
+              </div>
+              <div class="grid gap-1.5 sm:grid-cols-[6.5rem_1fr]">
+                <dt class="pt-1 text-muted-foreground">Scenes</dt>
+                <dd class="flex flex-wrap gap-1.5 font-mono"><span class="rounded-md bg-surface-2 px-2 py-1">!switch</span><span class="rounded-md bg-surface-2 px-2 py-1">!live</span><span class="rounded-md bg-surface-2 px-2 py-1">!starting</span><span class="rounded-md bg-surface-2 px-2 py-1">!ending</span><span class="rounded-md bg-surface-2 px-2 py-1">!privacy</span><span class="rounded-md bg-surface-2 px-2 py-1">!source</span></dd>
+              </div>
+              <div class="grid gap-1.5 sm:grid-cols-[6.5rem_1fr]">
+                <dt class="pt-1 text-muted-foreground">Feed</dt>
+                <dd class="flex flex-wrap gap-1.5 font-mono"><span class="rounded-md bg-surface-2 px-2 py-1">!bitrate</span><span class="rounded-md bg-surface-2 px-2 py-1">!fix</span><span class="rounded-md bg-surface-2 px-2 py-1">!refresh</span><span class="rounded-md bg-surface-2 px-2 py-1">!serverinfo</span></dd>
+              </div>
+              <div class="grid gap-1.5 sm:grid-cols-[6.5rem_1fr]">
+                <dt class="pt-1 text-muted-foreground">Settings</dt>
+                <dd class="flex flex-wrap gap-1.5 font-mono"><span class="rounded-md bg-surface-2 px-2 py-1">!trigger</span><span class="rounded-md bg-surface-2 px-2 py-1">!rtrigger</span><span class="rounded-md bg-surface-2 px-2 py-1">!notify</span><span class="rounded-md bg-surface-2 px-2 py-1">!alias</span></dd>
+              </div>
+            </dl>
+          </div>
+
+          <figure class="flex flex-col self-start overflow-hidden rounded-2xl border bg-card text-[15px] lg:mt-2" aria-label="Example chat">
+            <figcaption class="flex items-center justify-between border-b border-divider px-5 py-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              Stream chat
+              <span class="font-mono normal-case tracking-normal">twitch.tv/you</span>
+            </figcaption>
+            <div class="flex flex-col gap-3 px-5 py-5 leading-snug">
+              <p><span class="font-semibold text-[#E0822D]">hikerdan:</span> did the stream just freeze??</p>
+              <p>
+                <span class="font-semibold text-[#6F8CEB]">NOALBSbot:</span>
+                <span class="text-muted-foreground">Switched to LOW · BELABOX Cloud at 640 kbps</span>
+              </p>
+              <p><span class="font-semibold text-[#2DB36A]">mod_sam:</span> !bbs</p>
+              <p>
+                <span class="font-semibold text-[#6F8CEB]">NOALBSbot:</span>
+                <span class="text-muted-foreground">BELABOX (streaming, max 8,000 kbps): usb0: 410 kbps (LTE 54%) | usb1: 230 kbps | wlan0: off | Total: 640 kbps</span>
+              </p>
+              <p><span class="font-semibold text-[#2DB36A]">mod_sam:</span> !bbt wlan</p>
+              <p>
+                <span class="font-semibold text-[#6F8CEB]">NOALBSbot:</span>
+                <span class="text-muted-foreground">Turning wlan0 on</span>
+              </p>
+              <p>
+                <span class="font-semibold text-[#6F8CEB]">NOALBSbot:</span>
+                <span class="text-muted-foreground">Switched to LIVE · BELABOX Cloud at 5,980 kbps</span>
+              </p>
+              <p><span class="font-semibold text-[#E0822D]">hikerdan:</span> we’re so back</p>
+            </div>
+          </figure>
+        </section>
+
+        <section class="border-t border-divider py-16">
+          <div class="grid gap-8 md:grid-cols-[14rem_1fr]">
+            <h2 class="text-sm font-semibold tracking-widest text-muted-foreground uppercase">Works with</h2>
+            <div class="flex flex-col gap-5">
+              <div class="flex flex-col gap-2.5">
+                <span class="text-sm text-muted-foreground">Stream servers</span>
+                <ul class="flex flex-wrap gap-2 text-sm">
+                  <li class="rounded-lg border px-3 py-1.5">BELABOX Cloud</li><li class="rounded-lg border px-3 py-1.5">SRT Live Server</li><li class="rounded-lg border px-3 py-1.5">MediaMTX</li><li class="rounded-lg border px-3 py-1.5">NGINX RTMP</li><li class="rounded-lg border px-3 py-1.5">Node Media Server</li><li class="rounded-lg border px-3 py-1.5">Nimble</li><li class="rounded-lg border px-3 py-1.5">OpenIRL</li><li class="rounded-lg border px-3 py-1.5">IRLHosting</li><li class="rounded-lg border px-3 py-1.5">Xiu</li><li class="rounded-lg border px-3 py-1.5">OpenRTMP</li><li class="rounded-lg border px-3 py-1.5">RIST</li>
+                </ul>
+              </div>
+              <div class="flex flex-col gap-2.5">
+                <span class="text-sm text-muted-foreground">Chat</span>
+                <ul class="flex flex-wrap gap-2 text-sm">
+                  <li class="rounded-lg border px-3 py-1.5">Twitch</li><li class="rounded-lg border px-3 py-1.5">Kick</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="compare" class="scroll-mt-20 border-t border-divider py-20 lg:py-24">
+          <div class="flex max-w-2xl flex-col gap-4">
+            <h2 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Already run NOALBS yourself?</h2>
+            <p class="text-lg leading-relaxed text-muted-foreground">
+              It stays free and open source. The cloud version has the same switching and adds what
+              a program on your PC can’t do.
+            </p>
+          </div>
+          <div class="mt-10 overflow-x-auto rounded-2xl border">
+            <table class="w-full min-w-[34rem] text-left text-sm">
+              <thead>
+                <tr class="border-b bg-card">
+                  <th scope="col" class="w-[40%] px-5 py-3.5 font-medium text-muted-foreground"><span class="sr-only">Feature</span></th>
+                  <th scope="col" class="px-5 py-3.5 font-semibold">NOALBS on your PC</th>
+                  <th scope="col" class="bg-primary-soft px-5 py-3.5 font-semibold text-primary-soft-foreground">NOALBS Cloud</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-divider">
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Setup</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">Download it, edit a config file, keep it running</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">One browser source in OBS</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">LIVE / LOW / BRB switching</th>
+                  <td class="px-5 py-3.5">Yes</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Yes, the same rules</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Chat commands</th>
+                  <td class="px-5 py-3.5">Twitch and Kick</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Twitch and Kick, through our bot or, on Pro, your own</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Dashboard and phone remote control</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">No</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Yes</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Stream history and markers</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">No</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Yes</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">BELABOX and Moblin control</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">No</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Yes</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Team members with roles</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">No</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Yes</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Updates</th>
+                  <td class="px-5 py-3.5 text-muted-foreground">You install them</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Always on the latest</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 font-medium">Price</th>
+                  <td class="px-5 py-3.5">Free</td>
+                  <td class="bg-primary-soft/40 px-5 py-3.5">Free plan, Pro for more</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="faq" class="scroll-mt-20 grid gap-10 border-t border-divider py-20 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-16 lg:py-24">
+          <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Questions</h2>
+          <div class="flex flex-col divide-y divide-divider border-y border-divider">
+            <details class="group py-1" open>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Do I need to install anything?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                No. You add a browser source to OBS and turn on OBS’s WebSocket server (built into OBS
+                28 and later). The browser source talks to OBS on your PC and connects out to NOALBS
+                Cloud, so there’s nothing to forward on your router.
+              </p>
+            </details>
+            <details class="group py-1">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                What happens if NOALBS Cloud goes down mid-stream?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                Your stream keeps going. OBS stays on whatever scene it was on and you can switch by
+                hand as always. The browser source reconnects by itself, and switching picks up again.
+              </p>
+            </details>
+            <details class="group py-1">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Is my OBS password safe?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                It’s stored encrypted and only sent to your own browser source. The browser-source
+                link is shown once when you make it; we keep only a hash of it. Stream server passwords
+                and API keys are write-only, so the dashboard never shows them again.
+              </p>
+            </details>
+            <details class="group py-1">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Which stream server should I use?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                The one your encoder already sends to. NOALBS reads its stats page, so a BELABOX Cloud
+                relay, an SRT Live Server or MediaMTX on a VPS, or a hosted IRL server all work. Add a
+                second one as a backup and NOALBS uses whichever has a feed, by priority.
+              </p>
+            </details>
+            <details class="group py-1">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Can my mods help without getting my passwords?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                Yes. Operators can switch scenes and run the stream without seeing your stats URLs or
+                keys. Admins can also change settings and invite people. In chat you decide which
+                commands moderators, VIPs, subscribers or everyone may use.
+              </p>
+            </details>
+            <details class="group py-1">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                What does it cost?
+                <span class="text-xl leading-none text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-5 leading-relaxed text-muted-foreground">
+                The free plan covers one switcher with switching, remote control, chat commands and
+                BELABOX and Moblin control. Pro adds more switchers, stream servers and team members, longer
+                history and your own chat bot. You can see the plans after signing in.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section class="flex flex-col items-start gap-6 border-t border-divider py-20 lg:py-24">
+          <h2 class="text-4xl font-bold tracking-tight text-balance sm:text-5xl">Ready when your signal isn’t.</h2>
+          <p class="max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            NOALBS Cloud is the hosted version of
+            <a href="https://github.com/NOALBS" class="text-foreground underline underline-offset-4 hover:text-primary">NOALBS</a>,
+            the open-source switcher.<br />
+            Same brains, nothing to run yourself.
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <a
+              href="/login"
+              class="flex h-12 items-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground hover:bg-primary-strong"
+              >Start for free</a
+            >
+            <a
+              href="https://discord.gg/efWu5HWM2u"
+              class="flex h-12 items-center rounded-xl border border-border-strong px-6 font-semibold hover:bg-surface-2"
+              >Join the Discord</a
+            >
+          </div>
+        </section>
+      </main>
+
+      <footer class="flex flex-col gap-4 border-t border-divider py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span class="flex items-center gap-2 font-mono font-bold tracking-wide text-foreground">
+          <svg viewBox="0 0 260 262" class="size-[1.3em]" aria-hidden="true">
+            <g fill="#5576DA" stroke="#0B0D10" stroke-width="6" stroke-linejoin="round">
+              <path d="M22 62 L90 169 L90 243 L22 243 Z" />
+              <path d="M24 17 L93 17 L238 245 L169 245 Z" />
+              <path d="M169 17 L237 17 L237 204 L169 97 Z" />
+            </g>
+          </svg>
+          NOALBS
+        </span>
+        <nav class="flex flex-wrap gap-x-6 gap-y-2">
+          <a href="https://discord.gg/efWu5HWM2u" class="hover:text-foreground">Discord</a>
+          <a href="https://x.com/noalbs" class="hover:text-foreground">X</a>
+          <a href="https://github.com/NOALBS" class="hover:text-foreground">GitHub</a>
+          <a href="/integrate-stream-server" class="hover:text-foreground">For stream server providers</a>
+          <a href="/privacy" class="hover:text-foreground">Privacy</a>
+          <a href="/terms" class="hover:text-foreground">Terms</a>
+          <a href="/licenses" class="hover:text-foreground">Licenses</a>
+          <a href="/login" class="hover:text-foreground">Sign in</a>
+        </nav>
+      </footer>
+    </div>
+    <script type="module" src="/src/landing/main.ts"></script>
+  </body>
+</html>

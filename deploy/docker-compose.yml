@@ -1,0 +1,143 @@
+# NOALBS Cloud, the whole stack on one machine. See README.md next to this file.
+#
+#   cp .env.example .env   # then fill it in
+#   docker compose up -d
+#
+# The dashboard container serves the app on port 80 (or 443 with SITE_ADDRESS
+# set to your domain) and forwards /api to the API, /link to obs-link and
+# /chat/webhooks to the chat service.
+
+name: noalbs-cloud
+
+# Logs, traces and metrics over OTLP for api, obs-link and chat (off while the
+# endpoint is empty). See README, "Observability".
+x-telemetry: &telemetry
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+  OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-}
+  LOG_EXPORT_FILTER: ${LOG_EXPORT_FILTER:-}
+  LOG_FORMAT: ${LOG_FORMAT:-}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: noalbs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: noalbs
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noalbs -d noalbs"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  nats:
+    # 2.11+ so expiring status keys are visible to the API.
+    image: nats:2.12
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data"]
+    volumes:
+      - nats:/data
+
+  db-migrator:
+    image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/db-migrator:${NOALBS_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://noalbs:${POSTGRES_PASSWORD}@postgres/noalbs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/api:${NOALBS_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *telemetry
+      API_POSTGRES_URL: postgres://noalbs:${POSTGRES_PASSWORD}@postgres/noalbs
+      API_NATS_URL: nats://nats:4222
+      API_BASE_URL: ${NOALBS_PUBLIC_URL:?set NOALBS_PUBLIC_URL in .env}/api
+      API_BROWSER_SOURCE_URL: ${NOALBS_PUBLIC_URL}/source/
+      API_COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in .env}
+      API_DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env}
+      API_OAUTH_TWITCH__CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      API_OAUTH_TWITCH__CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      API_OAUTH_KICK__CLIENT_ID: ${KICK_CLIENT_ID:-}
+      API_OAUTH_KICK__CLIENT_SECRET: ${KICK_CLIENT_SECRET:-}
+      API_OAUTH_YOUTUBE__CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      API_OAUTH_YOUTUBE__CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      API_OAUTH_YOUTUBE__API_KEY: ${YOUTUBE_API_KEY:-}
+      API_DEV_LOGIN: ${DEV_LOGIN:-false}
+      API_ALLOW_PRIVATE_STATS_URLS: ${ALLOW_PRIVATE_STATS_URLS:-false}
+      # Where the visitor's IP is, for rate limits (see README, "HTTPS").
+      API_CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-x-forwarded-for}
+      API_DASHBOARD_URL: ${NOALBS_PUBLIC_URL}
+      # Billing is off unless the Stripe key is set.
+      API_STRIPE__SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      API_STRIPE__WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+
+  obs-link:
+    image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/obs-link:${NOALBS_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *telemetry
+      OBS_LINK_POSTGRES_URL: postgres://noalbs:${POSTGRES_PASSWORD}@postgres/noalbs
+      OBS_LINK_NATS_URL: nats://nats:4222
+      OBS_LINK_DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY}
+      OBS_LINK_ALLOW_PRIVATE_STATS_URLS: ${ALLOW_PRIVATE_STATS_URLS:-false}
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+
+  # Reads Twitch, Kick and YouTube chat and runs the commands. Run as many as you like
+  # (e.g. `docker compose up -d --scale chat=2`): they share the work through NATS.
+  chat:
+    image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/chat:${NOALBS_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *telemetry
+      CHAT_POSTGRES_URL: postgres://noalbs:${POSTGRES_PASSWORD}@postgres/noalbs
+      CHAT_NATS_URL: nats://nats:4222
+      CHAT_DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY}
+      CHAT_TWITCH__CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      CHAT_TWITCH__CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      CHAT_KICK__CLIENT_ID: ${KICK_CLIENT_ID:-}
+      CHAT_KICK__CLIENT_SECRET: ${KICK_CLIENT_SECRET:-}
+      CHAT_YOUTUBE__CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      CHAT_YOUTUBE__CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      CHAT_YOUTUBE__API_KEY: ${YOUTUBE_API_KEY:-}
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+
+  dashboard:
+    image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/dashboard:${NOALBS_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      # Certificates, when SITE_ADDRESS is a domain.
+      - caddy:/data
+    depends_on:
+      - api
+      - obs-link
+      - chat
+
+volumes:
+  postgres:
+  nats:
+  caddy:

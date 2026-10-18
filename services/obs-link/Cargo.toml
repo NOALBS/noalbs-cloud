@@ -1,0 +1,34 @@
+[package]
+name = "obs-link"
+version = "0.1.0"
+edition = "2024"
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+async-nats = { workspace = true }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+common = { workspace = true }
+config = { workspace = true }
+db.workspace = true
+live = { workspace = true }
+futures-util = { workspace = true }
+http-body-util.workspace = true
+obs-actions = { workspace = true }
+quick-xml.workspace = true
+reqwest = { workspace = true, features = ["json"] }
+rustls = { version = "0.23.45", default-features = false, features = ["aws_lc_rs"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_repr = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"] }
+tracing = { workspace = true }
+opentelemetry = { workspace = true }
+telemetry = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }

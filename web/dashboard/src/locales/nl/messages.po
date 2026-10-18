@@ -1,0 +1,53 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-14 05:21+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: nl\n"
+
+#: src/components/app-shell.tsx
+msgid " · Staff"
+msgstr " · Staff"
+
+#: src/components/app-shell.tsx
+msgid "Account menu"
+msgstr "Accountmenu"
+
+#: src/components/app-shell.tsx
+msgid "Account settings"
+msgstr "Accountinstellingen"
+
+#: src/components/app-shell.tsx
+msgid "Admin"
+msgstr "Admin"
+
+#: src/components/app-shell.tsx
+#: src/components/language-menu.tsx
+msgid "Auto"
+msgstr "Automatisch"
+
+#: src/components/app-shell.tsx
+msgid "Dark"
+msgstr "Donker"
+
+#: src/components/language-menu.tsx
+msgid "Language"
+msgstr "Taal"
+
+#: src/components/app-shell.tsx
+msgid "Light"
+msgstr "Licht"
+
+#: src/components/app-shell.tsx
+msgid "Sign out"
+msgstr "Uitloggen"
+
+#: src/components/app-shell.tsx
+msgid "Staff"
+msgstr "Staff"
+
+#: src/components/app-shell.tsx
+msgid "Theme"
+msgstr "Thema"

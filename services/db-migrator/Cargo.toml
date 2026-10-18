@@ -1,0 +1,11 @@
+[package]
+name = "db-migrator"
+version = "0.1.0"
+edition = "2024"
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+db = { workspace = true }
+tokio = { workspace = true, features = ["full"] }

@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0D10" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Privacy policy · NOALBS Cloud</title>
+    <meta name="description" content="What NOALBS Cloud keeps about you, why, for how long, and your rights." />
+    <script>
+      // Apply the theme before first paint to avoid a flash (same as the dashboard): the
+      // saved choice, or on Auto the browser's setting, following it when it changes.
+      try {
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+        const apply = () => {
+          const saved = localStorage.getItem("noalbs-theme");
+          document.documentElement.dataset.theme =
+            saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+        };
+        apply();
+        media.addEventListener("change", apply);
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto flex max-w-3xl flex-col px-5 sm:px-8">
+      <header class="flex h-18 items-center justify-between gap-4">
+        <a href="/" class="flex items-center gap-2 font-mono text-lg font-bold tracking-wide">
+          <svg viewBox="0 0 260 262" class="size-[1.3em]" aria-hidden="true">
+            <g fill="#5576DA" stroke="#0B0D10" stroke-width="6" stroke-linejoin="round">
+              <path d="M22 62 L90 169 L90 243 L22 243 Z" />
+              <path d="M24 17 L93 17 L238 245 L169 245 Z" />
+              <path d="M169 17 L237 17 L237 204 L169 97 Z" />
+            </g>
+          </svg>
+          NOALBS
+        </a>
+        <a href="/login" class="rounded-lg border border-border-strong px-3.5 py-2 text-sm font-medium hover:bg-surface-2">Sign in</a>
+      </header>
+
+      <main class="legal flex flex-col gap-10 pt-10 pb-20">
+        <div class="flex flex-col gap-3">
+          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Privacy policy</h1>
+          <p class="text-muted-foreground">Last updated 16 October 2026</p>
+          <p>
+            NOALBS Cloud switches your OBS scenes based on your stream’s signal, and lets you and
+            your team control it remotely. To do that we keep as little about you as we can. This
+            page says what, why, for how long, and what you can do about it.
+          </p>
+        </div>
+
+        <section>
+          <h2>Who we are</h2>
+          <p>
+            NOALBS Cloud is made and run by Brian Spit, known as 715209, from the Netherlands. That
+            makes us responsible (the “controller”) for the personal data described here.
+          </p>
+          <p>
+            For anything about your data, email
+            <a href="mailto:support@noalbs.com">support@noalbs.com</a>. We answer within a month.
+          </p>
+        </section>
+
+        <section>
+          <h2>What we keep and why</h2>
+          <dl>
+            <dt>Your account</dt>
+            <dd>
+              When you sign in with Twitch, Kick or YouTube we keep that account’s ID, username and
+              profile picture (on YouTube: your channel’s ID, handle and picture), to sign you in
+              and to show who did what in your workspace. We don’t ask for your email address, and
+              we don’t keep the sign-in tokens.
+              <em>Why: to provide the service you signed up for (GDPR art. 6(1)(b)).</em>
+            </dd>
+
+            <dt>Sessions</dt>
+            <dd>
+              For each browser you sign in with: when, which browser (its user agent) and when it
+              was last used, so you can see and sign out your sessions. A session cookie keeps you
+              signed in. <em>Why: to provide the service and keep your account safe (6(1)(b) and
+              6(1)(f)).</em>
+            </dd>
+
+            <dt>Workspaces and switchers</dt>
+            <dd>
+              Your workspaces, their members and invites, your switchers and their settings, and your
+              stream servers. Your OBS password, your BELABOX remote secret URL (if you connect a BELABOX),
+              your Moblin remote control password (if you connect Moblin) and the passwords and API
+              keys of your stream servers are stored encrypted; stream
+              server URLs, which can contain a key, are only shown to people who manage the
+              switcher.
+              <em>Why: to provide the service (6(1)(b)).</em>
+            </dd>
+
+            <dt>Organizations and managed workspaces</dt>
+            <dd>
+              A company that runs workspaces for its customers is an organization: we keep its
+              name, who is on its team (their account and role), its team invites and the limits
+              we gave it. A workspace an organization manages (a client workspace) belongs to the
+              organization and is listed under it, together with the people who joined it. The
+              organization’s admins can read an audit log of what its team and its customers
+              changed in it (who, what, when: creating, renaming or deleting a client, invite
+              links, who joined, left or was removed, roles, allocations, settings and its chat
+              bot), kept for a year with the names as they were then. See “When an organization
+              manages your workspace” below.
+              <em>Why: to provide the service (6(1)(b)).</em>
+            </dd>
+
+            <dt>Stream data</dt>
+            <dd>
+              While your OBS is connected we read your stream server’s stats every second
+              (bitrate, latency, and what the server reports, which can include stream names or the
+              IP address of the device that’s streaming), and OBS’s scenes, sources and whether
+              you’re live or recording. While you stream we save this as stream history, with an
+              activity log of scene switches and who made them. Preview images of your scene are
+              passed straight to the dashboard and not stored. With a BELABOX connected we also read
+              its status (network interfaces and their throughput, mobile network and signal,
+              sensors, notifications) and pass it to the dashboard without storing it (IP addresses
+              stay on our server); starting, stopping and changing it are logged in the activity
+              log. While someone who controls your switcher has its settings open, we also pass on
+              the WiFi networks it sees and has saved, its hotspot’s name and its modems’ settings
+              and operators; network names can say where you are, so support doesn’t see these. The
+              WiFi, hotspot and modem passwords you or the BELABOX give us are kept only in our
+              server’s memory, are never shown, and are gone when the connection to BELABOX Cloud
+              restarts.
+              With Moblin connected, your phone sends us its status (live or recording, bitrate,
+              bonding, battery and heat, its scenes and bitrate presets), which we pass to the
+              dashboard without storing it; its Wi-Fi name and location are ignored, and so is the
+              Twitch access token Moblin can send to remote controls (we never read it). Going live,
+              stopping and changing it are logged in the activity log.
+              Markers you or a moderator add to a stream (the text typed, the time, and the name of who
+              added it, such as a chat display name) are saved with that stream.
+              <em>Why: to provide the service (6(1)(b)).</em>
+            </dd>
+
+            <dt>Chat</dt>
+            <dd>
+              When you link a Twitch, Kick or YouTube channel, our bot reads the chat in that channel
+              to find commands and replies there (on YouTube only while you’re live: we look for your
+              live broadcast while your OBS streams). Chat messages aren’t stored. We keep the
+              channel’s ID and name, the access you granted (Kick’s and YouTube’s tokens,
+              encrypted), and the chatters you choose to ignore. <em>Why: to provide the chat commands you turned on (6(1)(b)).</em>
+            </dd>
+
+            <dt>Your chatters</dt>
+            <dd>
+              People in your chat aren’t NOALBS users, but when one of them uses a command, their
+              display name goes into your activity log with what the command did (and into the
+              stream’s markers for <code>!marker</code>), and their message ID is kept for 10
+              minutes so it’s handled only once. To check their role we look at the badges the
+              platform sends with the message. Names you ignore are kept on the Chat page.
+              <em>Why: the streamer’s legitimate interest in seeing who controlled their stream
+              (6(1)(f)). Chatters can ask us, or the streamer, to remove their name.</em>
+            </dd>
+
+            <dt>Payments</dt>
+            <dd>
+              Paid plans are handled by Stripe, which processes your payment details; we never see
+              your card. We keep the Stripe customer ID and your subscription and plan. The
+              customer belongs to the workspace: when its owner hands it to another member, we
+              remove their cards, billing email, address and tax IDs from it at Stripe. Invoices
+              already issued keep the details that were on them.
+              <em>Why: to provide the service (6(1)(b)) and to keep financial records as Dutch tax
+              law requires (6(1)(c)).</em>
+            </dd>
+
+            <dt>Server logs</dt>
+            <dd>
+              Our servers log errors and events to keep NOALBS Cloud running and secure. These logs
+              mostly contain internal IDs of accounts, workspaces and switchers, and the platform
+              ID of a chatter who ran a command; when something fails they can include a name
+              involved, such as a workspace’s or a chatter’s. They don’t contain IP addresses,
+              chat messages or passwords. We also record traces: which page or chat command was
+              used, by which account ID, and how long each step took, so we can find what’s slow or
+              broken. Logs and traces are sent to Grafana Labs and Axiom (below) to search them. To stop
+              abuse we count requests per IP address, in memory only, for a few minutes.
+              <em>Why: our legitimate interest in running a secure, working service (6(1)(f)).</em>
+            </dd>
+          </dl>
+        </section>
+
+        <section>
+          <h2>How long we keep it</h2>
+          <ul>
+            <li>Your account, workspaces and switchers: until you delete them.</li>
+            <li>Sessions: until you sign out, or after 30 days without being used.</li>
+            <li>
+              Stream history: as long as your workspace’s plan says (7 days on Free, 90 days on
+              Pro), counted from the end of each stream, or in a workspace managed by an
+              organization, as long as that organization’s limits say. This includes its
+              markers.
+            </li>
+            <li>
+              The activity log: as long as the stream history, and at least 30 days.
+            </li>
+            <li>Ignored chatters and linked channels: until you remove them.</li>
+            <li>The support access log and past support permissions: one year.</li>
+            <li>Our staff’s own log of what they did, such as suspending a workspace: one year.</li>
+            <li>
+              Invoices and payment records, kept at Stripe: 7 years, as Dutch tax law requires,
+              even when the workspace is deleted.
+            </li>
+            <li>
+              Server logs on our servers: they’re overwritten as they fill up and removed whenever
+              we update NOALBS Cloud. Logs and traces at Grafana Labs: 14 days; at Axiom: 30 days.
+            </li>
+          </ul>
+          <p>Deleted data is removed from our database straight away.</p>
+        </section>
+
+        <section>
+          <h2>Cookies and local storage</h2>
+          <p>
+            We use one cookie to keep you signed in (<code>id</code>; your browser keeps it up to
+            400 days, but the sign-in behind it ends after 30 days without use) and short-lived
+            cookies while you sign in or connect an account. Your browser also remembers a few
+            preferences for you, like the theme and which scenes and sources you’ve hidden; those
+            stay on your device and aren’t sent to us. All of this is needed for NOALBS Cloud to
+            work, so we don’t ask for consent. We don’t use analytics, ads or trackers.
+          </p>
+        </section>
+
+        <section>
+          <h2>When NOALBS support looks at your workspace</h2>
+          <p>
+            NOALBS staff can only open your workspace with your permission. Owners and admins give
+            it under Settings → General → NOALBS support access, for 24 hours or 7 days, to only
+            look or to also change switchers and their settings, and can end it at any time.
+            Support never gets your members, billing, or the power to delete or hand over the
+            workspace.
+          </p>
+          <p>
+            Only for abuse, a legal obligation or a security problem can staff open a workspace
+            without permission: for one hour, with a reason, to look or, when something has to be
+            stopped, to act on its switchers (never its members, billing or secrets). Its owners
+            and admins see who did it, how and why until they mark it as seen.
+          </p>
+          <p>
+            Everything staff do in your workspace is listed there for you: who, what, on which
+            switcher, when, and under which permission (looking around is listed once an hour per
+            page, every change each time). Changes also show in the activity log as “NOALBS
+            support”. Staff see your stream servers’ stats URLs and settings (a wrong stats URL is the
+            most common problem), but never their passwords or API keys, your raw stats, Moblin password
+            or browser-source link.
+            <em>Why: to help you when you ask, and to keep the service working and safe (6(1)(b) and
+            6(1)(f)).</em>
+          </p>
+          <p>
+            To stop abuse or protect an account, staff can also suspend a workspace (its switchers
+            pause and its chat commands stop; its members see the reason), sign an account out
+            everywhere, disable an account (it can’t sign in; we keep the reason), unlink a chat
+            channel, or make a switcher’s browser source reconnect. What touches a workspace shows
+            in its support log, and every staff action is kept in a staff log for a year so staff
+            can check each other.
+            <em>Why: to keep the service and its users safe (6(1)(f)).</em>
+          </p>
+        </section>
+
+        <section>
+          <h2>When an organization manages your workspace</h2>
+          <p>
+            Some workspaces are managed by an organization, such as a streaming host or an agency.
+            It owns the workspace and pays for it, and you join with the invite link it gave you.
+            Its team (the people it added to NOALBS Cloud) can then see and run everything in that
+            workspace without asking you: your switchers and their settings, your members, your
+            stream servers’ stats URLs and settings, your stream history and the activity log, and
+            they can control your OBS and the devices you connected, as you can. The passwords and
+            API keys of your stream servers are never shown to anyone, the team included. You join
+            as an admin: you run the workspace with them, but you never see billing and you can’t
+            delete the workspace or hand it over.
+          </p>
+          <p>
+            The workspace shows who manages it (Settings → General and its menu). You can leave it
+            at any time, which ends your access to it, and you can still create workspaces of your
+            own, which no organization can see. The organization keeps a line when you join, rename the
+            workspace, or invite, remove or change the role of someone in it. What the organization does as a team is listed in the
+            activity log under the team member’s name and the organization’s (like “kate (Nomad Hosting)”). If you leave, the organization keeps the workspace and
+            what is in it; ask it to delete what you don’t want kept.
+            <em>Why: the organization runs the workspace and the service for you (6(1)(b)); it is
+            responsible for what its team does with it.</em>
+          </p>
+          <p>
+            The organization can connect a chat bot account of its own, which then answers in the
+            chat of the channels you link instead of the shared NOALBS bot (we keep that account’s
+            access, Kick’s and YouTube’s tokens encrypted, for the organization). It also decides
+            whether you may connect a bot account of your own; if it doesn’t allow it, one you
+            connected stays stored but doesn’t answer.
+          </p>
+          <p>
+            NOALBS staff can suspend an organization (every switcher in its workspaces pauses and
+            their chat commands stop; the team sees the reason, its customers only that their workspace is paused and who manages it). That is recorded
+            in the staff log like any other staff action.
+          </p>
+        </section>
+
+        <section>
+          <h2>Who else handles your data</h2>
+          <ul>
+            <li>
+              <strong>Our hosting provider</strong>, Hetzner Online GmbH, runs our servers in
+              Nuremberg, Germany, in the EU.
+            </li>
+            <li>
+              <strong>Cloudflare</strong> carries all traffic between you and our servers, to keep
+              the site fast and protected, so it sees your IP address and what you send. Cloudflare
+              may process data in the United States, under the EU-US Data Privacy Framework and the
+              EU’s standard contractual clauses.
+            </li>
+            <li>
+              <strong>Stripe</strong> processes payments for paid plans. Stripe may transfer data
+              to the United States, under the EU-US Data Privacy Framework and the EU’s standard
+              contractual clauses.
+            </li>
+            <li>
+              <strong>Grafana Labs</strong> stores our server logs and traces (described above) in
+              the EU, for 14 days, so we can find and fix problems. Grafana Labs is a US company,
+              so the data may also be reached from the United States, under the EU-US Data
+              Privacy Framework and the EU’s standard contractual clauses.
+            </li>
+            <li>
+              <strong>Axiom</strong> stores the same logs and traces in the EU (Frankfurt), for 30
+              days, while we compare it with Grafana Labs. Axiom is a US company, so the data may
+              also be reached from the United States, under the EU’s standard contractual clauses.
+            </li>
+            <li>
+              <strong>Twitch, Kick and YouTube</strong> sign you in and carry chat. What you do
+              there is covered by their own privacy policies. We use YouTube through the YouTube API
+              Services, so by using it with NOALBS you also agree to the
+              <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>, and Google’s
+              handling of your data is covered by the
+              <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+            </li>
+            <li>
+              <strong>BELABOX Cloud</strong>, only if you connect a BELABOX: while your OBS is open
+              we connect to it with your secret URL to read your BELABOX’s status and send it the
+              commands you give. What BELABOX Cloud keeps is covered by its own policy.
+            </li>
+            <li>
+              <strong>The stream servers you add</strong>: we ask them for stats from the address
+              you give, every second while your OBS is connected.
+            </li>
+            <li>
+              <strong>Migadu</strong> (Migadu-Mail GmbH, Switzerland) hosts our email, so it
+              receives what you send to <a href="mailto:support@noalbs.com">support@noalbs.com</a>.
+              The EU recognises Switzerland as protecting personal data adequately.
+            </li>
+          </ul>
+          <p>We don’t sell your data or share it with anyone else, unless the law requires us to.</p>
+        </section>
+
+        <section>
+          <h2>Your rights</h2>
+          <ul>
+            <li>
+              <strong>Get a copy of your data</strong>: under Account, choose Download my data.
+            </li>
+            <li>
+              <strong>Delete your account</strong>: under Account, choose Delete account. Workspaces
+              you own alone are deleted with it. Your name stays in the activity logs and markers of
+              workspaces you were a member of until they expire, as the record of who did what there.
+            </li>
+            <li>
+              <strong>Correct your data</strong>: your name and picture come from Twitch, Kick or
+              YouTube and update each time you sign in; you can change everything else in the dashboard.
+            </li>
+            <li>
+              <strong>Withdraw access</strong>: unlink channels on the Chat page, or revoke NOALBS
+              in your Twitch or Kick settings, or at
+              <a href="https://myaccount.google.com/connections">Google’s third-party connections</a>
+              for YouTube.
+            </li>
+            <li>
+              <strong>Object to or restrict</strong> how we use your data, for anything the
+              dashboard doesn’t cover: email <a href="mailto:support@noalbs.com">support@noalbs.com</a>.
+            </li>
+          </ul>
+          <p>
+            If you think we handle your data wrongly, you can complain to the Dutch data
+            protection authority, the
+            <a href="https://autoriteitpersoonsgegevens.nl/">Autoriteit Persoonsgegevens</a>. We’d
+            appreciate hearing from you first.
+          </p>
+        </section>
+
+        <section>
+          <h2>Security</h2>
+          <p>
+            Everything travels encrypted (HTTPS), passwords, API keys and chat tokens are stored
+            encrypted,
+            and only the people who run NOALBS Cloud can reach the servers.
+          </p>
+        </section>
+
+        <section>
+          <h2>Age</h2>
+          <p>NOALBS Cloud isn’t meant for anyone under 16.</p>
+        </section>
+
+        <section>
+          <h2>Changes</h2>
+          <p>
+            When this policy changes we update the date at the top, and tell you in the dashboard or
+            on our Discord if it matters.
+          </p>
+        </section>
+      </main>
+
+      <footer class="flex flex-col gap-4 border-t border-divider py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span class="font-mono font-bold tracking-wide text-foreground">NOALBS</span>
+        <nav class="flex flex-wrap gap-x-6 gap-y-2">
+          <a href="https://discord.gg/efWu5HWM2u" class="hover:text-foreground">Discord</a>
+          <a href="https://x.com/noalbs" class="hover:text-foreground">X</a>
+          <a href="https://github.com/NOALBS" class="hover:text-foreground">GitHub</a>
+          <a href="/privacy" class="hover:text-foreground">Privacy</a>
+          <a href="/terms" class="hover:text-foreground">Terms</a>
+          <a href="/licenses" class="hover:text-foreground">Licenses</a>
+        </nav>
+      </footer>
+    </div>
+    <script type="module" src="/src/legal/main.ts"></script>
+  </body>
+</html>

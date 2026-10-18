@@ -1,0 +1,216 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/*
+ * Design tokens from the control-room mockup. Dark is the default; the theme
+ * is chosen before first paint in index.html (`data-theme` on <html>).
+ *
+ * Names follow shadcn/ui (`primary`, `muted`, `card`, …) so its components work
+ * unchanged, plus our own surfaces and stream states.
+ */
+:root {
+  color-scheme: dark;
+
+  --background: #0b0d10;
+  --foreground: #e9ecf1;
+  --sunken: #0f1215;
+  --card: #121519;
+  --card-foreground: #e9ecf1;
+  --popover: #181c22;
+  --popover-foreground: #e9ecf1;
+  /* Hovers: a clear step up from both cards and popovers, like light mode's. */
+  --surface-2: #22272f;
+  --muted: #181c22;
+  --muted-foreground: #a3abb8;
+  --subtle-foreground: #808896;
+
+  --border: #242931;
+  --border-strong: #2f3540;
+  --divider: #1d2129;
+  --input: #2f3540;
+
+  --primary: #a999ff;
+  --primary-strong: #8e7bff;
+  --primary-foreground: #0b0d10;
+  --primary-soft: #1a1733;
+  --primary-soft-border: #3a3270;
+  --primary-soft-foreground: #c7bdff;
+  --secondary: #181c22;
+  --secondary-foreground: #e9ecf1;
+  --accent: #22272f;
+  --accent-foreground: #e9ecf1;
+  --ring: #a999ff;
+
+  --destructive: #f43f5e;
+  --destructive-foreground: #fda4af;
+
+  /* Stream states: always paired with a text label, never colour alone. */
+  --live: #4ade80;
+  --low: #fbbf24;
+  --offline: #f43f5e;
+  --idle: #5b6472;
+
+  --radius: 0.75rem;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #f5f6f8;
+  --foreground: #11151b;
+  --sunken: #fafafb;
+  --card: #ffffff;
+  --card-foreground: #11151b;
+  --popover: #ffffff;
+  --popover-foreground: #11151b;
+  --surface-2: #eef0f3;
+  --muted: #eef0f3;
+  --muted-foreground: #566070;
+  --subtle-foreground: #6b7482;
+
+  --border: #e1e5ea;
+  --border-strong: #d3d8df;
+  --divider: #e8ebef;
+  --input: #d3d8df;
+
+  --primary: #5b45e0;
+  --primary-strong: #5b45e0;
+  --primary-foreground: #ffffff;
+  --primary-soft: #f0edff;
+  --primary-soft-border: #c9c0ff;
+  --primary-soft-foreground: #4b36c9;
+  --secondary: #eef0f3;
+  --secondary-foreground: #11151b;
+  --accent: #eef0f3;
+  --accent-foreground: #11151b;
+  --ring: #5b45e0;
+
+  --destructive: #e11d48;
+  --destructive-foreground: #be123c;
+
+  --live: #16a34a;
+  --low: #d97706;
+  --offline: #e11d48;
+  --idle: #a0a8b4;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sunken: var(--sunken);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-divider: var(--divider);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-border: var(--primary-soft-border);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-live: var(--live);
+  --color-low: var(--low);
+  --color-offline: var(--offline);
+  --color-idle: var(--idle);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* The landing page's Live-page mock: new activity entries fading in. */
+  --animate-fade-in: fade-in 0.4s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Tailwind 4 resets buttons to the default cursor: anything clickable gets the hand. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"]):not(
+    [data-disabled]
+  ) {
+    cursor: pointer;
+  }
+
+  /* Stats use tabular figures so numbers don't jitter as they update. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Long-form text on static pages (privacy.html). */
+@layer components {
+  .legal section {
+    @apply flex flex-col gap-4 leading-relaxed;
+  }
+  .legal h2 {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  .legal dl {
+    @apply flex flex-col gap-5;
+  }
+  .legal dt {
+    @apply font-semibold;
+  }
+  .legal dd {
+    @apply -mt-4 text-muted-foreground;
+  }
+  .legal em {
+    @apply mt-1 block text-sm not-italic;
+  }
+  .legal ul {
+    @apply flex list-disc flex-col gap-2 pl-5 text-muted-foreground;
+  }
+  .legal strong {
+    @apply font-semibold text-foreground;
+  }
+  .legal a {
+    @apply text-foreground underline underline-offset-4 hover:text-primary;
+  }
+  .legal code {
+    @apply font-mono text-sm;
+  }
+  .legal pre {
+    @apply overflow-x-auto rounded-xl border border-divider bg-surface-2 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground;
+  }
+  /* A detail still to fill in before launch. */
+  .legal .todo {
+    @apply rounded bg-low/20 px-1 text-foreground;
+  }
+}

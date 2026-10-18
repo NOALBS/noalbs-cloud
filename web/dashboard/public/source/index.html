@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>NOALBS browser source</title>
+</head>
+<body>
+	<!--
+		Added to OBS as a browser source. It connects out to obs-link at /link on
+		the host it was loaded from (a `link` query parameter overrides that; older
+		URLs carry one) and relays obs-websocket on this machine. The connect token
+		is in the URL fragment, which browsers never send to a server. The dashboard
+		shows the full URL when a switcher is created.
+	-->
+	<script type="module">
+		// Absolute: the page is also served at /source, where ./ would be the root.
+		import { ObsWsRelayApp } from '/source/obs_ws.js';
+
+		const params = new URLSearchParams(window.location.search);
+		const sameHost = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/link`;
+		const upstream = params.get('link') || sameHost;
+		const upstreamToken = decodeURIComponent(window.location.hash.slice(1)).trim();
+
+		window.obsWsRelayApp = ObsWsRelayApp(upstream, { upstreamToken });
+		window.obsWsRelayApp.start();
+	</script>
+</body>
+</html>

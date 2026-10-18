@@ -1,0 +1,15 @@
+*~
+.*.swp
+.swp
+*.log
+.DS_Store
+.vscode/
+.direnv/
+.envrc.local
+.direnv
+.env
+.cargo
+vendor
+target
+/dist
+config.toml

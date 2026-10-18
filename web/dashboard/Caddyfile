@@ -1,0 +1,100 @@
+{
+	admin off
+}
+
+{$SITE_ADDRESS} {
+	# The API, without the /api prefix. OAuth callbacks come back through here
+	# too, so the API's base_url is https://<domain>/api.
+	handle_path /api/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# The OBS browser source's WebSocket to obs-link: the page connects to /link on its own host.
+	handle /link {
+		reverse_proxy {$OBS_LINK_UPSTREAM}
+	}
+
+	# Moblin's remote control (Assistant URL wss://<domain>/moblin/<switcher ID>), also obs-link.
+	handle /moblin/* {
+		reverse_proxy {$OBS_LINK_UPSTREAM}
+	}
+
+	# Kick's chat webhooks, to any chat service instance (each one checks,
+	# de-duplicates and queues them, so one instance taking them all is fine).
+	handle /chat/webhooks/* {
+		reverse_proxy {$CHAT_UPSTREAM}
+	}
+
+	# The landing page, for visitors without a session cookie. Signed-in people get
+	# the dashboard, which sends them to their workspace (or to /login if the
+	# cookie turns out to be stale).
+	@landing {
+		path /
+		not header_regexp Cookie `(^|;\s*)id=`
+	}
+	handle @landing {
+		root * /srv
+		encode zstd gzip
+		rewrite * /landing.html
+		file_server
+		# `/` is the landing page or the dashboard depending on the cookie, and both
+		# files share a Last-Modified (built together), so a cached landing page would
+		# be "not modified" right after signing in. Never cache `/`.
+		header {
+			Cache-Control "no-store"
+			Vary Cookie
+		}
+	}
+
+	# The privacy policy, the terms and the licenses, static pages for everyone
+	# (the license text files they link to are served as plain files below).
+	handle /licenses {
+		root * /srv
+		encode zstd gzip
+		rewrite * /licenses.html
+		file_server
+		header Cache-Control "no-cache"
+	}
+	handle /privacy {
+		root * /srv
+		encode zstd gzip
+		rewrite * /privacy.html
+		file_server
+		header Cache-Control "no-cache"
+	}
+	handle /terms {
+		root * /srv
+		encode zstd gzip
+		rewrite * /terms.html
+		file_server
+		header Cache-Control "no-cache"
+	}
+
+	# The dashboard; unknown paths are app routes. /source/ is the browser source.
+	handle {
+		root * /srv
+		encode zstd gzip
+		# {path}/ serves /source without the slash (a directory's index.html).
+		try_files {path} {path}/ /index.html
+		file_server
+
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@pages not path /assets/* /
+		header @pages Cache-Control "no-cache"
+		# `/` for signed-in people: never cached either (see @landing).
+		@start path /
+		header @start {
+			Cache-Control "no-store"
+			Vary Cookie
+		}
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+		# reverse_proxy adds `Via: 1.1 caddy` to proxied responses.
+		-Via
+	}
+}

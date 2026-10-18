@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Runs only the jobs whose files changed. Done with job conditions rather than
+  # `paths:` on the workflow, since a skipped job still counts as passed for a
+  # required check, while a workflow that never ran leaves it pending.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      web: ${{ steps.filter.outputs.web }}
+      api-types: ${{ steps.filter.outputs.api-types }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust: &rust
+              - ".github/workflows/ci.yml"
+              - "Cargo.toml"
+              - "Cargo.lock"
+              - "crates/**"
+              - "services/**"
+            web:
+              - ".github/workflows/ci.yml"
+              - "web/dashboard/**"
+            # The OpenAPI document comes from the Rust side; the types from it
+            # and openapi-typescript.
+            api-types:
+              - *rust
+              - "web/dashboard/openapi.json"
+              - "web/dashboard/src/api/schema.d.ts"
+              - "web/dashboard/package.json"
+              - "web/dashboard/pnpm-lock.yaml"
+
+  check:
+    name: Check
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+
+    # Database tests (`#[sqlx::test]`) create a throwaway database per test on
+    # this server.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: localdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d localdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/localdb
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+    # Enable this when we want to enforce clippy checks, but for now it is too
+    # noisy and we don't want to block PRs on it.
+    #
+    #   - name: Run Clippy
+    #     run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build workspace
+        run: cargo build --workspace --locked
+
+      - name: Run tests
+        run: cargo test --workspace --locked
+
+  web:
+    name: Dashboard
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web/dashboard
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/dashboard/package.json
+
+      - name: Install Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  api-types:
+    name: API types up to date
+    needs: changes
+    if: needs.changes.outputs.api-types == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/dashboard/package.json
+
+      - name: Install Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/dashboard/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: web/dashboard
+        run: pnpm install --frozen-lockfile
+
+      # The dashboard's types come from the API's OpenAPI document. If this
+      # fails, run the two commands below and commit the result.
+      - name: Regenerate the OpenAPI document and types
+        run: |
+          cargo run --locked -p api -- --openapi > web/dashboard/openapi.json
+          (cd web/dashboard && pnpm gen:api)
+
+      - name: Check for changes
+        run: git diff --exit-code -- web/dashboard/openapi.json web/dashboard/src/api/schema.d.ts
