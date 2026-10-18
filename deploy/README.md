@@ -1,4 +1,3 @@
-| `ALLOW_PRIVATE_STATS_URLS` | `false` | Poll stats URLs on private addresses. Local testing or a self-hosted setup with servers on your own network only. |
 # Deploying NOALBS Cloud
 
 Everything runs from the images CI publishes on `main`
@@ -350,6 +349,7 @@ are in each service's `src/config.rs`.
 | `HOST`, `PORT` | `0.0.0.0`, `11000` | |
 | `POSTGRES_MAX_CONNECTIONS` | `10` | |
 | `BELABOX_URL` | `wss://remote.belabox.net/ws/remote` | BELABOX Cloud's remote endpoint (outbound WebSocket, for switchers with a BELABOX remote key). |
+| `ALLOW_PRIVATE_STATS_URLS` | `false` | Poll stats URLs on private addresses. Local testing or a self-hosted setup with servers on your own network only. |
 
 **chat** (`CHAT_…`)
 
