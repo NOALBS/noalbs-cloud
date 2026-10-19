@@ -788,6 +788,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/export/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the stream history of your own switchers (see `DataExport`), one
+         *     JSON object per line: an `about` line, then each `stream`, `stats` bucket
+         *     and activity log `event`, as stored.
+         */
+        get: operations["export_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/last-workspace": {
         parameters: {
             query?: never;
@@ -3010,22 +3031,51 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * @description Everything NOALBS Cloud keeps about you, for "Download my data" (GDPR access
-         *     and portability). Secrets (tokens, passwords, stream keys) are left out.
-         */
-        AccountExport: {
-            account: components["schemas"]["ExportedAccount"];
-            /** @description The Twitch/Kick accounts you sign in with. */
-            connections: components["schemas"]["ExportedConnection"][];
+        Account: {
             /** Format: date-time */
-            exported_at: string;
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Set by staff: the account can't sign in.
+             */
+            disabled_at?: string | null;
+            disabled_reason?: string | null;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The workspace the dashboard opens.
+             */
+            last_workspace_id?: string | null;
+            staff: boolean;
+            /** Format: date-time */
+            updated_at: string;
+            whitelisted: boolean;
+        };
+        AccountExport: {
+            account: components["schemas"]["Account"];
+            chat: components["schemas"]["Chat"];
+            /** @description The Twitch, Kick and YouTube accounts you sign in with. */
+            connections: components["schemas"]["Connection"][];
+            /** @description Invites you made or accepted. */
+            invites: components["schemas"]["Invite"][];
+            /** @description What you did in organizations, from their audit logs. */
+            organization_audit: components["schemas"]["OrganizationAuditEntry"][];
             /** @description Organizations whose team you're on. */
-            organizations: components["schemas"]["ExportedOrganization"][];
+            organizations: components["schemas"]["Organization"][];
             /** @description Browsers signed in to your account. */
-            sessions: components["schemas"]["ExportedSession"][];
-            /** @description Workspaces you're in; switchers are listed for the ones you own. */
-            workspaces: components["schemas"]["ExportedWorkspace"][];
+            sessions: components["schemas"]["Session"][];
+            /** @description What NOALBS staff did about your account (or, as staff, did yourself). */
+            staff_actions: components["schemas"]["StaffAction"][];
+            /** @description Only for NOALBS staff: their support work and what they set up. */
+            staff_work: components["schemas"]["StaffWork"];
+            /** @description NOALBS support access you gave (or, as staff, opened). */
+            support_grants: components["schemas"]["SupportGrant"][];
+            /**
+             * @description Workspaces you're in or created. Switchers are listed for your own (see
+             *     `switchers`), billing for those you own.
+             */
+            workspaces: components["schemas"]["Workspace"][];
         };
         AddAlias: {
             alias: string;
@@ -3473,6 +3523,18 @@ export interface components {
             /** @description What it was about, e.g. a client's or member's name. */
             subject?: string | null;
         };
+        AuthorizedChannel: {
+            channel_id: string;
+            /** Format: date-time */
+            created_at: string;
+            display_name: string;
+            login: string;
+            platform: string;
+            scopes: string[];
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
         BehaviourDto: {
             announce_raid: boolean;
             auto_stop_on_raid: boolean;
@@ -3801,6 +3863,11 @@ export interface components {
             signal?: number | null;
             ssid: string;
         };
+        Billing: {
+            needs_payment_method: boolean;
+            stripe_customer_id?: string | null;
+            subscriptions: components["schemas"]["Subscription"][];
+        };
         /** @enum {string} */
         BillingInterval: "month" | "year";
         BreakGlass: {
@@ -3892,9 +3959,25 @@ export interface components {
              */
             peak: number;
         };
+        ChannelLink: {
+            /** Format: date-time */
+            linked_at: string;
+            login: string;
+            platform: string;
+            switcher: string;
+            workspace: string;
+        };
         ChannelLinkSettings: {
             /** @description Post this switcher's automatic switches in the channel. */
             auto_switch_notification: boolean;
+        };
+        Chat: {
+            /** @description Bot accounts you connected. */
+            bots: components["schemas"]["ConnectedBot"][];
+            /** @description Channels you last let the bot into. */
+            channels_authorized: components["schemas"]["AuthorizedChannel"][];
+            /** @description Channels you linked to switchers. */
+            links: components["schemas"]["ChannelLink"][];
         };
         /** @description A bot account the chat service speaks as. */
         ChatBotDto: {
@@ -4045,12 +4128,33 @@ export interface components {
              */
             total: number;
         };
+        CommandAlias: {
+            alias: string;
+            command: string;
+        };
+        CommandOverride: {
+            command: string;
+            enabled: boolean;
+            min_role?: string | null;
+        };
         /**
          * @description The browser-source URL for OBS. It contains the connect token, so it is
          *     only shown when the switcher is created or its token is replaced.
          */
         ConnectLink: {
             browser_source_url: string;
+        };
+        ConnectedBot: {
+            /** @description The workspace or organization it answers for; `None` for NOALBS's shared bot. */
+            answers_for?: string | null;
+            /** Format: date-time */
+            connected_at: string;
+            display_name: string;
+            login: string;
+            platform: string;
+            platform_user_id: string;
+            scopes: string[];
+            status: string;
         };
         /** @description A switcher whose browser source is connected. */
         ConnectedSwitcherDto: {
@@ -4071,6 +4175,21 @@ export interface components {
             workspace_id: string;
             workspace_name: string;
             workspace_slug: string;
+        };
+        Connection: {
+            avatar_url?: string | null;
+            /** Format: date-time */
+            connected_at: string;
+            /** @description No longer asked for; always empty since September 2026. */
+            email?: string | null;
+            provider: string;
+            /** @description The account's ID on the platform. */
+            provider_id: string;
+            /** @description What the platform let us do when you signed in. */
+            scopes: string[];
+            /** Format: date-time */
+            updated_at: string;
+            username: string;
         };
         /** @description A linked login account. */
         ConnectionDto: {
@@ -4179,6 +4298,16 @@ export interface components {
             invite: components["schemas"]["TeamInviteDto"];
             /** @description The secret for the invite link (`/org-invite/{token}`). Not retrievable later. */
             token: string;
+        };
+        /**
+         * @description "Download my data" (GDPR access and portability): everything NOALBS Cloud
+         *     keeps about you but your stream history, which is `/me/export/history`.
+         */
+        DataExport: components["schemas"]["AccountExport"] & {
+            /** Format: date-time */
+            exported_at: string;
+            /** @description What's in the file, what's left out and why. */
+            notes: string[];
         };
         /**
          * @description A stream server's settings as the dashboard sees them. Only the fields its
@@ -4540,54 +4669,6 @@ export interface components {
             /** @enum {string} */
             kind: "moblin_error";
         };
-        ExportedAccount: {
-            /** Format: date-time */
-            created_at?: string | null;
-            /** Format: uuid */
-            id: string;
-            staff: boolean;
-        };
-        ExportedConnection: {
-            avatar_url?: string | null;
-            /** Format: date-time */
-            connected_at: string;
-            provider: string;
-            username: string;
-        };
-        ExportedOrganization: {
-            name: string;
-            role?: string | null;
-            url_slug: string;
-        };
-        ExportedSession: {
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** Format: date-time */
-            last_used_at: string;
-            provider: string;
-            user_agent?: string | null;
-        };
-        ExportedSwitcher: {
-            /** @description Chat channels linked to it, as `platform/login`. */
-            chat_channels: string[];
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            last_seen_at?: string | null;
-            name: string;
-            /** @description Name and kind of each stream server (their URLs can hold keys, so they're left out). */
-            stream_servers: string[];
-        };
-        ExportedWorkspace: {
-            /** @description The organization that manages this client workspace, if it is one. */
-            managed_by?: string | null;
-            name: string;
-            role?: string | null;
-            switchers: components["schemas"]["ExportedSwitcher"][];
-            url_slug: string;
-        };
         /**
          * @description How the feed is doing, and so which scene is (or would be) on air.
          * @enum {string}
@@ -4620,6 +4701,13 @@ export interface components {
             /** @description Their name in chat (Twitch login, Kick username, YouTube handle). */
             username: string;
         };
+        IgnoredChatter: {
+            /** Format: date-time */
+            ignored_at: string;
+            platform: string;
+            user_id: string;
+            username: string;
+        };
         /** @description A chatter a switcher ignores. */
         IgnoredChatterDto: {
             /** Format: date-time */
@@ -4635,6 +4723,23 @@ export interface components {
         };
         IntervalRequest: {
             interval: components["schemas"]["BillingInterval"];
+        };
+        Invite: {
+            /** Format: date-time */
+            accepted_at?: string | null;
+            accepted_by_you: boolean;
+            /** Format: date-time */
+            created_at: string;
+            created_by_you: boolean;
+            /** Format: date-time */
+            expires_at: string;
+            /** @description `workspace` or `organization`. */
+            kind: string;
+            /** @description The workspace's or organization's name. */
+            name: string;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            role: string;
         };
         /**
          * @description An invite that can still be used. The token is only shown once, when the
@@ -4693,6 +4798,17 @@ export interface components {
         LinkPriceRequest: {
             /** @description A recurring price made in the Stripe Dashboard (`price_…`). */
             stripe_price_id: string;
+        };
+        LinkedChannel: {
+            auto_switch_notification: boolean;
+            channel_id: string;
+            display_name: string;
+            /** Format: date-time */
+            linked_at: string;
+            login: string;
+            platform: string;
+            scopes: string[];
+            status: string;
         };
         /** @description What the organization's switchers are doing, in all. */
         LiveCountsDto: {
@@ -5052,6 +5168,16 @@ export interface components {
             count: number;
             name: string;
         };
+        NoticeCreated: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            ends_at?: string | null;
+            message: string;
+            severity: string;
+            /** Format: date-time */
+            starts_at?: string | null;
+        };
         /** @description A notice in force now. */
         NoticeDto: {
             /** @description Whether the viewer may hide it (never for `critical`). */
@@ -5243,6 +5369,33 @@ export interface components {
              *     OBS started.
              */
             this_stream: boolean;
+        };
+        Organization: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            joined_at: string;
+            name: string;
+            role: string;
+            url_slug: string;
+        };
+        OrganizationAuditEntry: {
+            action: string;
+            /** @description `team`, or `customer` acting in their client workspace. */
+            actor_kind: string;
+            /** @description Your name as it was then. */
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+            details: Record<string, never>;
+            organization: string;
+            subject?: string | null;
+        };
+        OrganizationCreated: {
+            /** Format: date-time */
+            created_at: string;
+            name: string;
+            url_slug: string;
         };
         OrganizationDto: {
             /** Format: date-time */
@@ -5557,6 +5710,16 @@ export interface components {
             /** Format: uuid */
             server_id: string;
         };
+        Session: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at: string;
+            provider: string;
+            user_agent?: string | null;
+        };
         /** @description A browser signed in to this account. */
         SessionDto: {
             /** Format: date-time */
@@ -5749,6 +5912,28 @@ export interface components {
             /** @description The bot of the organization that manages the workspace. */
             organization: boolean;
         };
+        StaffAction: {
+            about_you: boolean;
+            action: string;
+            by_you: boolean;
+            /** Format: date-time */
+            created_at: string;
+            details: Record<string, never>;
+            reason?: string | null;
+            /**
+             * @description Your name as it was then, when you did it. Other staff members' names
+             *     are left out.
+             */
+            staff_name?: string | null;
+            switcher_name?: string | null;
+            workspace_name?: string | null;
+        };
+        StaffWork: {
+            notices_created: components["schemas"]["NoticeCreated"][];
+            organizations_created: components["schemas"]["OrganizationCreated"][];
+            /** @description Requests you made in workspaces you aren't a member of. */
+            support_access: components["schemas"]["SupportAccess"][];
+        };
         StatsProbe: {
             /**
              * Format: int32
@@ -5858,6 +6043,23 @@ export interface components {
             /** Format: date-time */
             started_at: string;
         };
+        Subscription: {
+            billing_interval: string;
+            cancel_at_period_end: boolean;
+            /** Format: date-time */
+            canceled_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            current_period_end?: string | null;
+            /** Format: date-time */
+            current_period_start?: string | null;
+            /** @description What stays paid for until the end of a period after it was lowered. */
+            holds: components["schemas"]["SubscriptionHold"][];
+            items: components["schemas"]["SubscriptionItem"][];
+            status: string;
+            stripe_subscription_id: string;
+        };
         /** @description The workspace's Stripe subscription, while it has one that counts. */
         SubscriptionDto: {
             /** @description Canceled, but paid up until `current_period_end`. */
@@ -5880,6 +6082,31 @@ export interface components {
             plan_code?: string | null;
             /** @description `active`, `trialing` or `past_due` (a payment failed and Stripe is retrying). */
             status: string;
+        };
+        SubscriptionHold: {
+            code: string;
+            kind: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: date-time */
+            until: string;
+        };
+        SubscriptionItem: {
+            code: string;
+            kind: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        SupportAccess: {
+            /** Format: date-time */
+            created_at: string;
+            method: string;
+            route: string;
+            /** Format: uuid */
+            switcher_id?: string | null;
+            /** @description Without the workspace's permission (break-glass). */
+            without_grant: boolean;
+            workspace: string;
         };
         SupportAccessDto: {
             /** @description Emergency access: not yet acknowledged, or from the last 30 days. */
@@ -5905,6 +6132,22 @@ export interface components {
             switcher_id?: string | null;
             /** @description `null` when the switcher has been deleted since. */
             switcher_name?: string | null;
+        };
+        SupportGrant: {
+            /** Format: date-time */
+            acknowledged_at?: string | null;
+            break_glass: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            granted_by_you: boolean;
+            level: string;
+            reason?: string | null;
+            requested_by_you: boolean;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            workspace: string;
         };
         /** @description The permission in force for NOALBS support. */
         SupportGrantDto: {
@@ -5932,6 +6175,34 @@ export interface components {
         SwitchScene: {
             /** Format: uuid */
             scene_uuid: string;
+        };
+        Switcher: {
+            chat_channels: components["schemas"]["LinkedChannel"][];
+            command_aliases: components["schemas"]["CommandAlias"][];
+            command_overrides: components["schemas"]["CommandOverride"][];
+            /** Format: date-time */
+            created_at: string;
+            has_belabox_remote_key: boolean;
+            has_moblin_password: boolean;
+            has_obs_password: boolean;
+            /** Format: uuid */
+            id: string;
+            ignored_chatters: components["schemas"]["IgnoredChatter"][];
+            /** Format: date-time */
+            last_seen_at?: string | null;
+            name: string;
+            /**
+             * @description Every setting as stored (scenes by ID, triggers, behaviour, chat, BELABOX
+             *     and Moblin options), without its secrets.
+             */
+            settings: Record<string, never>;
+            /**
+             * @description Each stream server as stored, stats URL and stream key included, without
+             *     its encrypted password and API key.
+             */
+            stream_servers: Record<string, never>[];
+            /** Format: date-time */
+            updated_at: string;
         };
         SwitcherCountsDto: {
             /**
@@ -6155,6 +6426,32 @@ export interface components {
         };
         UpdateWorkspace: {
             name: string;
+        };
+        Workspace: {
+            billing?: components["schemas"]["Billing"] | null;
+            /** Format: date-time */
+            created_at: string;
+            created_by_you: boolean;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            joined_at?: string | null;
+            /** @description The organization that manages this client workspace, if it is one. */
+            managed_by?: string | null;
+            name: string;
+            /** @description Not for a client workspace: the organization's limits apply. */
+            plan?: string | null;
+            /** @description `None` when you created it but are no longer a member. */
+            role?: string | null;
+            /** Format: date-time */
+            suspended_at?: string | null;
+            suspended_reason?: string | null;
+            /**
+             * @description For your own workspaces: those you own, or an organization manages for
+             *     you. Other workspaces' switchers belong to their owners.
+             */
+            switchers: components["schemas"]["Switcher"][];
+            url_slug: string;
         };
         /** @description An add-on the workspace has. */
         WorkspaceAddonDto: {
@@ -8063,7 +8360,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountExport"];
+                    "application/json": components["schemas"]["DataExport"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    export_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One JSON object per line */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/x-ndjson": string;
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

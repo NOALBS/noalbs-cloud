@@ -16,7 +16,7 @@ base64.workspace = true
 chrono.workspace = true
 common.workspace = true
 config.workspace = true
-db.workspace = true
+db = { workspace = true, features = ["openapi"] }
 obs-actions.workspace = true
 live = { workspace = true, features = ["openapi"] }
 control = { workspace = true }

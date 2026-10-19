@@ -1,5 +1,6 @@
 use axum::{
     Json,
+    body::Body,
     extract::{Path, State},
     http::{StatusCode, header},
     response::IntoResponse,
@@ -7,7 +8,9 @@ use axum::{
 use axum_extra::extract::cookie::PrivateCookieJar;
 use chrono::{DateTime, Utc};
 use db::oauth2_connections::UnlinkOutcome;
+use futures_util::{StreamExt, stream};
 use serde::{Deserialize, Serialize};
+use tracing::Instrument;
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
@@ -26,6 +29,7 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(sign_out_other_sessions))
         .routes(routes!(unlink_connection))
         .routes(routes!(export_data))
+        .routes(routes!(export_history))
         .routes(routes!(delete_account))
 }
 
@@ -165,169 +169,46 @@ async fn unlink_connection(
     }
 }
 
-/// Everything NOALBS Cloud keeps about you, for "Download my data" (GDPR access
-/// and portability). Secrets (tokens, passwords, stream keys) are left out.
+/// "Download my data" (GDPR access and portability): everything NOALBS Cloud
+/// keeps about you but your stream history, which is `/me/export/history`.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct AccountExport {
+pub struct DataExport {
     pub exported_at: DateTime<Utc>,
-    pub account: ExportedAccount,
-    /// The Twitch/Kick accounts you sign in with.
-    pub connections: Vec<ExportedConnection>,
-    /// Browsers signed in to your account.
-    pub sessions: Vec<ExportedSession>,
-    /// Workspaces you're in; switchers are listed for the ones you own.
-    pub workspaces: Vec<ExportedWorkspace>,
-    /// Organizations whose team you're on.
-    pub organizations: Vec<ExportedOrganization>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedOrganization {
-    pub name: String,
-    pub url_slug: String,
-    pub role: Option<String>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedAccount {
-    pub id: Uuid,
-    pub staff: bool,
-    pub created_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedConnection {
-    pub provider: String,
-    pub username: String,
-    pub avatar_url: Option<String>,
-    pub connected_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedSession {
-    pub provider: String,
-    pub user_agent: Option<String>,
-    pub created_at: DateTime<Utc>,
-    pub last_used_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedWorkspace {
-    pub name: String,
-    pub url_slug: String,
-    pub role: Option<String>,
-    /// The organization that manages this client workspace, if it is one.
-    pub managed_by: Option<String>,
-    pub switchers: Vec<ExportedSwitcher>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ExportedSwitcher {
-    pub name: String,
-    pub created_at: DateTime<Utc>,
-    pub last_seen_at: Option<DateTime<Utc>>,
-    /// Name and kind of each stream server (their URLs can hold keys, so they're left out).
-    pub stream_servers: Vec<String>,
-    /// Chat channels linked to it, as `platform/login`.
-    pub chat_channels: Vec<String>,
+    /// What's in the file, what's left out and why.
+    pub notes: Vec<String>,
+    #[serde(flatten)]
+    pub data: db::export::AccountExport,
 }
 
 /// Download everything NOALBS Cloud keeps about you, as JSON.
 #[utoipa::path(get, path = "/me/export", tag = "auth",
-    responses((status = OK, body = AccountExport)))]
+    responses(
+        (status = OK, body = DataExport),
+        (status = TOO_MANY_REQUESTS, body = ErrorBody),
+    ))]
 async fn export_data(
     State(state): State<ApiState>,
     current_user: CurrentUser,
 ) -> ApiResult<impl IntoResponse> {
     let user_id = current_user.id();
-    let user = db::users::get_by_id(&state.db, user_id)
+    state.limits.export(user_id)?;
+    let data = db::export::account(&state.db, user_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Account not found"))?;
-    let connections = db::oauth2_connections::list_profiles_for_user(&state.db, user_id).await?;
-    let sessions = db::sessions::list_for_user(&state.db, user_id).await?;
-
-    let mut workspaces = Vec::new();
-    for workspace in db::workspaces::list_summaries(&state.db, user_id).await? {
-        let owner = matches!(
-            workspace.role,
-            Some(db::workspaces::WorkspaceRoleEnum::Owner)
-        );
-        let mut switchers = Vec::new();
-        if owner {
-            for switcher in db::switchers::list_summaries(&state.db, workspace.id).await? {
-                let servers = db::stream_servers::by_switcher_id(&state.db, switcher.id).await?;
-                let channels = db::chat::channels_for_switcher(&state.db, switcher.id).await?;
-                switchers.push(ExportedSwitcher {
-                    name: switcher.name,
-                    created_at: switcher.created_at,
-                    last_seen_at: switcher.last_seen_at,
-                    stream_servers: servers
-                        .into_iter()
-                        .map(|server| format!("{} ({:?})", server.name, server.kind))
-                        .collect(),
-                    chat_channels: channels
-                        .into_iter()
-                        .map(|linked| {
-                            format!(
-                                "{}/{}",
-                                format!("{:?}", linked.channel.platform).to_lowercase(),
-                                linked.channel.login
-                            )
-                        })
-                        .collect(),
-                });
-            }
-        }
-        workspaces.push(ExportedWorkspace {
-            name: workspace.name,
-            url_slug: workspace.url_slug,
-            role: workspace
-                .role
-                .map(|role| format!("{role:?}").to_lowercase()),
-            managed_by: workspace.organization_name,
-            switchers,
-        });
-    }
-
-    let export = AccountExport {
+    let export = DataExport {
         exported_at: Utc::now(),
-        account: ExportedAccount {
-            id: user.id,
-            staff: user.staff,
-            created_at: user.created_at,
-        },
-        connections: connections
-            .into_iter()
-            .map(|connection| ExportedConnection {
-                provider: connection.provider,
-                username: connection.provider_username,
-                avatar_url: connection.provider_avatar_url,
-                connected_at: connection.created_at,
-            })
-            .collect(),
-        sessions: sessions
-            .into_iter()
-            .map(|session| ExportedSession {
-                provider: session.provider,
-                user_agent: session.user_agent,
-                created_at: session.created_at,
-                last_used_at: session.last_used_at,
-                expires_at: session.expires_at,
-            })
-            .collect(),
-        workspaces,
-        organizations: db::organizations::list_for_user(&state.db, user_id)
-            .await?
-            .into_iter()
-            .map(|organization| ExportedOrganization {
-                name: organization.name,
-                url_slug: organization.url_slug,
-                role: organization
-                    .role
-                    .map(|role| format!("{role:?}").to_lowercase()),
-            })
-            .collect(),
+        notes: vec![
+            format!(
+                "Everything NOALBS Cloud keeps about you, except what's listed here. What we keep, why and for how long: {}/privacy",
+                state.dashboard_url
+            ),
+            "Stream history, stats, markers and the activity log of your own switchers are a separate download (Account → Download stream history), as they can be large.".to_owned(),
+            "This file holds your stream servers' stats URLs and stream keys: keep it private.".to_owned(),
+            "Left out: the passwords and API keys of your OBS, Moblin and stream servers, your BELABOX remote key and chat tokens. They're stored encrypted, and you set them yourself. Sign-in tokens and email addresses aren't kept.".to_owned(),
+            "Switchers and their settings are listed for your own workspaces: those you own, and those an organization manages for you. Other workspaces belong to their owners, and other people's data, such as who else is in a workspace, is left out.".to_owned(),
+            "Activity logs and markers in other people's workspaces record your display name, not your account, so we can't reliably find them for you. Our server logs are kept 14 to 30 days and name accounts by ID. If you think we hold something else about you, email support@noalbs.com and tell us where to look.".to_owned(),
+        ],
+        data,
     };
     Ok((
         [(
@@ -335,6 +216,73 @@ async fn export_data(
             "attachment; filename=\"noalbs-cloud-data.json\"",
         )],
         Json(export),
+    ))
+}
+
+/// Download the stream history of your own switchers (see `DataExport`), one
+/// JSON object per line: an `about` line, then each `stream`, `stats` bucket
+/// and activity log `event`, as stored.
+#[utoipa::path(get, path = "/me/export/history", tag = "auth",
+    responses(
+        (status = OK, description = "One JSON object per line", content_type = "application/x-ndjson", body = String),
+        (status = TOO_MANY_REQUESTS, body = ErrorBody),
+    ))]
+async fn export_history(
+    State(state): State<ApiState>,
+    current_user: CurrentUser,
+) -> ApiResult<impl IntoResponse> {
+    let user_id = current_user.id();
+    state.limits.export(user_id)?;
+    let about = serde_json::json!({
+        "type": "about",
+        "exported_at": Utc::now(),
+        "notes": [
+            "The stream history of your own switchers (in workspaces you own, or an organization manages for you), as stored, one JSON object per line.",
+            "stream: a broadcast, with its stream servers (sources) and markers. stats: one stream server over 10 seconds (sums and counts of the bitrate and latency, minimum and maximum, seconds live, low and offline) and raw, the server's last report, which can hold stream names and IP addresses. event: the activity log, with who did what.",
+            format!(
+                "Kept as long as your plan's stream history, the activity log at least 30 days: {}/privacy",
+                state.dashboard_url
+            ),
+        ],
+    });
+
+    // The body has to own its stream, so the lines are read on a task of their
+    // own: a slow download fills the channel and holds the task back, a
+    // cancelled one closes it and stops the task.
+    let (lines, mut received) = tokio::sync::mpsc::channel(64);
+    let pool = state.db.clone();
+    tokio::spawn(
+        async move {
+            let mut history = std::pin::pin!(db::export::history(&pool, user_id));
+            while let Some(line) = history.next().await {
+                let failed = line.is_err();
+                if lines.send(line).await.is_err() || failed {
+                    break;
+                }
+            }
+        }
+        .in_current_span(),
+    );
+    let body = stream::once(async move { Ok(about.to_string()) })
+        .chain(stream::poll_fn(move |cx| received.poll_recv(cx)))
+        .map(move |line: Result<String, db::Error>| match line {
+            Ok(line) => Ok(line + "\n"),
+            Err(error) => {
+                // The download ends broken, so the browser shows it failed.
+                tracing::warn!(%error, %user_id, "Couldn't export stream history");
+                Err(error)
+            }
+        });
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/x-ndjson"),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"noalbs-cloud-history.ndjson\"",
+            ),
+        ],
+        Body::from_stream(body),
     ))
 }
 

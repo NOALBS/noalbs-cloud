@@ -116,12 +116,29 @@ function YourData({ username }: { username: string }) {
           <span className="flex flex-col gap-0.5">
             <span className="text-sm font-semibold">Download my data</span>
             <span className="text-sm text-muted-foreground">
-              Your account, sign-ins, workspaces and switchers, as a JSON file.
+              Your account, sign-ins, workspaces, switchers and their settings, and what you did in
+              teams and chat, as a JSON file. It holds your stats URLs and stream keys: keep it
+              private.
             </span>
           </span>
           <Button variant="outline" disabled={download.isPending} onClick={() => download.mutate()}>
             <Download />
             Download
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold">Download stream history</span>
+            <span className="text-sm text-muted-foreground">
+              The stream history, stats, markers and activity log of your own switchers, one JSON
+              object per line. It can be large.
+            </span>
+          </span>
+          <Button variant="outline" asChild>
+            <a href="/api/me/export/history" download>
+              <Download />
+              Download
+            </a>
           </Button>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">

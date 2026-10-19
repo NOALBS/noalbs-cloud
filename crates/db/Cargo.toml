@@ -6,13 +6,20 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+# Derive `utoipa::ToSchema` for the types the API returns as they are (the
+# data export), so they're in its OpenAPI document.
+openapi = ["dep:utoipa"]
+
 [dependencies]
 chrono = { workspace = true, features = ["serde"] }
+futures-util.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sqlx = { workspace = true, features = ["postgres"] }
 thiserror.workspace = true
 tracing.workspace = true
+utoipa = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["serde", "v4"] }
 
 [dev-dependencies]

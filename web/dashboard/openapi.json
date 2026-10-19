@@ -2526,7 +2526,46 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountExport"
+                  "$ref": "#/components/schemas/DataExport"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/export/history": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Download the stream history of your own switchers (see `DataExport`), one\nJSON object per line: an `about` line, then each `stream`, `stats` bucket\nand activity log `event`, as stored.",
+        "operationId": "export_history",
+        "responses": {
+          "200": {
+            "description": "One JSON object per line",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -10618,52 +10657,139 @@
   },
   "components": {
     "schemas": {
+      "Account": {
+        "type": "object",
+        "required": [
+          "id",
+          "staff",
+          "whitelisted",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disabled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Set by staff: the account can't sign in."
+          },
+          "disabled_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "last_workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The workspace the dashboard opens."
+          },
+          "staff": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "whitelisted": {
+            "type": "boolean"
+          }
+        }
+      },
       "AccountExport": {
         "type": "object",
-        "description": "Everything NOALBS Cloud keeps about you, for \"Download my data\" (GDPR access\nand portability). Secrets (tokens, passwords, stream keys) are left out.",
         "required": [
-          "exported_at",
           "account",
           "connections",
           "sessions",
           "workspaces",
-          "organizations"
+          "organizations",
+          "invites",
+          "chat",
+          "support_grants",
+          "organization_audit",
+          "staff_actions",
+          "staff_work"
         ],
         "properties": {
           "account": {
-            "$ref": "#/components/schemas/ExportedAccount"
+            "$ref": "#/components/schemas/Account"
+          },
+          "chat": {
+            "$ref": "#/components/schemas/Chat"
           },
           "connections": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ExportedConnection"
+              "$ref": "#/components/schemas/Connection"
             },
-            "description": "The Twitch/Kick accounts you sign in with."
+            "description": "The Twitch, Kick and YouTube accounts you sign in with."
           },
-          "exported_at": {
-            "type": "string",
-            "format": "date-time"
+          "invites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invite"
+            },
+            "description": "Invites you made or accepted."
+          },
+          "organization_audit": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationAuditEntry"
+            },
+            "description": "What you did in organizations, from their audit logs."
           },
           "organizations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ExportedOrganization"
+              "$ref": "#/components/schemas/Organization"
             },
             "description": "Organizations whose team you're on."
           },
           "sessions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ExportedSession"
+              "$ref": "#/components/schemas/Session"
             },
             "description": "Browsers signed in to your account."
+          },
+          "staff_actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAction"
+            },
+            "description": "What NOALBS staff did about your account (or, as staff, did yourself)."
+          },
+          "staff_work": {
+            "$ref": "#/components/schemas/StaffWork",
+            "description": "Only for NOALBS staff: their support work and what they set up."
+          },
+          "support_grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportGrant"
+            },
+            "description": "NOALBS support access you gave (or, as staff, opened)."
           },
           "workspaces": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ExportedWorkspace"
+              "$ref": "#/components/schemas/Workspace"
             },
-            "description": "Workspaces you're in; switchers are listed for the ones you own."
+            "description": "Workspaces you're in or created. Switchers are listed for your own (see\n`switchers`), billing for those you own."
           }
         }
       },
@@ -12113,6 +12239,50 @@
           }
         }
       },
+      "AuthorizedChannel": {
+        "type": "object",
+        "required": [
+          "platform",
+          "channel_id",
+          "login",
+          "display_name",
+          "status",
+          "scopes",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "BehaviourDto": {
         "type": "object",
         "required": [
@@ -13083,6 +13253,30 @@
           }
         }
       },
+      "Billing": {
+        "type": "object",
+        "required": [
+          "needs_payment_method",
+          "subscriptions"
+        ],
+        "properties": {
+          "needs_payment_method": {
+            "type": "boolean"
+          },
+          "stripe_customer_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Subscription"
+            }
+          }
+        }
+      },
       "BillingInterval": {
         "type": "string",
         "enum": [
@@ -13371,6 +13565,34 @@
           }
         }
       },
+      "ChannelLink": {
+        "type": "object",
+        "required": [
+          "workspace",
+          "switcher",
+          "platform",
+          "login",
+          "linked_at"
+        ],
+        "properties": {
+          "linked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "login": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "switcher": {
+            "type": "string"
+          },
+          "workspace": {
+            "type": "string"
+          }
+        }
+      },
       "ChannelLinkSettings": {
         "type": "object",
         "required": [
@@ -13380,6 +13602,37 @@
           "auto_switch_notification": {
             "type": "boolean",
             "description": "Post this switcher's automatic switches in the channel."
+          }
+        }
+      },
+      "Chat": {
+        "type": "object",
+        "required": [
+          "channels_authorized",
+          "links",
+          "bots"
+        ],
+        "properties": {
+          "bots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectedBot"
+            },
+            "description": "Bot accounts you connected."
+          },
+          "channels_authorized": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuthorizedChannel"
+            },
+            "description": "Channels you last let the bot into."
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelLink"
+            },
+            "description": "Channels you linked to switchers."
           }
         }
       },
@@ -13819,6 +14072,42 @@
           }
         }
       },
+      "CommandAlias": {
+        "type": "object",
+        "required": [
+          "alias",
+          "command"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          }
+        }
+      },
+      "CommandOverride": {
+        "type": "object",
+        "required": [
+          "command",
+          "enabled"
+        ],
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "min_role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "ConnectLink": {
         "type": "object",
         "description": "The browser-source URL for OBS. It contains the connect token, so it is\nonly shown when the switcher is created or its token is replaced.",
@@ -13827,6 +14116,52 @@
         ],
         "properties": {
           "browser_source_url": {
+            "type": "string"
+          }
+        }
+      },
+      "ConnectedBot": {
+        "type": "object",
+        "required": [
+          "platform",
+          "platform_user_id",
+          "login",
+          "display_name",
+          "status",
+          "scopes",
+          "connected_at"
+        ],
+        "properties": {
+          "answers_for": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The workspace or organization it answers for; `None` for NOALBS's shared bot."
+          },
+          "connected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "platform_user_id": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
             "type": "string"
           }
         }
@@ -13897,6 +14232,57 @@
             "type": "string"
           },
           "workspace_slug": {
+            "type": "string"
+          }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "required": [
+          "provider",
+          "provider_id",
+          "username",
+          "scopes",
+          "connected_at",
+          "updated_at"
+        ],
+        "properties": {
+          "avatar_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "No longer asked for; always empty since September 2026."
+          },
+          "provider": {
+            "type": "string"
+          },
+          "provider_id": {
+            "type": "string",
+            "description": "The account's ID on the platform."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What the platform let us do when you signed in."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "username": {
             "type": "string"
           }
         }
@@ -14230,6 +14616,34 @@
             "description": "The secret for the invite link (`/org-invite/{token}`). Not retrievable later."
           }
         }
+      },
+      "DataExport": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AccountExport"
+          },
+          {
+            "type": "object",
+            "required": [
+              "exported_at",
+              "notes"
+            ],
+            "properties": {
+              "exported_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "What's in the file, what's left out and why."
+              }
+            }
+          }
+        ],
+        "description": "\"Download my data\" (GDPR access and portability): everything NOALBS Cloud\nkeeps about you but your stream history, which is `/me/export/history`."
       },
       "DetailsDto": {
         "type": "object",
@@ -15627,182 +16041,6 @@
         ],
         "description": "What happened, with the details the activity feed shows."
       },
-      "ExportedAccount": {
-        "type": "object",
-        "required": [
-          "id",
-          "staff"
-        ],
-        "properties": {
-          "created_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "staff": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ExportedConnection": {
-        "type": "object",
-        "required": [
-          "provider",
-          "username",
-          "connected_at"
-        ],
-        "properties": {
-          "avatar_url": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "connected_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        }
-      },
-      "ExportedOrganization": {
-        "type": "object",
-        "required": [
-          "name",
-          "url_slug"
-        ],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "url_slug": {
-            "type": "string"
-          }
-        }
-      },
-      "ExportedSession": {
-        "type": "object",
-        "required": [
-          "provider",
-          "created_at",
-          "last_used_at",
-          "expires_at"
-        ],
-        "properties": {
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "last_used_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "user_agent": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
-      "ExportedSwitcher": {
-        "type": "object",
-        "required": [
-          "name",
-          "created_at",
-          "stream_servers",
-          "chat_channels"
-        ],
-        "properties": {
-          "chat_channels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Chat channels linked to it, as `platform/login`."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "last_seen_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "name": {
-            "type": "string"
-          },
-          "stream_servers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Name and kind of each stream server (their URLs can hold keys, so they're left out)."
-          }
-        }
-      },
-      "ExportedWorkspace": {
-        "type": "object",
-        "required": [
-          "name",
-          "url_slug",
-          "switchers"
-        ],
-        "properties": {
-          "managed_by": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The organization that manages this client workspace, if it is one."
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "switchers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExportedSwitcher"
-            }
-          },
-          "url_slug": {
-            "type": "string"
-          }
-        }
-      },
       "FeedState": {
         "type": "string",
         "description": "How the feed is doing, and so which scene is (or would be) on air.",
@@ -15874,6 +16112,30 @@
           }
         }
       },
+      "IgnoredChatter": {
+        "type": "object",
+        "required": [
+          "platform",
+          "user_id",
+          "username",
+          "ignored_at"
+        ],
+        "properties": {
+          "ignored_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
       "IgnoredChatterDto": {
         "type": "object",
         "description": "A chatter a switcher ignores.",
@@ -15926,6 +16188,59 @@
         "properties": {
           "interval": {
             "$ref": "#/components/schemas/BillingInterval"
+          }
+        }
+      },
+      "Invite": {
+        "type": "object",
+        "required": [
+          "kind",
+          "name",
+          "role",
+          "created_by_you",
+          "accepted_by_you",
+          "created_at",
+          "expires_at"
+        ],
+        "properties": {
+          "accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "accepted_by_you": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by_you": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kind": {
+            "type": "string",
+            "description": "`workspace` or `organization`."
+          },
+          "name": {
+            "type": "string",
+            "description": "The workspace's or organization's name."
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "role": {
+            "type": "string"
           }
         }
       },
@@ -16086,6 +16401,49 @@
           "stripe_price_id": {
             "type": "string",
             "description": "A recurring price made in the Stripe Dashboard (`price_…`)."
+          }
+        }
+      },
+      "LinkedChannel": {
+        "type": "object",
+        "required": [
+          "platform",
+          "channel_id",
+          "login",
+          "display_name",
+          "status",
+          "scopes",
+          "auto_switch_notification",
+          "linked_at"
+        ],
+        "properties": {
+          "auto_switch_notification": {
+            "type": "boolean"
+          },
+          "channel_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "linked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "login": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string"
           }
         }
       },
@@ -16927,6 +17285,40 @@
           }
         }
       },
+      "NoticeCreated": {
+        "type": "object",
+        "required": [
+          "message",
+          "severity",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "NoticeDto": {
         "type": "object",
         "description": "A notice in force now.",
@@ -17343,6 +17735,95 @@
           "this_stream": {
             "type": "boolean",
             "description": "`rendering` and `encoding` count this stream's frames; otherwise since\nOBS started."
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "url_slug",
+          "role",
+          "joined_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "url_slug": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationAuditEntry": {
+        "type": "object",
+        "required": [
+          "organization",
+          "actor_name",
+          "actor_kind",
+          "action",
+          "details",
+          "created_at"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actor_kind": {
+            "type": "string",
+            "description": "`team`, or `customer` acting in their client workspace."
+          },
+          "actor_name": {
+            "type": "string",
+            "description": "Your name as it was then."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "object"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "OrganizationCreated": {
+        "type": "object",
+        "required": [
+          "name",
+          "url_slug",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url_slug": {
+            "type": "string"
           }
         }
       },
@@ -18102,6 +18583,38 @@
           }
         }
       },
+      "Session": {
+        "type": "object",
+        "required": [
+          "provider",
+          "created_at",
+          "last_used_at",
+          "expires_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "user_agent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "SessionDto": {
         "type": "object",
         "description": "A browser signed in to this account.",
@@ -18638,6 +19151,88 @@
           }
         }
       },
+      "StaffAction": {
+        "type": "object",
+        "required": [
+          "action",
+          "about_you",
+          "by_you",
+          "details",
+          "created_at"
+        ],
+        "properties": {
+          "about_you": {
+            "type": "boolean"
+          },
+          "action": {
+            "type": "string"
+          },
+          "by_you": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "object"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "staff_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Your name as it was then, when you did it. Other staff members' names\nare left out."
+          },
+          "switcher_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workspace_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "StaffWork": {
+        "type": "object",
+        "required": [
+          "support_access",
+          "notices_created",
+          "organizations_created"
+        ],
+        "properties": {
+          "notices_created": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoticeCreated"
+            }
+          },
+          "organizations_created": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationCreated"
+            }
+          },
+          "support_access": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportAccess"
+            },
+            "description": "Requests you made in workspaces you aren't a member of."
+          }
+        }
+      },
       "StatsProbe": {
         "type": "object",
         "required": [
@@ -18907,6 +19502,70 @@
           }
         }
       },
+      "Subscription": {
+        "type": "object",
+        "required": [
+          "stripe_subscription_id",
+          "billing_interval",
+          "status",
+          "cancel_at_period_end",
+          "created_at",
+          "items",
+          "holds"
+        ],
+        "properties": {
+          "billing_interval": {
+            "type": "string"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean"
+          },
+          "canceled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current_period_end": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "current_period_start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionHold"
+            },
+            "description": "What stays paid for until the end of a period after it was lowered."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionItem"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "stripe_subscription_id": {
+            "type": "string"
+          }
+        }
+      },
       "SubscriptionDto": {
         "type": "object",
         "description": "The workspace's Stripe subscription, while it has one that counts.",
@@ -18961,6 +19620,87 @@
           "status": {
             "type": "string",
             "description": "`active`, `trialing` or `past_due` (a payment failed and Stripe is retrying)."
+          }
+        }
+      },
+      "SubscriptionHold": {
+        "type": "object",
+        "required": [
+          "kind",
+          "code",
+          "quantity",
+          "until"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SubscriptionItem": {
+        "type": "object",
+        "required": [
+          "kind",
+          "code",
+          "quantity"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SupportAccess": {
+        "type": "object",
+        "required": [
+          "workspace",
+          "method",
+          "route",
+          "without_grant",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "method": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "switcher_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "without_grant": {
+            "type": "boolean",
+            "description": "Without the workspace's permission (break-glass)."
+          },
+          "workspace": {
+            "type": "string"
           }
         }
       },
@@ -19063,6 +19803,63 @@
           }
         }
       },
+      "SupportGrant": {
+        "type": "object",
+        "required": [
+          "workspace",
+          "level",
+          "break_glass",
+          "granted_by_you",
+          "requested_by_you",
+          "expires_at",
+          "created_at"
+        ],
+        "properties": {
+          "acknowledged_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "break_glass": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "granted_by_you": {
+            "type": "boolean"
+          },
+          "level": {
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requested_by_you": {
+            "type": "boolean"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "workspace": {
+            "type": "string"
+          }
+        }
+      },
       "SupportGrantDto": {
         "type": "object",
         "description": "The permission in force for NOALBS support.",
@@ -19144,6 +19941,92 @@
           "scene_uuid": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "Switcher": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "updated_at",
+          "settings",
+          "has_obs_password",
+          "has_belabox_remote_key",
+          "has_moblin_password",
+          "stream_servers",
+          "chat_channels",
+          "command_overrides",
+          "command_aliases",
+          "ignored_chatters"
+        ],
+        "properties": {
+          "chat_channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkedChannel"
+            }
+          },
+          "command_aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommandAlias"
+            }
+          },
+          "command_overrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommandOverride"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "has_belabox_remote_key": {
+            "type": "boolean"
+          },
+          "has_moblin_password": {
+            "type": "boolean"
+          },
+          "has_obs_password": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ignored_chatters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IgnoredChatter"
+            }
+          },
+          "last_seen_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "object",
+            "description": "Every setting as stored (scenes by ID, triggers, behaviour, chat, BELABOX\nand Moblin options), without its secrets."
+          },
+          "stream_servers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Each stream server as stored, stats URL and stream key included, without\nits encrypted password and API key."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -19767,6 +20650,95 @@
         ],
         "properties": {
           "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "url_slug",
+          "created_by_you",
+          "created_at",
+          "switchers"
+        ],
+        "properties": {
+          "billing": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Billing",
+                "description": "For workspaces you own."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by_you": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "joined_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "managed_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The organization that manages this client workspace, if it is one."
+          },
+          "name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Not for a client workspace: the organization's limits apply."
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`None` when you created it but are no longer a member."
+          },
+          "suspended_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "suspended_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "switchers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Switcher"
+            },
+            "description": "For your own workspaces: those you own, or an organization manages for\nyou. Other workspaces' switchers belong to their owners."
+          },
+          "url_slug": {
             "type": "string"
           }
         }

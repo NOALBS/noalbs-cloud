@@ -6,6 +6,7 @@
 //! | [`RateLimits::requests`] | client IP | every request ([`limit_requests`]), except Stripe's webhook |
 //! | [`RateLimits::sign_in`] | client IP | OAuth sign-in and linking, dev login |
 //! | [`RateLimits::outbound`] | user | handlers that call someone else: stats probe, chatter lookup, Stripe Checkout/portal |
+//! | [`RateLimits::exports`] | user | "Download my data" and its stream history (heavy reads) |
 //!
 //! The client IP is the proxy's header when `client_ip_header` is configured
 //! (`cf-connecting-ip` behind Cloudflare; `x-forwarded-for` behind Caddy alone,
@@ -41,6 +42,8 @@ pub struct RateLimits {
     pub sign_in: Limiter<IpAddr>,
     /// Requests that make us call another service for the user.
     pub outbound: Limiter<Uuid>,
+    /// Data exports, which read everything a user has.
+    pub exports: Limiter<Uuid>,
 }
 
 impl Default for RateLimits {
@@ -49,6 +52,7 @@ impl Default for RateLimits {
             requests: Limiter::new(600, Duration::from_millis(50)),
             sign_in: Limiter::new(20, Duration::from_secs(6)),
             outbound: Limiter::new(20, Duration::from_secs(3)),
+            exports: Limiter::new(5, Duration::from_secs(60)),
         }
     }
 }
@@ -58,11 +62,19 @@ impl RateLimits {
         self.requests.prune(now);
         self.sign_in.prune(now);
         self.outbound.prune(now);
+        self.exports.prune(now);
     }
 
     /// Takes one of the user's outbound requests, or 429.
     pub fn outbound(&self, user_id: Uuid) -> Result<(), ApiError> {
         self.outbound
+            .check(user_id, Instant::now())
+            .map_err(ApiError::rate_limited)
+    }
+
+    /// Takes one of the user's data exports, or 429.
+    pub fn export(&self, user_id: Uuid) -> Result<(), ApiError> {
+        self.exports
             .check(user_id, Instant::now())
             .map_err(ApiError::rate_limited)
     }
