@@ -12,6 +12,7 @@
       "!src/routeTree.gen.ts",
       "!src/api/schema.d.ts",
       "!openapi.json",
+      "!pnpm-lock.yaml",
       "!public/source"
     ]
   },
