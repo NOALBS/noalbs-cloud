@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.97-slim AS chef
+FROM rust:1.98-slim AS chef
 RUN cargo install cargo-chef
 WORKDIR /app
 
