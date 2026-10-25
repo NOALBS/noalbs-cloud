@@ -119,17 +119,34 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
   const { stream } = controls;
   const className = cn(BASE, VARIANT[variant]);
 
+  // Confirmed like stopping: a stray tap on a phone in a pocket shouldn't go live.
   if (!status?.streaming) {
     return (
-      <button
-        type="button"
-        disabled={disabled || stream.isPending}
-        onClick={() => stream.mutate(true)}
-        className={cn(className, "border-primary bg-primary text-primary-foreground")}
-      >
-        <Play className="size-4" />
-        Start stream
-      </button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled || stream.isPending}
+            className={cn(className, "border-primary bg-primary text-primary-foreground")}
+          >
+            <Play className="size-4" />
+            Start stream
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start the stream?</AlertDialogTitle>
+            <AlertDialogDescription>
+              OBS goes live with the scene on air now
+              {status?.current_scene ? ` (${status.current_scene.name})` : ""}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not yet</AlertDialogCancel>
+            <AlertDialogAction onClick={() => stream.mutate(true)}>Start stream</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     );
   }
 
@@ -167,11 +184,11 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
   const recording = Boolean(status?.recording);
   const paused = Boolean(status?.recording_paused);
 
-  return (
+  const button = (
     <button
       type="button"
       disabled={disabled || record.isPending}
-      onClick={() => record.mutate(!recording)}
+      onClick={recording ? undefined : () => record.mutate(true)}
       aria-pressed={recording}
       className={cn(BASE, VARIANT[variant], "bg-card")}
     >
@@ -193,6 +210,28 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
           : "Record"}
       </span>
     </button>
+  );
+  if (!recording) return button;
+
+  // A stray tap would end the file mid-stream, so it asks first.
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{button}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Stop recording?</AlertDialogTitle>
+          <AlertDialogDescription>
+            OBS saves the recording so far. Recording again starts a new file.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep recording</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={() => record.mutate(false)}>
+            Stop recording
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -275,6 +314,7 @@ export function AutoSwitchToggle({
   controls,
   status,
   autoSwitchSetting,
+  onlyWhileStreaming,
   canControl,
   className,
 }: {
@@ -282,11 +322,15 @@ export function AutoSwitchToggle({
   status: SwitcherStatus | null | undefined;
   /** The saved setting, used while no browser source reports the live value. */
   autoSwitchSetting: boolean;
+  /** The "Only while streaming" setting: on, nothing switches until OBS streams. */
+  onlyWhileStreaming: boolean;
   canControl: boolean;
   className?: string;
 }) {
   const { autoSwitch } = controls;
   const on = status ? status.auto_switch : autoSwitchSetting;
+  // Otherwise a test with the encoder off and OBS not streaming looks broken.
+  const waiting = on && onlyWhileStreaming && status?.obs_connected && !status.streaming;
 
   return (
     <div
@@ -298,7 +342,11 @@ export function AutoSwitchToggle({
       <span className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold">Auto switch</span>
         <span className="text-xs text-muted-foreground">
-          {on ? "Switching scenes on bitrate & RTT" : "Paused: manual scene switching only"}
+          {waiting
+            ? "Waiting: switches once OBS is streaming"
+            : on
+              ? "Switching scenes on bitrate & RTT"
+              : "Paused: manual scene switching only"}
         </span>
       </span>
       <Switch

@@ -7,6 +7,7 @@ import { api, unwrap } from "@/api/client";
 import { queryKeys, streamServersQuery } from "@/api/queries";
 import { BelaboxSettings } from "@/components/belabox-settings";
 import { CopyField } from "@/components/copy-field";
+import { DocsLink } from "@/components/docs-link";
 import { MoblinSettings } from "@/components/moblin-settings";
 import { ObsConnectionForm } from "@/components/obs-connection-form";
 import { ReadOnlyNotice } from "@/components/settings";
@@ -65,7 +66,35 @@ function SetupPage() {
           <span className="font-mono tabular">{Math.round((done / 3) * 100)}%</span>
         </div>
         <Progress value={(done / 3) * 100} aria-label="Setup progress" />
+        {done < 3 && (
+          <p className="text-xs text-muted-foreground">
+            Stuck on a step? The{" "}
+            <DocsLink page="getting-started/quick-start">quick start guide</DocsLink> walks through
+            it, and <DocsLink page="getting-started/introduction">how NOALBS connects</DocsLink>{" "}
+            explains where your video goes.
+          </p>
+        )}
       </div>
+
+      {done === 3 && (
+        <section className="flex flex-col gap-3 rounded-2xl border-2 border-live/40 bg-live/5 p-5">
+          <div className="flex flex-col gap-0.5">
+            <h2 className="font-semibold">Try it before you go live</h2>
+            <p className="text-sm text-muted-foreground">
+              {switcher.behaviour.only_switch_when_streaming
+                ? "NOALBS only switches while OBS is streaming (you can change that under Switching), so start the stream in OBS first. Then turn off your encoder"
+                : "Turn off your encoder"}
+              : within a few seconds OBS should go to your BRB scene, and back to LIVE when the
+              encoder is on again.
+            </p>
+          </div>
+          <Button asChild className="self-start">
+            <Link to="/$workspace/s/$switcher/live" params={params}>
+              Open the Live page
+            </Link>
+          </Button>
+        </section>
+      )}
 
       {!canManage && (
         <ReadOnlyNotice>Only admins can change the setup of a switcher.</ReadOnlyNotice>
@@ -75,8 +104,8 @@ function SetupPage() {
         number={1}
         done={connected}
         active={!connected}
-        title="Add the browser source to OBS"
-        description="It connects this switcher to your OBS, with no ports to open."
+        title="Connect OBS"
+        description="A browser source in OBS links it to this switcher, with no ports to open."
       >
         <BrowserSourceStep
           canManage={canManage}
@@ -329,8 +358,11 @@ function BrowserSourceStep({
         className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-muted-foreground"
       >
         <li>
-          Add a <strong className="text-foreground">Browser</strong> source to any scene you always
-          use, paste the link below as its URL, and keep it active.
+          Add a <strong className="text-foreground">Browser</strong> source to a scene you always
+          have open (it doesn’t have to be visible), paste the link below as its URL, and keep it
+          enabled. Leave{" "}
+          <strong className="text-foreground">Shutdown source when not visible</strong> off, or
+          NOALBS stops whenever that scene isn’t on air.
         </li>
       </ol>
 
@@ -397,6 +429,22 @@ function BrowserSourceStep({
           }
         />
       </ul>
+      {!obs && (
+        <p className="text-xs text-muted-foreground">
+          Not connecting?{" "}
+          <DocsLink
+            page="guides/troubleshooting"
+            anchor={
+              browserSource
+                ? "browser-source-is-up-waiting-for-obs"
+                : "waiting-for-the-browser-source"
+            }
+          >
+            See troubleshooting
+          </DocsLink>
+          .
+        </p>
+      )}
     </>
   );
 }

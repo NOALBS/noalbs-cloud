@@ -30,7 +30,7 @@ export const STREAM_SERVER_KINDS: KindInfo[] = [
     label: "BELABOX",
     blurb: "BELABOX Cloud",
     placeholder: "https://stats.srt.belabox.net/your-key",
-    help: "The stats URL of your ingest, from BELABOX Cloud.",
+    help: "Your relay’s stats URL from BELABOX Cloud; it starts with https://stats.srt.belabox.net/. Not the remote secret URL: that one goes under Settings → BELABOX Cloud.",
     fields: [],
   },
   {

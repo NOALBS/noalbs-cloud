@@ -109,7 +109,7 @@ function ChatPage() {
 
       <Section
         title="Commands"
-        description="Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins."
+        description="Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in."
         actions={
           <div role="radiogroup" aria-label="Show commands for" className="flex flex-wrap gap-1.5">
             {filters.map((option) => (

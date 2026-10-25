@@ -422,7 +422,7 @@ function ServerHistory({
           {switcher.triggers.offline != null && (
             <span className="flex items-center gap-1.5">
               <span className="w-3.5 border-t border-dashed border-offline" />
-              Offline {formatKbps(switcher.triggers.offline)}
+              BRB {formatKbps(switcher.triggers.offline)}
             </span>
           )}
         </div>

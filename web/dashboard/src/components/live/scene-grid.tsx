@@ -52,6 +52,8 @@ export function SceneGrid({
   });
 
   const switchScene = useMutation({
+    // One at a time, so a second tap can't overtake the first.
+    scope: { id: `scene-switch-${path.switcher_id}` },
     mutationFn: (sceneUuid: string) =>
       unwrap(
         api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene", {
@@ -180,7 +182,9 @@ export function SceneGrid({
               <button
                 key={sceneKey(scene)}
                 type="button"
-                disabled={!canControl || !scene.uuid || current || switchScene.isPending}
+                // Only the scene being switched to waits: on a slow connection the
+                // other tiles stay usable, and the switches go out in tap order.
+                disabled={!canControl || !scene.uuid || current || pending}
                 aria-pressed={current}
                 onClick={() => scene.uuid && switchScene.mutate(scene.uuid)}
                 className={cn(

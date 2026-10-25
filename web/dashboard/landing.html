@@ -54,6 +54,7 @@
           <a href="#devices" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">BELABOX &amp; Moblin</a>
           <a href="#chat" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">Chat</a>
           <a href="#faq" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">FAQ</a>
+          <a href="https://docs.noalbs.com/" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground md:block">Docs</a>
           <a href="https://discord.gg/efWu5HWM2u" class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground lg:block">Discord</a>
           <a href="/login" class="ml-2 rounded-lg border border-border-strong px-3.5 py-2 hover:bg-surface-2">Sign in</a>
         </nav>
@@ -281,7 +282,7 @@
             </div>
             <figcaption class="flex flex-wrap justify-between gap-x-6 gap-y-1 px-1 font-mono text-xs text-muted-foreground">
               <span>A demo stream: downtown, up the hill, through a tunnel, out the other side.</span>
-              <span>LOW below 2,500 kbps · BRB below 300 kbps · 2 retry attempts</span>
+              <span>LOW below 2,500 kbps · BRB below 300 kbps · 2 checks before switching</span>
             </figcaption>
           </figure>
         </section>
@@ -317,7 +318,7 @@
                 <h3 class="text-lg font-semibold">Pick scenes and triggers</h3>
                 <p class="leading-relaxed text-muted-foreground">
                   Your LIVE, LOW and BRB scenes, bitrate and RTT triggers, backup servers by priority,
-                  retry attempts. Then go live and walk.
+                  how many checks before switching. Then go live and walk.
                 </p>
               </li>
             </ol>
@@ -833,6 +834,8 @@
                 The one your encoder already sends to. NOALBS reads its stats page, so a BELABOX Cloud
                 relay, an SRT Live Server or MediaMTX on a VPS, or a hosted IRL server all work. Add a
                 second one as a backup and NOALBS uses whichever has a feed, by priority.
+                Streaming from your phone straight to Twitch or Kick? Then there’s no server for NOALBS
+                to read, or for OBS to play your feed from: send to one of those first.
               </p>
             </details>
             <details class="group py-1">
@@ -895,6 +898,7 @@
           NOALBS
         </span>
         <nav class="flex flex-wrap gap-x-6 gap-y-2">
+          <a href="https://docs.noalbs.com/" class="hover:text-foreground">Docs</a>
           <a href="https://discord.gg/efWu5HWM2u" class="hover:text-foreground">Discord</a>
           <a href="https://x.com/noalbs" class="hover:text-foreground">X</a>
           <a href="https://github.com/NOALBS" class="hover:text-foreground">GitHub</a>

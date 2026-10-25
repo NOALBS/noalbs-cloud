@@ -146,7 +146,7 @@ function TriggersPage() {
     behaviour.retry_attempts >= 0 &&
     behaviour.retry_attempts <= 100
       ? null
-      : "Retry attempts must be between 0 and 100.") ??
+      : "Checks before switching must be between 0 and 100.") ??
     (badTimeout ? `The ${TIMEOUT_NAMES[badTimeout]} must be between 1 and 1440 minutes.` : null);
 
   const save = useMutation({
@@ -200,7 +200,7 @@ function TriggersPage() {
         <div className="flex flex-col gap-4 lg:col-span-7">
           <Section
             title="Bitrate triggers"
-            description="Measured on the highest-priority server that is receiving video."
+            description="Measured on the highest-priority server that is receiving video. Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone."
           >
             <div className="flex flex-col gap-5 px-5 pb-5">
               <TriggerScale
@@ -419,9 +419,9 @@ function RecordingScenesSetting({
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold">Only record on these scenes</span>
         <span className="text-sm text-muted-foreground">
-          Pick scenes that keep recording on. Leave this empty to turn it off; recording pauses on
-          other scenes and resumes when you return. If you resume it yourself on another scene, it
-          keeps recording until the next scene change.
+          The recording pauses on any scene not picked here and resumes when you come back to one
+          that is. Leave it empty to record on every scene. If you resume it yourself on another
+          scene, it keeps recording until the next scene change.
         </span>
       </div>
       {!obsAvailable ? (

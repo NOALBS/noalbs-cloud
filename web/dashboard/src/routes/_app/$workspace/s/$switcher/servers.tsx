@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys, streamServersQuery, workspacePlanQuery } from "@/api/queries";
 import type { StreamServer, StreamServerKind } from "@/api/types";
+import { DocsLink } from "@/components/docs-link";
 import { ScenePicker } from "@/components/scene-picker";
 import { SecretUrlInput } from "@/components/secret-url-input";
 import {
@@ -207,7 +208,13 @@ function ServersPage() {
           </span>
           <p className="font-semibold">No stream servers yet</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX.
+            Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS
+            plays your feed from it, and NOALBS reads its stats to pick a scene.
+          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Streaming from your phone straight to Twitch or Kick? Then there’s no server to read
+            yet: you need one in between.{" "}
+            <DocsLink page="getting-started/introduction">How it connects</DocsLink>
           </p>
         </div>
       )}
@@ -571,7 +578,13 @@ function ServerEditor({
         )}
 
         {canManage && (
-          <ConnectionTest server={server} statsUrl={statsUrl} details={details} path={path} />
+          <ConnectionTest
+            server={server}
+            kind={server.kind}
+            statsUrl={statsUrl}
+            details={details}
+            path={path}
+          />
         )}
 
         <fieldset className="flex flex-col gap-2.5">
@@ -646,36 +659,39 @@ function ServerEditor({
 
 /**
  * Fetches the stats URL through the API and shows what came back. Runs on its
- * own for enabled servers; "Test" checks the URL as typed, before saving.
+ * own for enabled servers; "Test" checks the URL as typed, before saving. Without
+ * a `server` it tests one that isn't added yet.
  */
 function ConnectionTest({
   server,
+  kind,
   statsUrl,
   details,
   path,
 }: {
-  server: StreamServer;
+  server?: StreamServer;
+  kind: StreamServerKind;
   statsUrl: string;
   /** The kind-specific settings as typed; stored secrets fill in the rest. */
   details: DetailsForm;
   path: Path;
 }) {
   const [tested, setTested] = useState({
-    url: server.stats_url ?? "",
+    url: server?.stats_url ?? "",
     details: detailsInput(details),
-    asked: server.enabled,
+    asked: server?.enabled ?? false,
   });
   const probe = useQuery({
-    queryKey: ["stats-probe", server.id, server.kind, tested.url, tested.details],
+    queryKey: ["stats-probe", server?.id ?? "new", kind, tested.url, tested.details],
     queryFn: () =>
       unwrap(
         api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/stream-servers/test", {
           params: { path },
           body: {
-            kind: server.kind,
+            kind,
             stats_url: tested.url,
             details: tested.details,
-            stream_server_id: server.id,
+            stream_server_id: server?.id,
           },
         }),
       ),
@@ -696,7 +712,8 @@ function ConnectionTest({
   const failed = !checking && (result?.reachable === false || probe.isError);
 
   let title = "Not checked";
-  let detail = server.enabled ? "Checks the stats URL from NOALBS Cloud." : "Server is disabled";
+  let detail =
+    server?.enabled === false ? "Server is disabled" : "Checks the stats URL from NOALBS Cloud.";
   if (checking) {
     title = "Checking…";
     detail = maskUrl(tested.url);
@@ -809,7 +826,11 @@ function AddServerDialog({
         <form onSubmit={submit} className="flex flex-col gap-5">
           <DialogHeader>
             <DialogTitle>Add a stream server</DialogTitle>
-            <DialogDescription>Pick the server your encoder streams to.</DialogDescription>
+            <DialogDescription>
+              Pick the server your encoder streams to and OBS plays from. Not sure which one you
+              have? See the{" "}
+              <DocsLink page="reference/stream-server-kinds">list of servers</DocsLink>.
+            </DialogDescription>
           </DialogHeader>
 
           <fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -869,6 +890,8 @@ function AddServerDialog({
             onChange={setDetails}
             idPrefix="new-server"
           />
+
+          <ConnectionTest kind={kind} statsUrl={statsUrl} details={details} path={path} />
 
           {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
 

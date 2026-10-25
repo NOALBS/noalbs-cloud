@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MonitorPlay, PauseCircle, Radio } from "lucide-react";
+import { MonitorPlay, PauseCircle, PlugZap, Radio, WifiOff } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { streamServersQuery, switchersQuery } from "@/api/queries";
 import type { SwitcherStatus } from "@/api/types";
@@ -60,6 +60,9 @@ function LivePage() {
     summaries.data?.find((summary) => summary.id === switcher.id)?.paused || status?.paused,
   );
   const disabled = !canControl || !status?.obs_connected || paused;
+  // The dashboard lost its own connection (often the phone's signal): what's shown is
+  // out of date, and says nothing about OBS or the browser source.
+  const feedDown = live.connection === "reconnecting";
 
   return (
     <SwitcherPage
@@ -122,7 +125,20 @@ function LivePage() {
         </div>
       )}
 
-      {status === null && (
+      {feedDown && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-low/40 bg-low/10 p-4"
+        >
+          <WifiOff className="size-5 text-low" />
+          <p className="flex-1 text-sm">
+            <strong>Reconnecting to NOALBS…</strong> This page is out of date until it’s back.
+            Switching keeps running without it; check your phone’s signal.
+          </p>
+        </div>
+      )}
+
+      {status === null && !feedDown && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed p-4">
           <MonitorPlay className="size-5 text-primary" />
           <p className="flex-1 text-sm text-muted-foreground">
@@ -138,18 +154,37 @@ function LivePage() {
         </div>
       )}
 
+      {status && !status.obs_connected && !feedDown && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-low/40 bg-low/10 p-4">
+          <PlugZap className="size-5 text-low" />
+          <p className="flex-1 text-sm">
+            <strong>The browser source can’t reach OBS.</strong> Check that WebSocket is on in OBS
+            (Tools → WebSocket Server Settings) and that the port and password match Setup.
+          </p>
+          <Link
+            to="/$workspace/s/$switcher/setup"
+            params={params}
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            Open Setup
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <StatusCard
           status={status}
           now={now}
           sample={sample}
           serverName={activeServer?.name}
+          feedDown={feedDown}
           className="lg:col-span-4"
           autoSwitch={
             <AutoSwitchToggle
               controls={controls}
               status={status}
               autoSwitchSetting={switcher.behaviour.bitrate_switcher_enabled}
+              onlyWhileStreaming={switcher.behaviour.only_switch_when_streaming}
               canControl={canControl}
               className="mt-auto hidden lg:flex"
             />
@@ -162,11 +197,15 @@ function LivePage() {
           disabled={disabled}
           canControl={canControl}
           autoSwitchSetting={switcher.behaviour.bitrate_switcher_enabled}
+          onlyWhileStreaming={switcher.behaviour.only_switch_when_streaming}
         />
 
         <section
           aria-label="Bitrate"
-          className="hidden flex-col gap-3 rounded-2xl border bg-card p-5 lg:col-span-8 lg:flex"
+          className={cn(
+            "hidden flex-col gap-3 rounded-2xl border bg-card p-5 lg:col-span-8 lg:flex",
+            feedDown && "opacity-50",
+          )}
         >
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex items-end gap-8">
@@ -191,7 +230,7 @@ function LivePage() {
               {switcher.triggers.offline != null && (
                 <span className="flex items-center gap-1.5">
                   <span className="w-3.5 border-t border-dashed border-offline" />
-                  Offline {formatKbps(switcher.triggers.offline)}
+                  BRB {formatKbps(switcher.triggers.offline)}
                 </span>
               )}
               <span>Last 2 min</span>
@@ -292,12 +331,14 @@ function MobileActions({
   disabled,
   canControl,
   autoSwitchSetting,
+  onlyWhileStreaming,
 }: {
   controls: ObsControls;
   status: SwitcherStatus | null | undefined;
   disabled: boolean;
   canControl: boolean;
   autoSwitchSetting: boolean;
+  onlyWhileStreaming: boolean;
 }) {
   return (
     <section aria-label="Quick actions" className="grid grid-cols-2 gap-2.5 lg:hidden">
@@ -307,6 +348,7 @@ function MobileActions({
         controls={controls}
         status={status}
         autoSwitchSetting={autoSwitchSetting}
+        onlyWhileStreaming={onlyWhileStreaming}
         canControl={canControl}
         className="min-h-16 rounded-2xl bg-card"
       />
@@ -336,6 +378,7 @@ function StatusCard({
   now,
   sample,
   serverName,
+  feedDown,
   autoSwitch,
   className,
 }: {
@@ -343,10 +386,12 @@ function StatusCard({
   now: number;
   sample: Point | undefined;
   serverName: string | undefined;
+  /** The dashboard's own connection dropped: show the last state, greyed out. */
+  feedDown: boolean;
   autoSwitch: ReactNode;
   className?: string;
 }) {
-  const look = lookFor(status);
+  const look = feedDown ? lookFor(undefined) : lookFor(status);
 
   return (
     <section
@@ -363,7 +408,7 @@ function StatusCard({
           role="status"
         >
           <span className={cn("size-2.5 rounded-full", look.fill, look.pulse && "animate-pulse")} />
-          {status === undefined ? "CONNECTING…" : look.label}
+          {feedDown ? "RECONNECTING…" : status === undefined ? "CONNECTING…" : look.label}
         </span>
         <span className="font-mono text-sm text-muted-foreground tabular">
           {status?.streaming && status.stream_started_at
@@ -373,7 +418,9 @@ function StatusCard({
       </div>
 
       {/* On phones the big numbers live here; desktop has the chart card. */}
-      <div className="flex items-end justify-between gap-4 lg:hidden">
+      <div
+        className={cn("flex items-end justify-between gap-4 lg:hidden", feedDown && "opacity-50")}
+      >
         <Stat label={`Bitrate${serverName ? ` · ${serverName}` : ""}`}>
           <span className="text-[44px]">{sample ? formatKbps(sample.bitrate) : "—"}</span>
           <span className="text-base font-normal text-muted-foreground"> kbps</span>
