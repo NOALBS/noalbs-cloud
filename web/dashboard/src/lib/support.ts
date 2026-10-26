@@ -25,6 +25,7 @@ const SWITCHER_LABELS: [string, string, string][] = [
   ["DELETE", "", "Deleted the switcher"],
   ["GET", "/live", "Watched the Live page"],
   ["GET", "/obs/screenshot", "Watched the OBS preview"],
+  ["GET", "/obs/screenshot/watchers", "Looked at who watches the OBS preview"],
   ["GET", "/obs/audio/live", "Watched the audio meters"],
   ["GET", "/streams", "Looked at stream history"],
   ["GET", "/streams/{stream_id}", "Looked at a stream"],
@@ -55,6 +56,7 @@ const SWITCHER_LABELS: [string, string, string][] = [
   ["POST", "/connect-token", "Tried to create a new browser-source link"],
   ["GET", "/moblin/connection", "Tried to see the Moblin password"],
   ["GET", "/streams/{stream_id}/raw", "Tried to see raw stats"],
+  ["PUT", "/preview", "Tried to change who sees the OBS preview"],
 ];
 
 /** [method, route after `/workspaces/{workspace_id}`, label]. */

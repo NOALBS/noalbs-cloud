@@ -1,4 +1,11 @@
-import type { Me, OrganizationRole, SupportLevel, Workspace, WorkspaceRole } from "@/api/types";
+import type {
+  Me,
+  OrganizationRole,
+  PreviewOffAir,
+  SupportLevel,
+  Workspace,
+  WorkspaceRole,
+} from "@/api/types";
 
 /**
  * Mirrors the API's role rules so the UI can hide or disable what a user can't
@@ -106,6 +113,22 @@ export function canReadSecrets(actor: Actor): boolean {
   if (actor.organization)
     return ORGANIZATION_PERMISSIONS[actor.organization].includes("switcher.manage");
   return actor.role !== null && ROLE_PERMISSIONS[actor.role].includes("switcher.manage");
+}
+
+/**
+ * The workspace's owner, or the team of the organization that owns a client
+ * workspace: who chooses who sees the OBS preview off air. Never support.
+ */
+export function isOwner(actor: Actor): boolean {
+  return actor.role === "owner" || Boolean(actor.organization);
+}
+
+/** Whether `actor` sees the OBS preview while the switcher isn't streaming (as the API). */
+export function seesPreviewOffAir(actor: Actor, offAir: PreviewOffAir): boolean {
+  if (isSupport(actor)) return false;
+  if (offAir === "everyone") return true;
+  if (offAir === "admins") return isOwner(actor) || actor.role === "admin";
+  return offAir === "owners" && isOwner(actor);
 }
 
 const isOwnerOrStaff = (actor: Actor) =>

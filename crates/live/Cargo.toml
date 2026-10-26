@@ -9,7 +9,7 @@ publish.workspace = true
 [features]
 # Derive `utoipa::ToSchema` so the API can include these types in its OpenAPI
 # document (the dashboard's TypeScript types are generated from it).
-openapi = ["dep:utoipa"]
+openapi = ["dep:utoipa", "db/openapi"]
 
 [dependencies]
 async-nats = { workspace = true }

@@ -43,7 +43,7 @@
       <main class="legal flex flex-col gap-10 pt-10 pb-20">
         <div class="flex flex-col gap-3">
           <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Privacy policy</h1>
-          <p class="text-muted-foreground">Last updated 19 October 2026</p>
+          <p class="text-muted-foreground">Last updated 26 October 2026</p>
           <p>
             NOALBS Cloud switches your OBS scenes based on your stream’s signal, and lets you and
             your team control it remotely. To do that we keep as little about you as we can. This
@@ -115,7 +115,10 @@
               IP address of the device that’s streaming), and OBS’s scenes, sources and whether
               you’re live or recording. While you stream we save this as stream history, with an
               activity log of scene switches and who made them. Preview images of your scene are
-              passed straight to the dashboard and not stored. With a BELABOX connected we also read
+              passed straight to the dashboard and not stored. While you aren’t streaming they go only
+              to the people the workspace’s owner (or the organization that manages it) chose (nobody
+              until they change it), and never to NOALBS support. Who is watching is kept in memory for a few seconds, to show on the
+              Live page. With a BELABOX connected we also read
               its status (network interfaces and their throughput, mobile network and signal,
               sensors, notifications) and pass it to the dashboard without storing it (IP addresses
               stay on our server); starting, stopping and changing it are logged in the activity
@@ -243,7 +246,7 @@
             page, every change each time). Changes also show in the activity log as “NOALBS
             support”. Staff see your stream servers’ stats URLs and settings (a wrong stats URL is the
             most common problem), but never their passwords or API keys, your raw stats, Moblin password
-            or browser-source link.
+            or browser-source link. They see the OBS preview only while you’re live.
             <em>Why: to help you when you ask, and to keep the service working and safe (6(1)(b) and
             6(1)(f)).</em>
           </p>

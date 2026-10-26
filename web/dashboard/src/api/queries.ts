@@ -68,6 +68,8 @@ export const queryKeys = {
     ["workspaces", workspaceId, "switchers", switcherId, "obs-sources"] as const,
   obsAudio: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "obs-audio"] as const,
+  previewWatchers: (workspaceId: string, switcherId: string) =>
+    ["workspaces", workspaceId, "switchers", switcherId, "preview-watchers"] as const,
   obsStats: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "obs-stats"] as const,
   belaboxDetails: (workspaceId: string, switcherId: string) =>
@@ -294,6 +296,19 @@ export const eventsQuery = (workspaceId: string, switcherId: string) =>
     initialPageParam: null as string | null,
     getNextPageParam: (page) =>
       page.length < EVENTS_PAGE ? null : (page[page.length - 1]?.created_at ?? null),
+  });
+
+/** Who is watching the OBS preview now: those who fetched a frame in the last few seconds. */
+export const previewWatchersQuery = (workspaceId: string, switcherId: string) =>
+  queryOptions({
+    queryKey: queryKeys.previewWatchers(workspaceId, switcherId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot/watchers", {
+          params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
+        }),
+      ),
+    refetchInterval: 5_000,
   });
 
 /** The scenes in the switcher's OBS; fails with `obs_offline` while OBS isn't connected. */

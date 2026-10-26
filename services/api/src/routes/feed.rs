@@ -17,6 +17,7 @@ use axum::{
         sse::{Event, KeepAlive, Sse},
     },
 };
+use db::workspaces::WorkspaceRoleEnum;
 use futures_util::{Stream, StreamExt, stream};
 use live::{BelaboxRefusal, EventDetail, MoblinRefusal, SwitcherEvent};
 use obs_actions::{ObsClient, SceneSource};
@@ -27,9 +28,9 @@ use uuid::Uuid;
 
 use crate::{
     app::ApiState,
-    permissions::{SwitcherAuthorized, SwitcherControl, SwitcherView},
+    permissions::{SwitcherAuthorized, SwitcherControl, SwitcherView, Via, user_display_name},
     routes::{ApiError, ApiResult, ErrorBody},
-    screenshots,
+    screenshots::{self, Announce, Viewer},
 };
 
 pub fn router() -> OpenApiRouter<ApiState> {
@@ -44,6 +45,7 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(set_input_volume))
         .routes(routes!(audio_feed))
         .routes(routes!(obs_screenshot))
+        .routes(routes!(preview_watchers))
         .routes(routes!(obs_stats))
         .routes(routes!(switch_scene))
         .routes(routes!(set_streaming))
@@ -843,10 +845,13 @@ pub struct ScreenshotQuery {
 /// A JPEG still of the scene on air, for the Live page's preview. Each one is
 /// sent by the streamer's OBS computer, so the dashboard asks at the rate the
 /// viewer picked; a frame from the last quarter second is shared between viewers.
+/// While the switcher isn't streaming, only those its `preview_off_air` setting
+/// names get one, and never NOALBS support.
 #[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot", tag = "live",
     params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ScreenshotQuery),
     responses(
         (status = OK, description = "The image", content_type = "image/jpeg", body = Vec<u8>),
+        (status = FORBIDDEN, description = "`preview_off_air`: not streaming, and the setting leaves this viewer out", body = ErrorBody),
         (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
         (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
     ))]
@@ -855,7 +860,50 @@ async fn obs_screenshot(
     authorized: SwitcherAuthorized<SwitcherView>,
     Query(query): Query<ScreenshotQuery>,
 ) -> ApiResult<Response> {
-    let switcher_id = authorized.into_access().switcher.id;
+    let access = authorized.into_access();
+    let switcher_id = access.switcher.id;
+    let status = state.status_of(switcher_id).await;
+    if !status.as_ref().is_some_and(|status| status.streaming) {
+        let viewer = match access.workspace.via {
+            Via::Support { .. } => Viewer::Support,
+            Via::Organization => Viewer::Owner,
+            Via::Member => match db::workspaces::member_role(
+                &state.db,
+                access.workspace.workspace_id,
+                access.workspace.user.id(),
+            )
+            .await?
+            {
+                Some(WorkspaceRoleEnum::Owner) => Viewer::Owner,
+                Some(WorkspaceRoleEnum::Admin) => Viewer::Admin,
+                _ => Viewer::Operator,
+            },
+        };
+        if !screenshots::allowed_off_air(access.switcher.preview_off_air, viewer) {
+            return Err(ApiError::forbidden(
+                "preview_off_air",
+                "The preview is only shown while the stream is live.",
+            ));
+        }
+    }
+    let user_id = access.workspace.user.id();
+    let name = match state.preview_watchers.due(switcher_id, user_id) {
+        Announce::Recently => None,
+        Announce::Again(name) => Some(name),
+        Announce::New => Some(match access.workspace.via {
+            Via::Member => user_display_name(&state, user_id).await?,
+            _ => access.workspace.display_name(&state).await?,
+        }),
+    };
+    if let Some(name) = name {
+        let watching = live::PreviewWatching {
+            switcher_id,
+            user_id,
+            name,
+        };
+        screenshots::announce(&state.nats, &state.preview_watchers, watching).await;
+    }
+
     let (width, quality) = screenshots::settings(query.width, query.quality);
     let key = (switcher_id, width, quality);
     let frame = match state.screenshots.fresh(key) {
@@ -863,9 +911,7 @@ async fn obs_screenshot(
         None => {
             let obs = connected_obs(&state, switcher_id).await?;
             // The scene on air, as obs-link last reported it.
-            let scene = state
-                .status_of(switcher_id)
-                .await
+            let scene = status
                 .and_then(|status| status.current_scene)
                 .ok_or_else(|| {
                     ApiError::new(
@@ -902,6 +948,38 @@ async fn obs_screenshot(
         frame,
     )
         .into_response())
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PreviewWatcherDto {
+    /// As the activity feed names them, without "(Web)" for members.
+    pub name: String,
+    /// The one asking.
+    pub you: bool,
+}
+
+/// Who is watching the OBS preview: everyone who fetched a frame in the last
+/// few seconds, by name.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot/watchers", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses((status = OK, body = Vec<PreviewWatcherDto>)))]
+async fn preview_watchers(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> Json<Vec<PreviewWatcherDto>> {
+    let access = authorized.into_access();
+    let you = access.workspace.user.id();
+    Json(
+        state
+            .preview_watchers
+            .of(access.switcher.id)
+            .into_iter()
+            .map(|(user_id, name)| PreviewWatcherDto {
+                name,
+                you: user_id == you,
+            })
+            .collect(),
+    )
 }
 
 /// Frames dropped (or skipped) for one cause, out of all.

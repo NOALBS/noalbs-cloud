@@ -2730,8 +2730,30 @@ export interface paths {
          * A JPEG still of the scene on air, for the Live page's preview. Each one is
          *     sent by the streamer's OBS computer, so the dashboard asks at the rate the
          *     viewer picked; a frame from the last quarter second is shared between viewers.
+         *     While the switcher isn't streaming, only those its `preview_off_air` setting
+         *     names get one, and never NOALBS support.
          */
         get: operations["obs_screenshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot/watchers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who is watching the OBS preview: everyone who fetched a frame in the last
+         *     few seconds, by name.
+         */
+        get: operations["preview_watchers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2805,6 +2827,28 @@ export interface paths {
         put?: never;
         /** Start (`active: true`) or stop the stream. */
         post: operations["set_streaming"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose who may watch the OBS preview while the switcher isn't streaming.
+         *     Only the owner, or the organization's team for a client workspace: the
+         *     preview can show what the streamer keeps to themselves. Allowed while the
+         *     workspace is suspended, so it can always be made stricter.
+         */
+        put: operations["set_preview"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4463,6 +4507,14 @@ export interface components {
             /** @enum {string} */
             kind: "auto_switch_changed";
         } | {
+            /** @description Who may watch the OBS preview while the switcher isn't streaming changed. */
+            data: {
+                by?: string | null;
+                off_air: components["schemas"]["PreviewOffAir"];
+            };
+            /** @enum {string} */
+            kind: "preview_off_air_changed";
+        } | {
             /** @description "Fix feed" / `!fix` made these media sources reconnect. */
             data: {
                 by?: string | null;
@@ -5578,6 +5630,19 @@ export interface components {
             /** Format: int64 */
             switchers: number;
         };
+        /**
+         * @description Who may watch the OBS preview while the switcher isn't streaming. While it
+         *     streams, everyone who can see the switcher may: it shows what viewers see.
+         *     NOALBS support never sees it off air.
+         * @enum {string}
+         */
+        PreviewOffAir: "nobody" | "owners" | "admins" | "everyone";
+        PreviewWatcherDto: {
+            /** @description As the activity feed names them, without "(Web)" for members. */
+            name: string;
+            /** @description The one asking. */
+            you: boolean;
+        };
         /** @description Which ways to sign in are available. */
         ProvidersDto: {
             /** @description Whether `POST /auth/dev-login` is enabled (local development only). */
@@ -5867,6 +5932,10 @@ export interface components {
         };
         SetPlan: {
             code: string;
+        };
+        SetPreview: {
+            /** @description Who may watch the OBS preview while the switcher isn't streaming. */
+            off_air: components["schemas"]["PreviewOffAir"];
         };
         SetPriceRequest: {
             /**
@@ -6248,6 +6317,8 @@ export interface components {
             moblin: components["schemas"]["MoblinDto"];
             name: string;
             obs: components["schemas"]["ObsDto"];
+            /** @description Who may watch the OBS preview while it isn't streaming. */
+            preview_off_air: components["schemas"]["PreviewOffAir"];
             scenes: components["schemas"]["ScenesDto"];
             triggers: components["schemas"]["TriggersDto"];
         };
@@ -12776,6 +12847,15 @@ export interface operations {
                     "image/jpeg": number[];
                 };
             };
+            /** @description `preview_off_air`: not streaming, and the setting leaves this viewer out */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
             /** @description `obs_error` */
             502: {
                 headers: {
@@ -12792,6 +12872,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    preview_watchers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewWatcherDto"][];
                 };
             };
         };
@@ -12944,6 +13046,41 @@ export interface operations {
             };
             /** @description `obs_offline` */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    set_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPreview"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitcherDto"];
+                };
+            };
+            /** @description `owner_only` */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

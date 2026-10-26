@@ -9296,7 +9296,7 @@
         "tags": [
           "live"
         ],
-        "summary": "A JPEG still of the scene on air, for the Live page's preview. Each one is\nsent by the streamer's OBS computer, so the dashboard asks at the rate the\nviewer picked; a frame from the last quarter second is shared between viewers.",
+        "summary": "A JPEG still of the scene on air, for the Live page's preview. Each one is\nsent by the streamer's OBS computer, so the dashboard asks at the rate the\nviewer picked; a frame from the last quarter second is shared between viewers.\nWhile the switcher isn't streaming, only those its `preview_off_air` setting\nnames get one, and never NOALBS support.",
         "operationId": "obs_screenshot",
         "parameters": [
           {
@@ -9362,6 +9362,16 @@
               }
             }
           },
+          "403": {
+            "description": "`preview_off_air`: not streaming, and the setting leaves this viewer out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "502": {
             "description": "`obs_error`",
             "content": {
@@ -9378,6 +9388,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot/watchers": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Who is watching the OBS preview: everyone who fetched a frame in the last\nfew seconds, by name.",
+        "operationId": "preview_watchers",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PreviewWatcherDto"
+                  }
                 }
               }
             }
@@ -9612,6 +9665,66 @@
           },
           "503": {
             "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/preview": {
+      "put": {
+        "tags": [
+          "switchers"
+        ],
+        "summary": "Choose who may watch the OBS preview while the switcher isn't streaming.\nOnly the owner, or the organization's team for a client workspace: the\npreview can show what the streamer keeps to themselves. Allowed while the\nworkspace is suspended, so it can always be made stricter.",
+        "operationId": "set_preview",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitcherDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`owner_only`",
             "content": {
               "application/json": {
                 "schema": {
@@ -15180,6 +15293,40 @@
           },
           {
             "type": "object",
+            "description": "Who may watch the OBS preview while the switcher isn't streaming changed.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "Who may watch the OBS preview while the switcher isn't streaming changed.",
+                "required": [
+                  "off_air"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "off_air": {
+                    "$ref": "#/components/schemas/PreviewOffAir"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "preview_off_air_changed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
             "description": "\"Fix feed\" / `!fix` made these media sources reconnect.",
             "required": [
               "data",
@@ -18240,6 +18387,33 @@
           }
         }
       },
+      "PreviewOffAir": {
+        "type": "string",
+        "description": "Who may watch the OBS preview while the switcher isn't streaming. While it\nstreams, everyone who can see the switcher may: it shows what viewers see.\nNOALBS support never sees it off air.",
+        "enum": [
+          "nobody",
+          "owners",
+          "admins",
+          "everyone"
+        ]
+      },
+      "PreviewWatcherDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "you"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "As the activity feed names them, without \"(Web)\" for members."
+          },
+          "you": {
+            "type": "boolean",
+            "description": "The one asking."
+          }
+        }
+      },
       "ProvidersDto": {
         "type": "object",
         "description": "Which ways to sign in are available.",
@@ -19016,6 +19190,18 @@
         "properties": {
           "code": {
             "type": "string"
+          }
+        }
+      },
+      "SetPreview": {
+        "type": "object",
+        "required": [
+          "off_air"
+        ],
+        "properties": {
+          "off_air": {
+            "$ref": "#/components/schemas/PreviewOffAir",
+            "description": "Who may watch the OBS preview while the switcher isn't streaming."
           }
         }
       },
@@ -20094,7 +20280,8 @@
           "obs",
           "chat",
           "belabox",
-          "moblin"
+          "moblin",
+          "preview_off_air"
         ],
         "properties": {
           "behaviour": {
@@ -20129,6 +20316,10 @@
           },
           "obs": {
             "$ref": "#/components/schemas/ObsDto"
+          },
+          "preview_off_air": {
+            "$ref": "#/components/schemas/PreviewOffAir",
+            "description": "Who may watch the OBS preview while it isn't streaming."
           },
           "scenes": {
             "$ref": "#/components/schemas/ScenesDto"

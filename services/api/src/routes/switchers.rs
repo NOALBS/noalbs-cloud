@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
 use axum::{Json, extract::State, http::StatusCode};
-use db::switchers::{Behaviour, Scenes, SecretChange, StreamLink, Switcher, Triggers};
+use db::switchers::{
+    Behaviour, PreviewOffAir, Scenes, SecretChange, StreamLink, Switcher, Triggers,
+};
+use live::EventDetail;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -21,6 +24,7 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(rotate_connect_token))
         .routes(routes!(set_triggers))
         .routes(routes!(set_behaviour))
+        .routes(routes!(set_preview))
         .routes(routes!(set_scenes))
         .routes(routes!(set_obs))
         .routes(routes!(set_belabox))
@@ -191,6 +195,8 @@ pub struct SwitcherDto {
     pub chat: ChatSettingsDto,
     pub belabox: BelaboxDto,
     pub moblin: MoblinDto,
+    /// Who may watch the OBS preview while it isn't streaming.
+    pub preview_off_air: PreviewOffAir,
 }
 
 /// BELABOX Cloud. Optional: without a remote key nothing BELABOX-related runs.
@@ -287,6 +293,7 @@ impl From<Switcher> for SwitcherDto {
                 start_with_stream: s.moblin_start_with_stream,
                 stop_with_stream: s.moblin_stop_with_stream,
             },
+            preview_off_air: s.preview_off_air,
         }
     }
 }
@@ -622,6 +629,53 @@ fn has_duplicate_scene_ids(ids: &[Uuid]) -> bool {
     unique.sort_unstable();
     unique.dedup();
     unique.len() != ids.len()
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct SetPreview {
+    /// Who may watch the OBS preview while the switcher isn't streaming.
+    pub off_air: PreviewOffAir,
+}
+
+/// Choose who may watch the OBS preview while the switcher isn't streaming.
+/// Only the owner, or the organization's team for a client workspace: the
+/// preview can show what the streamer keeps to themselves. Allowed while the
+/// workspace is suspended, so it can always be made stricter.
+#[utoipa::path(put, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/preview", tag = "switchers",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = SetPreview,
+    responses((status = OK, body = SwitcherDto), (status = FORBIDDEN, description = "`owner_only`", body = ErrorBody)))]
+async fn set_preview(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Json(request): Json<SetPreview>,
+) -> ApiResult<Json<SwitcherDto>> {
+    let access = authorized.into_access();
+    if !access.workspace.is_owner(&state).await? {
+        return Err(ApiError::forbidden(
+            "owner_only",
+            "Only the workspace's owner can choose who sees the preview",
+        ));
+    }
+    if access.switcher.preview_off_air == request.off_air {
+        return Ok(Json(access.switcher.into()));
+    }
+
+    let switcher =
+        db::switchers::set_preview_off_air(&state.db, access.switcher.id, request.off_air).await?;
+    let by = access.workspace.display_name(&state).await?;
+    live::record_event(
+        &state.db,
+        &state.nats,
+        switcher.id,
+        EventDetail::PreviewOffAirChanged {
+            off_air: request.off_air,
+            by: Some(by),
+        },
+    )
+    .await?;
+
+    Ok(Json(switcher.into()))
 }
 
 /// Replace which OBS scene is used for each role.

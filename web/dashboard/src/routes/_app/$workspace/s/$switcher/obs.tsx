@@ -4,7 +4,7 @@ import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
-import type { SwitcherSummary } from "@/api/types";
+import type { PreviewOffAir, SwitcherSummary } from "@/api/types";
 import { BelaboxSettings } from "@/components/belabox-settings";
 import { CopyField } from "@/components/copy-field";
 import { MoblinSettings } from "@/components/moblin-settings";
@@ -26,8 +26,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
+import { previewOffAirOptions } from "@/lib/obs-preview";
+import { isOwner } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/$workspace/s/$switcher/obs")({
   component: ObsPage,
@@ -39,7 +48,7 @@ function ObsPage() {
   return (
     <SwitcherPage
       title="Switcher settings"
-      description="The OBS connection, the browser-source link, BELABOX Cloud, Moblin and this switcher’s name."
+      description="The OBS connection, the browser-source link, BELABOX Cloud, Moblin, who sees the preview off air and this switcher’s name."
       backToSettings
       className="max-w-3xl"
     >
@@ -72,9 +81,71 @@ function ObsPage() {
           </Button>
         }
       />
+      <PreviewPrivacy />
       <SwitcherName />
       {canManage && <DeleteSwitcher />}
     </SwitcherPage>
+  );
+}
+
+/** Who sees the OBS preview off air. Only the owner (or the organization's team) chooses. */
+function PreviewPrivacy() {
+  const { workspace, switcher, actor, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const owner = isOwner(actor);
+  const options = previewOffAirOptions(workspace.managed_by?.name ?? null);
+  const current = options.find((option) => option.value === switcher.preview_off_air);
+
+  const save = useMutation({
+    mutationFn: (off_air: PreviewOffAir) =>
+      unwrap(
+        api.PUT("/workspaces/{workspace_id}/switchers/{switcher_id}/preview", {
+          params: { path },
+          body: { off_air },
+        }),
+      ),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
+      toast.success("Saved");
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  return (
+    <div id="preview" className="scroll-mt-20">
+      <Section
+        title="OBS preview off air"
+        description="While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
+      >
+        <div className="flex flex-col gap-2 px-5 pb-5">
+          <Label htmlFor="preview-off-air">Who sees it off air</Label>
+          <Select
+            value={switcher.preview_off_air}
+            onValueChange={(next) => save.mutate(next as PreviewOffAir)}
+            disabled={!owner || save.isPending}
+          >
+            <SelectTrigger id="preview-off-air" className="w-full max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">{current?.description}</p>
+          {!owner && (
+            <p className="text-sm text-muted-foreground">
+              {workspace.managed_by
+                ? `Only ${workspace.managed_by.name} can change this.`
+                : "Only the workspace’s owner can change this."}
+            </p>
+          )}
+        </div>
+      </Section>
+    </div>
   );
 }
 

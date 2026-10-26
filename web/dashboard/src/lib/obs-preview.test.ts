@@ -5,7 +5,9 @@ import {
   formatBytes,
   fpsLabel,
   parsePreview,
+  previewOffAirOptions,
   previewOn,
+  watchingLine,
 } from "./obs-preview";
 
 describe("OBS preview settings", () => {
@@ -34,5 +36,32 @@ describe("OBS preview settings", () => {
     expect(bandwidthKbps(40_960, 2)).toBe(655);
     expect(formatBytes(900)).toBe("900 B");
     expect(formatBytes(40_960)).toBe("40 KB");
+  });
+});
+
+describe("Preview privacy", () => {
+  it("names the organization for a client workspace", () => {
+    expect(previewOffAirOptions(null).map((option) => option.label)).toEqual([
+      "Nobody",
+      "Only the owner",
+      "The owner and admins",
+      "Everyone in the workspace",
+    ]);
+    expect(previewOffAirOptions("Acme IRL")[1]?.label).toBe("Only Acme IRL");
+    expect(previewOffAirOptions("Acme IRL")[2]?.label).toBe("Acme IRL and admins");
+  });
+
+  it("says who else is watching", () => {
+    const you = { name: "kim", you: true };
+    expect(watchingLine([])).toBeNull();
+    expect(watchingLine([you])).toBeNull();
+    expect(watchingLine([you, { name: "Sam", you: false }])).toBe("Sam is watching");
+    expect(
+      watchingLine([
+        { name: "Alex", you: false },
+        { name: "NOALBS support (Jo)", you: false },
+        { name: "Sam", you: false },
+      ]),
+    ).toBe("Alex, NOALBS support (Jo) and Sam are watching");
   });
 });

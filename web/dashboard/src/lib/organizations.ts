@@ -278,7 +278,8 @@ export const ACTIVITY_PRESETS = [
   {
     value: "controls",
     label: "Controls",
-    kinds: "auto_switch_changed,feed_fixed,marker_created,source_toggled,input_muted",
+    kinds:
+      "auto_switch_changed,preview_off_air_changed,feed_fixed,marker_created,source_toggled,input_muted",
   },
 ] as const;
 

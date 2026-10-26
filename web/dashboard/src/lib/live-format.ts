@@ -66,6 +66,16 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         title: event.data.enabled ? "Auto switch on" : "Auto switch off",
         detail: by(event.data.by, "from the dashboard"),
       };
+    case "preview_off_air_changed":
+      return {
+        title: {
+          nobody: "Preview shown only while live",
+          owners: "Preview shown to the owner off air",
+          admins: "Preview shown to the owner and admins off air",
+          everyone: "Preview shown to everyone off air",
+        }[event.data.off_air],
+        detail: by(event.data.by, "from the dashboard"),
+      };
     case "feed_fixed":
       return {
         title: "Fixed the feed",

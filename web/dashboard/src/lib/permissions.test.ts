@@ -5,7 +5,9 @@ import {
   canReadSecrets,
   canRemove,
   invitableRoles,
+  isOwner,
   isSupport,
+  seesPreviewOffAir,
   transferCandidates,
 } from "./permissions";
 
@@ -119,5 +121,29 @@ describe("organization team", () => {
     expect(invitableRoles(orgAdmin)).toEqual(["operator", "admin"]);
     expect(canRemove(orgMember, false, "admin")).toBe(true);
     expect(canRemove(orgMember, false, "owner")).toBe(false);
+  });
+});
+
+describe("OBS preview off air", () => {
+  const orgMember = { role: null, staff: false, organization: "member" } as const;
+  const support = { role: null, staff: true, support: "control" } as const;
+
+  it("is chosen by the owner or the organization's team, never admins or support", () => {
+    expect([owner, orgMember, admin, operator, support].map(isOwner)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it("shows to whom the setting says, and never to support", () => {
+    const sees = (offAir: "nobody" | "owners" | "admins" | "everyone") =>
+      [owner, orgMember, admin, operator, support].map((actor) => seesPreviewOffAir(actor, offAir));
+    expect(sees("nobody")).toEqual([false, false, false, false, false]);
+    expect(sees("owners")).toEqual([true, true, false, false, false]);
+    expect(sees("admins")).toEqual([true, true, true, false, false]);
+    expect(sees("everyone")).toEqual([true, true, true, true, false]);
   });
 });

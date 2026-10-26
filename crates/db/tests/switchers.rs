@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use db::{
     chat_commands::{self, ChatCommandRole},
     stream_servers::{self, Details, StreamServerKind},
-    switchers::{self, Behaviour, SecretChange, StreamLink, Triggers},
+    switchers::{self, Behaviour, PreviewOffAir, SecretChange, StreamLink, Triggers},
     users, workspaces,
 };
 use sqlx::PgPool;
@@ -154,6 +154,27 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!(updated.recording_scene_ids, scenes);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn the_preview_is_private_off_air_until_the_owner_shares_it(pool: PgPool) {
+    let workspace_id = workspace(&pool).await;
+    let switcher = switchers::create(&pool, workspace_id, "Main", b"a")
+        .await
+        .unwrap();
+    assert_eq!(switcher.preview_off_air, PreviewOffAir::Nobody);
+
+    for off_air in [
+        PreviewOffAir::Owners,
+        PreviewOffAir::Admins,
+        PreviewOffAir::Everyone,
+        PreviewOffAir::Nobody,
+    ] {
+        let set = switchers::set_preview_off_air(&pool, switcher.id, off_air)
+            .await
+            .unwrap();
+        assert_eq!(set.preview_off_air, off_air);
+    }
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

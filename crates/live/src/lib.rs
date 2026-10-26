@@ -19,6 +19,7 @@
 //! | [`Takeover`] | core subject [`moblin_takeover_subject`] | obs-link, when a Moblin identifies |
 //! | [`AudioUpdate`] | core subject [`audio_subject`] | obs-link: levels while demanded, mute/fader changes always |
 //! | levels wanted | core subject [`audio_demand_subject`] | API, every 5 s while a mixer is open |
+//! | [`PreviewWatching`] | core subject [`preview_watching_subject`] | API, every 3 s per viewer of the OBS preview; every API replica keeps the list |
 
 mod audio;
 mod belabox;
@@ -56,6 +57,23 @@ pub fn stats_subject(switcher_id: Uuid) -> String {
 
 pub fn event_subject(switcher_id: Uuid) -> String {
     format!("switcher.{switcher_id}.event")
+}
+
+pub fn preview_watching_subject(switcher_id: Uuid) -> String {
+    format!("switcher.{switcher_id}.preview.watching")
+}
+
+/// [`preview_watching_subject`] for every switcher, for API replicas to follow.
+pub const PREVIEW_WATCHING_SUBJECTS: &str = "switcher.*.preview.watching";
+
+/// Someone fetched a frame of the switcher's OBS preview, so the Live page can
+/// show who is watching whichever API replica serves it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PreviewWatching {
+    pub switcher_id: Uuid,
+    pub user_id: Uuid,
+    /// As the Live page shows them.
+    pub name: String,
 }
 
 pub fn config_subject(switcher_id: Uuid) -> String {
@@ -385,6 +403,11 @@ pub enum EventDetail {
     },
     AutoSwitchChanged {
         enabled: bool,
+        by: Option<String>,
+    },
+    /// Who may watch the OBS preview while the switcher isn't streaming changed.
+    PreviewOffAirChanged {
+        off_air: db::switchers::PreviewOffAir,
         by: Option<String>,
     },
     /// "Fix feed" / `!fix` made these media sources reconnect.

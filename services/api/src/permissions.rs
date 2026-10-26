@@ -476,6 +476,19 @@ impl WorkspaceAccess {
         Ok(access.allowed || access.organization_allowed)
     }
 
+    /// The workspace's owner, or the team of the organization that owns this
+    /// client workspace: who decides what the others see. Never NOALBS support.
+    pub async fn is_owner(&self, state: &ApiState) -> std::result::Result<bool, ApiError> {
+        Ok(match self.via {
+            Via::Organization => true,
+            Via::Support { .. } => false,
+            Via::Member => {
+                db::workspaces::member_role(&state.db, self.workspace_id, self.user.id()).await?
+                    == Some(WorkspaceRoleEnum::Owner)
+            }
+        })
+    }
+
     /// The actor's standing in this workspace.
     pub async fn actor(&self, state: &ApiState) -> std::result::Result<Actor, ApiError> {
         if self.user.is_staff() {

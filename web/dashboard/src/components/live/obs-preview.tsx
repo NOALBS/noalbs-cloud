@@ -1,6 +1,9 @@
-import { Settings2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Eye, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/api/client";
+import { previewWatchersQuery } from "@/api/queries";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,6 +24,7 @@ import {
   QUALITY_OPTIONS,
   usePreviewSettings,
   WIDTH_OPTIONS,
+  watchingLine,
 } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
 
@@ -93,7 +97,9 @@ function useObsFrames(
             setProblem(
               response.status === 503
                 ? "OBS isn’t connected."
-                : "OBS didn’t send a picture. Trying again…",
+                : response.status === 403
+                  ? OFF_AIR
+                  : "OBS didn’t send a picture. Trying again…",
             );
             wait = Math.max(wait, 3000);
           }
@@ -116,20 +122,46 @@ function useObsFrames(
   return { frame, problem };
 }
 
-/** A live still of the OBS output. Off by default on phones, to spare data. */
-export function ObsPreview({ path, obsConnected }: { path: Path; obsConnected: boolean }) {
+const OFF_AIR = "Off air, the preview is hidden. It shows again when the stream goes live.";
+
+/**
+ * A live still of the OBS output. Off by default on phones, to spare data.
+ * Off air it shows only to whom the switcher's setting says (`offAirAllowed`),
+ * since OBS can show what the streamer keeps to themselves; `privacyLink` is
+ * where the owner changes that. Everyone sees who else is watching.
+ */
+export function ObsPreview({
+  path,
+  obsConnected,
+  streaming,
+  offAirAllowed,
+  privacyLink,
+}: {
+  path: Path;
+  obsConnected: boolean;
+  streaming: boolean;
+  offAirAllowed: boolean;
+  /** Route params for the switcher settings, for those who may change who sees it. */
+  privacyLink?: { workspace: string; switcher: string };
+}) {
   const desktop = useMediaQuery(DESKTOP);
   const [settings, update] = usePreviewSettings();
   const [showSettings, setShowSettings] = useState(false);
   const on = previewOn(settings, desktop);
+  const hidden = !streaming && !offAirAllowed;
   const { frame, problem } = useObsFrames(
     path.workspace_id,
     path.switcher_id,
-    on && obsConnected,
+    on && obsConnected && !hidden,
     settings.fps,
     settings.width,
     settings.quality,
   );
+  const watchers = useQuery({
+    ...previewWatchersQuery(path.workspace_id, path.switcher_id),
+    enabled: obsConnected,
+  });
+  const watching = obsConnected && watchers.data ? watchingLine(watchers.data) : null;
 
   // Laid out like the other Live sections: heading above, content below, and
   // the controls under it on the right.
@@ -143,13 +175,29 @@ export function ObsPreview({ path, obsConnected }: { path: Path; obsConnected: b
       <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
         {on ? (
           <div className="relative flex aspect-video items-center justify-center bg-black">
-            {frame && obsConnected && (
+            {frame && obsConnected && !hidden && (
               <img src={frame.url} alt="What OBS is showing" className="size-full object-contain" />
             )}
-            {(!obsConnected || problem || !frame) && (
-              <p className="absolute rounded-lg bg-black/70 px-3 py-1.5 text-sm text-white">
-                {!obsConnected ? "OBS isn’t connected." : (problem ?? "Loading…")}
-              </p>
+            {obsConnected && hidden ? (
+              <div className="absolute flex max-w-[85%] flex-col items-center gap-1 rounded-lg bg-black/70 px-3 py-2 text-center text-sm text-white">
+                <p>{OFF_AIR}</p>
+                {privacyLink && (
+                  <Link
+                    to="/$workspace/s/$switcher/obs"
+                    params={privacyLink}
+                    hash="preview"
+                    className="text-xs underline underline-offset-2"
+                  >
+                    Choose who sees it off air
+                  </Link>
+                )}
+              </div>
+            ) : (
+              (!obsConnected || problem || !frame) && (
+                <p className="absolute rounded-lg bg-black/70 px-3 py-1.5 text-sm text-white">
+                  {!obsConnected ? "OBS isn’t connected." : (problem ?? "Loading…")}
+                </p>
+              )
             )}
           </div>
         ) : (
@@ -158,10 +206,18 @@ export function ObsPreview({ path, obsConnected }: { path: Path; obsConnected: b
           </p>
         )}
 
+        {watching && (
+          <p className="flex items-center gap-1.5 border-t border-divider px-4 py-2 text-xs text-muted-foreground">
+            <Eye className="size-3.5 shrink-0" aria-hidden />
+            {watching}
+          </p>
+        )}
+
         <div className="flex min-h-11 items-center justify-between gap-2 border-t border-divider py-1.5 pr-2.5 pl-4">
           <p className="text-xs text-muted-foreground">
             {on &&
               frame &&
+              !hidden &&
               `${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
           </p>
           <span className="flex items-center gap-2">

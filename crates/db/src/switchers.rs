@@ -75,8 +75,30 @@ pub struct Switcher {
     /// Stop Moblin's stream when the OBS stream stops.
     pub moblin_stop_with_stream: bool,
 
+    /// Who may watch the OBS preview while the switcher isn't streaming.
+    pub preview_off_air: PreviewOffAir,
+
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
+}
+
+/// Who may watch the OBS preview while the switcher isn't streaming. While it
+/// streams, everyone who can see the switcher may: it shows what viewers see.
+/// NOALBS support never sees it off air.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, sqlx::Type)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[sqlx(type_name = "text", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum PreviewOffAir {
+    #[default]
+    Nobody,
+    /// The workspace's owner, or the team of the organization that owns a
+    /// client workspace.
+    Owners,
+    /// The owners and the workspace's admins.
+    Admins,
+    /// Everyone who can see the switcher, operators too, but NOALBS support.
+    Everyone,
 }
 
 /// NOALBS's default chat aliases (`alias`, `command`), which every new switcher
@@ -632,6 +654,24 @@ pub async fn touch_last_seen(pool: &PgPool, switcher_id: Uuid) -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+/// Sets who may watch the OBS preview while the switcher isn't streaming.
+#[tracing::instrument(skip(pool))]
+pub async fn set_preview_off_air(
+    pool: &PgPool,
+    switcher_id: Uuid,
+    off_air: PreviewOffAir,
+) -> Result<Switcher> {
+    let switcher = sqlx::query_as::<_, Switcher>(
+        "UPDATE switchers SET preview_off_air = $2 WHERE id = $1 RETURNING *",
+    )
+    .bind(switcher_id)
+    .bind(off_air)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(switcher)
 }
 
 /// Turns automatic switching on or off.

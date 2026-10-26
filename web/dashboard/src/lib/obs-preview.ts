@@ -1,4 +1,53 @@
 import { useCallback, useState } from "react";
+import type { PreviewOffAir, PreviewWatcher } from "@/api/types";
+
+/**
+ * Who sees the preview while the switcher isn't streaming: a switcher setting
+ * only its owner chooses (the organization's team for a client workspace),
+ * since OBS can show what the streamer keeps to themselves. `managedBy` names
+ * that organization. While live, everyone with access sees it.
+ */
+export function previewOffAirOptions(
+  managedBy: string | null,
+): { value: PreviewOffAir; label: string; description: string }[] {
+  return [
+    {
+      value: "nobody",
+      label: "Nobody",
+      description: "The preview shows only while the stream is live.",
+    },
+    {
+      value: "owners",
+      label: managedBy ? `Only ${managedBy}` : "Only the owner",
+      description: managedBy
+        ? `${managedBy}’s team sees it off air too. Admins and operators see it only while live.`
+        : "The owner sees it off air too. Admins and operators see it only while live.",
+    },
+    {
+      value: "admins",
+      label: managedBy ? `${managedBy} and admins` : "The owner and admins",
+      description: managedBy
+        ? `${managedBy}’s team and the workspace’s admins see it off air too. Operators see it only while live.`
+        : "The owner and admins see it off air too. Operators see it only while live.",
+    },
+    {
+      value: "everyone",
+      label: "Everyone in the workspace",
+      description: "Admins and operators see it off air too.",
+    },
+  ];
+}
+
+/** "Sam and Alex are watching", leaving out the viewer (who knows); `null` when nobody else is. */
+export function watchingLine(watchers: PreviewWatcher[]): string | null {
+  const names = watchers.filter((watcher) => !watcher.you).map((watcher) => watcher.name);
+  if (names.length === 0) return null;
+  const list =
+    names.length === 1
+      ? names[0]
+      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return `${list} ${names.length === 1 ? "is" : "are"} watching`;
+}
 
 /**
  * The Live page's OBS preview: stills of the scene on air, fetched at the rate

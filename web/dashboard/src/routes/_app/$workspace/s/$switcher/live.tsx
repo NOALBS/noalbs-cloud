@@ -28,7 +28,7 @@ import { SwitcherPage } from "@/components/switcher-page";
 import { useNow } from "@/hooks/use-now";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { formatKbps, formatUptime } from "@/lib/live-format";
-import { can, isSupport } from "@/lib/permissions";
+import { can, isOwner, isSupport, seesPreviewOffAir } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { isStale, latest, type Point } from "@/live/reducer";
 import { useSwitcherLive } from "@/live/use-switcher-live";
@@ -294,7 +294,13 @@ function LivePage() {
         </section>
 
         <div className="flex flex-col gap-4 lg:col-span-5">
-          <ObsPreview path={path} obsConnected={Boolean(status?.obs_connected)} />
+          <ObsPreview
+            path={path}
+            obsConnected={Boolean(status?.obs_connected)}
+            streaming={Boolean(status?.streaming)}
+            offAirAllowed={seesPreviewOffAir(actor, switcher.preview_off_air)}
+            privacyLink={isOwner(actor) ? params : undefined}
+          />
           <SceneGrid
             path={path}
             scenes={switcher.scenes}

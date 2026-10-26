@@ -41,6 +41,8 @@ pub struct ApiState {
     pub chat_environment: String,
     /// Recent OBS stills, shared between people watching the same switcher.
     pub screenshots: std::sync::Arc<crate::screenshots::Cache>,
+    /// Who watches each switcher's preview right now.
+    pub preview_watchers: std::sync::Arc<crate::screenshots::Watchers>,
     /// A few seconds of memory for the session and permission lookups every request starts with.
     pub auth: std::sync::Arc<crate::auth_cache::AuthCache>,
     /// In-memory rate limits (`crate::rate_limit`).
@@ -248,6 +250,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         dashboard_url: dashboard_url(&config)?,
         chat_environment,
         screenshots: std::sync::Arc::default(),
+        preview_watchers: std::sync::Arc::default(),
         auth: std::sync::Arc::new(crate::auth_cache::AuthCache::new()),
         limits: std::sync::Arc::default(),
         client_ip_header: client_ip_header(&config)?,
@@ -260,6 +263,11 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
 
     billing::spawn_upkeep(state.clone(), shutdown_handle.clone());
     crate::rate_limit::spawn_upkeep(state.limits.clone(), shutdown_handle.clone());
+    crate::screenshots::spawn_follow(
+        state.nats.clone(),
+        state.preview_watchers.clone(),
+        shutdown_handle.clone(),
+    );
 
     let (router, openapi) = api_router().split_for_parts();
     let app = router
