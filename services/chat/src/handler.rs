@@ -184,11 +184,6 @@ async fn handle_link(
         chat.platform = platform,
         switcher.id = %switcher.id,
     );
-    tracing::info!(
-        parent: &span,
-        chatter = message.chatter.id,
-        "Chat command"
-    );
     run_command(
         state,
         message,
@@ -211,6 +206,7 @@ async fn run_command(
     command: &str,
     args: &[String],
 ) -> Result<()> {
+    tracing::info!(command, ?args, chatter = message.chatter.id, "Chat command");
     crate::metrics::command(message.platform, command);
     let platform = message.platform.label();
     let language = switcher.language.clone();
