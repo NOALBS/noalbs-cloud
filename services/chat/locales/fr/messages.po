@@ -1,0 +1,504 @@
+# French for the NOALBS Cloud chat bot.
+# Builds on the NOALBS translations by Thibaut SEVERAC and VictorJaunts.
+# Reworded and completed for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+
+msgid "scene: {scene}"
+msgstr "scène : {scene}"
+
+msgid "scene: unknown"
+msgstr "scène : inconnue"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "débit : {bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "débit : inconnu"
+
+msgid "not streaming"
+msgstr "pas en stream"
+
+msgid "fps: {fps}"
+msgstr "fps : {fps}"
+
+msgid "network: {dropped}"
+msgstr "réseau : {dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "décalage de rendu : {dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "décalage d'encodage : {dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "pertes dues à : {causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU : {percent} %"
+
+msgid "memory: {memory} MB"
+msgstr "mémoire : {memory} Mo"
+
+msgid "free disk space: {disk} GB"
+msgstr "espace disque libre : {disk} Go"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "Aucune scène LIVE choisie pour l'instant. Choisissez-en une sur la page Scenes."
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "Aucune scène Privacy choisie pour l'instant. Choisissez-en une sur la page Scenes."
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "Aucune scène Starting choisie pour l'instant. Choisissez-en une sur la page Scenes."
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "Aucune scène Ending choisie pour l'instant. Choisissez-en une sur la page Scenes."
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "Aucune scène Refresh choisie pour l'instant. Choisissez-en une sur la page Scenes."
+
+msgid "Switched to the LIVE scene"
+msgstr "Passage à la scène LIVE"
+
+msgid "Switched to the Privacy scene"
+msgstr "Passage à la scène Privacy"
+
+msgid "Switched to the Starting scene"
+msgstr "Passage à la scène Starting"
+
+msgid "Switched to the Ending scene"
+msgstr "Passage à la scène Ending"
+
+msgid "Switched to the Refresh scene"
+msgstr "Passage à la scène Refresh"
+
+msgid "Chat notifications on"
+msgstr "Notifications du chat activées"
+
+msgid "Chat notifications off"
+msgstr "Notifications du chat désactivées"
+
+msgid "Auto stop on raid on"
+msgstr "Arrêt automatique au raid activé"
+
+msgid "Auto stop on raid off"
+msgstr "Arrêt automatique au raid désactivé"
+
+msgid "Public commands on"
+msgstr "Commandes publiques activées"
+
+msgid "Public commands off"
+msgstr "Commandes publiques désactivées"
+
+msgid "Mod commands on"
+msgstr "Commandes modérateurs activées"
+
+msgid "Mod commands off"
+msgstr "Commandes modérateurs désactivées"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "Le palier LOW est à {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "Le palier LOW est désactivé"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "Le palier hors ligne est à {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "Le palier hors ligne est désactivé"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "Le palier RTT est à {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "Le palier RTT est désactivé"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "Le palier RTT hors ligne est à {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "Le palier RTT hors ligne est désactivé"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "Palier LOW réglé à {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "Palier LOW désactivé"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "Palier hors ligne réglé à {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "Palier hors ligne désactivé"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "Palier RTT réglé à {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "Palier RTT désactivé"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "Palier RTT hors ligne réglé à {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "Palier RTT hors ligne désactivé"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "Les paliers de débit doivent être compris entre 1 et 100 000 kbps"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "Les paliers RTT doivent être compris entre 1 et 60 000 ms"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "Le débit hors ligne doit être inférieur au débit LOW"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "Le RTT hors ligne doit être supérieur au RTT LOW"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "Utilisation : {prefix}switch <nom de la scène>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "Utilisation : {prefix}source <nom de la source>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "Utilisation : {prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "Utilisation : {prefix}bbt <interface, p. ex. usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "Utilisation : {prefix}mbitrate <kbps d'un préréglage>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "Utilisation : {prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "Utilisation : {prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "Utilisation : {prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "Utilisation : {prefix}alias <alias> <commande> | {prefix}alias rem <alias>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "Utilisation : {prefix}noalbs version | prefix <nouveau> | lang <code>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "Connexion à BELABOX Cloud en cours. Réessayez dans un instant."
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud a refusé l'URL secrète. Vérifiez-la dans les réglages du switcher."
+
+msgid "The BELABOX is offline."
+msgstr "Le BELABOX est hors ligne."
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "Le BELABOX n'a pas encore de réglages de stream. Lancez-le une fois depuis sa propre page."
+
+msgid "The BELABOX is already streaming."
+msgstr "Le BELABOX est déjà en stream."
+
+msgid "The BELABOX isn't streaming."
+msgstr "Le BELABOX n'est pas en stream."
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "Le débit doit être compris entre 300 et 12000 kbps."
+
+msgid "The BELABOX has no such network interface."
+msgstr "Le BELABOX n'a pas cette interface réseau."
+
+msgid "The last network interface can't be turned off."
+msgstr "La dernière interface réseau ne peut pas être désactivée."
+
+msgid "The BELABOX can't do that."
+msgstr "Le BELABOX ne peut pas faire ça."
+
+msgid "{name}: off"
+msgstr "{name} : désactivée"
+
+msgid "no network interfaces"
+msgstr "aucune interface réseau"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "en stream, max {bitrate} kbps"
+
+msgid "streaming"
+msgstr "en stream"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX ({state}) : {interfaces} | Total : {total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS n'est pas connecté pour le moment."
+
+msgid "OBS said no: {reason}"
+msgstr "OBS a refusé : {reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS a refusé : code {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS n'a pas répondu. Réessayez dans un instant."
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "Une erreur s'est produite. Réessayez dans un instant."
+
+msgid "No scene matches \"{query}\"."
+msgstr "Aucune scène ne correspond à \"{query}\"."
+
+msgid "Switched to {scene}"
+msgstr "Passage à {scene}"
+
+msgid "Starting the stream"
+msgstr "Démarrage du stream"
+
+msgid "Stopping the stream"
+msgstr "Arrêt du stream"
+
+msgid "Already streaming"
+msgstr "Déjà en stream"
+
+msgid "Not streaming"
+msgstr "Pas en stream"
+
+msgid "Recording started"
+msgstr "Enregistrement démarré"
+
+msgid "Recording stopped"
+msgstr "Enregistrement arrêté"
+
+msgid "Refreshing the feed"
+msgstr "Rafraîchissement du flux"
+
+msgid "Already refreshing"
+msgstr "Rafraîchissement déjà en cours"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "Réparation du flux : reconnexion de {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "Rien à réparer : aucune source de stream n'est lue sur {scene}"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "Aucune scène Refresh choisie, réparation à la place. {result}"
+
+msgid "{name} is now shown"
+msgstr "{name} est maintenant visible"
+
+msgid "{name} is now hidden"
+msgstr "{name} est maintenant masquée"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "Aucune source de cette scène ne correspond à \"{query}\"."
+
+msgid "Marker added at {time}"
+msgstr "Marqueur ajouté à {time}"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "Cette version d'OBS est trop ancienne pour ça. Mettez OBS à jour."
+
+msgid "{reading} (low)"
+msgstr "{reading} (faible)"
+
+msgid "offline"
+msgstr "hors ligne"
+
+msgid "Current bitrate: {reading}"
+msgstr "Débit actuel : {reading}"
+
+msgid "No stream stats right now."
+msgstr "Aucune statistique de stream pour le moment."
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "Le préfixe doit faire de 1 à 3 caractères, sans espaces"
+
+msgid "Languages: {languages}"
+msgstr "Langues : {languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} lance maintenant {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "Alias {alias} supprimé"
+
+msgid "{alias} is already taken"
+msgstr "{alias} est déjà pris"
+
+msgid "There's no alias {alias}"
+msgstr "L'alias {alias} n'existe pas"
+
+msgid "There's no command {command}"
+msgstr "La commande {command} n'existe pas"
+
+msgid "Commands now start with {prefix}"
+msgstr "Les commandes commencent maintenant par {prefix}"
+
+msgid "Language set to {language}"
+msgstr "Langue réglée sur {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "{command} n'est pas encore disponible dans NOALBS Cloud."
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "Passage à {scene} · {server} à {reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "Passage à {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "Le stream s'est arrêté et a raid {to}, merci de suivre ce lien : {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "Temps d'attente hors ligne atteint, arrêt du stream"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "Temps d'attente de la scène Ending atteint, arrêt du stream"
+
+msgid "Ignoring {name} from now on"
+msgstr "{name} est ignoré à partir de maintenant"
+
+msgid "No longer ignoring {name}"
+msgstr "{name} n'est plus ignoré"
+
+msgid "{name} isn't ignored"
+msgstr "{name} n'est pas ignoré"
+
+msgid "There's no user called {name}"
+msgstr "Aucun utilisateur nommé {name}"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX n'est pas connecté pour le moment : OBS est-il ouvert avec la source navigateur ?"
+
+msgid "Starting the BELABOX stream"
+msgstr "Démarrage du stream BELABOX"
+
+msgid "Stopping the BELABOX stream"
+msgstr "Arrêt du stream BELABOX"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "Débit max BELABOX : {bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX n'a pas encore indiqué son débit max."
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "Débit max BELABOX réglé à {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "Activation de {name}"
+
+msgid "Turning {name} off"
+msgstr "Désactivation de {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX n'a aucune interface réseau comme {query}"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX n'a encore envoyé aucune mesure de capteur."
+
+msgid "Starting the Moblin stream"
+msgstr "Démarrage du stream Moblin"
+
+msgid "Stopping the Moblin stream"
+msgstr "Arrêt du stream Moblin"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Débit Moblin : {bitrate} kbps · préréglages : {presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Préréglages de débit Moblin : {presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Débit Moblin réglé à {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin n'a aucun préréglage à {bitrate} kbps. Préréglages : {presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Scène Moblin : {scene} · scènes : {scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Scènes Moblin : {scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Passage de Moblin à {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin n'a aucune scène comme {query}"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "Ce switcher est en pause : l'espace de travail a plus de switchers que son offre n'en inclut."
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin n'est pas connecté pour le moment."
+
+msgid "none"
+msgstr "aucun"
+
+msgid "Moblin is already live."
+msgstr "Moblin est déjà en direct."
+
+msgid "Moblin isn't live."
+msgstr "Moblin n'est pas en direct."
+
+msgid "Moblin has no such scene."
+msgstr "Moblin n'a pas cette scène."
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin n'a pas ce préréglage de débit."
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin n'a pas ce préréglage de zoom."
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "Le zoom doit être compris entre 0,5x et 100x."
+
+msgid "Moblin has no such connection."
+msgstr "Moblin n'a pas cette connexion."
+
+msgid "The last connection in use can't be turned off."
+msgstr "La dernière connexion utilisée ne peut pas être désactivée."
+
+msgid "The priority must be between 1 and 10."
+msgstr "La priorité doit être comprise entre 1 et 10."
+
+msgid "Moblin refused."
+msgstr "Moblin a refusé."
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin n'a pas répondu. Réessayez dans un instant."
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin (en direct, {uptime})"
+
+msgid "Moblin (live)"
+msgstr "Moblin (en direct)"
+
+msgid "Moblin (not live)"
+msgstr "Moblin (pas en direct)"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding : {bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "Batterie {level} %, en charge"
+
+msgid "Battery {level}%"
+msgstr "Batterie {level} %"
+
+msgid "Getting hot"
+msgstr "Chauffe"
+
+msgid "Too hot!"
+msgstr "Trop chaud !"
+
+msgid "Muted"
+msgstr "Muet"

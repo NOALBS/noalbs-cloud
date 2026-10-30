@@ -17,7 +17,7 @@ use uuid::Uuid;
 use super::{fuzzy, normalize_alias, on_off};
 use crate::{
     app::State,
-    messages::{Msg, ServerReading},
+    messages::{Msg, SceneKind, ServerReading, TriggerKind, Usage},
 };
 
 /// A stats sample older than this doesn't count as "now".
@@ -60,10 +60,10 @@ pub async fn run(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Option<Msg> {
         "bitrate" | "sourceinfo" => bitrate(ctx).await,
         "serverinfo" => server_info(ctx).await,
         "switch" => switch(ctx, args).await,
-        "live" => switch_to(ctx, ctx.switcher.scene_live, "LIVE").await,
-        "privacy" => switch_to(ctx, ctx.switcher.scene_privacy, "Privacy").await,
-        "starting" => switch_to(ctx, ctx.switcher.scene_starting, "Starting").await,
-        "ending" => switch_to(ctx, ctx.switcher.scene_ending, "Ending").await,
+        "live" => switch_to(ctx, ctx.switcher.scene_live, SceneKind::Live).await,
+        "privacy" => switch_to(ctx, ctx.switcher.scene_privacy, SceneKind::Privacy).await,
+        "starting" => switch_to(ctx, ctx.switcher.scene_starting, SceneKind::Starting).await,
+        "ending" => switch_to(ctx, ctx.switcher.scene_ending, SceneKind::Ending).await,
         "refresh" => refresh(ctx).await,
         "fix" => fix(ctx).await,
         "source" => source(ctx, args).await,
@@ -98,11 +98,9 @@ fn failure(error: control::Error) -> Msg {
         // `marker` cuts the description to fit.
         control::Error::InvalidMarker => Msg::Failed,
         control::Error::ObsOffline => Msg::ObsOffline,
-        control::Error::ObsRefused { code, comment } => {
-            Msg::ObsRefused(comment.unwrap_or_else(|| format!("code {code}")))
-        }
+        control::Error::ObsRefused { code, comment } => Msg::ObsRefused { code, comment },
         control::Error::ObsUnreachable(_) => Msg::ObsTimeout,
-        control::Error::NoRefreshScene => Msg::NoScene("Refresh"),
+        control::Error::NoRefreshScene => Msg::NoScene(SceneKind::Refresh),
         control::Error::AlreadyRefreshing => Msg::AlreadyRefreshing,
         control::Error::NoSceneIds => Msg::NoSceneIds,
         control::Error::SourceNotFound
@@ -120,6 +118,13 @@ fn failure(error: control::Error) -> Msg {
             tracing::warn!(%error, "A chat command failed");
             Msg::Failed
         }
+    }
+}
+
+fn usage(ctx: &Ctx<'_>, usage: Usage) -> Msg {
+    Msg::Usage {
+        prefix: ctx.switcher.command_prefix.clone(),
+        usage,
     }
 }
 
@@ -191,10 +196,7 @@ async fn server_info(ctx: &Ctx<'_>) -> Reply {
 async fn switch(ctx: &Ctx<'_>, args: &[String]) -> Reply {
     let query = args.join(" ");
     if query.is_empty() {
-        return Ok(Msg::Usage(format!(
-            "{}switch <scene name>",
-            ctx.switcher.command_prefix
-        )));
+        return Ok(usage(ctx, Usage::Switch));
     }
     let obs = ctx.state.control.connected_obs(ctx.switcher.id).await?;
     let list = obs.scene_list().await?;
@@ -215,7 +217,7 @@ async fn switch(ctx: &Ctx<'_>, args: &[String]) -> Reply {
     Ok(Msg::SwitchedTo(scene.scene_name.clone()))
 }
 
-async fn switch_to(ctx: &Ctx<'_>, scene: Option<Uuid>, kind: &'static str) -> Reply {
+async fn switch_to(ctx: &Ctx<'_>, scene: Option<Uuid>, kind: SceneKind) -> Reply {
     let Some(uuid) = scene else {
         return Ok(Msg::NoScene(kind));
     };
@@ -223,7 +225,7 @@ async fn switch_to(ctx: &Ctx<'_>, scene: Option<Uuid>, kind: &'static str) -> Re
         .control
         .switch_scene(ctx.switcher.id, uuid, &ctx.by)
         .await?;
-    Ok(Msg::SwitchedTo(format!("the {kind} scene")))
+    Ok(Msg::SwitchedToKind(kind))
 }
 
 /// Without a Refresh scene it fixes instead, like NOALBS.
@@ -249,10 +251,7 @@ async fn fix(ctx: &Ctx<'_>) -> Reply {
 async fn source(ctx: &Ctx<'_>, args: &[String]) -> Reply {
     let query = args.join(" ");
     if query.is_empty() {
-        return Ok(Msg::Usage(format!(
-            "{}source <source name>",
-            ctx.switcher.command_prefix
-        )));
+        return Ok(usage(ctx, Usage::Source));
     }
     let (_, items) = ctx.state.control.sources(ctx.switcher.id).await?;
     let names: Vec<String> = items.iter().map(|item| item.name.clone()).collect();
@@ -334,12 +333,7 @@ async fn belabox_bitrate(ctx: &Ctx<'_>, args: &[String]) -> Reply {
         return Ok(Msg::BelaboxBitrate(online_belabox(ctx).await?.max_br));
     };
     let Ok(max_br) = arg.trim_end_matches("kbps").parse::<u32>() else {
-        return Ok(Msg::Usage(format!(
-            "{}bbb <{}-{} kbps>",
-            ctx.switcher.command_prefix,
-            live::BELABOX_MIN_BITRATE,
-            live::BELABOX_MAX_BITRATE
-        )));
+        return Ok(usage(ctx, Usage::BelaboxBitrate));
     };
     // On BELABOX's 250 kbps grid, like belabot.
     let max_br = max_br.saturating_add(125) / 250 * 250;
@@ -355,10 +349,7 @@ async fn belabox_bitrate(ctx: &Ctx<'_>, args: &[String]) -> Reply {
 async fn belabox_interface(ctx: &Ctx<'_>, args: &[String]) -> Reply {
     let query = args.join(" ");
     if query.is_empty() {
-        return Ok(Msg::Usage(format!(
-            "{}bbt <interface, e.g. usb0>",
-            ctx.switcher.command_prefix
-        )));
+        return Ok(usage(ctx, Usage::BelaboxInterface));
     }
     let status = online_belabox(ctx).await?;
     let labels = ctx.switcher.interface_labels();
@@ -454,10 +445,7 @@ async fn moblin_bitrate(ctx: &Ctx<'_>, args: &[String]) -> Reply {
         });
     };
     let Ok(wanted) = arg.trim_end_matches("kbps").replace(',', "").parse::<u32>() else {
-        return Ok(Msg::Usage(format!(
-            "{}mbitrate <kbps of a preset>",
-            ctx.switcher.command_prefix
-        )));
+        return Ok(usage(ctx, Usage::MoblinBitrate));
     };
     let Some(preset) = status.bitrate_presets.iter().find(|p| p.kbps == wanted) else {
         return Ok(Msg::NoMoblinPreset {
@@ -557,30 +545,17 @@ async fn record(ctx: &Ctx<'_>) -> Reply {
 }
 
 async fn flag(ctx: &Ctx<'_>, args: &[String], flag: ChatFlag) -> Reply {
-    let (label, current) = match flag {
-        ChatFlag::AutoSwitchNotification => {
-            ("Chat notifications", ctx.switcher.auto_switch_notification)
-        }
-        ChatFlag::AutoStopOnRaid => ("Auto stop on raid", ctx.switcher.auto_stop_on_raid),
-        ChatFlag::PublicCommands => ("Public commands", ctx.switcher.public_commands_enabled),
-        ChatFlag::ModCommands => ("Mod commands", ctx.switcher.mod_commands_enabled),
+    let (command, current) = match flag {
+        ChatFlag::AutoSwitchNotification => ("notify", ctx.switcher.auto_switch_notification),
+        ChatFlag::AutoStopOnRaid => ("autostop", ctx.switcher.auto_stop_on_raid),
+        ChatFlag::PublicCommands => ("public", ctx.switcher.public_commands_enabled),
+        ChatFlag::ModCommands => ("mod", ctx.switcher.mod_commands_enabled),
     };
     let value = match args.first() {
         None => !current,
         Some(arg) => match on_off(arg) {
             Some(value) => value,
-            None => {
-                return Ok(Msg::Usage(format!(
-                    "{}{} [on|off]",
-                    ctx.switcher.command_prefix,
-                    match flag {
-                        ChatFlag::AutoSwitchNotification => "notify",
-                        ChatFlag::AutoStopOnRaid => "autostop",
-                        ChatFlag::PublicCommands => "public",
-                        ChatFlag::ModCommands => "mod",
-                    }
-                )));
-            }
+            None => return Ok(usage(ctx, Usage::OnOff(command))),
         },
     };
     db::switchers::set_chat_flag(&ctx.state.db, ctx.switcher.id, flag, value).await?;
@@ -588,7 +563,7 @@ async fn flag(ctx: &Ctx<'_>, args: &[String], flag: ChatFlag) -> Reply {
         // Raids out are only subscribed to where something stops on them.
         ctx.state.request_reconcile().await;
     }
-    Ok(Msg::Toggled(label, value))
+    Ok(Msg::Toggled(flag, value))
 }
 
 async fn trigger(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Reply {
@@ -599,16 +574,15 @@ async fn trigger(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Reply {
         rtt: switcher.trigger_rtt,
         rtt_offline: switcher.trigger_rtt_offline,
     };
-    let (what, unit, slot) = match command {
-        "trigger" => ("The LOW trigger", "kbps", &mut triggers.low),
-        "otrigger" => ("The offline trigger", "kbps", &mut triggers.offline),
-        "rtrigger" => ("The RTT trigger", "ms", &mut triggers.rtt),
-        _ => ("The offline RTT trigger", "ms", &mut triggers.rtt_offline),
+    let (kind, slot) = match command {
+        "trigger" => (TriggerKind::Low, &mut triggers.low),
+        "otrigger" => (TriggerKind::Offline, &mut triggers.offline),
+        "rtrigger" => (TriggerKind::Rtt, &mut triggers.rtt),
+        _ => (TriggerKind::RttOffline, &mut triggers.rtt_offline),
     };
     let Some(arg) = args.first() else {
         return Ok(Msg::Trigger {
-            what,
-            unit,
+            trigger: kind,
             value: *slot,
         });
     };
@@ -618,20 +592,27 @@ async fn trigger(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Reply {
         match arg.replace([',', '.'], "").parse::<i32>() {
             Ok(value) => Some(value),
             Err(_) => {
-                return Ok(Msg::Usage(format!(
-                    "{}{command} <{unit}|off>",
-                    switcher.command_prefix
-                )));
+                let command = command.to_owned();
+                return Ok(usage(
+                    ctx,
+                    match kind {
+                        TriggerKind::Low | TriggerKind::Offline => Usage::BitrateTrigger(command),
+                        TriggerKind::Rtt | TriggerKind::RttOffline => Usage::RttTrigger(command),
+                    },
+                ));
             }
         }
     };
     *slot = value;
-    if let Err(reason) = control::check_triggers(&triggers) {
-        return Ok(Msg::Invalid(reason.to_owned()));
+    if let Err(error) = control::check_triggers(&triggers) {
+        return Ok(Msg::InvalidTriggers(error));
     }
     db::switchers::set_triggers(&ctx.state.db, switcher.id, triggers).await?;
     notify_config(ctx.state, switcher.id).await;
-    Ok(Msg::TriggerSet { what, unit, value })
+    Ok(Msg::TriggerSet {
+        trigger: kind,
+        value,
+    })
 }
 
 /// Tells obs-link that the switcher's settings changed.
@@ -647,11 +628,6 @@ async fn notify_config(state: &State, switcher_id: Uuid) {
 
 async fn alias(ctx: &Ctx<'_>, args: &[String]) -> Reply {
     let prefix = &ctx.switcher.command_prefix;
-    let usage = || {
-        Msg::Usage(format!(
-            "{prefix}alias <alias> <command> | {prefix}alias rem <alias>"
-        ))
-    };
     let pool = &ctx.state.db;
     match args {
         [action, alias] if matches!(action.as_str(), "rem" | "remove" | "del" | "delete") => {
@@ -668,7 +644,7 @@ async fn alias(ctx: &Ctx<'_>, args: &[String]) -> Reply {
         }
         [alias, command] => {
             let Some(alias) = normalize_alias(alias) else {
-                return Ok(usage());
+                return Ok(usage(ctx, Usage::Alias));
             };
             let command = command
                 .trim()
@@ -690,17 +666,11 @@ async fn alias(ctx: &Ctx<'_>, args: &[String]) -> Reply {
                 Err(error) => Err(error.into()),
             }
         }
-        _ => Ok(usage()),
+        _ => Ok(usage(ctx, Usage::Alias)),
     }
 }
 
 async fn noalbs(ctx: &Ctx<'_>, args: &[String]) -> Reply {
-    let prefix = &ctx.switcher.command_prefix;
-    let usage = || {
-        Msg::Usage(format!(
-            "{prefix}noalbs version | prefix <new> | lang <code>"
-        ))
-    };
     let mut settings = db::switchers::ChatSettings {
         command_prefix: ctx.switcher.command_prefix.clone(),
         language: ctx.switcher.language.clone(),
@@ -712,9 +682,7 @@ async fn noalbs(ctx: &Ctx<'_>, args: &[String]) -> Reply {
         [action] if action == "version" => Ok(Msg::Version),
         [action, new] if action == "prefix" => {
             if new.chars().count() > 3 {
-                return Ok(Msg::Invalid(
-                    "The prefix must be 1 to 3 characters without spaces".into(),
-                ));
+                return Ok(Msg::PrefixTooLong);
             }
             settings.command_prefix = new.clone();
             db::switchers::set_chat_settings(&ctx.state.db, ctx.switcher.id, &settings).await?;
@@ -723,10 +691,7 @@ async fn noalbs(ctx: &Ctx<'_>, args: &[String]) -> Reply {
         [action, code] if action == "lang" => {
             let code = code.to_lowercase();
             if !db::chat_commands::LANGUAGES.contains(&code.as_str()) {
-                return Ok(Msg::Invalid(format!(
-                    "Languages: {}",
-                    db::chat_commands::LANGUAGES.join(", ")
-                )));
+                return Ok(Msg::UnknownLanguage);
             }
             settings.language = code.clone();
             db::switchers::set_chat_settings(&ctx.state.db, ctx.switcher.id, &settings).await?;
@@ -750,7 +715,7 @@ async fn noalbs(ctx: &Ctx<'_>, args: &[String]) -> Reply {
                 },
             )
         }
-        _ => Ok(usage()),
+        _ => Ok(usage(ctx, Usage::Noalbs)),
     }
 }
 

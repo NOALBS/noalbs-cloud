@@ -5,6 +5,7 @@ mod config;
 mod error;
 mod events;
 mod handler;
+mod i18n;
 mod inbound;
 mod kick;
 mod kv;

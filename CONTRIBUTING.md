@@ -32,6 +32,23 @@ A few rules that are easy to miss:
 - Stats URLs, stream keys and IPs are secrets: keep them out of `info` logs, span fields and plain view in
   the dashboard (streamers show it on stream).
 - Ported code from another project keeps its notice; see [`docs/licenses.md`](docs/licenses.md).
+- What the chat bot says is in `services/chat/src/messages.rs`, written with `tr!`. After changing it,
+  update the catalogs: `UPDATE_CATALOGS=1 cargo test -p chat catalogs`. See [Translations](#translations).
+
+## Translations
+
+The chat bot's translations are in `services/chat/locales/<language>/messages.po`, the same format as
+the dashboard's. Any `.po` editor works. Keep `{placeholders}` as they are (a test checks), along with
+what people type, like `on|off` and `rem`. An empty `msgstr` falls back to English, so a new message
+doesn't have to be translated in the same pull request. Add your name to the top of the file.
+
+Most of what's there was finished with AI help and hasn't been checked by a native speaker yet, so
+fixes are very welcome.
+
+To add a language: add its code to `LANGUAGES` in `crates/db/src/chat_commands.rs`, its catalog to
+`CATALOGS` in `services/chat/src/i18n.rs` (with the header of an existing `.po`) and its name to
+`LANGUAGE_NAMES` in the dashboard's `chat.tsx`, then update the catalogs as above. `number_format`
+in `messages.rs` says how the language writes numbers.
 
 ## AI-assisted contributions
 

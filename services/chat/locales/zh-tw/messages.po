@@ -1,0 +1,504 @@
+# Traditional Chinese for the NOALBS Cloud chat bot.
+# Builds on the NOALBS translations by Ladelltwitch, Onijima and ИEØ_ΙΙØZ.
+# Reworded and completed for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh-tw\n"
+
+msgid "scene: {scene}"
+msgstr "場景：{scene}"
+
+msgid "scene: unknown"
+msgstr "場景：未知"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "位元率：{bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "位元率：未知"
+
+msgid "not streaming"
+msgstr "未在實況"
+
+msgid "fps: {fps}"
+msgstr "FPS：{fps}"
+
+msgid "network: {dropped}"
+msgstr "網路：{dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "算繪延遲：{dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "編碼延遲：{dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "遺失影格原因：{causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU：{percent}%"
+
+msgid "memory: {memory} MB"
+msgstr "記憶體：{memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "硬碟可用空間：{disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未選擇 LIVE 場景。請到 Scenes 頁面選擇。"
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未選擇 Privacy 場景。請到 Scenes 頁面選擇。"
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未選擇 Starting 場景。請到 Scenes 頁面選擇。"
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未選擇 Ending 場景。請到 Scenes 頁面選擇。"
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未選擇 Refresh 場景。請到 Scenes 頁面選擇。"
+
+msgid "Switched to the LIVE scene"
+msgstr "已切換至 LIVE 場景"
+
+msgid "Switched to the Privacy scene"
+msgstr "已切換至 Privacy 場景"
+
+msgid "Switched to the Starting scene"
+msgstr "已切換至 Starting 場景"
+
+msgid "Switched to the Ending scene"
+msgstr "已切換至 Ending 場景"
+
+msgid "Switched to the Refresh scene"
+msgstr "已切換至 Refresh 場景"
+
+msgid "Chat notifications on"
+msgstr "聊天室通知已開啟"
+
+msgid "Chat notifications off"
+msgstr "聊天室通知已關閉"
+
+msgid "Auto stop on raid on"
+msgstr "揪團時自動停止已開啟"
+
+msgid "Auto stop on raid off"
+msgstr "揪團時自動停止已關閉"
+
+msgid "Public commands on"
+msgstr "公開指令已開啟"
+
+msgid "Public commands off"
+msgstr "公開指令已關閉"
+
+msgid "Mod commands on"
+msgstr "管理員指令已開啟"
+
+msgid "Mod commands off"
+msgstr "管理員指令已關閉"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOW 觸發值為 {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "LOW 觸發已關閉"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "離線觸發值為 {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "離線觸發已關閉"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTT 觸發值為 {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "RTT 觸發已關閉"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "離線 RTT 觸發值為 {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "離線 RTT 觸發已關閉"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOW 觸發值已設為 {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "LOW 觸發已停用"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "離線觸發值已設為 {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "離線觸發已停用"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTT 觸發值已設為 {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "RTT 觸發已停用"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "離線 RTT 觸發值已設為 {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "離線 RTT 觸發已停用"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "位元率觸發值必須介於 1 到 100,000 kbps 之間"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTT 觸發值必須介於 1 到 60,000 ms 之間"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "離線位元率必須低於 LOW 位元率"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "離線 RTT 必須高於 LOW RTT"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "用法：{prefix}switch <場景名稱>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "用法：{prefix}source <來源名稱>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "用法：{prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "用法：{prefix}bbt <網路介面，例如 usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "用法：{prefix}mbitrate <預設組合的 kbps>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "用法：{prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "用法：{prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "用法：{prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "用法：{prefix}alias <別名> <指令> | {prefix}alias rem <別名>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "用法：{prefix}noalbs version | prefix <新前綴> | lang <語言代碼>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "仍在連線至 BELABOX Cloud。請稍後再試。"
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud 拒絕了秘密網址。請到切換器設定中檢查。"
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX 已離線。"
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOX 尚無實況設定。請先從它自己的頁面啟動一次。"
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX 已在實況中。"
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX 未在實況。"
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "位元率必須介於 300 到 12000 kbps 之間。"
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOX 沒有這個網路介面。"
+
+msgid "The last network interface can't be turned off."
+msgstr "無法關閉最後一個網路介面。"
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX 無法執行此操作。"
+
+msgid "{name}: off"
+msgstr "{name}：已關閉"
+
+msgid "no network interfaces"
+msgstr "沒有網路介面"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "實況中，最高 {bitrate} kbps"
+
+msgid "streaming"
+msgstr "實況中"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX（{state}）：{interfaces} | 總計：{total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS 目前未連線。"
+
+msgid "OBS said no: {reason}"
+msgstr "OBS 拒絕了：{reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS 拒絕了：代碼 {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS 沒有回應。請稍後再試。"
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "發生錯誤。請稍後再試。"
+
+msgid "No scene matches \"{query}\"."
+msgstr "沒有符合「{query}」的場景。"
+
+msgid "Switched to {scene}"
+msgstr "已切換至 {scene}"
+
+msgid "Starting the stream"
+msgstr "正在開始實況"
+
+msgid "Stopping the stream"
+msgstr "正在停止實況"
+
+msgid "Already streaming"
+msgstr "已在實況中"
+
+msgid "Not streaming"
+msgstr "未在實況"
+
+msgid "Recording started"
+msgstr "已開始錄影"
+
+msgid "Recording stopped"
+msgstr "已停止錄影"
+
+msgid "Refreshing the feed"
+msgstr "正在重新整理訊號"
+
+msgid "Already refreshing"
+msgstr "已在重新整理"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "正在修復訊號：重新連線 {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "沒有需要修復的項目：{scene} 上沒有正在播放的串流來源"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "尚未選擇 Refresh 場景，改用修復功能。{result}"
+
+msgid "{name} is now shown"
+msgstr "{name} 現在已顯示"
+
+msgid "{name} is now hidden"
+msgstr "{name} 現在已隱藏"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "這個場景沒有符合「{query}」的來源。"
+
+msgid "Marker added at {time}"
+msgstr "已在 {time} 新增標記"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "這個 OBS 版本太舊，無法執行此操作。請更新 OBS。"
+
+msgid "{reading} (low)"
+msgstr "{reading}（偏低）"
+
+msgid "offline"
+msgstr "離線"
+
+msgid "Current bitrate: {reading}"
+msgstr "目前位元率：{reading}"
+
+msgid "No stream stats right now."
+msgstr "目前沒有實況統計資料。"
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "前綴必須為 1 到 3 個字元，且不含空格"
+
+msgid "Languages: {languages}"
+msgstr "語言：{languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} 現在會執行 {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "已移除別名 {alias}"
+
+msgid "{alias} is already taken"
+msgstr "{alias} 已被使用"
+
+msgid "There's no alias {alias}"
+msgstr "別名 {alias} 不存在"
+
+msgid "There's no command {command}"
+msgstr "指令 {command} 不存在"
+
+msgid "Commands now start with {prefix}"
+msgstr "指令現在以 {prefix} 開頭"
+
+msgid "Language set to {language}"
+msgstr "語言已設為 {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "NOALBS Cloud 尚未提供 {command}。"
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "已切換至 {scene} · {server}，{reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "已切換至 {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "實況已停止並揪團給 {to}，請大家追隨一下 {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "已達離線逾時，正在停止實況"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "已達 Ending 場景逾時，正在停止實況"
+
+msgid "Ignoring {name} from now on"
+msgstr "從現在起忽略 {name}"
+
+msgid "No longer ignoring {name}"
+msgstr "不再忽略 {name}"
+
+msgid "{name} isn't ignored"
+msgstr "{name} 未被忽略"
+
+msgid "There's no user called {name}"
+msgstr "找不到名為 {name} 的使用者"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX 目前未連線：OBS 是否已開啟並載入瀏覽器來源？"
+
+msgid "Starting the BELABOX stream"
+msgstr "正在開始 BELABOX 實況"
+
+msgid "Stopping the BELABOX stream"
+msgstr "正在停止 BELABOX 實況"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "BELABOX 最高位元率：{bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX 尚未回報最高位元率。"
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "BELABOX 最高位元率已設為 {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "正在開啟 {name}"
+
+msgid "Turning {name} off"
+msgstr "正在關閉 {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX 沒有類似 {query} 的網路介面"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX 尚未傳送任何感測器讀數。"
+
+msgid "Starting the Moblin stream"
+msgstr "正在開始 Moblin 實況"
+
+msgid "Stopping the Moblin stream"
+msgstr "正在停止 Moblin 實況"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblin 位元率：{bitrate} kbps · 預設組合：{presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblin 位元率預設組合：{presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblin 位元率已設為 {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin 沒有 {bitrate} kbps 的預設組合。預設組合：{presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblin 場景：{scene} · 場景清單：{scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblin 場景清單：{scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "正在將 Moblin 切換至 {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin 沒有類似 {query} 的場景"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "這個切換器已暫停：工作區的切換器數量超過方案所含數量。"
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin 目前未連線。"
+
+msgid "none"
+msgstr "無"
+
+msgid "Moblin is already live."
+msgstr "Moblin 已在直播中。"
+
+msgid "Moblin isn't live."
+msgstr "Moblin 未在直播。"
+
+msgid "Moblin has no such scene."
+msgstr "Moblin 沒有這個場景。"
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin 沒有這個位元率預設組合。"
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin 沒有這個縮放預設組合。"
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "縮放倍率必須介於 0.5x 到 100x 之間。"
+
+msgid "Moblin has no such connection."
+msgstr "Moblin 沒有這個連線。"
+
+msgid "The last connection in use can't be turned off."
+msgstr "無法關閉最後一個使用中的連線。"
+
+msgid "The priority must be between 1 and 10."
+msgstr "優先順序必須介於 1 到 10 之間。"
+
+msgid "Moblin refused."
+msgstr "Moblin 拒絕了。"
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin 沒有回應。請稍後再試。"
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin（直播中，{uptime}）"
+
+msgid "Moblin (live)"
+msgstr "Moblin（直播中）"
+
+msgid "Moblin (not live)"
+msgstr "Moblin（未直播）"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding：{bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "電池 {level}%，充電中"
+
+msgid "Battery {level}%"
+msgstr "電池 {level}%"
+
+msgid "Getting hot"
+msgstr "溫度升高"
+
+msgid "Too hot!"
+msgstr "過熱！"
+
+msgid "Muted"
+msgstr "已靜音"

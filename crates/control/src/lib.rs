@@ -556,25 +556,38 @@ fn input_error(error: obs_actions::Error) -> Error {
     }
 }
 
-/// Checks switching triggers the way the database would, with a message to show.
-pub fn check_triggers(triggers: &db::switchers::Triggers) -> std::result::Result<(), &'static str> {
+/// Why switching triggers can't be used. The chat bot says these in the switcher's language.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum TriggerError {
+    #[error("Bitrate triggers must be between 1 and 100,000 kbps")]
+    BitrateRange,
+    #[error("RTT triggers must be between 1 and 60,000 ms")]
+    RttRange,
+    #[error("The offline bitrate must be lower than the LOW bitrate")]
+    OfflineBitrate,
+    #[error("The offline RTT must be higher than the LOW RTT")]
+    OfflineRtt,
+}
+
+/// Checks switching triggers the way the database would.
+pub fn check_triggers(triggers: &db::switchers::Triggers) -> std::result::Result<(), TriggerError> {
     let in_range = |value: Option<i32>, max: i32| value.is_none_or(|v| (1..=max).contains(&v));
 
     if !in_range(triggers.low, MAX_BITRATE_KBPS) || !in_range(triggers.offline, MAX_BITRATE_KBPS) {
-        return Err("Bitrate triggers must be between 1 and 100,000 kbps");
+        return Err(TriggerError::BitrateRange);
     }
     if !in_range(triggers.rtt, MAX_RTT_MS) || !in_range(triggers.rtt_offline, MAX_RTT_MS) {
-        return Err("RTT triggers must be between 1 and 60,000 ms");
+        return Err(TriggerError::RttRange);
     }
     if let (Some(low), Some(offline)) = (triggers.low, triggers.offline)
         && offline >= low
     {
-        return Err("The offline bitrate must be lower than the LOW bitrate");
+        return Err(TriggerError::OfflineBitrate);
     }
     if let (Some(rtt), Some(rtt_offline)) = (triggers.rtt, triggers.rtt_offline)
         && rtt_offline <= rtt
     {
-        return Err("The offline RTT must be higher than the LOW RTT");
+        return Err(TriggerError::OfflineRtt);
     }
     Ok(())
 }

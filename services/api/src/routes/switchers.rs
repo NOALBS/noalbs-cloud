@@ -403,7 +403,7 @@ pub fn validate_triggers(triggers: &TriggersDto) -> ApiResult<()> {
         rtt: triggers.rtt,
         rtt_offline: triggers.rtt_offline,
     })
-    .map_err(|message| ApiError::bad_request("invalid_triggers", message))
+    .map_err(|error| ApiError::bad_request("invalid_triggers", error.to_string()))
 }
 
 /// List a workspace's switchers.

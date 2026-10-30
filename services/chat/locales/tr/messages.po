@@ -1,0 +1,504 @@
+# Turkish for the NOALBS Cloud chat bot.
+# Builds on the NOALBS translations by Fatih Karaoz.
+# Reworded and completed for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr\n"
+
+msgid "scene: {scene}"
+msgstr "sahne: {scene}"
+
+msgid "scene: unknown"
+msgstr "sahne: bilinmiyor"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "bitrate: {bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "bitrate: bilinmiyor"
+
+msgid "not streaming"
+msgstr "yayın yapılmıyor"
+
+msgid "fps: {fps}"
+msgstr "fps: {fps}"
+
+msgid "network: {dropped}"
+msgstr "ağ: {dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "render gecikmesi: {dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "kodlama gecikmesi: {dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "düşme nedeni: {causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU: %{percent}"
+
+msgid "memory: {memory} MB"
+msgstr "bellek: {memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "boş disk alanı: {disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "Henüz LIVE sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "Henüz Privacy sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "Henüz Starting sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "Henüz Ending sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "Henüz Refresh sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+
+msgid "Switched to the LIVE scene"
+msgstr "LIVE sahnesine geçildi"
+
+msgid "Switched to the Privacy scene"
+msgstr "Privacy sahnesine geçildi"
+
+msgid "Switched to the Starting scene"
+msgstr "Starting sahnesine geçildi"
+
+msgid "Switched to the Ending scene"
+msgstr "Ending sahnesine geçildi"
+
+msgid "Switched to the Refresh scene"
+msgstr "Refresh sahnesine geçildi"
+
+msgid "Chat notifications on"
+msgstr "Sohbet bildirimleri açık"
+
+msgid "Chat notifications off"
+msgstr "Sohbet bildirimleri kapalı"
+
+msgid "Auto stop on raid on"
+msgstr "Raid'de otomatik durdurma açık"
+
+msgid "Auto stop on raid off"
+msgstr "Raid'de otomatik durdurma kapalı"
+
+msgid "Public commands on"
+msgstr "Genel komutlar açık"
+
+msgid "Public commands off"
+msgstr "Genel komutlar kapalı"
+
+msgid "Mod commands on"
+msgstr "Mod komutları açık"
+
+msgid "Mod commands off"
+msgstr "Mod komutları kapalı"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOW tetiği: {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "LOW tetiği kapalı"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "Çevrimdışı tetiği: {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "Çevrimdışı tetiği kapalı"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTT tetiği: {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "RTT tetiği kapalı"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "Çevrimdışı RTT tetiği: {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "Çevrimdışı RTT tetiği kapalı"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOW tetiği ayarlandı: {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "LOW tetiği kapatıldı"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "Çevrimdışı tetiği ayarlandı: {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "Çevrimdışı tetiği kapatıldı"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTT tetiği ayarlandı: {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "RTT tetiği kapatıldı"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "Çevrimdışı RTT tetiği ayarlandı: {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "Çevrimdışı RTT tetiği kapatıldı"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "Bitrate tetikleri 1 ile 100.000 kbps arasında olmalı"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTT tetikleri 1 ile 60.000 ms arasında olmalı"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "Çevrimdışı bitrate, LOW bitrate değerinden düşük olmalı"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "Çevrimdışı RTT, LOW RTT değerinden yüksek olmalı"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "Kullanım: {prefix}switch <sahne adı>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "Kullanım: {prefix}source <kaynak adı>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "Kullanım: {prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "Kullanım: {prefix}bbt <arayüz, örn. usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "Kullanım: {prefix}mbitrate <bir ön ayarın kbps değeri>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "Kullanım: {prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "Kullanım: {prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "Kullanım: {prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "Kullanım: {prefix}alias <takma ad> <komut> | {prefix}alias rem <takma ad>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "Kullanım: {prefix}noalbs version | prefix <yeni> | lang <kod>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "BELABOX Cloud'a hâlâ bağlanılıyor. Birazdan tekrar dene."
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud gizli URL'yi reddetti. Switcher ayarlarından kontrol et."
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX çevrimdışı."
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOX'ın henüz yayın ayarları yok. Kendi sayfasından bir kez başlat."
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX zaten yayında."
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX yayında değil."
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "Bitrate 300 ile 12000 kbps arasında olmalı."
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOX'ta böyle bir ağ arayüzü yok."
+
+msgid "The last network interface can't be turned off."
+msgstr "Son ağ arayüzü kapatılamaz."
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX bunu yapamıyor."
+
+msgid "{name}: off"
+msgstr "{name}: kapalı"
+
+msgid "no network interfaces"
+msgstr "ağ arayüzü yok"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "yayında, en fazla {bitrate} kbps"
+
+msgid "streaming"
+msgstr "yayında"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX ({state}): {interfaces} | Toplam: {total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS şu anda bağlı değil."
+
+msgid "OBS said no: {reason}"
+msgstr "OBS reddetti: {reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS reddetti: kod {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS yanıt vermedi. Birazdan tekrar dene."
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "Bir şeyler ters gitti. Birazdan tekrar dene."
+
+msgid "No scene matches \"{query}\"."
+msgstr "Eşleşen sahne yok: \"{query}\"."
+
+msgid "Switched to {scene}"
+msgstr "Sahne değiştirildi: {scene}"
+
+msgid "Starting the stream"
+msgstr "Yayın başlatılıyor"
+
+msgid "Stopping the stream"
+msgstr "Yayın durduruluyor"
+
+msgid "Already streaming"
+msgstr "Zaten yayında"
+
+msgid "Not streaming"
+msgstr "Yayında değil"
+
+msgid "Recording started"
+msgstr "Kayıt başladı"
+
+msgid "Recording stopped"
+msgstr "Kayıt durduruldu"
+
+msgid "Refreshing the feed"
+msgstr "Yayın akışı yenileniyor"
+
+msgid "Already refreshing"
+msgstr "Zaten yenileniyor"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "Yayın akışı düzeltiliyor, yeniden bağlanıyor: {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "Düzeltilecek bir şey yok, oynayan yayın kaynağı yok: {scene}"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "Refresh sahnesi seçilmedi, bunun yerine düzeltiliyor. {result}"
+
+msgid "{name} is now shown"
+msgstr "{name} artık görünür"
+
+msgid "{name} is now hidden"
+msgstr "{name} artık gizli"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "Bu sahnede eşleşen kaynak yok: \"{query}\"."
+
+msgid "Marker added at {time}"
+msgstr "İşaretçi eklendi: {time}"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "Bu OBS sürümü bunun için çok eski. OBS'i güncelle."
+
+msgid "{reading} (low)"
+msgstr "{reading} (düşük)"
+
+msgid "offline"
+msgstr "çevrimdışı"
+
+msgid "Current bitrate: {reading}"
+msgstr "Mevcut bit hızı: {reading}"
+
+msgid "No stream stats right now."
+msgstr "Şu anda yayın istatistiği yok."
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "Önek boşluksuz 1 ila 3 karakter olmalı"
+
+msgid "Languages: {languages}"
+msgstr "Diller: {languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} artık şunu çalıştırıyor: {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "Takma ad kaldırıldı: {alias}"
+
+msgid "{alias} is already taken"
+msgstr "{alias} zaten kullanılıyor"
+
+msgid "There's no alias {alias}"
+msgstr "Böyle bir takma ad yok: {alias}"
+
+msgid "There's no command {command}"
+msgstr "Böyle bir komut yok: {command}"
+
+msgid "Commands now start with {prefix}"
+msgstr "Komut öneki artık: {prefix}"
+
+msgid "Language set to {language}"
+msgstr "Dil ayarlandı: {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "{command} henüz NOALBS Cloud'da yok."
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "Sahne değiştirildi: {scene} · {server}, {reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "Sahne değiştirildi: {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "Yayın durdu ve şu kanala raid atıldı: {to}, lütfen bu bağlantıyı takip edin: {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "Çevrimdışı zaman aşımına ulaşıldı, yayın durduruluyor"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "Ending sahnesi zaman aşımına ulaşıldı, yayın durduruluyor"
+
+msgid "Ignoring {name} from now on"
+msgstr "Artık yok sayılıyor: {name}"
+
+msgid "No longer ignoring {name}"
+msgstr "Artık yok sayılmıyor: {name}"
+
+msgid "{name} isn't ignored"
+msgstr "Yok sayılmıyor: {name}"
+
+msgid "There's no user called {name}"
+msgstr "Böyle bir kullanıcı yok: {name}"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX şu anda bağlı değil: OBS tarayıcı kaynağıyla açık mı?"
+
+msgid "Starting the BELABOX stream"
+msgstr "BELABOX yayını başlatılıyor"
+
+msgid "Stopping the BELABOX stream"
+msgstr "BELABOX yayını durduruluyor"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "BELABOX en yüksek bitrate: {bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX en yüksek bitrate değerini henüz bildirmedi."
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "BELABOX en yüksek bitrate ayarlandı: {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "Açılıyor: {name}"
+
+msgid "Turning {name} off"
+msgstr "Kapatılıyor: {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX'ta benzer ağ arayüzü yok: {query}"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX henüz sensör verisi göndermedi."
+
+msgid "Starting the Moblin stream"
+msgstr "Moblin yayını başlatılıyor"
+
+msgid "Stopping the Moblin stream"
+msgstr "Moblin yayını durduruluyor"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblin bitrate: {bitrate} kbps · ön ayarlar: {presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblin bitrate ön ayarları: {presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblin bitrate ayarlandı: {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin'de {bitrate} kbps ön ayarı yok. Ön ayarlar: {presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblin sahnesi: {scene} · sahneler: {scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblin sahneleri: {scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Moblin sahnesi değiştiriliyor: {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin'de benzer sahne yok: {query}"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "Bu switcher duraklatıldı: çalışma alanında planın içerdiğinden fazla switcher var."
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin şu anda bağlı değil."
+
+msgid "none"
+msgstr "yok"
+
+msgid "Moblin is already live."
+msgstr "Moblin zaten yayında."
+
+msgid "Moblin isn't live."
+msgstr "Moblin yayında değil."
+
+msgid "Moblin has no such scene."
+msgstr "Moblin'de böyle bir sahne yok."
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin'de böyle bir bitrate ön ayarı yok."
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin'de böyle bir yakınlaştırma ön ayarı yok."
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "Yakınlaştırma 0,5x ile 100x arasında olmalı."
+
+msgid "Moblin has no such connection."
+msgstr "Moblin'de böyle bir bağlantı yok."
+
+msgid "The last connection in use can't be turned off."
+msgstr "Kullanımdaki son bağlantı kapatılamaz."
+
+msgid "The priority must be between 1 and 10."
+msgstr "Öncelik 1 ile 10 arasında olmalı."
+
+msgid "Moblin refused."
+msgstr "Moblin reddetti."
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin yanıt vermedi. Birazdan tekrar dene."
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin (yayında, {uptime})"
+
+msgid "Moblin (live)"
+msgstr "Moblin (yayında)"
+
+msgid "Moblin (not live)"
+msgstr "Moblin (yayında değil)"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding: {bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "Pil %{level}, şarj oluyor"
+
+msgid "Battery {level}%"
+msgstr "Pil %{level}"
+
+msgid "Getting hot"
+msgstr "Isınıyor"
+
+msgid "Too hot!"
+msgstr "Çok sıcak!"
+
+msgid "Muted"
+msgstr "Sessiz"

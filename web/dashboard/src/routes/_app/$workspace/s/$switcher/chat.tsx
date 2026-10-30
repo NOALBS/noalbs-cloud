@@ -54,13 +54,6 @@ const LANGUAGE_NAMES: Record<string, string> = {
   "zh-tw": "中文（台灣）",
 };
 
-/**
- * The languages the bot has messages for (`messages.rs` in the chat service). The API accepts
- * more, but they would all be answered in English, so the picker waits until there's a choice.
- * Add a code here once its messages are written.
- */
-const BOT_LANGUAGES = ["en"];
-
 type Filter = "all" | ChatRole;
 const FILTERS: Filter[] = ["all", "admin", "moderator", "vip", "subscriber", "public"];
 type Path = { workspace_id: string; switcher_id: string };
@@ -161,7 +154,6 @@ function ChatSettingsSection({
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(settings);
-  const botLanguages = languages.filter((code) => BOT_LANGUAGES.includes(code));
   const dirty = JSON.stringify(form) !== JSON.stringify(settings);
 
   const save = useMutation({
@@ -205,7 +197,7 @@ function ChatSettingsSection({
               className="w-24 font-mono"
             />
           </div>
-          {botLanguages.length > 1 && (
+          {languages.length > 1 && (
             <div className="flex flex-col gap-2">
               <Label htmlFor="chat-language">Bot language</Label>
               <Select
@@ -217,7 +209,7 @@ function ChatSettingsSection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {botLanguages.map((code) => (
+                  {languages.map((code) => (
                     <SelectItem key={code} value={code}>
                       {LANGUAGE_NAMES[code] ?? code}
                     </SelectItem>

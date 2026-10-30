@@ -2,7 +2,8 @@ Notices for software NOALBS Cloud works with
 =============================================
 
 NOALBS Cloud's BELABOX and Moblin remote control speak the protocols of the
-projects below, written from their source code. Their licenses are listed here.
+projects below, written from their source code, and its chat bot's translations
+build on those of NOALBS. Their licenses are listed here.
 
 
 BELABOX (belaUI)
@@ -26,6 +27,46 @@ https://github.com/eerimoq/moblin
 MIT License
 
 Copyright (c) 2023 Erik Moqvist
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+NOALBS
+------
+https://github.com/NOALBS/nginx-obs-automatic-low-bitrate-switching
+
+The chat bot's translations build on NOALBS's. Thank you to its translators:
+
+  Chinese (Taiwan): Ladelltwitch, Onijima, ИEØ_ΙΙØZ
+  Dutch: Chasin1, Chasinboi
+  French: Thibaut SEVERAC, VictorJaunts
+  German: kami29, Gwalex, Valentin Lehmann, Alexander Wagner, Heiko Nickerl
+  Italian: chefmauriziol
+  Polish: palczuu
+  Portuguese (Brazil): Vinicios Yals, Wilson
+  Spanish: Edin Melchor
+  Swedish: ungutvecklare
+  Turkish: Fatih Karaoz
+
+MIT License
+
+Copyright (c) 2018-2024 Brian Spit
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

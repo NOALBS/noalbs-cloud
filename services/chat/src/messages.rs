@@ -1,22 +1,33 @@
-//! What the bot says. Keyed by the switcher's `language`; only English is
-//! written so far, so every language falls back to it.
+//! What the bot says, in English; `tr!` turns it into the switcher's `language`
+//! (see [`crate::i18n`]). Whole sentences only: a translation can't be put
+//! together from English pieces.
 
 use std::collections::BTreeMap;
 
+use control::TriggerError;
+use db::switchers::ChatFlag;
 use live::{BelaboxInterface, BelaboxRefusal, MoblinRefusal, MoblinStatus, MoblinThermal};
+
+use crate::i18n::tr;
 
 /// A reply, with what it needs to be worded.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Msg {
     ObsOffline,
     Paused,
-    ObsRefused(String),
+    /// OBS's own reason, when it gives one, is in English.
+    ObsRefused {
+        code: u32,
+        comment: Option<String>,
+    },
     ObsTimeout,
     Failed,
-    /// No scene of this kind (e.g. "Privacy") is picked for the switcher.
-    NoScene(&'static str),
+    /// No scene of this kind is picked for the switcher.
+    NoScene(SceneKind),
     NoSceneMatch(String),
     SwitchedTo(String),
+    /// `!live`, `!privacy`, `!starting` or `!ending` switched.
+    SwitchedToKind(SceneKind),
     StreamStarting,
     StreamStopping,
     AlreadyStreaming,
@@ -52,20 +63,23 @@ pub enum Msg {
         stats: Box<control::ObsStats>,
     },
     /// A setting was turned on or off.
-    Toggled(&'static str, bool),
+    Toggled(ChatFlag, bool),
     /// A trigger's value (`None` = off).
     Trigger {
-        what: &'static str,
-        unit: &'static str,
+        trigger: TriggerKind,
         value: Option<i32>,
     },
     TriggerSet {
-        what: &'static str,
-        unit: &'static str,
+        trigger: TriggerKind,
         value: Option<i32>,
     },
-    Invalid(String),
-    Usage(String),
+    InvalidTriggers(TriggerError),
+    PrefixTooLong,
+    UnknownLanguage,
+    Usage {
+        prefix: String,
+        usage: Usage,
+    },
     AliasAdded {
         alias: String,
         command: String,
@@ -156,83 +170,363 @@ pub enum ServerReading {
     Offline,
 }
 
-fn kbps(value: u32) -> String {
+/// A scene the switcher has a role for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SceneKind {
+    Live,
+    Privacy,
+    Starting,
+    Ending,
+    Refresh,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TriggerKind {
+    Low,
+    Offline,
+    Rtt,
+    RttOffline,
+}
+
+/// What a command takes, for when it got something else.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Usage {
+    Switch,
+    Source,
+    BelaboxBitrate,
+    BelaboxInterface,
+    MoblinBitrate,
+    OnOff(&'static str),
+    BitrateTrigger(String),
+    RttTrigger(String),
+    Alias,
+    Noalbs,
+}
+
+/// How a language writes numbers: what groups thousands, and the decimal mark.
+fn number_format(lang: &str) -> (char, char) {
+    match lang {
+        "de" | "es" | "it" | "nl" | "pt-br" | "tr" => ('.', ','),
+        "fr" | "pl" | "sv" => (' ', ','),
+        _ => (',', '.'),
+    }
+}
+
+fn kbps(lang: &str, value: u32) -> String {
+    let (thousands, _) = number_format(lang);
     let digits = value.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
         if i > 0 && (digits.len() - i) % 3 == 0 {
-            out.push(',');
+            out.push(thousands);
         }
         out.push(c);
     }
     out
 }
 
-fn reading(bitrate: u32, rtt: Option<f64>) -> String {
+/// A number with one decimal.
+fn decimal(lang: &str, value: f64) -> String {
+    let (_, mark) = number_format(lang);
+    format!("{value:.1}").replace('.', &mark.to_string())
+}
+
+fn reading(lang: &str, bitrate: u32, rtt: Option<f64>) -> String {
     match rtt {
-        Some(rtt) => format!("{} kbps, {} ms", kbps(bitrate), rtt.round() as i64),
-        None => format!("{} kbps", kbps(bitrate)),
+        Some(rtt) => format!("{} kbps, {} ms", kbps(lang, bitrate), rtt.round() as i64),
+        None => format!("{} kbps", kbps(lang, bitrate)),
     }
 }
 
 /// NOALBS's `!serverinfo` wording.
-fn server_info(scene: Option<&str>, bitrate: Option<u32>, stats: &control::ObsStats) -> String {
-    let dropped = |d: control::Dropped| format!("{} ({:.1}%)", d.frames, d.percent());
-    let mut parts = vec![format!("scene: {}", scene.unwrap_or("unknown"))];
+fn server_info(
+    lang: &str,
+    scene: Option<&str>,
+    bitrate: Option<u32>,
+    stats: &control::ObsStats,
+) -> String {
+    let dropped = |d: control::Dropped| format!("{} ({}%)", d.frames, decimal(lang, d.percent()));
+    let mut parts = vec![match scene {
+        Some(scene) => tr!(lang, "scene: {scene}", scene = scene),
+        None => tr!(lang, "scene: unknown"),
+    }];
     if stats.streaming {
         parts.push(match bitrate {
-            Some(bitrate) => format!("bitrate: {} kbps", kbps(bitrate)),
-            None => "bitrate: unknown".into(),
+            Some(bitrate) => tr!(
+                lang,
+                "bitrate: {bitrate} kbps",
+                bitrate = kbps(lang, bitrate)
+            ),
+            None => tr!(lang, "bitrate: unknown"),
         });
     } else {
-        parts.push("not streaming".into());
+        parts.push(tr!(lang, "not streaming"));
     }
-    parts.push(format!("fps: {}", stats.fps.round()));
+    parts.push(tr!(lang, "fps: {fps}", fps = stats.fps.round()));
     let mut causes = Vec::new();
     if stats.streaming {
-        causes.push(format!("network: {}", dropped(stats.network)));
+        causes.push(tr!(
+            lang,
+            "network: {dropped}",
+            dropped = dropped(stats.network)
+        ));
     }
-    causes.push(format!("rendering lag: {}", dropped(stats.rendering)));
-    causes.push(format!("encoding lag: {}", dropped(stats.encoding)));
-    parts.push(format!("dropped due to: {}", causes.join(", ")));
-    parts.push(format!("CPU: {:.1}%", stats.cpu_percent));
-    parts.push(format!("memory: {:.1} MB", stats.memory_mb));
-    parts.push(format!(
-        "free disk space: {:.1} GB",
-        stats.disk_free_mb / 1024.0
+    causes.push(tr!(
+        lang,
+        "rendering lag: {dropped}",
+        dropped = dropped(stats.rendering)
+    ));
+    causes.push(tr!(
+        lang,
+        "encoding lag: {dropped}",
+        dropped = dropped(stats.encoding)
+    ));
+    parts.push(tr!(
+        lang,
+        "dropped due to: {causes}",
+        causes = causes.join(", ")
+    ));
+    parts.push(tr!(
+        lang,
+        "CPU: {percent}%",
+        percent = decimal(lang, stats.cpu_percent)
+    ));
+    parts.push(tr!(
+        lang,
+        "memory: {memory} MB",
+        memory = decimal(lang, stats.memory_mb)
+    ));
+    parts.push(tr!(
+        lang,
+        "free disk space: {disk} GB",
+        disk = decimal(lang, stats.disk_free_mb / 1024.0)
     ));
     parts.join(", ")
 }
 
-fn on(value: bool) -> &'static str {
-    if value { "on" } else { "off" }
+fn no_scene(lang: &str, kind: SceneKind) -> String {
+    match kind {
+        SceneKind::Live => {
+            tr!(
+                lang,
+                "No LIVE scene is picked yet. Choose one on the Scenes page."
+            )
+        }
+        SceneKind::Privacy => {
+            tr!(
+                lang,
+                "No Privacy scene is picked yet. Choose one on the Scenes page."
+            )
+        }
+        SceneKind::Starting => {
+            tr!(
+                lang,
+                "No Starting scene is picked yet. Choose one on the Scenes page."
+            )
+        }
+        SceneKind::Ending => {
+            tr!(
+                lang,
+                "No Ending scene is picked yet. Choose one on the Scenes page."
+            )
+        }
+        SceneKind::Refresh => {
+            tr!(
+                lang,
+                "No Refresh scene is picked yet. Choose one on the Scenes page."
+            )
+        }
+    }
 }
 
-fn belabox_refusal(refusal: BelaboxRefusal) -> &'static str {
+fn switched_to_kind(lang: &str, kind: SceneKind) -> String {
+    match kind {
+        SceneKind::Live => tr!(lang, "Switched to the LIVE scene"),
+        SceneKind::Privacy => tr!(lang, "Switched to the Privacy scene"),
+        SceneKind::Starting => tr!(lang, "Switched to the Starting scene"),
+        SceneKind::Ending => tr!(lang, "Switched to the Ending scene"),
+        SceneKind::Refresh => tr!(lang, "Switched to the Refresh scene"),
+    }
+}
+
+fn toggled(lang: &str, flag: ChatFlag, value: bool) -> String {
+    match (flag, value) {
+        (ChatFlag::AutoSwitchNotification, true) => tr!(lang, "Chat notifications on"),
+        (ChatFlag::AutoSwitchNotification, false) => tr!(lang, "Chat notifications off"),
+        (ChatFlag::AutoStopOnRaid, true) => tr!(lang, "Auto stop on raid on"),
+        (ChatFlag::AutoStopOnRaid, false) => tr!(lang, "Auto stop on raid off"),
+        (ChatFlag::PublicCommands, true) => tr!(lang, "Public commands on"),
+        (ChatFlag::PublicCommands, false) => tr!(lang, "Public commands off"),
+        (ChatFlag::ModCommands, true) => tr!(lang, "Mod commands on"),
+        (ChatFlag::ModCommands, false) => tr!(lang, "Mod commands off"),
+    }
+}
+
+fn trigger(lang: &str, trigger: TriggerKind, value: Option<i32>) -> String {
+    match (trigger, value) {
+        (TriggerKind::Low, Some(value)) => {
+            tr!(lang, "The LOW trigger is {value} kbps", value = value)
+        }
+        (TriggerKind::Low, None) => tr!(lang, "The LOW trigger is off"),
+        (TriggerKind::Offline, Some(value)) => {
+            tr!(lang, "The offline trigger is {value} kbps", value = value)
+        }
+        (TriggerKind::Offline, None) => tr!(lang, "The offline trigger is off"),
+        (TriggerKind::Rtt, Some(value)) => {
+            tr!(lang, "The RTT trigger is {value} ms", value = value)
+        }
+        (TriggerKind::Rtt, None) => tr!(lang, "The RTT trigger is off"),
+        (TriggerKind::RttOffline, Some(value)) => {
+            tr!(lang, "The offline RTT trigger is {value} ms", value = value)
+        }
+        (TriggerKind::RttOffline, None) => tr!(lang, "The offline RTT trigger is off"),
+    }
+}
+
+fn trigger_set(lang: &str, trigger: TriggerKind, value: Option<i32>) -> String {
+    match (trigger, value) {
+        (TriggerKind::Low, Some(value)) => {
+            tr!(lang, "The LOW trigger set to {value} kbps", value = value)
+        }
+        (TriggerKind::Low, None) => tr!(lang, "The LOW trigger turned off"),
+        (TriggerKind::Offline, Some(value)) => {
+            tr!(
+                lang,
+                "The offline trigger set to {value} kbps",
+                value = value
+            )
+        }
+        (TriggerKind::Offline, None) => tr!(lang, "The offline trigger turned off"),
+        (TriggerKind::Rtt, Some(value)) => {
+            tr!(lang, "The RTT trigger set to {value} ms", value = value)
+        }
+        (TriggerKind::Rtt, None) => tr!(lang, "The RTT trigger turned off"),
+        (TriggerKind::RttOffline, Some(value)) => {
+            tr!(
+                lang,
+                "The offline RTT trigger set to {value} ms",
+                value = value
+            )
+        }
+        (TriggerKind::RttOffline, None) => tr!(lang, "The offline RTT trigger turned off"),
+    }
+}
+
+fn invalid_triggers(lang: &str, error: TriggerError) -> String {
+    match error {
+        TriggerError::BitrateRange => {
+            tr!(lang, "Bitrate triggers must be between 1 and 100,000 kbps")
+        }
+        TriggerError::RttRange => tr!(lang, "RTT triggers must be between 1 and 60,000 ms"),
+        TriggerError::OfflineBitrate => {
+            tr!(
+                lang,
+                "The offline bitrate must be lower than the LOW bitrate"
+            )
+        }
+        TriggerError::OfflineRtt => {
+            tr!(lang, "The offline RTT must be higher than the LOW RTT")
+        }
+    }
+}
+
+fn usage(lang: &str, prefix: &str, usage: &Usage) -> String {
+    match usage {
+        Usage::Switch => tr!(lang, "Usage: {prefix}switch <scene name>", prefix = prefix),
+        Usage::Source => tr!(lang, "Usage: {prefix}source <source name>", prefix = prefix),
+        Usage::BelaboxBitrate => tr!(
+            lang,
+            "Usage: {prefix}bbb <{min}-{max} kbps>",
+            prefix = prefix,
+            min = live::BELABOX_MIN_BITRATE,
+            max = live::BELABOX_MAX_BITRATE
+        ),
+        Usage::BelaboxInterface => {
+            tr!(
+                lang,
+                "Usage: {prefix}bbt <interface, e.g. usb0>",
+                prefix = prefix
+            )
+        }
+        Usage::MoblinBitrate => {
+            tr!(
+                lang,
+                "Usage: {prefix}mbitrate <kbps of a preset>",
+                prefix = prefix
+            )
+        }
+        Usage::OnOff(command) => tr!(
+            lang,
+            "Usage: {prefix}{command} [on|off]",
+            prefix = prefix,
+            command = command
+        ),
+        Usage::BitrateTrigger(command) => tr!(
+            lang,
+            "Usage: {prefix}{command} <kbps|off>",
+            prefix = prefix,
+            command = command
+        ),
+        Usage::RttTrigger(command) => tr!(
+            lang,
+            "Usage: {prefix}{command} <ms|off>",
+            prefix = prefix,
+            command = command
+        ),
+        Usage::Alias => tr!(
+            lang,
+            "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>",
+            prefix = prefix
+        ),
+        Usage::Noalbs => tr!(
+            lang,
+            "Usage: {prefix}noalbs version | prefix <new> | lang <code>",
+            prefix = prefix
+        ),
+    }
+}
+
+fn belabox_refusal(lang: &str, refusal: BelaboxRefusal) -> String {
     match refusal {
-        BelaboxRefusal::Connecting => "Still connecting to BELABOX Cloud. Try again in a moment.",
+        BelaboxRefusal::Connecting => {
+            tr!(
+                lang,
+                "Still connecting to BELABOX Cloud. Try again in a moment."
+            )
+        }
         BelaboxRefusal::InvalidKey => {
-            "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+            tr!(
+                lang,
+                "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+            )
         }
-        BelaboxRefusal::EncoderOffline => "The BELABOX is offline.",
+        BelaboxRefusal::EncoderOffline => tr!(lang, "The BELABOX is offline."),
         BelaboxRefusal::NoConfig => {
-            "The BELABOX has no stream settings yet. Start it once from its own page."
+            tr!(
+                lang,
+                "The BELABOX has no stream settings yet. Start it once from its own page."
+            )
         }
-        BelaboxRefusal::AlreadyStreaming => "The BELABOX is already streaming.",
-        BelaboxRefusal::NotStreaming => "The BELABOX isn't streaming.",
-        BelaboxRefusal::InvalidBitrate => "The bitrate must be between 300 and 12000 kbps.",
-        BelaboxRefusal::UnknownInterface => "The BELABOX has no such network interface.",
-        BelaboxRefusal::LastInterface => "The last network interface can't be turned off.",
+        BelaboxRefusal::AlreadyStreaming => tr!(lang, "The BELABOX is already streaming."),
+        BelaboxRefusal::NotStreaming => tr!(lang, "The BELABOX isn't streaming."),
+        BelaboxRefusal::InvalidBitrate => {
+            tr!(lang, "The bitrate must be between 300 and 12000 kbps.")
+        }
+        BelaboxRefusal::UnknownInterface => tr!(lang, "The BELABOX has no such network interface."),
+        BelaboxRefusal::LastInterface => {
+            tr!(lang, "The last network interface can't be turned off.")
+        }
         // Chat never sends these (WiFi, modems and stream settings are dashboard-only).
         BelaboxRefusal::UnknownWifi
         | BelaboxRefusal::UnknownModem
         | BelaboxRefusal::Streaming
-        | BelaboxRefusal::Invalid(_) => "The BELABOX can't do that.",
+        | BelaboxRefusal::Invalid(_) => tr!(lang, "The BELABOX can't do that."),
     }
 }
 
 /// Like belabot's `!bbs`: each interface, then the total.
 fn belabox_stats(
+    lang: &str,
     streaming: bool,
     max_br: Option<u32>,
     total_kbps: u32,
@@ -242,14 +536,14 @@ fn belabox_stats(
     let mut parts: Vec<String> = interfaces
         .iter()
         .map(|interface| {
-            let mut part = format!("{}: ", interface.display_name(labels));
-            if !interface.enabled {
-                part.push_str("off");
+            let name = interface.display_name(labels);
+            let mut part = if !interface.enabled {
+                tr!(lang, "{name}: off", name = name)
             } else if let Some(error) = &interface.error {
-                part.push_str(error);
+                format!("{name}: {error}")
             } else {
-                part.push_str(&format!("{} kbps", kbps(interface.kbps)));
-            }
+                format!("{name}: {} kbps", kbps(lang, interface.kbps))
+            };
             if let Some(modem) = &interface.modem {
                 let details: Vec<String> = [
                     modem.network.clone(),
@@ -267,25 +561,35 @@ fn belabox_stats(
         })
         .collect();
     if parts.is_empty() {
-        parts.push("no network interfaces".into());
+        parts.push(tr!(lang, "no network interfaces"));
     }
     let state = if streaming {
         match max_br {
-            Some(max_br) => format!("streaming, max {} kbps", kbps(max_br)),
-            None => "streaming".into(),
+            Some(max_br) => tr!(
+                lang,
+                "streaming, max {bitrate} kbps",
+                bitrate = kbps(lang, max_br)
+            ),
+            None => tr!(lang, "streaming"),
         }
     } else {
-        "not streaming".into()
+        tr!(lang, "not streaming")
     };
-    format!(
-        "BELABOX ({state}): {} | Total: {} kbps",
-        parts.join(" | "),
-        kbps(total_kbps)
+    tr!(
+        lang,
+        "BELABOX ({state}): {interfaces} | Total: {total} kbps",
+        state = state,
+        interfaces = parts.join(" | "),
+        total = kbps(lang, total_kbps)
     )
 }
 
-pub fn text(_language: &str, msg: &Msg) -> String {
-    english(msg)
+pub fn text(language: &str, msg: &Msg) -> String {
+    match msg {
+        // Said in the new language, to show it worked.
+        Msg::LanguageSet(new) => render(new, msg),
+        _ => render(language, msg),
+    }
 }
 
 /// A time into the stream: `4:07`, or `1:02:05` from an hour on.
@@ -299,247 +603,343 @@ fn clock(seconds: i64) -> String {
     }
 }
 
-fn english(msg: &Msg) -> String {
+fn render(lang: &str, msg: &Msg) -> String {
     match msg {
-        Msg::ObsOffline => "OBS isn't connected right now.".into(),
-        Msg::Paused => {
-            "This switcher is paused: the workspace has more switchers than its plan includes."
-                .into()
-        }
-        Msg::ObsRefused(reason) => format!("OBS said no: {reason}"),
-        Msg::ObsTimeout => "OBS didn't answer. Try again in a moment.".into(),
-        Msg::Failed => "Something went wrong. Try again in a moment.".into(),
-        Msg::NoScene(kind) => {
-            format!("No {kind} scene is picked yet. Choose one on the Scenes page.")
-        }
-        Msg::NoSceneMatch(query) => format!("No scene matches \"{query}\"."),
-        Msg::SwitchedTo(scene) => format!("Switched to {scene}"),
-        Msg::StreamStarting => "Starting the stream".into(),
-        Msg::StreamStopping => "Stopping the stream".into(),
-        Msg::AlreadyStreaming => "Already streaming".into(),
-        Msg::NotStreaming => "Not streaming".into(),
-        Msg::RecordingStarting => "Recording started".into(),
-        Msg::RecordingStopping => "Recording stopped".into(),
-        Msg::Refreshing => "Refreshing the feed".into(),
-        Msg::AlreadyRefreshing => "Already refreshing".into(),
-        Msg::Fixed(sources) => format!("Fixing the feed: reconnecting {}", sources.join(", ")),
-        Msg::NothingToFix(scene) => {
-            format!("Nothing to fix: no stream source is playing on {scene}")
-        }
-        Msg::FixInstead(fix) => format!(
-            "No Refresh scene is picked, so fixing instead. {}",
-            english(fix)
+        Msg::ObsOffline => tr!(lang, "OBS isn't connected right now."),
+        Msg::Paused => paused(lang),
+        Msg::ObsRefused {
+            comment: Some(reason),
+            ..
+        } => tr!(lang, "OBS said no: {reason}", reason = reason),
+        Msg::ObsRefused {
+            code,
+            comment: None,
+        } => tr!(lang, "OBS said no: code {code}", code = code),
+        Msg::ObsTimeout => tr!(lang, "OBS didn't answer. Try again in a moment."),
+        Msg::Failed => tr!(lang, "Something went wrong. Try again in a moment."),
+        Msg::NoScene(kind) => no_scene(lang, *kind),
+        Msg::NoSceneMatch(query) => tr!(lang, "No scene matches \"{query}\".", query = query),
+        Msg::SwitchedTo(scene) => tr!(lang, "Switched to {scene}", scene = scene),
+        Msg::SwitchedToKind(kind) => switched_to_kind(lang, *kind),
+        Msg::StreamStarting => tr!(lang, "Starting the stream"),
+        Msg::StreamStopping => tr!(lang, "Stopping the stream"),
+        Msg::AlreadyStreaming => tr!(lang, "Already streaming"),
+        Msg::NotStreaming => tr!(lang, "Not streaming"),
+        Msg::RecordingStarting => tr!(lang, "Recording started"),
+        Msg::RecordingStopping => tr!(lang, "Recording stopped"),
+        Msg::Refreshing => tr!(lang, "Refreshing the feed"),
+        Msg::AlreadyRefreshing => tr!(lang, "Already refreshing"),
+        Msg::Fixed(sources) => tr!(
+            lang,
+            "Fixing the feed: reconnecting {sources}",
+            sources = sources.join(", ")
         ),
-        Msg::SourceToggled { name, enabled } => {
-            format!(
-                "{name} is now {}",
-                if *enabled { "shown" } else { "hidden" }
+        Msg::NothingToFix(scene) => tr!(
+            lang,
+            "Nothing to fix: no stream source is playing on {scene}",
+            scene = scene
+        ),
+        Msg::FixInstead(fix) => tr!(
+            lang,
+            "No Refresh scene is picked, so fixing instead. {result}",
+            result = render(lang, fix)
+        ),
+        Msg::SourceToggled {
+            name,
+            enabled: true,
+        } => tr!(lang, "{name} is now shown", name = name),
+        Msg::SourceToggled {
+            name,
+            enabled: false,
+        } => tr!(lang, "{name} is now hidden", name = name),
+        Msg::NoSourceMatch(query) => {
+            tr!(
+                lang,
+                "No source on this scene matches \"{query}\".",
+                query = query
             )
         }
-        Msg::NoSourceMatch(query) => format!("No source on this scene matches \"{query}\"."),
         Msg::MarkerAdded { offset_seconds } => {
-            format!("Marker added at {}", clock(*offset_seconds))
+            tr!(
+                lang,
+                "Marker added at {time}",
+                time = clock(*offset_seconds)
+            )
         }
-        Msg::NoSceneIds => "This OBS version is too old for that. Update OBS.".into(),
+        Msg::NoSceneIds => tr!(lang, "This OBS version is too old for that. Update OBS."),
         Msg::Bitrate(servers) => servers
             .iter()
             .map(|(name, server)| {
                 let value = match server {
-                    ServerReading::Live { bitrate, rtt } => reading(*bitrate, *rtt),
-                    ServerReading::Low { bitrate, rtt } => {
-                        format!("{} (low)", reading(*bitrate, *rtt))
-                    }
-                    ServerReading::Offline => "offline".into(),
+                    ServerReading::Live { bitrate, rtt } => reading(lang, *bitrate, *rtt),
+                    ServerReading::Low { bitrate, rtt } => tr!(
+                        lang,
+                        "{reading} (low)",
+                        reading = reading(lang, *bitrate, *rtt)
+                    ),
+                    ServerReading::Offline => tr!(lang, "offline"),
                 };
                 if servers.len() == 1 {
-                    format!("Current bitrate: {value}")
+                    tr!(lang, "Current bitrate: {reading}", reading = value)
                 } else {
                     format!("{name}: {value}")
                 }
             })
             .collect::<Vec<_>>()
             .join(" | "),
-        Msg::NoStats => "No stream stats right now.".into(),
+        Msg::NoStats => tr!(lang, "No stream stats right now."),
         Msg::ServerInfo {
             scene,
             bitrate,
             stats,
-        } => server_info(scene.as_deref(), *bitrate, stats),
-        Msg::Toggled(what, value) => format!("{what} {}", on(*value)),
-        Msg::Trigger { what, unit, value } => match value {
-            Some(value) => format!("{what} is {value} {unit}"),
-            None => format!("{what} is off"),
-        },
-        Msg::TriggerSet { what, unit, value } => match value {
-            Some(value) => format!("{what} set to {value} {unit}"),
-            None => format!("{what} turned off"),
-        },
-        Msg::Invalid(reason) => reason.clone(),
-        Msg::Usage(usage) => format!("Usage: {usage}"),
+        } => server_info(lang, scene.as_deref(), *bitrate, stats),
+        Msg::Toggled(flag, value) => toggled(lang, *flag, *value),
+        Msg::Trigger {
+            trigger: kind,
+            value,
+        } => trigger(lang, *kind, *value),
+        Msg::TriggerSet {
+            trigger: kind,
+            value,
+        } => trigger_set(lang, *kind, *value),
+        Msg::InvalidTriggers(error) => invalid_triggers(lang, *error),
+        Msg::PrefixTooLong => tr!(lang, "The prefix must be 1 to 3 characters without spaces"),
+        Msg::UnknownLanguage => tr!(
+            lang,
+            "Languages: {languages}",
+            languages = db::chat_commands::LANGUAGES.join(", ")
+        ),
+        Msg::Usage {
+            prefix,
+            usage: wanted,
+        } => usage(lang, prefix, wanted),
         Msg::AliasAdded {
             alias,
             command,
             prefix,
-        } => format!("{prefix}{alias} now runs {prefix}{command}"),
-        Msg::AliasRemoved(alias) => format!("Removed the alias {alias}"),
-        Msg::AliasTaken(alias) => format!("{alias} is already taken"),
-        Msg::AliasNotFound(alias) => format!("There's no alias {alias}"),
-        Msg::UnknownCommand(command) => format!("There's no command {command}"),
-        Msg::PrefixSet(prefix) => format!("Commands now start with {prefix}"),
-        Msg::LanguageSet(language) => format!("Language set to {language}"),
+        } => tr!(
+            lang,
+            "{prefix}{alias} now runs {prefix}{command}",
+            prefix = prefix,
+            alias = alias,
+            command = command
+        ),
+        Msg::AliasRemoved(alias) => tr!(lang, "Removed the alias {alias}", alias = alias),
+        Msg::AliasTaken(alias) => tr!(lang, "{alias} is already taken", alias = alias),
+        Msg::AliasNotFound(alias) => tr!(lang, "There's no alias {alias}", alias = alias),
+        Msg::UnknownCommand(command) => {
+            tr!(lang, "There's no command {command}", command = command)
+        }
+        Msg::PrefixSet(prefix) => tr!(lang, "Commands now start with {prefix}", prefix = prefix),
+        Msg::LanguageSet(language) => {
+            tr!(lang, "Language set to {language}", language = language)
+        }
         Msg::Version => format!("NOALBS Cloud {}", env!("CARGO_PKG_VERSION")),
-        Msg::NotAvailable(command) => format!("{command} isn't available in NOALBS Cloud yet."),
+        Msg::NotAvailable(command) => {
+            tr!(
+                lang,
+                "{command} isn't available in NOALBS Cloud yet.",
+                command = command
+            )
+        }
         Msg::AutoSwitched {
             scene,
             server,
             bitrate,
             rtt,
         } => match (server, bitrate) {
-            (Some(server), Some(bitrate)) => {
-                format!(
-                    "Switched to {scene} · {server} at {}",
-                    reading(*bitrate, *rtt)
-                )
-            }
-            (Some(server), None) => format!("Switched to {scene} · {server}"),
-            _ => format!("Switched to {scene}"),
+            (Some(server), Some(bitrate)) => tr!(
+                lang,
+                "Switched to {scene} · {server} at {reading}",
+                scene = scene,
+                server = server,
+                reading = reading(lang, *bitrate, *rtt)
+            ),
+            (Some(server), None) => tr!(
+                lang,
+                "Switched to {scene} · {server}",
+                scene = scene,
+                server = server
+            ),
+            _ => tr!(lang, "Switched to {scene}", scene = scene),
         },
-        Msg::RaidStopping { to, url } => {
-            format!("The stream has stopped and raided {to} please follow this link {url}")
-        }
-        Msg::OfflineTimeout => "Offline timeout reached, stopping the stream".into(),
-        Msg::EndingTimeout => "Ending scene timeout reached, stopping the stream".into(),
-        Msg::Ignoring(name) => format!("Ignoring {name} from now on"),
-        Msg::Unignored(name) => format!("No longer ignoring {name}"),
-        Msg::NotIgnored(name) => format!("{name} isn't ignored"),
-        Msg::UserNotFound(name) => format!("There's no user called {name}"),
+        Msg::RaidStopping { to, url } => tr!(
+            lang,
+            "The stream has stopped and raided {to} please follow this link {url}",
+            to = to,
+            url = url
+        ),
+        Msg::OfflineTimeout => tr!(lang, "Offline timeout reached, stopping the stream"),
+        Msg::EndingTimeout => tr!(lang, "Ending scene timeout reached, stopping the stream"),
+        Msg::Ignoring(name) => tr!(lang, "Ignoring {name} from now on", name = name),
+        Msg::Unignored(name) => tr!(lang, "No longer ignoring {name}", name = name),
+        Msg::NotIgnored(name) => tr!(lang, "{name} isn't ignored", name = name),
+        Msg::UserNotFound(name) => tr!(lang, "There's no user called {name}", name = name),
         Msg::BelaboxUnreachable => {
-            "BELABOX isn't connected right now: is OBS open with the browser source?".into()
+            tr!(
+                lang,
+                "BELABOX isn't connected right now: is OBS open with the browser source?"
+            )
         }
-        Msg::BelaboxRefused(refusal) => belabox_refusal(*refusal).into(),
-        Msg::BelaboxStarting => "Starting the BELABOX stream".into(),
-        Msg::BelaboxStopping => "Stopping the BELABOX stream".into(),
-        Msg::BelaboxBitrate(Some(max_br)) => format!("BELABOX max bitrate: {} kbps", kbps(*max_br)),
-        Msg::BelaboxBitrate(None) => "BELABOX hasn't said its max bitrate yet.".into(),
-        Msg::BelaboxBitrateSet(max_br) => {
-            format!("BELABOX max bitrate set to {} kbps", kbps(*max_br))
+        Msg::BelaboxRefused(refusal) => belabox_refusal(lang, *refusal),
+        Msg::BelaboxStarting => tr!(lang, "Starting the BELABOX stream"),
+        Msg::BelaboxStopping => tr!(lang, "Stopping the BELABOX stream"),
+        Msg::BelaboxBitrate(Some(max_br)) => tr!(
+            lang,
+            "BELABOX max bitrate: {bitrate} kbps",
+            bitrate = kbps(lang, *max_br)
+        ),
+        Msg::BelaboxBitrate(None) => tr!(lang, "BELABOX hasn't said its max bitrate yet."),
+        Msg::BelaboxBitrateSet(max_br) => tr!(
+            lang,
+            "BELABOX max bitrate set to {bitrate} kbps",
+            bitrate = kbps(lang, *max_br)
+        ),
+        Msg::BelaboxInterfaceToggled {
+            name,
+            enabled: true,
+        } => tr!(lang, "Turning {name} on", name = name),
+        Msg::BelaboxInterfaceToggled {
+            name,
+            enabled: false,
+        } => tr!(lang, "Turning {name} off", name = name),
+        Msg::NoInterfaceMatch(query) => {
+            tr!(
+                lang,
+                "BELABOX has no network interface like {query}",
+                query = query
+            )
         }
-        Msg::BelaboxInterfaceToggled { name, enabled } => {
-            format!("Turning {name} {}", on(*enabled))
-        }
-        Msg::NoInterfaceMatch(query) => format!("BELABOX has no network interface like {query}"),
         Msg::BelaboxStats {
             streaming,
             max_br,
             total_kbps,
             interfaces,
             labels,
-        } => belabox_stats(*streaming, *max_br, *total_kbps, interfaces, labels),
+        } => belabox_stats(lang, *streaming, *max_br, *total_kbps, interfaces, labels),
         Msg::BelaboxSensors(sensors) if sensors.is_empty() => {
-            "BELABOX hasn't sent any sensor readings yet.".into()
+            tr!(lang, "BELABOX hasn't sent any sensor readings yet.")
         }
         Msg::BelaboxSensors(sensors) => sensors
             .iter()
             .map(|(name, value)| format!("{name}: {value}"))
             .collect::<Vec<_>>()
             .join(" | "),
-        Msg::MoblinUnreachable => "Moblin isn't connected right now.".into(),
-        Msg::MoblinRefused(refusal) => moblin_refusal(*refusal).into(),
-        Msg::MoblinStarting => "Starting the Moblin stream".into(),
-        Msg::MoblinStopping => "Stopping the Moblin stream".into(),
+        Msg::MoblinUnreachable => moblin_unreachable(lang),
+        Msg::MoblinRefused(refusal) => moblin_refusal(lang, *refusal),
+        Msg::MoblinStarting => tr!(lang, "Starting the Moblin stream"),
+        Msg::MoblinStopping => tr!(lang, "Stopping the Moblin stream"),
         Msg::MoblinBitrate { current, presets } => {
-            let presets = kbps_list(presets);
+            let presets = kbps_list(lang, presets);
             match current {
-                Some(current) => {
-                    format!(
-                        "Moblin bitrate: {} kbps · presets: {presets}",
-                        kbps(*current)
-                    )
-                }
-                None => format!("Moblin bitrate presets: {presets}"),
+                Some(current) => tr!(
+                    lang,
+                    "Moblin bitrate: {bitrate} kbps · presets: {presets}",
+                    bitrate = kbps(lang, *current),
+                    presets = presets
+                ),
+                None => tr!(lang, "Moblin bitrate presets: {presets}", presets = presets),
             }
         }
-        Msg::MoblinBitrateSet(value) => format!("Moblin bitrate set to {} kbps", kbps(*value)),
+        Msg::MoblinBitrateSet(value) => tr!(
+            lang,
+            "Moblin bitrate set to {bitrate} kbps",
+            bitrate = kbps(lang, *value)
+        ),
         Msg::NoMoblinPreset {
             kbps: value,
             presets,
-        } => format!(
-            "Moblin has no {} kbps preset. Presets: {}",
-            kbps(*value),
-            kbps_list(presets)
+        } => tr!(
+            lang,
+            "Moblin has no {bitrate} kbps preset. Presets: {presets}",
+            bitrate = kbps(lang, *value),
+            presets = kbps_list(lang, presets)
         ),
         Msg::MoblinScenes { current, scenes } => match current {
-            Some(current) => format!("Moblin scene: {current} · scenes: {}", scenes.join(", ")),
-            None => format!("Moblin scenes: {}", scenes.join(", ")),
+            Some(current) => tr!(
+                lang,
+                "Moblin scene: {scene} · scenes: {scenes}",
+                scene = current,
+                scenes = scenes.join(", ")
+            ),
+            None => tr!(lang, "Moblin scenes: {scenes}", scenes = scenes.join(", ")),
         },
-        Msg::MoblinSceneSet(scene) => format!("Switching Moblin to {scene}"),
-        Msg::NoMoblinSceneMatch(query) => format!("Moblin has no scene like {query}"),
-        Msg::MoblinStats(status) => moblin_stats(status),
+        Msg::MoblinSceneSet(scene) => tr!(lang, "Switching Moblin to {scene}", scene = scene),
+        Msg::NoMoblinSceneMatch(query) => {
+            tr!(lang, "Moblin has no scene like {query}", query = query)
+        }
+        Msg::MoblinStats(status) => moblin_stats(lang, status),
     }
 }
 
-fn kbps_list(values: &[u32]) -> String {
+fn paused(lang: &str) -> String {
+    tr!(
+        lang,
+        "This switcher is paused: the workspace has more switchers than its plan includes."
+    )
+}
+
+fn moblin_unreachable(lang: &str) -> String {
+    tr!(lang, "Moblin isn't connected right now.")
+}
+
+fn kbps_list(lang: &str, values: &[u32]) -> String {
     if values.is_empty() {
-        return "none".into();
+        return tr!(lang, "none");
     }
-    let values: Vec<String> = values.iter().map(|value| kbps(*value)).collect();
+    let values: Vec<String> = values.iter().map(|value| kbps(lang, *value)).collect();
     format!("{} kbps", values.join(", "))
 }
 
-fn moblin_refusal(refusal: MoblinRefusal) -> &'static str {
+fn moblin_refusal(lang: &str, refusal: MoblinRefusal) -> String {
     match refusal {
-        MoblinRefusal::NotConnected => "Moblin isn't connected right now.",
-        MoblinRefusal::Paused => {
-            "This switcher is paused: the workspace has more switchers than its plan includes."
+        MoblinRefusal::NotConnected => moblin_unreachable(lang),
+        MoblinRefusal::Paused => paused(lang),
+        MoblinRefusal::AlreadyStreaming => tr!(lang, "Moblin is already live."),
+        MoblinRefusal::NotStreaming => tr!(lang, "Moblin isn't live."),
+        MoblinRefusal::UnknownScene => tr!(lang, "Moblin has no such scene."),
+        MoblinRefusal::UnknownPreset => tr!(lang, "Moblin has no such bitrate preset."),
+        MoblinRefusal::UnknownZoomPreset => tr!(lang, "Moblin has no such zoom preset."),
+        MoblinRefusal::InvalidZoom => tr!(lang, "The zoom must be between 0.5x and 100x."),
+        MoblinRefusal::UnknownConnection => tr!(lang, "Moblin has no such connection."),
+        MoblinRefusal::LastConnection => {
+            tr!(lang, "The last connection in use can't be turned off.")
         }
-        MoblinRefusal::AlreadyStreaming => "Moblin is already live.",
-        MoblinRefusal::NotStreaming => "Moblin isn't live.",
-        MoblinRefusal::UnknownScene => "Moblin has no such scene.",
-        MoblinRefusal::UnknownPreset => "Moblin has no such bitrate preset.",
-        MoblinRefusal::UnknownZoomPreset => "Moblin has no such zoom preset.",
-        MoblinRefusal::InvalidZoom => "The zoom must be between 0.5x and 100x.",
-        MoblinRefusal::UnknownConnection => "Moblin has no such connection.",
-        MoblinRefusal::LastConnection => "The last connection in use can't be turned off.",
-        MoblinRefusal::InvalidPriority => "The priority must be between 1 and 10.",
-        MoblinRefusal::Failed => "Moblin refused.",
-        MoblinRefusal::Timeout => "Moblin didn't answer. Try again in a moment.",
+        MoblinRefusal::InvalidPriority => tr!(lang, "The priority must be between 1 and 10."),
+        MoblinRefusal::Failed => tr!(lang, "Moblin refused."),
+        MoblinRefusal::Timeout => tr!(lang, "Moblin didn't answer. Try again in a moment."),
     }
 }
 
 /// `!mstats`: live or not, bitrate, bonding, battery and heat.
-fn moblin_stats(status: &MoblinStatus) -> String {
-    let mut head = if status.streaming {
-        "Moblin (live".to_owned()
-    } else {
-        "Moblin (not live".to_owned()
+fn moblin_stats(lang: &str, status: &MoblinStatus) -> String {
+    let head = match status.uptime.as_deref() {
+        Some(uptime) if status.streaming => tr!(lang, "Moblin (live, {uptime})", uptime = uptime),
+        _ if status.streaming => tr!(lang, "Moblin (live)"),
+        _ => tr!(lang, "Moblin (not live)"),
     };
-    if let Some(uptime) = status.uptime.as_deref().filter(|_| status.streaming) {
-        head.push_str(&format!(", {uptime}"));
-    }
-    head.push(')');
 
     let mut parts = vec![head];
     if let Some(bitrate) = &status.bitrate {
         parts.push(bitrate.clone());
     }
     if let Some(bonding) = &status.bonding {
-        parts.push(format!("Bonding: {bonding}"));
+        parts.push(tr!(lang, "Bonding: {bonding}", bonding = bonding));
     }
     if let Some(level) = status.battery_level {
-        let charging = if status.battery_charging == Some(true) {
-            ", charging"
+        parts.push(if status.battery_charging == Some(true) {
+            tr!(lang, "Battery {level}%, charging", level = level)
         } else {
-            ""
-        };
-        parts.push(format!("Battery {level}%{charging}"));
+            tr!(lang, "Battery {level}%", level = level)
+        });
     }
     match status.thermal {
-        Some(MoblinThermal::Serious) => parts.push("Getting hot".into()),
-        Some(MoblinThermal::Critical) => parts.push("Too hot!".into()),
+        Some(MoblinThermal::Serious) => parts.push(tr!(lang, "Getting hot")),
+        Some(MoblinThermal::Critical) => parts.push(tr!(lang, "Too hot!")),
         _ => {}
     }
     if status.muted {
-        parts.push("Muted".into());
+        parts.push(tr!(lang, "Muted"));
     }
     parts.join(" | ")
 }
@@ -548,7 +948,9 @@ fn moblin_stats(status: &MoblinStatus) -> String {
 mod tests {
     use std::collections::BTreeMap;
 
-    use super::{Msg, ServerReading, text};
+    use db::switchers::ChatFlag;
+
+    use super::{Msg, SceneKind, ServerReading, TriggerKind, Usage, text};
     use live::{BelaboxInterface, BelaboxModem, BelaboxRefusal};
 
     #[test]
@@ -781,8 +1183,145 @@ mod tests {
             ("MediaMTX".into(), ServerReading::Offline),
         ]);
         assert_eq!(
-            text("de", &two),
+            text("en", &two),
             "BELABOX: 640 kbps (low) | MediaMTX: offline"
+        );
+        assert_eq!(
+            text("de", &two),
+            "BELABOX: 640 kbps (niedrig) | MediaMTX: offline"
+        );
+    }
+
+    #[test]
+    fn replies_are_in_the_switchers_language() {
+        let switched = Msg::SwitchedTo("LIVE".into());
+        assert_eq!(text("en", &switched), "Switched to LIVE");
+        assert_eq!(text("nl", &switched), "Overgeschakeld naar LIVE");
+        assert_eq!(text("zh-tw", &switched), "已切換至 LIVE");
+        // A language we don't know, or a code from before it was checked.
+        assert_eq!(text("xx", &switched), "Switched to LIVE");
+    }
+
+    #[test]
+    fn a_new_language_is_confirmed_in_that_language() {
+        let set = Msg::LanguageSet("de".into());
+        assert_eq!(text("en", &set), "Sprache auf de gesetzt");
+        let back = Msg::LanguageSet("en".into());
+        assert_eq!(text("de", &back), "Language set to en");
+    }
+
+    #[test]
+    fn numbers_are_written_the_languages_way() {
+        let bitrate = Msg::BelaboxBitrateSet(12000);
+        assert_eq!(
+            text("en", &bitrate),
+            "BELABOX max bitrate set to 12,000 kbps"
+        );
+        assert_eq!(
+            text("de", &bitrate),
+            "Maximale BELABOX-Bitrate auf 12.000 kbps gesetzt"
+        );
+        assert_eq!(
+            text("fr", &bitrate),
+            "Débit max BELABOX réglé à 12 000 kbps"
+        );
+    }
+
+    #[test]
+    fn serverinfo_uses_the_languages_decimal_mark() {
+        let info = Msg::ServerInfo {
+            scene: None,
+            bitrate: None,
+            stats: Box::new(control::ObsStats {
+                streaming: false,
+                reconnecting: false,
+                stream_bytes: 0,
+                stream_duration_ms: 0,
+                congestion: 0.0,
+                network: control::Dropped {
+                    frames: 0,
+                    total: 0,
+                },
+                rendering: control::Dropped {
+                    frames: 0,
+                    total: 0,
+                },
+                encoding: control::Dropped {
+                    frames: 0,
+                    total: 0,
+                },
+                this_stream: false,
+                fps: 30.0,
+                frame_render_ms: 0.0,
+                cpu_percent: 12.34,
+                memory_mb: 512.0,
+                disk_free_mb: 2048.0,
+            }),
+        };
+        let de = text("de", &info);
+        assert!(
+            de.starts_with("Szene: unbekannt, streamt nicht, fps: 30"),
+            "{de}"
+        );
+        assert!(de.contains("CPU: 12,3 %"), "{de}");
+        assert!(de.contains("freier Speicherplatz: 2,0 GB"), "{de}");
+        // Turkish puts the percent sign first.
+        assert!(text("tr", &info).contains("CPU: %12,3"));
+    }
+
+    #[test]
+    fn typed_settings_read_as_whole_sentences() {
+        assert_eq!(
+            text("en", &Msg::Toggled(ChatFlag::ModCommands, false)),
+            "Mod commands off"
+        );
+        assert_eq!(
+            text(
+                "en",
+                &Msg::Trigger {
+                    trigger: TriggerKind::RttOffline,
+                    value: Some(500)
+                }
+            ),
+            "The offline RTT trigger is 500 ms"
+        );
+        assert_eq!(
+            text(
+                "en",
+                &Msg::TriggerSet {
+                    trigger: TriggerKind::Low,
+                    value: None
+                }
+            ),
+            "The LOW trigger turned off"
+        );
+        assert_eq!(
+            text("en", &Msg::NoScene(SceneKind::Privacy)),
+            "No Privacy scene is picked yet. Choose one on the Scenes page."
+        );
+        assert_eq!(
+            text("en", &Msg::SwitchedToKind(SceneKind::Live)),
+            "Switched to the LIVE scene"
+        );
+        assert_eq!(
+            text(
+                "en",
+                &Msg::Usage {
+                    prefix: "!".into(),
+                    usage: Usage::OnOff("notify")
+                }
+            ),
+            "Usage: !notify [on|off]"
+        );
+        assert_eq!(
+            text(
+                "en",
+                &Msg::ObsRefused {
+                    code: 702,
+                    comment: None
+                }
+            ),
+            "OBS said no: code 702"
         );
     }
 }

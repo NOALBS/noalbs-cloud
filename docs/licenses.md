@@ -14,7 +14,7 @@ and the dashboard's JavaScript is sent to every visitor's browser, so this isn't
 | --- | --- | --- | --- |
 | `/third-party-licenses.txt` | Production npm packages of the dashboard and browser source, with full license texts | `web/dashboard/scripts/js-licenses.mjs` (uses `pnpm licenses list --prod`) | No, generated on every `pnpm build` |
 | `/rust-licenses.txt` | Rust crates linked into `api`, `obs-link` and `chat`, with the license each declares | `web/dashboard/scripts/rust-licenses.mjs` (uses `cargo metadata`) | **Yes** |
-| `/third-party-notices.txt` | Software we implement protocols of (BELABOX/belaUI, Moblin): copyright and license texts | By hand | **Yes** |
+| `/third-party-notices.txt` | Software we implement protocols of (BELABOX/belaUI, Moblin) and NOALBS, whose translations the chat bot builds on: copyright and license texts, and its translators | By hand | **Yes** |
 
 ## When to do something
 
@@ -40,6 +40,10 @@ or icon set): add its license to `licenses.html` by hand.
 **Code ported from another project** (NOALBS v2's stream servers, belabot, Moblin's protocol, ...): keep
 the original copyright notice if its license requires it, and mention it on `licenses.html` (BELABOX/belaUI, GPL-3.0, and Moblin, MIT: credit lines on
 the page, texts in the committed `public/third-party-notices.txt`).
+
+**Translations:** the chat bot's languages build on NOALBS's (MIT). Whoever works on a language adds
+themselves to the top of its `.po` file; `third-party-notices.txt` and `licenses.html` credit
+the NOALBS translators, so they only change if more is taken from there.
 
 ## Checking
 

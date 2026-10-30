@@ -1,0 +1,504 @@
+# Swedish for the NOALBS Cloud chat bot.
+# Builds on the NOALBS translations by ungutvecklare.
+# Reworded and completed for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sv\n"
+
+msgid "scene: {scene}"
+msgstr "scen: {scene}"
+
+msgid "scene: unknown"
+msgstr "scen: okänd"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "bitrate: {bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "bitrate: okänd"
+
+msgid "not streaming"
+msgstr "strömmar inte"
+
+msgid "fps: {fps}"
+msgstr "fps: {fps}"
+
+msgid "network: {dropped}"
+msgstr "nätverk: {dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "renderingslagg: {dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "kodningslagg: {dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "tappade på grund av: {causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU: {percent} %"
+
+msgid "memory: {memory} MB"
+msgstr "minne: {memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "ledigt diskutrymme: {disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "Ingen LIVE-scen är vald än. Välj en på sidan Scenes."
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "Ingen Privacy-scen är vald än. Välj en på sidan Scenes."
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "Ingen Starting-scen är vald än. Välj en på sidan Scenes."
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "Ingen Ending-scen är vald än. Välj en på sidan Scenes."
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "Ingen Refresh-scen är vald än. Välj en på sidan Scenes."
+
+msgid "Switched to the LIVE scene"
+msgstr "Bytte till LIVE-scenen"
+
+msgid "Switched to the Privacy scene"
+msgstr "Bytte till Privacy-scenen"
+
+msgid "Switched to the Starting scene"
+msgstr "Bytte till Starting-scenen"
+
+msgid "Switched to the Ending scene"
+msgstr "Bytte till Ending-scenen"
+
+msgid "Switched to the Refresh scene"
+msgstr "Bytte till Refresh-scenen"
+
+msgid "Chat notifications on"
+msgstr "Chattaviseringar på"
+
+msgid "Chat notifications off"
+msgstr "Chattaviseringar av"
+
+msgid "Auto stop on raid on"
+msgstr "Automatiskt stopp vid raid på"
+
+msgid "Auto stop on raid off"
+msgstr "Automatiskt stopp vid raid av"
+
+msgid "Public commands on"
+msgstr "Publika kommandon på"
+
+msgid "Public commands off"
+msgstr "Publika kommandon av"
+
+msgid "Mod commands on"
+msgstr "Mod-kommandon på"
+
+msgid "Mod commands off"
+msgstr "Mod-kommandon av"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOW-utlösaren är {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "LOW-utlösaren är av"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "Offline-utlösaren är {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "Offline-utlösaren är av"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTT-utlösaren är {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "RTT-utlösaren är av"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "Offline-RTT-utlösaren är {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "Offline-RTT-utlösaren är av"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOW-utlösaren inställd på {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "LOW-utlösaren avstängd"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "Offline-utlösaren inställd på {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "Offline-utlösaren avstängd"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTT-utlösaren inställd på {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "RTT-utlösaren avstängd"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "Offline-RTT-utlösaren inställd på {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "Offline-RTT-utlösaren avstängd"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "Bitrate-utlösare måste vara mellan 1 och 100 000 kbps"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTT-utlösare måste vara mellan 1 och 60 000 ms"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "Offline-bitraten måste vara lägre än LOW-bitraten"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "Offline-RTT måste vara högre än LOW-RTT"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "Användning: {prefix}switch <scennamn>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "Användning: {prefix}source <källnamn>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "Användning: {prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "Användning: {prefix}bbt <gränssnitt, t.ex. usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "Användning: {prefix}mbitrate <kbps för en förinställning>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "Användning: {prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "Användning: {prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "Användning: {prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "Användning: {prefix}alias <alias> <kommando> | {prefix}alias rem <alias>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "Användning: {prefix}noalbs version | prefix <nytt> | lang <kod>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "Ansluter fortfarande till BELABOX Cloud. Försök igen om en stund."
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud nekade den hemliga URL:en. Kontrollera den i switcherns inställningar."
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX är offline."
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOX har inga ströminställningar än. Starta den en gång från dess egen sida."
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX strömmar redan."
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX strömmar inte."
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "Bitraten måste vara mellan 300 och 12000 kbps."
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOX har inget sådant nätverksgränssnitt."
+
+msgid "The last network interface can't be turned off."
+msgstr "Det sista nätverksgränssnittet kan inte stängas av."
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX kan inte göra det."
+
+msgid "{name}: off"
+msgstr "{name}: av"
+
+msgid "no network interfaces"
+msgstr "inga nätverksgränssnitt"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "strömmar, max {bitrate} kbps"
+
+msgid "streaming"
+msgstr "strömmar"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX ({state}): {interfaces} | Totalt: {total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS är inte anslutet just nu."
+
+msgid "OBS said no: {reason}"
+msgstr "OBS nekade: {reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS nekade: kod {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS svarade inte. Försök igen om en stund."
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "Något gick fel. Försök igen om en stund."
+
+msgid "No scene matches \"{query}\"."
+msgstr "Ingen scen matchar \"{query}\"."
+
+msgid "Switched to {scene}"
+msgstr "Bytte till {scene}"
+
+msgid "Starting the stream"
+msgstr "Startar strömmen"
+
+msgid "Stopping the stream"
+msgstr "Stoppar strömmen"
+
+msgid "Already streaming"
+msgstr "Strömmar redan"
+
+msgid "Not streaming"
+msgstr "Strömmar inte"
+
+msgid "Recording started"
+msgstr "Inspelning startad"
+
+msgid "Recording stopped"
+msgstr "Inspelning stoppad"
+
+msgid "Refreshing the feed"
+msgstr "Uppdaterar flödet"
+
+msgid "Already refreshing"
+msgstr "Uppdaterar redan"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "Fixar flödet: återansluter {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "Inget att fixa: ingen strömkälla spelas på {scene}"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "Ingen Refresh-scen är vald, så fixar i stället. {result}"
+
+msgid "{name} is now shown"
+msgstr "{name} visas nu"
+
+msgid "{name} is now hidden"
+msgstr "{name} är nu dold"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "Ingen källa på den här scenen matchar \"{query}\"."
+
+msgid "Marker added at {time}"
+msgstr "Markör tillagd vid {time}"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "Den här OBS-versionen är för gammal för det. Uppdatera OBS."
+
+msgid "{reading} (low)"
+msgstr "{reading} (låg)"
+
+msgid "offline"
+msgstr "offline"
+
+msgid "Current bitrate: {reading}"
+msgstr "Aktuell bitrate: {reading}"
+
+msgid "No stream stats right now."
+msgstr "Ingen strömstatistik just nu."
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "Prefixet måste vara 1 till 3 tecken utan mellanslag"
+
+msgid "Languages: {languages}"
+msgstr "Språk: {languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} kör nu {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "Tog bort aliaset {alias}"
+
+msgid "{alias} is already taken"
+msgstr "{alias} är redan upptaget"
+
+msgid "There's no alias {alias}"
+msgstr "Det finns inget alias {alias}"
+
+msgid "There's no command {command}"
+msgstr "Det finns inget kommando {command}"
+
+msgid "Commands now start with {prefix}"
+msgstr "Kommandon börjar nu med {prefix}"
+
+msgid "Language set to {language}"
+msgstr "Språk inställt på {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "{command} är inte tillgängligt i NOALBS Cloud än."
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "Bytte till {scene} · {server} med {reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "Bytte till {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "Strömmen har stoppats och raidat {to}, följ den här länken: {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "Tidsgränsen för offline nåddes, stoppar strömmen"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "Tidsgränsen för Ending-scenen nåddes, stoppar strömmen"
+
+msgid "Ignoring {name} from now on"
+msgstr "Ignorerar {name} från och med nu"
+
+msgid "No longer ignoring {name}"
+msgstr "Ignorerar inte längre {name}"
+
+msgid "{name} isn't ignored"
+msgstr "{name} ignoreras inte"
+
+msgid "There's no user called {name}"
+msgstr "Det finns ingen användare som heter {name}"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX är inte anslutet just nu: är OBS öppet med webbläsarkällan?"
+
+msgid "Starting the BELABOX stream"
+msgstr "Startar BELABOX-strömmen"
+
+msgid "Stopping the BELABOX stream"
+msgstr "Stoppar BELABOX-strömmen"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "Högsta BELABOX-bitrate: {bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX har inte angett sin högsta bitrate än."
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "Högsta BELABOX-bitrate inställd på {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "Slår på {name}"
+
+msgid "Turning {name} off"
+msgstr "Stänger av {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX har inget nätverksgränssnitt som {query}"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX har inte skickat några sensorvärden än."
+
+msgid "Starting the Moblin stream"
+msgstr "Startar Moblin-strömmen"
+
+msgid "Stopping the Moblin stream"
+msgstr "Stoppar Moblin-strömmen"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblin-bitrate: {bitrate} kbps · förinställningar: {presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblin-bitrateförinställningar: {presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblin-bitrate inställd på {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin har ingen förinställning på {bitrate} kbps. Förinställningar: {presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblin-scen: {scene} · scener: {scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblin-scener: {scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Byter Moblin till {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin har ingen scen som {query}"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "Den här switchern är pausad: arbetsytan har fler switchers än vad planen omfattar."
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin är inte anslutet just nu."
+
+msgid "none"
+msgstr "inga"
+
+msgid "Moblin is already live."
+msgstr "Moblin är redan live."
+
+msgid "Moblin isn't live."
+msgstr "Moblin är inte live."
+
+msgid "Moblin has no such scene."
+msgstr "Moblin har ingen sådan scen."
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin har ingen sådan bitrateförinställning."
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin har ingen sådan zoomförinställning."
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "Zoomen måste vara mellan 0,5x och 100x."
+
+msgid "Moblin has no such connection."
+msgstr "Moblin har ingen sådan anslutning."
+
+msgid "The last connection in use can't be turned off."
+msgstr "Den sista anslutningen som används kan inte stängas av."
+
+msgid "The priority must be between 1 and 10."
+msgstr "Prioriteten måste vara mellan 1 och 10."
+
+msgid "Moblin refused."
+msgstr "Moblin nekade."
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin svarade inte. Försök igen om en stund."
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin (live, {uptime})"
+
+msgid "Moblin (live)"
+msgstr "Moblin (live)"
+
+msgid "Moblin (not live)"
+msgstr "Moblin (inte live)"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding: {bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "Batteri {level} %, laddar"
+
+msgid "Battery {level}%"
+msgstr "Batteri {level} %"
+
+msgid "Getting hot"
+msgstr "Blir varm"
+
+msgid "Too hot!"
+msgstr "För varm!"
+
+msgid "Muted"
+msgstr "Tystad"
