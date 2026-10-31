@@ -1,3 +1,4 @@
+import { plural, t } from "@lingui/core/macro";
 import { useCallback, useState } from "react";
 import type { PreviewOffAir, PreviewWatcher } from "@/api/types";
 
@@ -13,27 +14,27 @@ export function previewOffAirOptions(
   return [
     {
       value: "nobody",
-      label: "Nobody",
-      description: "The preview shows only while the stream is live.",
+      label: t`Nobody`,
+      description: t`The preview shows only while the stream is live.`,
     },
     {
       value: "owners",
-      label: managedBy ? `Only ${managedBy}` : "Only the owner",
+      label: managedBy ? t`Only ${managedBy}` : t`Only the owner`,
       description: managedBy
-        ? `${managedBy}’s team sees it off air too. Admins and operators see it only while live.`
-        : "The owner sees it off air too. Admins and operators see it only while live.",
+        ? t`${managedBy}’s team sees it off air too. Admins and operators see it only while live.`
+        : t`The owner sees it off air too. Admins and operators see it only while live.`,
     },
     {
       value: "admins",
-      label: managedBy ? `${managedBy} and admins` : "The owner and admins",
+      label: managedBy ? t`${managedBy} and admins` : t`The owner and admins`,
       description: managedBy
-        ? `${managedBy}’s team and the workspace’s admins see it off air too. Operators see it only while live.`
-        : "The owner and admins see it off air too. Operators see it only while live.",
+        ? t`${managedBy}’s team and the workspace’s admins see it off air too. Operators see it only while live.`
+        : t`The owner and admins see it off air too. Operators see it only while live.`,
     },
     {
       value: "everyone",
-      label: "Everyone in the workspace",
-      description: "Admins and operators see it off air too.",
+      label: t`Everyone in the workspace`,
+      description: t`Admins and operators see it off air too.`,
     },
   ];
 }
@@ -42,11 +43,10 @@ export function previewOffAirOptions(
 export function watchingLine(watchers: PreviewWatcher[]): string | null {
   const names = watchers.filter((watcher) => !watcher.you).map((watcher) => watcher.name);
   if (names.length === 0) return null;
-  const list =
-    names.length === 1
-      ? names[0]
-      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-  return `${list} ${names.length === 1 ? "is" : "are"} watching`;
+  const rest = names.slice(0, -1).join(", ");
+  const last = names[names.length - 1] ?? "";
+  const list = names.length === 1 ? last : t`${rest} and ${last}`;
+  return plural(names.length, { one: `${list} is watching`, other: `${list} are watching` });
 }
 
 /**
@@ -68,12 +68,13 @@ export interface PreviewSettings {
 
 export const FPS_OPTIONS = [0.5, 1, 2, 5] as const;
 export const WIDTH_OPTIONS = [320, 480, 640, 960, 1280] as const;
-export const QUALITY_OPTIONS = [
-  { value: 30, label: "Low" },
-  { value: 60, label: "Medium" },
-  { value: 80, label: "High" },
-  { value: 95, label: "Best" },
-] as const;
+export const qualityOptions = () =>
+  [
+    { value: 30, label: t`Low` },
+    { value: 60, label: t`Medium` },
+    { value: 80, label: t`High` },
+    { value: 95, label: t`Best` },
+  ] as const;
 
 export const DEFAULT_PREVIEW: PreviewSettings = { enabled: null, fps: 1, width: 640, quality: 60 };
 
@@ -96,7 +97,7 @@ export function parsePreview(raw: string | null): PreviewSettings {
     fps: oneOf(FPS_OPTIONS, value.fps, DEFAULT_PREVIEW.fps as 1),
     width: oneOf(WIDTH_OPTIONS, value.width, DEFAULT_PREVIEW.width as 640),
     quality: oneOf(
-      QUALITY_OPTIONS.map((option) => option.value),
+      qualityOptions().map((option) => option.value),
       value.quality,
       DEFAULT_PREVIEW.quality as 60,
     ),
@@ -109,7 +110,7 @@ export function previewOn(settings: PreviewSettings, desktop: boolean): boolean 
 }
 
 export function fpsLabel(fps: number): string {
-  return fps < 1 ? `1 every ${Math.round(1 / fps)} s` : `${fps} fps`;
+  return fps < 1 ? t`1 every ${Math.round(1 / fps)} s` : `${fps} fps`;
 }
 
 /** Roughly what the preview costs at this frame size, in kbps. */

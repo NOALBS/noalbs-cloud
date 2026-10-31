@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, History } from "lucide-react";
@@ -22,8 +24,8 @@ function HistoryPage() {
 
   return (
     <SwitcherPage
-      title="History"
-      description="Every stream from start to stop: how the feed held up, and what switched."
+      title={t`History`}
+      description={t`Every stream from start to stop: how the feed held up, and what switched.`}
     >
       {streams.isPending && (
         <div className="flex flex-col gap-2.5">
@@ -36,10 +38,14 @@ function HistoryPage() {
       {streams.isSuccess && all.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
           <History className="size-8 text-muted-foreground" />
-          <p className="font-semibold">No streams yet</p>
+          <p className="font-semibold">
+            <Trans>No streams yet</Trans>
+          </p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            When OBS goes live with the browser source connected, the stream is recorded here with
-            its bitrate, RTT and scene switches.
+            <Trans>
+              When OBS goes live with the browser source connected, the stream is recorded here with
+              its bitrate, RTT and scene switches.
+            </Trans>
           </p>
         </div>
       )}
@@ -64,20 +70,23 @@ function HistoryPage() {
           disabled={streams.isFetchingNextPage}
           className="min-h-11 self-center rounded-full border px-5 text-sm font-medium text-primary hover:bg-surface-2 disabled:opacity-50"
         >
-          {streams.isFetchingNextPage ? "Loading…" : "Load older streams"}
+          {streams.isFetchingNextPage ? t`Loading…` : t`Load older streams`}
         </button>
       )}
 
       {days != null && (
         <p className="text-center text-xs text-muted-foreground">
-          The {plan.data?.plan.name} plan keeps {days} {days === 1 ? "day" : "days"} of history.{" "}
-          <Link
-            to="/$workspace/settings/plan"
-            params={{ workspace: workspace.url_slug }}
-            className="font-medium text-primary hover:underline"
-          >
-            See plans
-          </Link>
+          <Trans>
+            The {plan.data?.plan.name} plan keeps <Plural value={days} one="# day" other="# days" />{" "}
+            of history.{" "}
+            <Link
+              to="/$workspace/settings/plan"
+              params={{ workspace: workspace.url_slug }}
+              className="font-medium text-primary hover:underline"
+            >
+              See plans
+            </Link>
+          </Trans>
         </p>
       )}
     </SwitcherPage>
@@ -99,8 +108,10 @@ function StreamRow({ stream }: { stream: StreamSummary }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="font-mono text-base font-semibold tabular">
-            {formatClock(start)} –{" "}
-            {running ? "now" : formatClock(Date.parse(stream.ended_at ?? ""))}
+            <Trans>
+              {formatClock(start)} –{" "}
+              {running ? t`now` : formatClock(Date.parse(stream.ended_at ?? ""))}
+            </Trans>
           </span>
           <span className="text-sm text-muted-foreground">
             {formatDuration(stream.duration_seconds)}
@@ -108,7 +119,7 @@ function StreamRow({ stream }: { stream: StreamSummary }) {
           {running && (
             <span className="flex items-center gap-1.5 rounded-full bg-live/12 px-2 py-0.5 text-[11px] font-bold tracking-wider text-live">
               <span className="size-1.5 animate-pulse rounded-full bg-live" />
-              LIVE NOW
+              <Trans>LIVE NOW</Trans>
             </span>
           )}
         </div>
@@ -116,10 +127,10 @@ function StreamRow({ stream }: { stream: StreamSummary }) {
       </div>
       <div className="hidden shrink-0 flex-col items-end gap-0.5 text-right sm:flex">
         <span className="font-mono text-sm font-semibold text-live tabular">
-          {Math.round(shares.live * 100)}% live
+          <Trans>{Math.round(shares.live * 100)}% live</Trans>
         </span>
         <span className="text-xs text-muted-foreground">
-          {stream.auto_switches === 1 ? "1 auto switch" : `${stream.auto_switches} auto switches`}
+          {plural(stream.auto_switches, { one: "# auto switch", other: "# auto switches" })}
         </span>
       </div>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

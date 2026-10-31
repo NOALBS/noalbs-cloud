@@ -1,6 +1,9 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { StreamServer } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { formatKbps } from "@/lib/live-format";
+import { currentLocale } from "@/lib/locale";
 import { kindInfo } from "@/lib/stream-server-kinds";
 import { cn } from "@/lib/utils";
 import type { Point } from "@/live/reducer";
@@ -44,7 +47,10 @@ export function ServerCard({
       <div className="flex items-center gap-3">
         <span className="w-28 shrink-0 font-mono text-xl font-semibold tabular">
           {fresh ? formatKbps(last.bitrate) : "—"}
-          <span className="text-xs font-normal text-muted-foreground"> kbps</span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {" "}
+            <Trans>kbps</Trans>
+          </span>
         </span>
         <BitrateChart
           points={points}
@@ -59,13 +65,13 @@ export function ServerCard({
       </div>
       <span className="flex items-center gap-2 font-mono text-xs text-muted-foreground tabular">
         {!server.enabled
-          ? "Disabled"
+          ? t`Disabled`
           : fresh
-            ? `${last.rtt != null ? `RTT ${Math.round(last.rtt)} ms · ` : ""}${look.label.toLowerCase()}`
-            : "No feed"}
+            ? `${last.rtt != null ? `RTT ${Math.round(last.rtt)} ms · ` : ""}${look.label.toLocaleLowerCase(currentLocale())}`
+            : t`No feed`}
         {inUse && (
           <span className="rounded bg-primary px-1.5 font-sans text-[10px] font-bold text-primary-foreground">
-            IN USE
+            <Trans>IN USE</Trans>
           </span>
         )}
       </span>

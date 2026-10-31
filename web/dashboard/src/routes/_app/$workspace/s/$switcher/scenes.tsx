@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { type UseQueryResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MonitorPlay, RotateCw } from "lucide-react";
@@ -32,49 +34,49 @@ interface RoleRow {
   short?: string;
 }
 
-const AUTOMATIC: RoleRow[] = [
-  { key: "live", label: "LIVE", description: "Your feed is healthy.", dot: SCENE_ROLES.live.dot },
+const automatic = (): RoleRow[] => [
+  { key: "live", label: "LIVE", description: t`Your feed is healthy.`, dot: SCENE_ROLES.live.dot },
   {
     key: "low",
     label: "LOW",
-    description: "Bitrate or RTT crossed the LOW trigger.",
+    description: t`Bitrate or RTT crossed the LOW trigger.`,
     dot: SCENE_ROLES.low.dot,
   },
   {
     key: "offline",
-    label: "BRB / offline",
+    label: t`BRB / offline`,
     short: "BRB",
-    description: "No usable feed on any server.",
+    description: t`No usable feed on any server.`,
     dot: SCENE_ROLES.offline.dot,
   },
 ];
 
-const ON_COMMAND: RoleRow[] = [
+const onCommand = (): RoleRow[] => [
   {
     key: "starting",
-    label: "Starting",
-    description: "Before the stream goes live.",
+    label: t`Starting`,
+    description: t`Before the stream goes live.`,
     dot: "bg-primary",
     command: "starting",
   },
   {
     key: "ending",
-    label: "Ending",
-    description: "Wrapping up the stream.",
+    label: t`Ending`,
+    description: t`Wrapping up the stream.`,
     dot: "bg-primary",
     command: "ending",
   },
   {
     key: "privacy",
-    label: "Privacy",
-    description: "Hide the camera instantly.",
+    label: t`Privacy`,
+    description: t`Hide the camera instantly.`,
     dot: "bg-primary",
     command: "privacy",
   },
   {
     key: "refresh",
-    label: "Refresh",
-    description: "Shown briefly while the feed reloads.",
+    label: t`Refresh`,
+    description: t`Shown briefly while the feed reloads.`,
     dot: "bg-primary",
     command: "refresh",
   },
@@ -108,7 +110,7 @@ function ScenesPage() {
       queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
       setBase(updated.scenes);
       setForm(updated.scenes);
-      toast.success("Saved");
+      toast.success(t`Saved`);
     },
   });
 
@@ -117,8 +119,8 @@ function ScenesPage() {
 
   return (
     <SwitcherPage
-      title="Scenes"
-      description="Tell NOALBS which OBS scene to use for each situation."
+      title={t`Scenes`}
+      description={t`Tell NOALBS which OBS scene to use for each situation.`}
       backToSettings
       actions={<SyncedChip obs={obs} />}
     >
@@ -126,7 +128,10 @@ function ScenesPage() {
         <div className="flex gap-3 rounded-2xl border border-dashed p-4">
           <MonitorPlay className="mt-0.5 size-5 shrink-0 text-primary" />
           <p className="text-sm text-muted-foreground">
-            {errorMessage(obs.error)} Scenes are picked from your OBS, so connect it to change them.
+            <Trans>
+              {errorMessage(obs.error)} Scenes are picked from your OBS, so connect it to change
+              them.
+            </Trans>
           </p>
         </div>
       )}
@@ -135,14 +140,14 @@ function ScenesPage() {
         <div className="flex flex-col gap-4 lg:col-span-8">
           {[
             {
-              title: "Automatic",
-              description: "Chosen by the switcher from your bitrate and latency.",
-              rows: AUTOMATIC,
+              title: t`Automatic`,
+              description: t`Chosen by the switcher from your bitrate and latency.`,
+              rows: automatic(),
             },
             {
-              title: "On command",
-              description: "Only used when you or a mod asks for them.",
-              rows: ON_COMMAND,
+              title: t`On command`,
+              description: t`Only used when you or a mod asks for them.`,
+              rows: onCommand(),
             },
           ].map((group) => (
             <Section key={group.title} title={group.title} description={group.description}>
@@ -212,7 +217,7 @@ function SyncedChip({ obs }: { obs: UseQueryResult<ObsScenes> }) {
       className="flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] text-muted-foreground hover:text-foreground"
     >
       <RotateCw className={cn("size-3.5", obs.isFetching && "animate-spin")} />
-      Synced from OBS {formatRelative(new Date(obs.dataUpdatedAt), new Date(now))}
+      <Trans>Synced from OBS {formatRelative(new Date(obs.dataUpdatedAt), new Date(now))}</Trans>
     </button>
   );
 }
@@ -231,21 +236,23 @@ function ObsSceneList({
 
   const usesOf = (uuid: string | null | undefined) => {
     if (!uuid) return [];
-    const roles = [...AUTOMATIC, ...ON_COMMAND]
+    const roles = [...automatic(), ...onCommand()]
       .filter((row) => scenes[row.key] === uuid)
       .map((row) => row.short ?? row.label);
     const overrides = servers
       .filter((server) => Object.values(server.overrides).includes(uuid))
-      .map((server) => `Override · ${server.name}`);
+      .map((server) => t`Override · ${server.name}`);
     return [...roles, ...overrides];
   };
 
   return (
-    <section aria-label="Scenes in OBS" className="flex flex-col rounded-2xl border bg-card">
+    <section aria-label={t`Scenes in OBS`} className="flex flex-col rounded-2xl border bg-card">
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
-        <h2 className="font-semibold">Scenes in OBS</h2>
+        <h2 className="font-semibold">
+          <Trans>Scenes in OBS</Trans>
+        </h2>
         <span className="font-mono text-xs text-muted-foreground">
-          {obs.scenes.length === 1 ? "1 scene" : `${obs.scenes.length} scenes`}
+          {plural(obs.scenes.length, { one: "# scene", other: "# scenes" })}
         </span>
       </div>
       <ul>
@@ -260,7 +267,9 @@ function ObsSceneList({
               <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
                 {onAir && (
                   <span className="size-2 shrink-0 rounded-full bg-offline">
-                    <span className="sr-only">On air</span>
+                    <span className="sr-only">
+                      <Trans>On air</Trans>
+                    </span>
                   </span>
                 )}
                 <span className="truncate">{scene.name}</span>
@@ -280,7 +289,7 @@ function ObsSceneList({
 function OverridesNote({ servers, obs }: { servers: StreamServer[]; obs: ObsScenes | undefined }) {
   const { workspace, switcher } = useSwitcher();
   const nameOf = (uuid: string) =>
-    obs?.scenes.find((scene) => scene.uuid === uuid)?.name ?? "another scene";
+    obs?.scenes.find((scene) => scene.uuid === uuid)?.name ?? t`another scene`;
   const lines = servers.flatMap((server) =>
     (["live", "low", "offline"] as const).flatMap((role) => {
       const uuid = server.overrides[role];
@@ -290,24 +299,28 @@ function OverridesNote({ servers, obs }: { servers: StreamServer[]; obs: ObsScen
 
   return (
     <section className="flex flex-col gap-2 rounded-2xl border border-dashed p-5">
-      <span className="text-sm font-semibold">Per-server overrides</span>
+      <span className="text-sm font-semibold">
+        <Trans>Per-server overrides</Trans>
+      </span>
       <span className="text-[13px] leading-relaxed text-muted-foreground">
         {lines.length === 0
-          ? "No server swaps in its own scenes. "
+          ? t`No server swaps in its own scenes. `
           : lines.map((line) => (
               <span key={`${line.server}-${line.role}`} className="block">
-                {line.server} uses <span className="text-foreground">{line.scene}</span> instead of{" "}
-                {SCENE_ROLES[line.role].label}.
+                <Trans>
+                  {line.server} uses <span className="text-foreground">{line.scene}</span> instead
+                  of {SCENE_ROLES[line.role].label}.
+                </Trans>
               </span>
             ))}
-        Set overrides on each stream server.
+        <Trans>Set overrides on each stream server.</Trans>
       </span>
       <Link
         to="/$workspace/s/$switcher/servers"
         params={{ workspace: workspace.url_slug, switcher: switcher.id }}
         className="text-sm font-medium text-primary hover:underline"
       >
-        Open stream servers
+        <Trans>Open stream servers</Trans>
       </Link>
     </section>
   );

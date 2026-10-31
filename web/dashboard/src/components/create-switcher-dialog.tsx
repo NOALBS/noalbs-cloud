@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type ReactNode, useState } from "react";
@@ -81,18 +83,24 @@ export function CreateSwitcherDialog({
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-5">
           <DialogHeader>
-            <DialogTitle>Add a switcher</DialogTitle>
+            <DialogTitle>
+              <Trans>Add a switcher</Trans>
+            </DialogTitle>
             <DialogDescription>
-              A switcher connects one OBS to your stream servers. Most streamers need one.
+              <Trans>
+                A switcher connects one OBS to your stream servers. Most streamers need one.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="switcher-name">Name</Label>
+            <Label htmlFor="switcher-name">
+              <Trans>Name</Trans>
+            </Label>
             <Input
               id="switcher-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Main switcher"
+              placeholder={t`Main switcher`}
               maxLength={60}
               autoFocus
             />
@@ -107,14 +115,14 @@ export function CreateSwitcherDialog({
                   className="font-semibold underline"
                   onClick={() => setOpen(false)}
                 >
-                  See plans
+                  <Trans>See plans</Trans>
                 </Link>
               )}
             </p>
           )}
           <DialogFooter>
             <Button type="submit" disabled={!name.trim() || create.isPending}>
-              {create.isPending ? "Adding…" : "Add switcher"}
+              {create.isPending ? t`Adding…` : t`Add switcher`}
             </Button>
           </DialogFooter>
         </form>

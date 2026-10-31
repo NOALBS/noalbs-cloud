@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -62,7 +64,7 @@ export function CustomerInviteDialog({
     onSuccess: async (_, inviteId) => {
       if (created?.invite.id === inviteId) setCreated(null);
       await queryClient.invalidateQueries({ queryKey: queryKeys.invites(client.id) });
-      toast.success("Invite revoked");
+      toast.success(t`Invite revoked`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -78,36 +80,44 @@ export function CustomerInviteDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite the customer to {client.name}</DialogTitle>
+          <DialogTitle>
+            <Trans>Invite the customer to {client.name}</Trans>
+          </DialogTitle>
           <DialogDescription>
-            They sign in with Twitch, Kick or YouTube and get in as an admin: they run the
-            workspace, but never see billing. You keep running it too, and they can still make their
-            own workspaces.
+            <Trans>
+              They sign in with Twitch, Kick or YouTube and get in as an admin: they run the
+              workspace, but never see billing. You keep running it too, and they can still make
+              their own workspaces.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
 
         {created ? (
           <div className="flex flex-col gap-2 rounded-xl border border-divider bg-sunken p-3.5">
             <p className="text-sm">
-              Copy the link now: it won’t be shown again. It works once and expires{" "}
-              {formatRelative(created.invite.expires_at)}.
+              <Trans>
+                Copy the link now: it won’t be shown again. It works once and expires{" "}
+                {formatRelative(created.invite.expires_at)}.
+              </Trans>
             </p>
             <CopyField
               value={customerInviteUrl(window.location.origin, created.token)}
-              label="invite link"
+              label={t`invite link`}
               secret
             />
           </div>
         ) : (
           <Button onClick={() => create.mutate()} disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create invite link"}
+            {create.isPending ? t`Creating…` : t`Create invite link`}
           </Button>
         )}
         {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
 
         {invites.data && invites.data.length > 0 && (
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold">Open invites</span>
+            <span className="text-sm font-semibold">
+              <Trans>Open invites</Trans>
+            </span>
             <ul className="flex flex-col">
               {invites.data.map((invite) => (
                 <li
@@ -115,13 +125,15 @@ export function CustomerInviteDialog({
                   className="flex items-center justify-between gap-2 border-t border-divider py-2 text-sm"
                 >
                   <span className="text-muted-foreground">
-                    Created {formatRelative(invite.created_at)} · expires{" "}
-                    {formatRelative(invite.expires_at)}
+                    <Trans>
+                      Created {formatRelative(invite.created_at)} · expires{" "}
+                      {formatRelative(invite.expires_at)}
+                    </Trans>
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Revoke invite"
+                    aria-label={t`Revoke invite`}
                     onClick={() => revoke.mutate(invite.id)}
                     disabled={revoke.isPending}
                   >

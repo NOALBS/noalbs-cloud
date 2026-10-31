@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -34,14 +36,14 @@ function OrganizationsPage() {
 
   return (
     <Page
-      title="Organizations"
-      description="Companies that run client workspaces for their customers, paid from a pool you set."
+      title={t`Organizations`}
+      description={t`Companies that run client workspaces for their customers, paid from a pool you set.`}
       className="max-w-6xl"
       actions={
         <NewOrganization>
           <Button>
             <Plus />
-            New organization
+            <Trans>New organization</Trans>
           </Button>
         </NewOrganization>
       }
@@ -50,16 +52,26 @@ function OrganizationsPage() {
         <Skeleton className="h-48 rounded-2xl" />
       ) : organizations.data.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          No organizations yet.
+          <Trans>No organizations yet.</Trans>
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
           <li className="hidden grid-cols-[1fr_7rem_7rem_6rem_8rem] gap-4 border-b border-divider px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase md:grid">
-            <span>Organization</span>
-            <span>Clients</span>
-            <span>Switchers</span>
-            <span>Team</span>
-            <span>Created</span>
+            <span>
+              <Trans>Organization</Trans>
+            </span>
+            <span>
+              <Trans>Clients</Trans>
+            </span>
+            <span>
+              <Trans>Switchers</Trans>
+            </span>
+            <span>
+              <Trans>Team</Trans>
+            </span>
+            <span>
+              <Trans>Created</Trans>
+            </span>
           </li>
           {organizations.data.map((organization) => (
             <li key={organization.id} className="border-b border-divider last:border-b-0">
@@ -71,7 +83,11 @@ function OrganizationsPage() {
                 <span className="flex min-w-0 flex-col">
                   <span className="flex items-center gap-2 truncate text-sm font-medium">
                     {organization.name}
-                    {organization.suspension && <Badge variant="destructive">Suspended</Badge>}
+                    {organization.suspension && (
+                      <Badge variant="destructive">
+                        <Trans>Suspended</Trans>
+                      </Badge>
+                    )}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
                     /{organization.url_slug}
@@ -106,7 +122,7 @@ function NewOrganization({ children }: { children: React.ReactNode }) {
 
   const create = useMutation({
     mutationFn: () => {
-      if (!parsed) throw new Error("Check the limits");
+      if (!parsed) throw new Error(t`Check the limits`);
       return unwrap(
         api.POST("/admin/organizations", {
           body: { name: name.trim(), url_slug: slug.slug, limits: parsed },
@@ -134,13 +150,19 @@ function NewOrganization({ children }: { children: React.ReactNode }) {
       <DialogContent className="sm:max-w-xl">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>New organization</DialogTitle>
+            <DialogTitle>
+              <Trans>New organization</Trans>
+            </DialogTitle>
             <DialogDescription>
-              Set what its clients may use in total. Invite its first admin from the next page.
+              <Trans>
+                Set what its clients may use in total. Invite its first admin from the next page.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="organization-name">Name</Label>
+            <Label htmlFor="organization-name">
+              <Trans>Name</Trans>
+            </Label>
             <Input
               id="organization-name"
               value={name}
@@ -159,13 +181,13 @@ function NewOrganization({ children }: { children: React.ReactNode }) {
           {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="submit"
               disabled={!name.trim() || !slug.ready || !parsed || create.isPending}
             >
-              {create.isPending ? "Creating…" : "Create"}
+              {create.isPending ? t`Creating…` : t`Create`}
             </Button>
           </DialogFooter>
         </form>

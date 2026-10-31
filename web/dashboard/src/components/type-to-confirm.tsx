@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { type ReactNode, useId, useState } from "react";
 import {
   AlertDialog,
@@ -14,6 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/errors";
 
+/** Input methods type full-width spaces and digits: those count as the plain ones. */
+const typedForm = (text: string) => text.normalize("NFKC").trim();
+
 /**
  * For things that can't be undone (deleting a workspace or an account, handing it over): the
  * button only works once `phrase` is typed. The dialog stays open on failure
@@ -25,7 +30,7 @@ export function TypeToConfirm({
   description,
   phrase,
   confirmLabel,
-  pendingLabel = "Deleting…",
+  pendingLabel = t`Deleting…`,
   disabled = false,
   onConfirm,
 }: {
@@ -88,7 +93,9 @@ export function TypeToConfirm({
         </AlertDialogHeader>
         <div className="flex flex-col gap-2">
           <Label htmlFor={id}>
-            Type <span className="font-mono">{phrase}</span> to confirm
+            <Trans>
+              Type <span className="font-mono">{phrase}</span> to confirm
+            </Trans>
           </Label>
           <Input
             id={id}
@@ -100,10 +107,12 @@ export function TypeToConfirm({
           {error != null && <p className="text-sm text-destructive">{errorMessage(error)}</p>}
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
           <Button
             variant="destructive"
-            disabled={typed.trim() !== phrase || pending}
+            disabled={typedForm(typed) !== typedForm(phrase) || pending}
             onClick={() => void confirm()}
           >
             {pending ? pendingLabel : confirmLabel}

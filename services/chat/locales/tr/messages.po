@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "boş disk alanı: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Henüz LIVE sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+msgstr "Henüz LIVE sahnesi seçilmedi. Sahneler sayfasından bir tane seç."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Henüz Privacy sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+msgstr "Henüz Gizlilik sahnesi seçilmedi. Sahneler sayfasından bir tane seç."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Henüz Starting sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+msgstr "Henüz Başlangıç sahnesi seçilmedi. Sahneler sayfasından bir tane seç."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Henüz Ending sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+msgstr "Henüz Bitiş sahnesi seçilmedi. Sahneler sayfasından bir tane seç."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Henüz Refresh sahnesi seçilmedi. Scenes sayfasından bir tane seç."
+msgstr "Henüz Yenile sahnesi seçilmedi. Sahneler sayfasından bir tane seç."
 
 msgid "Switched to the LIVE scene"
 msgstr "LIVE sahnesine geçildi"
 
 msgid "Switched to the Privacy scene"
-msgstr "Privacy sahnesine geçildi"
+msgstr "Gizlilik sahnesine geçildi"
 
 msgid "Switched to the Starting scene"
-msgstr "Starting sahnesine geçildi"
+msgstr "Başlangıç sahnesine geçildi"
 
 msgid "Switched to the Ending scene"
-msgstr "Ending sahnesine geçildi"
+msgstr "Bitiş sahnesine geçildi"
 
 msgid "Switched to the Refresh scene"
-msgstr "Refresh sahnesine geçildi"
+msgstr "Yenile sahnesine geçildi"
 
 msgid "Chat notifications on"
 msgstr "Sohbet bildirimleri açık"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Düzeltilecek bir şey yok, oynayan yayın kaynağı yok: {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Refresh sahnesi seçilmedi, bunun yerine düzeltiliyor. {result}"
+msgstr "Yenile sahnesi seçilmedi, bunun yerine düzeltiliyor. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} artık görünür"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Çevrimdışı zaman aşımına ulaşıldı, yayın durduruluyor"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Ending sahnesi zaman aşımına ulaşıldı, yayın durduruluyor"
+msgstr "Bitiş sahnesi zaman aşımına ulaşıldı, yayın durduruluyor"
 
 msgid "Ignoring {name} from now on"
 msgstr "Artık yok sayılıyor: {name}"

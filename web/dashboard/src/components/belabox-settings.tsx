@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -46,7 +48,7 @@ export function BelaboxSettings() {
     onSuccess: (updated, change) => {
       queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
       if (change.remote_key !== undefined) setKey("");
-      toast.success(change.clear_remote_key ? "BELABOX disconnected" : "Saved");
+      toast.success(change.clear_remote_key ? t`BELABOX disconnected` : t`Saved`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -60,7 +62,9 @@ export function BelaboxSettings() {
     <div className="flex flex-col">
       <form onSubmit={submit} className="flex flex-col gap-3 px-5 pb-5">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="belabox-key">BELABOX remote secret URL</Label>
+          <Label htmlFor="belabox-key">
+            <Trans>BELABOX remote secret URL</Trans>
+          </Label>
           <Input
             id="belabox-key"
             type="password"
@@ -68,28 +72,30 @@ export function BelaboxSettings() {
             spellCheck={false}
             value={key}
             onChange={(event) => setKey(event.target.value)}
-            placeholder={hasKey ? "Saved — paste to replace" : "https://remote.belabox.net/?key=…"}
+            placeholder={hasKey ? t`Saved — paste to replace` : "https://remote.belabox.net/?key=…"}
             disabled={!canManage}
             className="font-mono"
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Copy the <strong>BELABOX remote secret URL</strong> from your{" "}
-          <a
-            href="https://cloud.belabox.net"
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary hover:underline"
-          >
-            BELABOX Cloud
-          </a>{" "}
-          account and paste it here. It’s stored encrypted and never shown again. Anyone with it can
-          control your BELABOX.
+          <Trans>
+            Copy the <strong>BELABOX remote secret URL</strong> from your{" "}
+            <a
+              href="https://cloud.belabox.net"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline"
+            >
+              BELABOX Cloud
+            </a>{" "}
+            account and paste it here. It’s stored encrypted and never shown again. Anyone with it
+            can control your BELABOX.
+          </Trans>
         </p>
         {canManage && (
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={key.trim() === "" || save.isPending}>
-              {save.isPending ? "Saving…" : hasKey ? "Replace secret URL" : "Connect BELABOX"}
+              {save.isPending ? t`Saving…` : hasKey ? t`Replace secret URL` : t`Connect BELABOX`}
             </Button>
             {hasKey && (
               <Button
@@ -104,7 +110,7 @@ export function BelaboxSettings() {
                 }
                 disabled={save.isPending}
               >
-                Disconnect
+                <Trans>Disconnect</Trans>
               </Button>
             )}
           </div>
@@ -112,25 +118,27 @@ export function BelaboxSettings() {
       </form>
       <ToggleRow
         id="belabox-start-with-stream"
-        title="Start BELABOX with the OBS stream"
-        description="When the OBS stream starts (from OBS, the dashboard or !start), BELABOX starts with its saved settings."
+        title={t`Start BELABOX with the OBS stream`}
+        description={t`When the OBS stream starts (from OBS, the dashboard or !start), BELABOX starts with its saved settings.`}
         checked={startWithStream}
         onCheckedChange={(checked) => save.mutate({ start_with_stream: checked })}
         disabled={!canManage || !hasKey || save.isPending}
-        note={hasKey ? undefined : "Needs the secret URL"}
+        note={hasKey ? undefined : t`Needs the secret URL`}
       />
       <ToggleRow
         id="belabox-stop-with-stream"
-        title="Stop BELABOX with the OBS stream"
-        description="When the OBS stream stops (from OBS, the dashboard, !stop or a raid), BELABOX stops too. Leave off to keep it running."
+        title={t`Stop BELABOX with the OBS stream`}
+        description={t`When the OBS stream stops (from OBS, the dashboard, !stop or a raid), BELABOX stops too. Leave off to keep it running.`}
         checked={stopWithStream}
         onCheckedChange={(checked) => save.mutate({ stop_with_stream: checked })}
         disabled={!canManage || !hasKey || save.isPending}
-        note={hasKey ? undefined : "Needs the secret URL"}
+        note={hasKey ? undefined : t`Needs the secret URL`}
       />
       <p className="border-t border-divider px-5 py-3 text-xs text-muted-foreground">
-        NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX.
-        BELABOX is a trademark of its owner.
+        <Trans>
+          NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX.
+          BELABOX is a trademark of its owner.
+        </Trans>
       </p>
     </div>
   );

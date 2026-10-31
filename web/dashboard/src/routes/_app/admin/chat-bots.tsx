@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Bot } from "lucide-react";
@@ -22,19 +24,19 @@ export const Route = createFileRoute("/_app/admin/chat-bots")({
 });
 
 function ChatBotsPage() {
-  useGrantOutcome(Route.useSearch(), (platform) => `Shared ${platform} bot connected`);
+  useGrantOutcome(Route.useSearch(), (platform) => t`Shared ${platform} bot connected`);
   const bots = useQuery(adminChatBotsQuery);
   const providers = useQuery(providersQuery);
 
   return (
     <Page
-      title="Chat bots"
-      description="The shared NOALBS bot accounts that answer in every linked channel, unless a workspace uses its own bot."
+      title={t`Chat bots`}
+      description={t`The shared NOALBS bot accounts that answer in every linked channel, unless a workspace uses its own bot.`}
       className="max-w-4xl"
     >
       <Section
-        title="Shared bots"
-        description="Connect by signing in as the bot account (not your own) when the platform asks."
+        title={t`Shared bots`}
+        description={t`Connect by signing in as the bot account (not your own) when the platform asks.`}
       >
         {!bots.data || !providers.data ? (
           <Skeleton className="mx-5 mb-5 h-14" />
@@ -73,7 +75,7 @@ function SharedBotRow({
       unwrap(api.DELETE("/admin/chat-bots/{platform}", { params: { path: { platform } } })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.adminChatBots });
-      toast.success(`Shared ${label} bot disconnected`);
+      toast.success(t`Shared ${label} bot disconnected`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -88,32 +90,34 @@ function SharedBotRow({
         </span>
         <span className="text-sm text-muted-foreground">
           {!configured
-            ? `${label} sign-in isn’t configured on this server.`
+            ? t`${label} sign-in isn’t configured on this server.`
             : bot
-              ? `Connected ${formatRelative(bot.connected_at)}`
-              : `Not connected: ${label} channels without their own bot get no replies.`}
+              ? t`Connected ${formatRelative(bot.connected_at)}`
+              : t`Not connected: ${label} channels without their own bot get no replies.`}
         </span>
       </span>
       {bot?.status === "revoked" && (
-        <Badge className="bg-low/15 text-low">Needs reconnecting</Badge>
+        <Badge className="bg-low/15 text-low">
+          <Trans>Needs reconnecting</Trans>
+        </Badge>
       )}
       {configured && (
         <Button variant={bot ? "outline" : "default"} size="sm" asChild>
           <a href={sharedBotConnectUrl(platform, window.location.pathname)}>
-            {bot ? "Reconnect" : "Connect"}
+            {bot ? t`Reconnect` : t`Connect`}
           </a>
         </Button>
       )}
       {bot && (
         <ConfirmButton
           variant="ghost"
-          title={`Disconnect the shared ${label} bot?`}
-          description={`${label} channels without their own bot stop getting replies until one is connected again.`}
-          confirmLabel="Disconnect"
+          title={t`Disconnect the shared ${label} bot?`}
+          description={t`${label} channels without their own bot stop getting replies until one is connected again.`}
+          confirmLabel={t`Disconnect`}
           disabled={remove.isPending}
           onConfirm={() => remove.mutate()}
         >
-          Disconnect
+          <Trans>Disconnect</Trans>
         </ConfirmButton>
       )}
     </li>

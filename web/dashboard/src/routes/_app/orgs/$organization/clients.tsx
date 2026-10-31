@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Link2, ListPlus, Pencil, Plus } from "lucide-react";
@@ -34,25 +36,26 @@ import {
   BULK_MAX,
   bulkOutcome,
   CLIENT_STATE_DOT,
-  CLIENT_STATE_LABELS,
   CLIENT_STATES,
   type ClientState,
   clientState,
+  clientStateLabels,
   isClaimed,
   parseClientsSearch,
 } from "@/lib/organizations";
 import { cn } from "@/lib/utils";
 
-const CUSTOMERS: { value: ClientCustomer | "any"; label: string }[] = [
-  { value: "any", label: "Any customer state" },
-  { value: "joined", label: "Customer joined" },
-  { value: "unclaimed", label: "Not claimed" },
+const customers = (): { value: ClientCustomer | "any"; label: string }[] => [
+  { value: "any", label: t`Any customer state` },
+  { value: "joined", label: t`Customer joined` },
+  { value: "unclaimed", label: t`Not claimed` },
 ];
 
-const SORTS = [
-  { value: "newest", label: "Newest first" },
-  { value: "name", label: "By name" },
-] as const;
+const sorts = () =>
+  [
+    { value: "newest", label: t`Newest first` },
+    { value: "name", label: t`By name` },
+  ] as const;
 
 const CHECKBOX = "size-4 shrink-0 cursor-pointer accent-primary";
 
@@ -103,11 +106,14 @@ function ClientsPage() {
 
   return (
     <Page
-      title="Clients"
+      title={t`Clients`}
       description={
         clients.data && !filtered
-          ? `${clients.data.total} workspace${clients.data.total === 1 ? "" : "s"} you run for your customers.`
-          : "The workspaces you run for your customers."
+          ? plural(clients.data.total, {
+              one: "# workspace you run for your customers.",
+              other: "# workspaces you run for your customers.",
+            })
+          : t`The workspaces you run for your customers.`
       }
       actions={
         isAdmin && (
@@ -115,13 +121,13 @@ function ClientsPage() {
             <ImportClientsDialog organization={organization}>
               <Button variant="outline" disabled={suspended}>
                 <ListPlus />
-                Import
+                <Trans>Import</Trans>
               </Button>
             </ImportClientsDialog>
             <NewClientDialog organization={organization}>
               <Button disabled={suspended}>
                 <Plus />
-                New client
+                <Trans>New client</Trans>
               </Button>
             </NewClientDialog>
           </>
@@ -131,21 +137,23 @@ function ClientsPage() {
       <LimitsCard organization={organization} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={q} onSearch={search} placeholder="Search by name, URL or ID" />
+        <SearchBox value={q} onSearch={search} placeholder={t`Search by name, URL or ID`} />
         <Select
           value={state ?? "any"}
           onValueChange={(value) =>
             filter({ state: CLIENT_STATES.find((candidate) => candidate === value) })
           }
         >
-          <SelectTrigger className="w-40" aria-label="State">
+          <SelectTrigger className="w-40" aria-label={t`State`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">Any state</SelectItem>
+            <SelectItem value="any">
+              <Trans>Any state</Trans>
+            </SelectItem>
             {CLIENT_STATES.map((value) => (
               <SelectItem key={value} value={value}>
-                {CLIENT_STATE_LABELS[value]}
+                {clientStateLabels()[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -156,11 +164,11 @@ function ClientsPage() {
             filter({ customer: value === "any" ? undefined : (value as ClientCustomer) })
           }
         >
-          <SelectTrigger className="w-44" aria-label="Customer">
+          <SelectTrigger className="w-44" aria-label={t`Customer`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CUSTOMERS.map((option) => (
+            {customers().map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -171,11 +179,11 @@ function ClientsPage() {
           value={sort ?? "newest"}
           onValueChange={(value) => filter({ sort: value === "name" ? "name" : undefined })}
         >
-          <SelectTrigger className="w-40" aria-label="Sort">
+          <SelectTrigger className="w-40" aria-label={t`Sort`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SORTS.map((option) => (
+            {sorts().map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -204,8 +212,10 @@ function ClientsPage() {
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
           {filtered
-            ? "No clients match."
-            : `No clients yet.${isAdmin ? " Create one to set up their switcher and invite them." : ""}`}
+            ? t`No clients match.`
+            : isAdmin
+              ? t`No clients yet. Create one to set up their switcher and invite them.`
+              : t`No clients yet.`}
         </p>
       ) : (
         <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
@@ -215,9 +225,9 @@ function ClientsPage() {
               className={CHECKBOX}
               checked={allOnPage}
               onChange={(event) => togglePage(event.target.checked)}
-              aria-label="Select every client on this page"
+              aria-label={t`Select every client on this page`}
             />
-            Select this page
+            <Trans>Select this page</Trans>
           </label>
           <ul>
             {items.map((client) => (
@@ -279,9 +289,9 @@ function BulkBar({
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
       ]);
       if (outcome.failed > 0) {
-        toast.error(`${outcome.ok} deleted, ${outcome.failed} could not be`);
+        toast.error(t`${outcome.ok} deleted, ${outcome.failed} could not be`);
       } else {
-        toast.success(`${outcome.ok} client${outcome.ok === 1 ? "" : "s"} deleted`);
+        toast.success(plural(outcome.ok, { one: "# client deleted", other: "# clients deleted" }));
       }
     },
   });
@@ -289,47 +299,51 @@ function BulkBar({
   return (
     <div
       role="toolbar"
-      aria-label="Selected clients"
+      aria-label={t`Selected clients`}
       className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary-soft-border bg-primary-soft px-4 py-2.5 text-sm"
     >
       <span className="mr-auto font-semibold">
-        {ids.length} selected
+        <Trans>{ids.length} selected</Trans>
         {tooMany && (
-          <span className="ml-2 font-normal text-low">Pick at most {BULK_MAX} for one action.</span>
+          <span className="ml-2 font-normal text-low">
+            <Trans>Pick at most {BULK_MAX} for one action.</Trans>
+          </span>
         )}
       </span>
       <BulkInvitesDialog organization={organization} ids={ids}>
         <Button variant="outline" size="sm" disabled={tooMany}>
           <Link2 />
-          Invite links
+          <Trans>Invite links</Trans>
         </Button>
       </BulkInvitesDialog>
       {isAdmin && (
         <BulkAllocationDialog organization={organization} ids={ids}>
           <Button variant="outline" size="sm" disabled={tooMany}>
             <Pencil />
-            Allocation
+            <Trans>Allocation</Trans>
           </Button>
         </BulkAllocationDialog>
       )}
       {isAdmin && (
         <TypeToConfirm
-          trigger="Delete"
-          title={`Delete ${ids.length} client${ids.length === 1 ? "" : "s"}?`}
+          trigger={t`Delete`}
+          title={plural(ids.length, { one: "Delete # client?", other: "Delete # clients?" })}
           description={
             <p>
-              Their workspaces go for good with their switchers, stream servers, history and the
-              customers’ access. Nothing here can be restored.
+              <Trans>
+                Their workspaces go for good with their switchers, stream servers, history and the
+                customers’ access. Nothing here can be restored.
+              </Trans>
             </p>
           }
-          phrase={`delete ${ids.length}`}
-          confirmLabel="Delete clients"
+          phrase={t`delete ${ids.length}`}
+          confirmLabel={t`Delete clients`}
           disabled={tooMany}
           onConfirm={() => remove.mutateAsync()}
         />
       )}
       <Button variant="ghost" size="sm" onClick={onClear}>
-        Clear
+        <Trans>Clear</Trans>
       </Button>
     </div>
   );
@@ -365,7 +379,7 @@ function ClientRow({
         queryClient.invalidateQueries({ queryKey: queryKeys.organizations }),
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
       ]);
-      toast.success(`${client.name} was deleted`);
+      toast.success(t`${client.name} was deleted`);
     },
   });
 
@@ -376,7 +390,7 @@ function ClientRow({
         className={CHECKBOX}
         checked={selected}
         onChange={(event) => onSelect(event.target.checked)}
-        aria-label={`Select ${client.name}`}
+        aria-label={t`Select ${client.name}`}
       />
       <span className="flex min-w-0 flex-1 basis-56 items-center gap-3">
         <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[state])} />
@@ -389,14 +403,14 @@ function ClientRow({
             {client.name}
           </Link>
           <span className="truncate text-xs text-muted-foreground">
-            /{client.url_slug} · {CLIENT_STATE_LABELS[state]}
+            /{client.url_slug} · {clientStateLabels()[state]}
           </span>
         </span>
       </span>
 
       <span className="flex items-center gap-2 text-xs text-muted-foreground">
         <Badge variant={claimed ? "secondary" : "outline"}>
-          {claimed ? "Customer joined" : "Not claimed"}
+          {claimed ? t`Customer joined` : t`Not claimed`}
         </Badge>
         <span className="tabular font-mono">
           {client.switchers} / {allocationLabel(client.switcher_allocation)}
@@ -407,27 +421,29 @@ function ClientRow({
         <CustomerInviteDialog client={client}>
           <Button variant="outline" size="sm">
             <Link2 />
-            Invite
+            <Trans>Invite</Trans>
           </Button>
         </CustomerInviteDialog>
         {isAdmin && (
           <>
             <EditClientDialog organization={organization} client={client}>
-              <Button variant="ghost" size="icon" aria-label={`Edit ${client.name}`}>
+              <Button variant="ghost" size="icon" aria-label={t`Edit ${client.name}`}>
                 <Pencil />
               </Button>
             </EditClientDialog>
             <TypeToConfirm
-              trigger="Delete"
-              title={`Delete ${client.name}?`}
+              trigger={t`Delete`}
+              title={t`Delete ${client.name}?`}
               description={
                 <p>
-                  The workspace goes for good with its switchers, stream servers, history and the
-                  customers’ access. Nothing here can be restored.
+                  <Trans>
+                    The workspace goes for good with its switchers, stream servers, history and the
+                    customers’ access. Nothing here can be restored.
+                  </Trans>
                 </p>
               }
               phrase={client.url_slug}
-              confirmLabel="Delete client"
+              confirmLabel={t`Delete client`}
               onConfirm={() => remove.mutateAsync()}
             />
           </>

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { RefreshCw } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import type { BelaboxDetails, BelaboxModemDetails } from "@/api/types";
@@ -50,7 +52,7 @@ export function ModemPanel({
   if (details.modems.length === 0) {
     return (
       <p className="rounded-xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-        This BELABOX reports no modems.
+        <Trans>This BELABOX reports no modems.</Trans>
       </p>
     );
   }
@@ -108,7 +110,7 @@ function Modem({
       description={
         <span className="flex items-center gap-2">
           {modem.status?.signal != null && <SignalBars signal={modem.status.signal} />}
-          {modem.no_sim ? "No SIM card" : status || modem.status?.connection || "Not connected"}
+          {modem.no_sim ? t`No SIM card` : status || modem.status?.connection || t`Not connected`}
         </span>
       }
       action={!modem.no_sim && <ScanButton modem={modem} config={config} scanning={scanning} />}
@@ -116,13 +118,13 @@ function Modem({
       {settings && (
         <form onSubmit={submit} className="flex flex-col gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Network type" error={errors.networkType}>
+            <Field label={t`Network type`} error={errors.networkType}>
               <Select
                 value={form.networkType}
                 onValueChange={(networkType) => patch({ networkType })}
                 disabled={!canManage}
               >
-                <SelectTrigger className="w-full" aria-label="Network type">
+                <SelectTrigger className="w-full" aria-label={t`Network type`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,8 +137,8 @@ function Modem({
               </Select>
             </Field>
             <Field
-              label="Operator"
-              hint={choices.length === 0 ? "Scan to see the operators in range." : undefined}
+              label={t({ context: "mobile network", message: "Operator" })}
+              hint={choices.length === 0 ? t`Scan to see the operators in range.` : undefined}
             >
               <Select
                 value={form.network === "" ? AUTOMATIC : form.network}
@@ -145,11 +147,16 @@ function Modem({
                 }
                 disabled={!canManage}
               >
-                <SelectTrigger className="w-full" aria-label="Operator">
+                <SelectTrigger
+                  className="w-full"
+                  aria-label={t({ context: "mobile network", message: "Operator" })}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={AUTOMATIC}>Automatic</SelectItem>
+                  <SelectItem value={AUTOMATIC}>
+                    <Trans>Automatic</Trans>
+                  </SelectItem>
                   {choices.map((choice) => (
                     <SelectItem key={choice.id} value={choice.id} disabled={choice.disabled}>
                       {choice.label}
@@ -162,7 +169,7 @@ function Modem({
 
           {settings.autoconfig != null && (
             <SwitchRow
-              label="Pick the APN automatically"
+              label={t`Pick the APN automatically`}
               checked={form.autoconfig}
               onChange={(autoconfig) => patch({ autoconfig })}
               disabled={!canManage}
@@ -180,30 +187,30 @@ function Modem({
                   aria-invalid={Boolean(errors.apn)}
                 />
               </Field>
-              <Field label="Username">
+              <Field label={t`Username`}>
                 <Input
                   value={form.username}
                   onChange={(event) => patch({ username: event.target.value })}
                   disabled={!canManage}
                   autoComplete="off"
-                  aria-label="APN username"
+                  aria-label={t`APN username`}
                 />
               </Field>
-              <Field label="Password">
+              <Field label={t`Password`}>
                 <Input
                   type="password"
                   autoComplete="new-password"
                   value={form.password}
                   onChange={(event) => patch({ password: event.target.value })}
-                  placeholder={settings.has_password ? "Unchanged" : ""}
+                  placeholder={settings.has_password ? t`Unchanged` : ""}
                   disabled={!canManage}
-                  aria-label="APN password"
+                  aria-label={t`APN password`}
                 />
               </Field>
             </div>
           )}
           <SwitchRow
-            label="Allow roaming"
+            label={t`Allow roaming`}
             checked={form.roaming}
             onChange={(roaming) => patch({ roaming })}
             disabled={!canManage}
@@ -216,19 +223,21 @@ function Modem({
                 size="sm"
                 disabled={!dirty || Object.keys(errors).length > 0 || config.modem.isPending}
               >
-                {config.modem.isPending ? "Applying…" : "Save modem"}
+                {config.modem.isPending ? t`Applying…` : t`Save modem`}
               </Button>
               {dirty && (
                 <Button type="button" size="sm" variant="ghost" onClick={() => setDraft(null)}>
-                  Discard
+                  <Trans>Discard</Trans>
                 </Button>
               )}
               <span className="text-xs text-muted-foreground">
-                The modem reconnects to apply these.
+                <Trans>The modem reconnects to apply these.</Trans>
               </span>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">Only admins can change the modem.</p>
+            <p className="text-xs text-muted-foreground">
+              <Trans>Only admins can change the modem.</Trans>
+            </p>
           )}
         </form>
       )}
@@ -276,7 +285,7 @@ function ScanButton({
     return (
       <Button size="sm" variant="outline" disabled>
         <RefreshCw className="size-3.5 animate-spin" />
-        Scanning…
+        <Trans>Scanning…</Trans>
       </Button>
     );
   }
@@ -285,21 +294,27 @@ function ScanButton({
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="outline" disabled={config.scanModem.isPending}>
           <RefreshCw className="size-3.5" />
-          Scan operators
+          <Trans>Scan operators</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Scan for operators?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Scan for operators?</Trans>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            The modem disconnects while it searches, which takes about a minute. A stream using it
-            loses that connection until it’s done, so do this before you go live.
+            <Trans>
+              The modem disconnects while it searches, which takes about a minute. A stream using it
+              loses that connection until it’s done, so do this before you go live.
+            </Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction onClick={() => config.scanModem.mutate(modem.id)}>
-            Scan
+            <Trans>Scan</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

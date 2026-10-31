@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -33,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WorkspaceTile } from "@/components/workspace-tile";
-import { ORGANIZATION_ROLE_LABELS } from "@/lib/organizations";
+import { organizationRoleLabels } from "@/lib/organizations";
 import { menuWorkspaces, recentWorkspaceIds } from "@/lib/recent-workspaces";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -64,32 +66,44 @@ export function OrgShell({
       <aside className="sticky top-0 hidden h-dvh w-66 shrink-0 flex-col gap-5 overflow-y-auto border-r border-divider bg-sunken px-3 py-3.5 md:flex">
         <OrganizationSwitcher organization={organization} />
 
-        <nav aria-label="Organization" className="flex flex-col gap-0.5">
-          <span className={SECTION_LABEL}>ORGANIZATION</span>
+        <nav aria-label={t`Organization`} className="flex flex-col gap-0.5">
+          <span className={SECTION_LABEL}>
+            <Trans>ORGANIZATION</Trans>
+          </span>
           <Link to="/orgs/$organization/clients" params={params} className={NAV_LINK}>
             <Warehouse className="size-4" />
-            <span className="flex-1">Clients</span>
+            <span className="flex-1">
+              <Trans>Clients</Trans>
+            </span>
             <span className="font-mono text-[11px] tabular text-muted-foreground">
               {organization.usage.clients}
             </span>
           </Link>
           <Link to="/orgs/$organization/live" params={params} className={NAV_LINK}>
             <Radio className="size-4" />
-            <span className="flex-1">Live</span>
+            <span className="flex-1">
+              <Trans>Live</Trans>
+            </span>
           </Link>
           {isAdmin && (
             <Link to="/orgs/$organization/activity" params={params} className={NAV_LINK}>
               <Activity className="size-4" />
-              <span className="flex-1">Activity</span>
+              <span className="flex-1">
+                <Trans>Activity</Trans>
+              </span>
             </Link>
           )}
           <Link to="/orgs/$organization/chat" params={params} className={NAV_LINK}>
             <Bot className="size-4" />
-            <span className="flex-1">Chat bot</span>
+            <span className="flex-1">
+              <Trans>Chat bot</Trans>
+            </span>
           </Link>
           <Link to="/orgs/$organization/team" params={params} className={NAV_LINK}>
             <Users className="size-4" />
-            <span className="flex-1">Team</span>
+            <span className="flex-1">
+              <Trans>Team</Trans>
+            </span>
             <span className="font-mono text-[11px] tabular text-muted-foreground">
               {organization.usage.team}
             </span>
@@ -113,38 +127,40 @@ export function OrgShell({
             role="alert"
             className="border-b border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm md:px-8"
           >
-            <span className="font-semibold">NOALBS suspended this organization</span>{" "}
-            {formatRelative(organization.suspension.since)}: {organization.suspension.reason}. Every
-            client’s switchers are paused.
+            <Trans>
+              <span className="font-semibold">NOALBS suspended this organization</span>{" "}
+              {formatRelative(organization.suspension.since)}: {organization.suspension.reason}.
+              Every client’s switchers are paused.
+            </Trans>
           </div>
         )}
         <main className="flex-1 pb-24 md:pb-0">{children}</main>
 
         <nav
-          aria-label="Primary"
+          aria-label={t`Primary`}
           className="fixed inset-x-0 bottom-0 z-20 grid grid-flow-col auto-cols-fr border-t border-divider bg-sunken pb-[env(safe-area-inset-bottom)] md:hidden"
         >
           <Link to="/orgs/$organization/clients" params={params} className={TAB_CLASS}>
             <Warehouse className="size-5.5" />
-            Clients
+            <Trans>Clients</Trans>
           </Link>
           <Link to="/orgs/$organization/live" params={params} className={TAB_CLASS}>
             <Radio className="size-5.5" />
-            Live
+            <Trans>Live</Trans>
           </Link>
           {isAdmin && (
             <Link to="/orgs/$organization/activity" params={params} className={TAB_CLASS}>
               <Activity className="size-5.5" />
-              Activity
+              <Trans>Activity</Trans>
             </Link>
           )}
           <Link to="/orgs/$organization/chat" params={params} className={TAB_CLASS}>
             <Bot className="size-5.5" />
-            Chat bot
+            <Trans>Chat bot</Trans>
           </Link>
           <Link to="/orgs/$organization/team" params={params} className={TAB_CLASS}>
             <Users className="size-5.5" />
-            Team
+            <Trans>Team</Trans>
           </Link>
         </nav>
       </div>
@@ -174,7 +190,7 @@ function OrganizationSwitcher({
           "flex shrink-0 items-center gap-2.5 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-surface-2",
           compact ? "min-h-11 min-w-0" : "h-12 px-2.5 hover:bg-surface-2",
         )}
-        aria-label="Switch organization or workspace"
+        aria-label={t`Switch organization or workspace`}
       >
         <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
           <Building2 className="size-4" />
@@ -183,7 +199,7 @@ function OrganizationSwitcher({
           <span className="truncate font-semibold leading-tight">{organization.name}</span>
           {organization.role && (
             <span className="truncate text-xs text-muted-foreground">
-              {ORGANIZATION_ROLE_LABELS[organization.role]}
+              {organizationRoleLabels()[organization.role]}
             </span>
           )}
         </span>
@@ -191,7 +207,7 @@ function OrganizationSwitcher({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-75">
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          Organizations
+          <Trans>Organizations</Trans>
         </DropdownMenuLabel>
         {organizations.data?.map((candidate) => (
           <DropdownMenuItem key={candidate.id} asChild>
@@ -210,7 +226,7 @@ function OrganizationSwitcher({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-              {menu.hidden > 0 ? "Recent workspaces" : "Workspaces"}
+              {menu.hidden > 0 ? t`Recent workspaces` : t`Workspaces`}
             </DropdownMenuLabel>
             {menu.shown.map((workspace) => (
               <DropdownMenuItem key={workspace.id} asChild>
@@ -231,19 +247,19 @@ function OrganizationSwitcher({
         <DropdownMenuItem asChild>
           <Link to="/workspaces">
             <LayoutList />
-            All workspaces{menu.hidden > 0 && ` (${workspaces.data?.length ?? 0})`}
+            <Trans>All workspaces{menu.hidden > 0 && ` (${workspaces.data?.length ?? 0})`}</Trans>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/welcome" search={{ mode: "create" }}>
             <Plus />
-            Create workspace
+            <Trans>Create workspace</Trans>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/welcome" search={{ mode: "join" }}>
             <Link2 />
-            Join with invite link
+            <Trans>Join with invite link</Trans>
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

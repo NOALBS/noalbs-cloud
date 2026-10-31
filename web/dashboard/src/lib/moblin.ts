@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { MoblinStatus, MoblinThermal } from "@/api/types";
 
 /** Shorter passwords are refused (the API checks it too). */
@@ -31,11 +32,11 @@ export function moblinView(status: MoblinStatus | null | undefined, now: number)
 export function thermalLabel(thermal: MoblinThermal | null | undefined): string | null {
   switch (thermal) {
     case "normal":
-      return "Normal";
+      return t`Normal`;
     case "serious":
-      return "Getting hot";
+      return t`Getting hot`;
     case "critical":
-      return "Hot";
+      return t`Hot`;
     default:
       return null;
   }
@@ -45,7 +46,7 @@ export function thermalLabel(thermal: MoblinThermal | null | undefined): string 
 export function batteryLabel(status: MoblinStatus): string | null {
   if (status.battery_level == null) return null;
   return status.battery_charging
-    ? `${status.battery_level}% · charging`
+    ? t`${status.battery_level}% · charging`
     : `${status.battery_level}%`;
 }
 

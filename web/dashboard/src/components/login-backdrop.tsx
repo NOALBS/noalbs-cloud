@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LOGO_PIECES } from "@/components/logo";
 import { currentLocale } from "@/lib/locale";
@@ -206,7 +207,7 @@ export function LoginBackdrop() {
                   className={`font-mono font-semibold ${tone(item.kbps)}`}
                   opacity="0.35"
                 >
-                  {item.kbps.toLocaleString(currentLocale())} kbps
+                  <Trans>{item.kbps.toLocaleString(currentLocale())} kbps</Trans>
                 </text>
               );
           }

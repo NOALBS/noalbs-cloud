@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
@@ -23,17 +25,18 @@ const TAB =
   "flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium text-muted-foreground data-[status=active]:bg-surface-2 data-[status=active]:text-foreground";
 
 /** The admin section's pages, in menu order. */
-export const ADMIN_PAGES = [
-  { label: "Overview", to: "/admin", icon: Gauge, exact: true },
-  { label: "Status", to: "/admin/status", icon: Activity, exact: false },
-  { label: "Users", to: "/admin/users", icon: Users, exact: false },
-  { label: "Workspaces", to: "/admin/workspaces", icon: Warehouse, exact: false },
-  { label: "Organizations", to: "/admin/organizations", icon: Building2, exact: false },
-  { label: "Products", to: "/admin/products", icon: Package, exact: false },
-  { label: "Notices", to: "/admin/notices", icon: Megaphone, exact: false },
-  { label: "Chat bots", to: "/admin/chat-bots", icon: Bot, exact: false },
-  { label: "Audit log", to: "/admin/audit", icon: ScrollText, exact: false },
-] as const;
+export const adminPages = () =>
+  [
+    { label: t`Overview`, to: "/admin", icon: Gauge, exact: true },
+    { label: t`Status`, to: "/admin/status", icon: Activity, exact: false },
+    { label: t`Users`, to: "/admin/users", icon: Users, exact: false },
+    { label: t`Workspaces`, to: "/admin/workspaces", icon: Warehouse, exact: false },
+    { label: t`Organizations`, to: "/admin/organizations", icon: Building2, exact: false },
+    { label: t`Products`, to: "/admin/products", icon: Package, exact: false },
+    { label: t`Notices`, to: "/admin/notices", icon: Megaphone, exact: false },
+    { label: t`Chat bots`, to: "/admin/chat-bots", icon: Bot, exact: false },
+    { label: t`Audit log`, to: "/admin/audit", icon: ScrollText, exact: false },
+  ] as const;
 
 /** The staff-only admin section: its own navigation, apart from any workspace. */
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -42,10 +45,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-5 border-r border-divider bg-sunken px-3 py-3.5 md:flex">
         <div className="flex items-center gap-2 px-2.5 pt-1 font-semibold">
           <ShieldCheck className="size-5 text-primary" />
-          Admin
+          <Trans>Admin</Trans>
         </div>
-        <nav aria-label="Admin" className="flex flex-col gap-0.5">
-          {ADMIN_PAGES.map((page) => (
+        <nav aria-label={t`Admin`} className="flex flex-col gap-0.5">
+          {adminPages().map((page) => (
             <Link
               key={page.to}
               to={page.to}
@@ -59,7 +62,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </nav>
         <Link to="/" className={cn(NAV_LINK, "mt-auto")}>
           <ChevronLeft className="size-4" />
-          Back to NOALBS
+          <Trans>Back to NOALBS</Trans>
         </Link>
       </aside>
 
@@ -68,14 +71,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 font-semibold">
               <ShieldCheck className="size-5 text-primary" />
-              Admin
+              <Trans>Admin</Trans>
             </span>
             <Link to="/" className="flex min-h-11 items-center text-sm font-medium text-primary">
-              Back to NOALBS
+              <Trans>Back to NOALBS</Trans>
             </Link>
           </div>
-          <nav aria-label="Admin" className="-mx-1 flex gap-1 overflow-x-auto">
-            {ADMIN_PAGES.map((page) => (
+          <nav aria-label={t`Admin`} className="-mx-1 flex gap-1 overflow-x-auto">
+            {adminPages().map((page) => (
               <Link
                 key={page.to}
                 to={page.to}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Link } from "@tanstack/react-router";
 import type { Me } from "@/api/types";
 import { providerLabel, UserAvatar } from "./user-avatar";
@@ -9,7 +10,7 @@ export function MinimalHeader({ me }: { me: Me }) {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-divider px-4 md:px-8">
-      <Link to="/" aria-label="Home">
+      <Link to="/" aria-label={t`Home`}>
         <Wordmark className="text-base" />
       </Link>
       <span className="flex items-center gap-2.5 text-sm text-muted-foreground">

@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -102,7 +104,7 @@ export function RawExplorer({
   if (sources.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-        No stream server reported stats during this stream.
+        <Trans>No stream server reported stats during this stream.</Trans>
       </p>
     );
   }
@@ -110,7 +112,7 @@ export function RawExplorer({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <section
-        aria-label="Fields"
+        aria-label={t`Fields`}
         className="flex flex-col gap-3 rounded-2xl border bg-card p-4 lg:col-span-4"
       >
         {sources.length > 1 && (
@@ -121,7 +123,7 @@ export function RawExplorer({
               setPicked(null);
             }}
           >
-            <SelectTrigger aria-label="Stream server" className="w-full">
+            <SelectTrigger aria-label={t`Stream server`} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -138,14 +140,13 @@ export function RawExplorer({
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Find a field"
-            aria-label="Find a field"
+            placeholder={t`Find a field`}
+            aria-label={t`Find a field`}
             className="pl-8"
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          {fields.length} numeric {fields.length === 1 ? "field" : "fields"} · pick up to{" "}
-          {MAX_PICKED} to chart
+          {t`${plural(fields.length, { one: "# numeric field", other: "# numeric fields" })} · pick up to ${MAX_PICKED} to chart`}
         </p>
         <ul className="flex max-h-72 flex-col overflow-y-auto overscroll-contain lg:max-h-[28rem]">
           {raw.isPending && <Skeleton className="h-32" />}
@@ -186,7 +187,7 @@ export function RawExplorer({
         )}
         {raw.isSuccess && points.length === 0 && (
           <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-            This server didn’t report any stats during this stream.
+            <Trans>This server didn’t report any stats during this stream.</Trans>
           </p>
         )}
 
@@ -222,13 +223,15 @@ export function RawExplorer({
         })}
 
         {snapshot && (
-          <section aria-label="Snapshot" className="flex flex-col rounded-2xl border bg-card">
+          <section aria-label={t`Snapshot`} className="flex flex-col rounded-2xl border bg-card">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider px-4 py-2.5">
               <h3 className="text-sm font-semibold">
-                Snapshot{" "}
-                <span className="font-mono font-normal text-muted-foreground tabular">
-                  {formatClock(snapshot.at, true)}
-                </span>
+                <Trans>
+                  Snapshot{" "}
+                  <span className="font-mono font-normal text-muted-foreground tabular">
+                    {formatClock(snapshot.at, true)}
+                  </span>
+                </Trans>
               </h3>
               <div className="flex items-center gap-1.5">
                 <Button
@@ -238,11 +241,11 @@ export function RawExplorer({
                   aria-pressed={revealed}
                 >
                   {revealed ? <EyeOff /> : <Eye />}
-                  {revealed ? "Hide" : "Show"}
+                  {revealed ? t`Hide` : t`Show`}
                 </Button>
                 <Button size="sm" variant="outline" onClick={copy}>
                   {copied ? <Check /> : <Copy />}
-                  {copied ? "Copied" : "Copy"}
+                  {copied ? t`Copied` : t`Copy`}
                 </Button>
               </div>
             </div>
@@ -252,8 +255,10 @@ export function RawExplorer({
               </pre>
             ) : (
               <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                Hidden, since raw stats can include stream names or addresses. Copy works without
-                showing it.
+                <Trans>
+                  Hidden, since raw stats can include stream names or addresses. Copy works without
+                  showing it.
+                </Trans>
               </p>
             )}
           </section>

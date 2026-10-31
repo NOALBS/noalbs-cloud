@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
@@ -55,23 +57,26 @@ function SetupPage() {
 
   return (
     <SwitcherPage
-      title="Setup"
-      description={`Connect OBS and your stream server to ${switcher.name}, and optionally your BELABOX or Moblin.`}
+      title={t`Setup`}
+      description={t`Connect OBS and your stream server to ${switcher.name}, and optionally your BELABOX or Moblin.`}
       backToSettings
       className="max-w-3xl"
     >
       <div className="flex flex-col gap-2">
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{done === 3 ? "All set" : `${done} of 3 done`}</span>
+          <span>{done === 3 ? t`All set` : t`${done} of 3 done`}</span>
           <span className="font-mono tabular">{Math.round((done / 3) * 100)}%</span>
         </div>
-        <Progress value={(done / 3) * 100} aria-label="Setup progress" />
+        <Progress value={(done / 3) * 100} aria-label={t`Setup progress`} />
         {done < 3 && (
           <p className="text-xs text-muted-foreground">
-            Stuck on a step? The{" "}
-            <DocsLink page="getting-started/quick-start">quick start guide</DocsLink> walks through
-            it, and <DocsLink page="getting-started/introduction">how NOALBS connects</DocsLink>{" "}
-            explains where your video goes.
+            <Trans>
+              Stuck on a step? The{" "}
+              <DocsLink page="getting-started/quick-start">quick start guide</DocsLink> walks
+              through it, and{" "}
+              <DocsLink page="getting-started/introduction">how NOALBS connects</DocsLink> explains
+              where your video goes.
+            </Trans>
           </p>
         )}
       </div>
@@ -79,33 +84,39 @@ function SetupPage() {
       {done === 3 && (
         <section className="flex flex-col gap-3 rounded-2xl border-2 border-live/40 bg-live/5 p-5">
           <div className="flex flex-col gap-0.5">
-            <h2 className="font-semibold">Try it before you go live</h2>
+            <h2 className="font-semibold">
+              <Trans>Try it before you go live</Trans>
+            </h2>
             <p className="text-sm text-muted-foreground">
-              {switcher.behaviour.only_switch_when_streaming
-                ? "NOALBS only switches while OBS is streaming (you can change that under Switching), so start the stream in OBS first. Then turn off your encoder"
-                : "Turn off your encoder"}
-              : within a few seconds OBS should go to your BRB scene, and back to LIVE when the
-              encoder is on again.
+              <Trans>
+                {switcher.behaviour.only_switch_when_streaming
+                  ? t`NOALBS only switches while OBS is streaming (you can change that under Switching), so start the stream in OBS first. Then turn off your encoder`
+                  : t`Turn off your encoder`}
+                : within a few seconds OBS should go to your BRB scene, and back to LIVE when the
+                encoder is on again.
+              </Trans>
             </p>
           </div>
           <Button asChild className="self-start">
             <Link to="/$workspace/s/$switcher/live" params={params}>
-              Open the Live page
+              <Trans>Open the Live page</Trans>
             </Link>
           </Button>
         </section>
       )}
 
       {!canManage && (
-        <ReadOnlyNotice>Only admins can change the setup of a switcher.</ReadOnlyNotice>
+        <ReadOnlyNotice>
+          <Trans>Only admins can change the setup of a switcher.</Trans>
+        </ReadOnlyNotice>
       )}
 
       <Step
         number={1}
         done={connected}
         active={!connected}
-        title="Connect OBS"
-        description="A browser source in OBS links it to this switcher, with no ports to open."
+        title={t`Connect OBS`}
+        description={t`A browser source in OBS links it to this switcher, with no ports to open.`}
       >
         <BrowserSourceStep
           canManage={canManage}
@@ -120,26 +131,29 @@ function SetupPage() {
         number={2}
         done={hasServer}
         active={connected && !hasServer}
-        title="Connect your stream server"
-        description="Where your encoder sends video. NOALBS reads its stats to pick a scene."
+        title={t`Connect your stream server`}
+        description={t`Where your encoder sends video. NOALBS reads its stats to pick a scene.`}
       >
         {hasServer ? (
           <p className="text-sm text-muted-foreground">
             {servers.data?.length === 1
-              ? `Using ${servers.data[0]?.name}.`
-              : `${servers.data?.length} stream servers, tried in order.`}{" "}
+              ? t`Using ${servers.data[0]?.name ?? ""}.`
+              : plural(servers.data?.length ?? 0, {
+                  one: "# stream server, tried in order.",
+                  other: "# stream servers, tried in order.",
+                })}{" "}
             <Link
               to="/$workspace/s/$switcher/servers"
               params={params}
               className="font-medium text-primary hover:underline"
             >
-              Manage stream servers
+              <Trans>Manage stream servers</Trans>
             </Link>
           </p>
         ) : (
           <Button asChild className="self-start">
             <Link to="/$workspace/s/$switcher/servers" params={params}>
-              Add a stream server
+              <Trans>Add a stream server</Trans>
             </Link>
           </Button>
         )}
@@ -149,15 +163,15 @@ function SetupPage() {
         number={3}
         done={scenesSet}
         active={connected && hasServer && !scenesSet}
-        title="Pick your LIVE, LOW and BRB scenes"
-        description="The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
+        title={t`Pick your LIVE, LOW and BRB scenes`}
+        description={t`The scenes NOALBS switches between. They’re loaded from OBS once it’s connected.`}
       >
         <Link
           to="/$workspace/s/$switcher/scenes"
           params={params}
           className="text-sm font-medium text-primary hover:underline"
         >
-          Go to scenes
+          <Trans>Go to scenes</Trans>
         </Link>
       </Step>
 
@@ -166,8 +180,8 @@ function SetupPage() {
         done={switcher.belabox.has_remote_key}
         active={false}
         optional
-        title="Connect BELABOX Cloud"
-        description="Using a BELABOX? See its modems on the Live page, control it from the dashboard and chat, and start or stop it with the OBS stream."
+        title={t`Connect BELABOX Cloud`}
+        description={t`Using a BELABOX? See its modems on the Live page, control it from the dashboard and chat, and start or stop it with the OBS stream.`}
       >
         <div className="rounded-xl border border-divider pt-4">
           <BelaboxSettings />
@@ -184,8 +198,8 @@ function SetupPage() {
         done={switcher.moblin.has_password}
         active={false}
         optional
-        title="Connect Moblin"
-        description="Streaming with Moblin? See its bitrate, bonding and battery on the Live page, control it from the dashboard and chat, and start or stop it with the OBS stream."
+        title={t`Connect Moblin`}
+        description={t`Streaming with Moblin? See its bitrate, bonding and battery on the Live page, control it from the dashboard and chat, and start or stop it with the OBS stream.`}
       >
         <div className="rounded-xl border border-divider pt-4">
           <MoblinSettings />
@@ -204,13 +218,13 @@ function SetupPage() {
 function BelaboxLine({ view }: { view: BelaboxView }) {
   switch (view.kind) {
     case "online":
-      return <ConnectionLine ok done="BELABOX connected" waiting="" />;
+      return <ConnectionLine ok done={t`BELABOX connected`} waiting="" />;
     case "invalid_key":
       return (
         <ConnectionLine
           ok={false}
           done=""
-          waiting="BELABOX Cloud refused the secret URL. Paste it again above."
+          waiting={t`BELABOX Cloud refused the secret URL. Paste it again above.`}
         />
       );
     case "offline":
@@ -218,7 +232,7 @@ function BelaboxLine({ view }: { view: BelaboxView }) {
         <ConnectionLine
           ok={false}
           done=""
-          waiting="Connected to BELABOX Cloud; waiting for your BELABOX to come online…"
+          waiting={t`Connected to BELABOX Cloud; waiting for your BELABOX to come online…`}
         />
       );
     case "idle":
@@ -226,12 +240,12 @@ function BelaboxLine({ view }: { view: BelaboxView }) {
         <ConnectionLine
           ok={false}
           done=""
-          waiting="BELABOX connects while OBS is open with the browser source."
+          waiting={t`BELABOX connects while OBS is open with the browser source.`}
         />
       );
     case "loading":
     case "connecting":
-      return <ConnectionLine ok={false} done="" waiting="Connecting to BELABOX Cloud…" />;
+      return <ConnectionLine ok={false} done="" waiting={t`Connecting to BELABOX Cloud…`} />;
   }
 }
 
@@ -240,14 +254,14 @@ function MoblinLine({ view }: { view: MoblinView }) {
   switch (view.kind) {
     case "connected":
     case "paused":
-      return <ConnectionLine ok done="Moblin connected" waiting="" />;
+      return <ConnectionLine ok done={t`Moblin connected`} waiting="" />;
     case "loading":
     case "disconnected":
       return (
         <ConnectionLine
           ok={false}
           done=""
-          waiting="Waiting for Moblin… Enter the password and URL above, then turn the streamer on."
+          waiting={t`Waiting for Moblin… Enter the password and URL above, then turn the streamer on.`}
         />
       );
   }
@@ -294,7 +308,7 @@ function Step({
             {title}
             {optional && (
               <Badge variant="secondary" className="font-normal">
-                Optional
+                <Trans>Optional</Trans>
               </Badge>
             )}
           </h2>
@@ -346,10 +360,12 @@ function BrowserSourceStep({
     <>
       <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
         <li>
-          In OBS, open{" "}
-          <strong className="text-foreground">Tools → WebSocket Server Settings</strong>, turn on
-          the WebSocket server and enter its port and password here (
-          <strong className="text-foreground">Show Connect Info</strong> shows both).
+          <Trans>
+            In OBS, open{" "}
+            <strong className="text-foreground">Tools → WebSocket Server Settings</strong>, turn on
+            the WebSocket server and enter its port and password here (
+            <strong className="text-foreground">Show Connect Info</strong> shows both).
+          </Trans>
         </li>
       </ol>
       <ObsConnectionForm className="rounded-xl border border-divider p-4" />
@@ -358,20 +374,24 @@ function BrowserSourceStep({
         className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-muted-foreground"
       >
         <li>
-          Add a <strong className="text-foreground">Browser</strong> source to a scene you always
-          have open (it doesn’t have to be visible), paste the link below as its URL, and keep it
-          enabled. Leave{" "}
-          <strong className="text-foreground">Shutdown source when not visible</strong> off, or
-          NOALBS stops whenever that scene isn’t on air.
+          <Trans>
+            Add a <strong className="text-foreground">Browser</strong> source to a scene you always
+            have open (it doesn’t have to be visible), paste the link below as its URL, and keep it
+            enabled. Leave{" "}
+            <strong className="text-foreground">Shutdown source when not visible</strong> off, or
+            NOALBS stops whenever that scene isn’t on air.
+          </Trans>
         </li>
       </ol>
 
       {url ? (
         <div className="flex flex-col gap-2">
-          <CopyField value={url} label="browser source URL" secret />
+          <CopyField value={url} label={t`browser source URL`} secret />
           <p className="text-xs text-muted-foreground">
-            Copy it now: the link contains a secret, so it won’t be shown again. You can always
-            create a new one.
+            <Trans>
+              Copy it now: the link contains a secret, so it won’t be shown again. You can always
+              create a new one.
+            </Trans>
           </p>
         </div>
       ) : canManage ? (
@@ -379,20 +399,26 @@ function BrowserSourceStep({
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="self-start">
-                Create a new link
+                <Trans>Create a new link</Trans>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Create a new browser-source link?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  <Trans>Create a new browser-source link?</Trans>
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  The current link stops working, so you’ll need to paste the new one into OBS.
+                  <Trans>
+                    The current link stops working, so you’ll need to paste the new one into OBS.
+                  </Trans>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>
+                  <Trans>Cancel</Trans>
+                </AlertDialogCancel>
                 <AlertDialogAction onClick={() => rotate.mutate()}>
-                  Create new link
+                  <Trans>Create new link</Trans>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -404,10 +430,10 @@ function BrowserSourceStep({
               onClick={() => rotate.mutate()}
               disabled={rotate.isPending}
             >
-              Create browser-source link
+              <Trans>Create browser-source link</Trans>
             </Button>
             <p className="text-xs text-muted-foreground">
-              If you already pasted a link into OBS, this replaces it.
+              <Trans>If you already pasted a link into OBS, this replaces it.</Trans>
             </p>
           </div>
         )
@@ -416,22 +442,22 @@ function BrowserSourceStep({
       <ul className="flex flex-col gap-1.5 rounded-xl border border-divider bg-sunken px-3.5 py-3 text-sm">
         <ConnectionLine
           ok={browserSource}
-          done="Browser source connected"
-          waiting="Waiting for the browser source…"
+          done={t`Browser source connected`}
+          waiting={t`Waiting for the browser source…`}
         />
         <ConnectionLine
           ok={obs}
-          done="OBS connected"
+          done={t`OBS connected`}
           waiting={
             browserSource
-              ? "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
-              : "OBS connects through the browser source"
+              ? t`Browser source is up; waiting for OBS. Check the WebSocket port and password above.`
+              : t`OBS connects through the browser source`
           }
         />
       </ul>
       {!obs && (
         <p className="text-xs text-muted-foreground">
-          Not connecting?{" "}
+          <Trans>Not connecting?</Trans>{" "}
           <DocsLink
             page="guides/troubleshooting"
             anchor={
@@ -440,7 +466,7 @@ function BrowserSourceStep({
                 : "waiting-for-the-browser-source"
             }
           >
-            See troubleshooting
+            <Trans>See troubleshooting</Trans>
           </DocsLink>
           .
         </p>

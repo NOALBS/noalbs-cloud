@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation } from "@tanstack/react-query";
 import {
   Battery,
@@ -215,19 +217,21 @@ export function MoblinCard({
     ? connected.streaming
       ? { label: "LIVE", tone: "text-live", fill: "bg-live" }
       : {
-          label: view.kind === "paused" ? "PAUSED" : "READY",
+          label: view.kind === "paused" ? t`PAUSED` : t`READY`,
           tone: "text-muted-foreground",
           fill: "bg-idle",
         }
     : view.kind === "loading"
-      ? { label: "CONNECTING…", tone: "text-muted-foreground", fill: "bg-idle" }
-      : { label: "NOT CONNECTED", tone: "text-muted-foreground", fill: "bg-idle" };
+      ? { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" }
+      : { label: t`NOT CONNECTED`, tone: "text-muted-foreground", fill: "bg-idle" };
 
   return (
     <section aria-label="Moblin" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">Moblin</span>
+          <span className="text-sm font-semibold">
+            <Trans>Moblin</Trans>
+          </span>
           <span
             className={cn(
               "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
@@ -245,7 +249,9 @@ export function MoblinCard({
 
       {view.kind === "disconnected" && (
         <p className="text-sm text-muted-foreground">
-          Moblin isn’t connected. Check Settings → Remote control → Streamer in Moblin.
+          <Trans>
+            Moblin isn’t connected. Check Settings → Remote control → Streamer in Moblin.
+          </Trans>
         </p>
       )}
 
@@ -266,9 +272,9 @@ function Details({
   // [name, value, whether it's a problem]; the long lines (bonding, Moblink) have their own lists.
   const facts = (
     [
-      ["Battery", batteryLabel(status), false],
-      ["Heat", thermalLabel(status.thermal), false],
-      ["Phone", status.system_monitor ? systemMonitorLabel(status.system_monitor) : null, false],
+      [t`Battery`, batteryLabel(status), false],
+      [t`Heat`, thermalLabel(status.thermal), false],
+      [t`Phone`, status.system_monitor ? systemMonitorLabel(status.system_monitor) : null, false],
       ["DJI", status.dji_devices?.text ?? null, status.dji_devices?.ok === false],
     ] satisfies [string, string | null, boolean][]
   ).filter((fact): fact is [string, string, boolean] => fact[1] != null);
@@ -277,10 +283,12 @@ function Details({
     <>
       <div className="flex flex-col">
         <span className="font-mono text-xl font-semibold tabular">
-          {status.streaming ? (status.bitrate ?? "—") : "Not live"}
+          {status.streaming ? (status.bitrate ?? "—") : t`Not live`}
         </span>
         {status.streaming && status.uptime && (
-          <span className="text-xs text-muted-foreground">Live for {status.uptime}</span>
+          <span className="text-xs text-muted-foreground">
+            <Trans>Live for {status.uptime}</Trans>
+          </span>
         )}
       </div>
 
@@ -323,7 +331,7 @@ function Details({
             aria-pressed={status.recording}
           >
             <Circle className={cn("size-3.5", status.recording && "fill-offline text-offline")} />
-            {status.recording ? "Recording" : "Record"}
+            {status.recording ? t`Recording` : t`Record`}
           </Button>
           <Button
             size="sm"
@@ -333,7 +341,7 @@ function Details({
             aria-pressed={status.muted}
           >
             {status.muted ? <MicOff className="size-3.5" /> : <Mic className="size-3.5" />}
-            {status.muted ? "Muted" : "Mute"}
+            {status.muted ? t`Muted` : t`Mute`}
           </Button>
           <Button
             size="sm"
@@ -341,19 +349,19 @@ function Details({
             onClick={() => controls.stealth.mutate(!status.stealth_mode)}
             disabled={controls.stealth.isPending}
             aria-pressed={status.stealth_mode}
-            title="Moblin’s screen shows a black image instead of the camera. The stream isn’t affected."
+            title={t`Moblin’s screen shows a black image instead of the camera. The stream isn’t affected.`}
           >
             <EyeOff className="size-3.5" />
-            {status.stealth_mode ? "Stealth on" : "Stealth"}
+            {status.stealth_mode ? t`Stealth on` : t`Stealth`}
           </Button>
         </div>
       )}
       {!canControl && (status.recording || status.muted || status.stealth_mode) && (
         <p className="text-xs text-muted-foreground">
           {[
-            status.recording && "Recording",
-            status.muted && "Muted",
-            status.stealth_mode && "Stealth mode",
+            status.recording && t`Recording`,
+            status.muted && t`Muted`,
+            status.stealth_mode && t`Stealth mode`,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -364,14 +372,14 @@ function Details({
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <Choice
-          label="Scene"
+          label={t`Scene`}
           value={status.scene_id}
           options={status.scenes.map((scene) => ({ id: scene.id, label: scene.name }))}
           onChange={(id) => controls.scene.mutate(id)}
           disabled={!canControl || controls.scene.isPending}
         />
         <Choice
-          label="Bitrate preset"
+          label={t`Bitrate preset`}
           value={status.bitrate_preset_id}
           options={sortedPresets(status).map((preset) => ({
             id: preset.id,
@@ -396,7 +404,9 @@ function Bonding({ status }: { status: MoblinStatus }) {
 
   return (
     <div className="flex flex-col gap-1 text-xs">
-      <span className="text-muted-foreground">Bonding</span>
+      <span className="text-muted-foreground">
+        <Trans>Bonding</Trans>
+      </span>
       {rows ? (
         <ul className="flex flex-col gap-1">
           {rows.map((row) => (
@@ -441,7 +451,9 @@ function Moblink({ line }: { line: MoblinStatusText }) {
 
   return (
     <div className="flex flex-col gap-1 text-xs">
-      <span className="text-muted-foreground">Moblink</span>
+      <span className="text-muted-foreground">
+        <Trans>Moblink</Trans>
+      </span>
       {relays ? (
         <ul className="flex flex-wrap gap-1.5">
           {relays.map((relay) => (
@@ -453,7 +465,7 @@ function Moblink({ line }: { line: MoblinStatusText }) {
               )}
             >
               <span className="font-semibold">{relay.name}</span>
-              {relay.hot && <Flame aria-label="Hot" className="size-3.5 text-offline" />}
+              {relay.hot && <Flame aria-label={t`Hot`} className="size-3.5 text-offline" />}
               {relay.battery != null && (
                 <span className="flex items-center gap-0.5 font-mono tabular">
                   {relay.lowBattery ? (
@@ -492,7 +504,9 @@ function Zoom({
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs tracking-wider text-muted-foreground uppercase">Zoom</span>
+        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+          <Trans>Zoom</Trans>
+        </span>
         <div className="flex items-center gap-1.5">
           {canControl && (
             <Button
@@ -501,7 +515,7 @@ function Zoom({
               className="size-8"
               onClick={() => controls.zoom.mutate(stepZoom(x, -1))}
               disabled={busy}
-              aria-label="Zoom out"
+              aria-label={t`Zoom out`}
             >
               <Minus className="size-3.5" />
             </Button>
@@ -516,7 +530,7 @@ function Zoom({
               className="size-8"
               onClick={() => controls.zoom.mutate(stepZoom(x, 1))}
               disabled={busy}
-              aria-label="Zoom in"
+              aria-label={t`Zoom in`}
             >
               <Plus className="size-3.5" />
             </Button>
@@ -570,7 +584,7 @@ function Connections({
           htmlFor={id}
           className="text-xs font-normal tracking-wider text-muted-foreground uppercase"
         >
-          Connection priorities
+          <Trans>Connection priorities</Trans>
         </Label>
         <Switch
           id={id}
@@ -581,8 +595,10 @@ function Connections({
       </div>
       {!enabled && (
         <p className="text-xs text-muted-foreground">
-          Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one.
-          Only SRTLA streams use these.
+          <Trans>
+            Off: Moblin uses every connection alike. Turn on to switch connections off or prefer
+            one. Only SRTLA streams use these.
+          </Trans>
         </p>
       )}
       <ul className="flex flex-col divide-y divide-divider">
@@ -620,7 +636,10 @@ function ConnectionRow({
       <span className="min-w-0 flex-1 truncate text-sm font-semibold" title={connection.name}>
         {connection.name}
       </span>
-      <span className="flex items-center gap-1" title="Priority: higher is used more when stable">
+      <span
+        className="flex items-center gap-1"
+        title={t`Priority: higher is used more when stable`}
+      >
         {canControl && (
           <Button
             size="icon"
@@ -628,7 +647,7 @@ function ConnectionRow({
             className="size-7"
             onClick={() => setPriority(connection.priority - 1)}
             disabled={change.isPending || connection.priority <= MOBLIN_MIN_PRIORITY}
-            aria-label={`Lower ${connection.name}'s priority`}
+            aria-label={t`Lower ${connection.name}'s priority`}
           >
             <Minus className="size-3" />
           </Button>
@@ -641,7 +660,7 @@ function ConnectionRow({
             className="size-7"
             onClick={() => setPriority(connection.priority + 1)}
             disabled={change.isPending || connection.priority >= MOBLIN_MAX_PRIORITY}
-            aria-label={`Raise ${connection.name}'s priority`}
+            aria-label={t`Raise ${connection.name}'s priority`}
           >
             <Plus className="size-3" />
           </Button>
@@ -651,7 +670,7 @@ function ConnectionRow({
         checked={connection.enabled}
         onCheckedChange={(enabled) => change.mutate({ id: connection.id, enabled })}
         disabled={!canControl || change.isPending || (connection.enabled && !canTurnOff)}
-        aria-label={`${connection.enabled ? "Turn off" : "Turn on"} ${connection.name}`}
+        aria-label={`${connection.enabled ? t`Turn off` : t`Turn on`} ${connection.name}`}
       />
     </li>
   );
@@ -685,7 +704,7 @@ function Choice({
         disabled={disabled || options.length === 0}
       >
         <SelectTrigger id={id} className="w-full">
-          <SelectValue placeholder={options.length === 0 ? "None" : "Other"} />
+          <SelectValue placeholder={options.length === 0 ? t`None` : t`Other`} />
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
@@ -705,7 +724,7 @@ function StreamToggle({ controls, streaming }: { controls: Controls; streaming: 
     return (
       <Button size="sm" onClick={() => stream.mutate(true)} disabled={stream.isPending}>
         <Play className="size-3.5" />
-        Go live
+        <Trans>Go live</Trans>
       </Button>
     );
   }
@@ -714,20 +733,24 @@ function StreamToggle({ controls, streaming }: { controls: Controls; streaming: 
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="outline" disabled={stream.isPending}>
           <Square className="size-3.5" />
-          Stop
+          <Trans>Stop</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Stop the Moblin stream?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Stop the Moblin stream?</Trans>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Moblin stops sending, so the stream server loses the feed.
+            <Trans>Moblin stops sending, so the stream server loses the feed.</Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep streaming</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Keep streaming</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => stream.mutate(false)}>
-            Stop Moblin
+            <Trans>Stop Moblin</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

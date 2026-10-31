@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { ApiRequestError } from "@/api/client";
@@ -5,6 +7,7 @@ import { obsStatsQuery } from "@/api/queries";
 import type { ObsDropped, ObsStats } from "@/api/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { errorMessage } from "@/lib/errors";
 import { formatKbps } from "@/lib/live-format";
 import {
   bitrateBetween,
@@ -41,17 +44,19 @@ export function ObsStatsPopover({
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
           <span className="flex items-center gap-2 text-sm font-semibold">
             <span className={cn("size-1.5 rounded-full", connected ? "bg-live" : "bg-offline")} />
-            OBS
+            <Trans>OBS</Trans>
           </span>
           <span className="text-xs text-muted-foreground">
-            {connected ? "Connected" : "Not connected"}
+            {connected ? t`Connected` : t`Not connected`}
           </span>
         </div>
         {connected ? (
           <ObsStatsBody path={path} />
         ) : (
           <p className="p-4 text-sm text-muted-foreground">
-            OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats.
+            <Trans>
+              OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats.
+            </Trans>
           </p>
         )}
       </PopoverContent>
@@ -81,8 +86,8 @@ function ObsStatsBody({ path }: { path: Path }) {
       return (
         <p className="p-4 text-sm text-muted-foreground">
           {query.error instanceof ApiRequestError
-            ? query.error.message
-            : "Couldn’t read OBS’s stats."}
+            ? errorMessage(query.error)
+            : t`Couldn’t read OBS’s stats.`}
         </p>
       );
     }
@@ -98,23 +103,30 @@ function ObsStatsBody({ path }: { path: Path }) {
   return (
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-end justify-between gap-3">
-        <Stat label="Stream bitrate">
+        <Stat label={t`Stream bitrate`}>
           {stats.streaming ? (
             bitrate != null ? (
               <>
                 <span className="text-2xl">{formatKbps(bitrate)}</span>
-                <span className="text-sm font-normal text-muted-foreground"> kbps</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {" "}
+                  <Trans>kbps</Trans>
+                </span>
               </>
             ) : (
-              <span className="text-sm font-normal text-muted-foreground">Measuring…</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                <Trans>Measuring…</Trans>
+              </span>
             )
           ) : (
-            <span className="text-sm font-normal text-muted-foreground">Not streaming</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              <Trans>Not streaming</Trans>
+            </span>
           )}
         </Stat>
         {stats.reconnecting && (
           <span className="rounded-full bg-offline/15 px-2.5 py-1 text-xs font-semibold text-offline">
-            Reconnecting
+            <Trans>Reconnecting</Trans>
           </span>
         )}
       </div>
@@ -122,15 +134,15 @@ function ObsStatsBody({ path }: { path: Path }) {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs tracking-wider text-muted-foreground uppercase">
-            Dropped frames
+            <Trans>Dropped frames</Trans>
           </span>
           <span className="text-xs text-muted-foreground">
-            {stats.this_stream ? "This stream" : "Since OBS started"}
+            {stats.this_stream ? t`This stream` : t`Since OBS started`}
           </span>
         </div>
-        {stats.streaming && <DroppedRow label="Network" dropped={stats.network} />}
-        <DroppedRow label="Rendering lag" dropped={stats.rendering} />
-        <DroppedRow label="Encoding lag" dropped={stats.encoding} />
+        {stats.streaming && <DroppedRow label={t`Network`} dropped={stats.network} />}
+        <DroppedRow label={t`Rendering lag`} dropped={stats.rendering} />
+        <DroppedRow label={t`Encoding lag`} dropped={stats.encoding} />
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-divider pt-4">
@@ -138,8 +150,8 @@ function ObsStatsBody({ path }: { path: Path }) {
           {stats.fps.toFixed(2)}
         </Stat>
         <Stat label="CPU">{stats.cpu_percent.toFixed(1)}%</Stat>
-        <Stat label="Memory">{formatMegabytes(stats.memory_mb)}</Stat>
-        <Stat label="Free disk">{formatMegabytes(stats.disk_free_mb)}</Stat>
+        <Stat label={t`Memory`}>{formatMegabytes(stats.memory_mb)}</Stat>
+        <Stat label={t`Free disk`}>{formatMegabytes(stats.disk_free_mb)}</Stat>
       </div>
     </div>
   );

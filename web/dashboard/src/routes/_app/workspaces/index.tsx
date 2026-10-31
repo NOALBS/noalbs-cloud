@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Link2, Plus } from "lucide-react";
@@ -21,18 +23,19 @@ import { WorkspaceTile } from "@/components/workspace-tile";
 import { MEMBER_ROLES, parseWorkspacesSearch } from "@/lib/my-workspaces";
 import {
   CLIENT_STATE_DOT,
-  CLIENT_STATE_LABELS,
   CLIENT_STATES,
   type ClientState,
   clientState,
+  clientStateLabels,
 } from "@/lib/organizations";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { roleLabels } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-const SORTS = [
-  { value: "oldest", label: "Oldest first" },
-  { value: "name", label: "By name" },
-] as const;
+const sorts = () =>
+  [
+    { value: "oldest", label: t`Oldest first` },
+    { value: "name", label: t`By name` },
+  ] as const;
 
 export const Route = createFileRoute("/_app/workspaces/")({
   validateSearch: parseWorkspacesSearch,
@@ -60,45 +63,50 @@ function WorkspacesPage() {
 
   return (
     <Page
-      title="Workspaces"
+      title={t`Workspaces`}
       description={
         workspaces.data && !filtered
-          ? `${workspaces.data.total} workspace${workspaces.data.total === 1 ? "" : "s"} you’re a member of.`
-          : "The workspaces you’re a member of."
+          ? plural(workspaces.data.total, {
+              one: "# workspace you’re a member of.",
+              other: "# workspaces you’re a member of.",
+            })
+          : t`The workspaces you’re a member of.`
       }
       actions={
         <>
           <Button variant="outline" asChild>
             <Link to="/welcome" search={{ mode: "join" }}>
               <Link2 />
-              Join
+              <Trans>Join</Trans>
             </Link>
           </Button>
           <Button asChild>
             <Link to="/welcome" search={{ mode: "create" }}>
               <Plus />
-              Create
+              <Trans>Create</Trans>
             </Link>
           </Button>
         </>
       }
     >
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={q} onSearch={search} placeholder="Search by name or URL" />
+        <SearchBox value={q} onSearch={search} placeholder={t`Search by name or URL`} />
         <Select
           value={state ?? "any"}
           onValueChange={(value) =>
             filter({ state: CLIENT_STATES.find((candidate) => candidate === value) })
           }
         >
-          <SelectTrigger className="w-40" aria-label="State">
+          <SelectTrigger className="w-40" aria-label={t`State`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">Any state</SelectItem>
+            <SelectItem value="any">
+              <Trans>Any state</Trans>
+            </SelectItem>
             {CLIENT_STATES.map((value) => (
               <SelectItem key={value} value={value}>
-                {CLIENT_STATE_LABELS[value]}
+                {clientStateLabels()[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -107,14 +115,16 @@ function WorkspacesPage() {
           value={role ?? "any"}
           onValueChange={(value) => filter({ role: MEMBER_ROLES.find((r) => r === value) })}
         >
-          <SelectTrigger className="w-36" aria-label="Your role">
+          <SelectTrigger className="w-36" aria-label={t`Your role`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">Any role</SelectItem>
+            <SelectItem value="any">
+              <Trans>Any role</Trans>
+            </SelectItem>
             {MEMBER_ROLES.map((value) => (
               <SelectItem key={value} value={value}>
-                {ROLE_LABELS[value]}
+                {roleLabels()[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -123,11 +133,11 @@ function WorkspacesPage() {
           value={sort ?? "oldest"}
           onValueChange={(value) => filter({ sort: value === "name" ? "name" : undefined })}
         >
-          <SelectTrigger className="w-36" aria-label="Sort">
+          <SelectTrigger className="w-36" aria-label={t`Sort`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SORTS.map((option) => (
+            {sorts().map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -140,7 +150,7 @@ function WorkspacesPage() {
         <Skeleton className="h-48 rounded-2xl" />
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-          {filtered ? "No workspaces match." : "You’re not in any workspace yet."}
+          {filtered ? t`No workspaces match.` : t`You’re not in any workspace yet.`}
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
@@ -181,17 +191,17 @@ function WorkspaceRow({ item }: { item: MyWorkspace }) {
           <span className="truncate text-sm font-semibold">{workspace.name}</span>
           <span className="truncate text-xs text-muted-foreground">
             /{workspace.url_slug}
-            {workspace.managed_by && ` · managed by ${workspace.managed_by.name}`}
+            {workspace.managed_by && t` · managed by ${workspace.managed_by.name}`}
           </span>
         </span>
         <span className="flex items-center gap-3 text-xs text-muted-foreground">
-          {workspace.role && <Badge variant="secondary">{ROLE_LABELS[workspace.role]}</Badge>}
+          {workspace.role && <Badge variant="secondary">{roleLabels()[workspace.role]}</Badge>}
           <span className="tabular font-mono">
-            {workspace.switcher_count} switcher{workspace.switcher_count === 1 ? "" : "s"}
+            {plural(workspace.switcher_count, { one: "# switcher", other: "# switchers" })}
           </span>
           <span className="flex min-w-28 items-center gap-1.5">
             <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[status])} />
-            {CLIENT_STATE_LABELS[status]}
+            {clientStateLabels()[status]}
           </span>
         </span>
       </Link>

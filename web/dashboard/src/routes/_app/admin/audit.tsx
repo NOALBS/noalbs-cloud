@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { adminAuditQuery } from "@/api/queries";
@@ -9,16 +11,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { describeAudit } from "@/lib/admin";
 import { errorMessage } from "@/lib/errors";
 import { currentLocale } from "@/lib/locale";
-import { SUPPORT_LEVEL_LABELS } from "@/lib/support";
+import { supportLevelLabels } from "@/lib/support";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 type Kind = "all" | "admin" | "support";
 
-const KINDS: { value: Kind; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "admin", label: "Admin actions" },
-  { value: "support", label: "Support in workspaces" },
+const kinds = (): { value: Kind; label: string }[] => [
+  { value: "all", label: t`All` },
+  { value: "admin", label: t`Admin actions` },
+  { value: "support", label: t`Support in workspaces` },
 ];
 
 export const Route = createFileRoute("/_app/admin/audit")({
@@ -35,12 +37,12 @@ function AuditPage() {
 
   return (
     <Page
-      title="Audit log"
-      description="What staff did: actions from Admin, and support work inside workspaces (which each workspace also sees). Kept for a year."
+      title={t`Audit log`}
+      description={t`What staff did: actions from Admin, and support work inside workspaces (which each workspace also sees). Kept for a year.`}
       className="max-w-5xl"
     >
-      <div role="tablist" aria-label="Show" className="flex flex-wrap gap-1.5">
-        {KINDS.map((option) => (
+      <div role="tablist" aria-label={t`Show`} className="flex flex-wrap gap-1.5">
+        {kinds().map((option) => (
           <Link
             key={option.value}
             to="/admin/audit"
@@ -59,13 +61,15 @@ function AuditPage() {
         ))}
       </div>
 
-      <Section title="Entries">
+      <Section title={t`Entries`}>
         {audit.isError && (
           <p className="px-5 pb-5 text-sm text-destructive">{errorMessage(audit.error)}</p>
         )}
         {audit.isPending && <Skeleton className="mx-5 mb-5 h-40" />}
         {audit.isSuccess && entries.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-muted-foreground">Nothing yet.</p>
+          <p className="px-5 pb-5 text-sm text-muted-foreground">
+            <Trans>Nothing yet.</Trans>
+          </p>
         )}
         {entries.length > 0 && (
           <ul className="flex flex-col divide-y divide-divider border-t">
@@ -81,7 +85,7 @@ function AuditPage() {
               onClick={() => audit.fetchNextPage()}
               disabled={audit.isFetchingNextPage}
             >
-              Show older
+              <Trans>Show older</Trans>
             </Button>
           </div>
         )}
@@ -102,7 +106,11 @@ function AuditRow({ entry }: { entry: AdminAuditEntry }) {
             <span className="font-normal text-muted-foreground"> · {entry.switcher_name}</span>
           )}
         </span>
-        {entry.reason && <span className="text-muted-foreground">“{entry.reason}”</span>}
+        {entry.reason && (
+          <span className="text-muted-foreground">
+            <Trans>“{entry.reason}”</Trans>
+          </span>
+        )}
         <span className="text-xs text-muted-foreground">
           {entry.staff_name} · {formatRelative(entry.created_at)} ·{" "}
           {new Date(entry.created_at).toLocaleString(currentLocale())}
@@ -114,7 +122,7 @@ function AuditRow({ entry }: { entry: AdminAuditEntry }) {
                 params={{ workspace: entry.workspace_id }}
                 className="text-primary hover:underline"
               >
-                workspace
+                <Trans>workspace</Trans>
               </Link>
             </>
           )}
@@ -126,21 +134,23 @@ function AuditRow({ entry }: { entry: AdminAuditEntry }) {
                 params={{ user: entry.target_user_id }}
                 className="text-primary hover:underline"
               >
-                user
+                <Trans>user</Trans>
               </Link>
             </>
           )}
         </span>
       </span>
       {entry.kind === "admin" ? (
-        <Badge variant="secondary">Admin</Badge>
+        <Badge variant="secondary">
+          <Trans>Admin</Trans>
+        </Badge>
       ) : entry.break_glass ? (
         <Badge variant="outline" className="border-low/50 text-low">
-          Emergency
+          <Trans>Emergency</Trans>
         </Badge>
       ) : (
         <Badge variant="outline">
-          {entry.grant_level ? SUPPORT_LEVEL_LABELS[entry.grant_level] : "No permission"}
+          {entry.grant_level ? supportLevelLabels()[entry.grant_level] : t`No permission`}
         </Badge>
       )}
     </li>

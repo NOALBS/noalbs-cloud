@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FeedState, Marker, StreamSummary } from "@/api/types";
 import { currentLocale } from "@/lib/locale";
 
@@ -233,6 +234,6 @@ export function formatOffset(seconds: number): string {
 /** One line per marker, "1:02:05 Clutch play", for pasting or saving. */
 export function markersToText(markers: Marker[]): string {
   return markers
-    .map((marker) => `${formatOffset(marker.offset_seconds)} ${marker.description ?? "Marker"}`)
+    .map((marker) => `${formatOffset(marker.offset_seconds)} ${marker.description ?? t`Marker`}`)
     .join("\n");
 }

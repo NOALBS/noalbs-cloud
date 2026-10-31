@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +58,9 @@ export function ReasonDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="staff-reason">Reason</Label>
+          <Label htmlFor="staff-reason">
+            <Trans>Reason</Trans>
+          </Label>
           <textarea
             id="staff-reason"
             value={reason}
@@ -70,7 +73,7 @@ export function ReasonDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button
             variant="destructive"

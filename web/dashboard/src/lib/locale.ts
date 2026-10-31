@@ -2,7 +2,22 @@ import { i18n } from "@lingui/core";
 import { useSyncExternalStore } from "react";
 
 /** The languages the dashboard is translated into. Keep in step with `locales` in lingui.config.ts. */
-export const LOCALES = [{ code: "en", name: "English" }] as const;
+export const LOCALES = [
+  { code: "en", name: "English" },
+  { code: "de", name: "Deutsch" },
+  { code: "es", name: "Español" },
+  { code: "fr", name: "Français" },
+  { code: "it", name: "Italiano" },
+  { code: "ja", name: "日本語" },
+  { code: "ko", name: "한국어" },
+  { code: "nl", name: "Nederlands" },
+  { code: "pl", name: "Polski" },
+  { code: "pt-br", name: "Português (Brasil)" },
+  { code: "sv", name: "Svenska" },
+  { code: "tr", name: "Türkçe" },
+  { code: "zh-cn", name: "简体中文" },
+  { code: "zh-tw", name: "繁體中文" },
+] as const;
 
 export type Locale = (typeof LOCALES)[number]["code"];
 /** What the viewer picked: a language, or `system` to follow the browser's languages. */
@@ -20,13 +35,18 @@ export function parsePreference(saved: string | null): LocalePreference {
 }
 
 /**
- * The first of the browser's languages we have, matching on the language alone
- * ("nl-BE" gets "nl"), else the source language.
+ * The first of the browser's languages we have: the exact tag ("pt-BR"), else on
+ * the language alone ("nl-BE" gets "nl", "pt-PT" gets "pt-br"), else the source language.
+ * Chinese goes by script: traditional for Hant, Hong Kong and Macau, else simplified.
  */
 export function pickLocale(requested: readonly string[]): Locale {
   for (const tag of requested) {
-    const language = tag.split("-")[0]?.toLowerCase() ?? "";
-    if (isLocale(language)) return language;
+    const code = tag.toLowerCase();
+    if (isLocale(code)) return code;
+    if (/^zh-(hant|hk|mo)\b/.test(code)) return "zh-tw";
+    const language = code.split("-")[0];
+    const match = LOCALES.find((locale) => locale.code.split("-")[0] === language);
+    if (match) return match.code;
   }
   return SOURCE_LOCALE;
 }

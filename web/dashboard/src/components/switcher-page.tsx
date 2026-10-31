@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import type { ReactNode } from "react";
@@ -6,15 +8,16 @@ import { cn } from "@/lib/utils";
 
 /** A switcher's pages, in sidebar order. Setup isn't listed: the sidebar shows it while
  * setup is unfinished, and Settings links to it. */
-export const SWITCHER_PAGES = [
-  { label: "Live", to: "/$workspace/s/$switcher/live" },
-  { label: "History", to: "/$workspace/s/$switcher/history" },
-  { label: "Scenes", to: "/$workspace/s/$switcher/scenes" },
-  { label: "Switching", to: "/$workspace/s/$switcher/triggers" },
-  { label: "Stream servers", to: "/$workspace/s/$switcher/servers" },
-  { label: "Chat & commands", to: "/$workspace/s/$switcher/chat" },
-  { label: "Settings", to: "/$workspace/s/$switcher/obs" },
-] as const;
+export const switcherPages = () =>
+  [
+    { label: t`Live`, to: "/$workspace/s/$switcher/live" },
+    { label: t`History`, to: "/$workspace/s/$switcher/history" },
+    { label: t`Scenes`, to: "/$workspace/s/$switcher/scenes" },
+    { label: t`Switching`, to: "/$workspace/s/$switcher/triggers" },
+    { label: t`Stream servers`, to: "/$workspace/s/$switcher/servers" },
+    { label: t`Chat & commands`, to: "/$workspace/s/$switcher/chat" },
+    { label: t`Settings`, to: "/$workspace/s/$switcher/obs" },
+  ] as const;
 
 /** The pages the mobile "Settings" tab covers; its hub is the triggers page. */
 export const SETTINGS_SEGMENTS = ["triggers", "scenes", "servers", "chat", "obs", "setup"];
@@ -57,7 +60,7 @@ export function SwitcherPage({
           className="-mb-2 flex min-h-11 items-center gap-1 self-start text-sm font-medium text-primary md:hidden"
         >
           <ChevronLeft className="size-4" />
-          Settings
+          <Trans>Settings</Trans>
         </Link>
       )}
       {back}

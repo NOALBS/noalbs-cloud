@@ -18,6 +18,24 @@ describe("pickLocale", () => {
     expect(pickLocale(["en-GB"])).toBe("en");
   });
 
+  it("matches a regional language exactly", () => {
+    expect(pickLocale(["pt-BR"])).toBe("pt-br");
+    expect(pickLocale(["zh-TW"])).toBe("zh-tw");
+  });
+
+  it("gives another region the language we have", () => {
+    expect(pickLocale(["nl-BE"])).toBe("nl");
+    expect(pickLocale(["pt-PT"])).toBe("pt-br");
+  });
+
+  it("picks Chinese by script", () => {
+    expect(pickLocale(["zh-CN"])).toBe("zh-cn");
+    expect(pickLocale(["zh-SG"])).toBe("zh-cn");
+    expect(pickLocale(["zh"])).toBe("zh-cn");
+    expect(pickLocale(["zh-HK"])).toBe("zh-tw");
+    expect(pickLocale(["zh-Hant-TW"])).toBe("zh-tw");
+  });
+
   it("skips languages we don't have and falls back to English", () => {
     expect(pickLocale(["tlh", "en-US"])).toBe("en");
     expect(pickLocale(["tlh"])).toBe("en");

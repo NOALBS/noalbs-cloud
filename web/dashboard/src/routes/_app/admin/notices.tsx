@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -26,36 +28,38 @@ const SEVERITY_CLASS: Record<string, string> = {
   critical: "bg-destructive/15 text-destructive-foreground",
 };
 
-const STATE_LABEL: Record<string, string> = {
-  active: "Showing",
-  upcoming: "Scheduled",
-  ended: "Ended",
-};
+const stateLabel = (): Record<string, string> => ({
+  active: t`Showing`,
+  upcoming: t`Scheduled`,
+  ended: t`Ended`,
+});
 
 function NoticesPage() {
   const notices = useQuery(adminNoticesQuery);
 
   return (
     <Page
-      title="Notices"
-      description="Messages shown as a banner to everyone who is signed in: maintenance, an outage, a change. Each post, change and removal is in the audit log."
+      title={t`Notices`}
+      description={t`Messages shown as a banner to everyone who is signed in: maintenance, an outage, a change. Each post, change and removal is in the audit log.`}
       className="max-w-4xl"
       actions={
         <NoticeDialog>
           <Button size="sm">
             <Plus className="size-4" />
-            New notice
+            <Trans>New notice</Trans>
           </Button>
         </NoticeDialog>
       }
     >
-      <Section title="All notices">
+      <Section title={t`All notices`}>
         {notices.isError && (
           <p className="px-5 pb-5 text-sm text-destructive">{errorMessage(notices.error)}</p>
         )}
         {notices.isPending && <Skeleton className="mx-5 mb-5 h-20" />}
         {notices.isSuccess && notices.data.length === 0 && (
-          <p className="px-5 pb-5 text-sm text-muted-foreground">No notices yet.</p>
+          <p className="px-5 pb-5 text-sm text-muted-foreground">
+            <Trans>No notices yet.</Trans>
+          </p>
         )}
         {notices.data && notices.data.length > 0 && (
           <ul>
@@ -82,7 +86,7 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
     mutationFn: () => unwrap(api.POST("/admin/notices/{notice_id}/end", path)),
     onSuccess: async () => {
       await refresh();
-      toast.success(notice.state === "upcoming" ? "Notice removed" : "Notice ended");
+      toast.success(notice.state === "upcoming" ? t`Notice removed` : t`Notice ended`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -90,7 +94,7 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
     mutationFn: () => unwrap(api.DELETE("/admin/notices/{notice_id}", path)),
     onSuccess: async () => {
       await refresh();
-      toast.success("Notice deleted");
+      toast.success(t`Notice deleted`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -98,12 +102,12 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
   const when = (iso: string) => new Date(iso).toLocaleString(currentLocale());
   const schedule =
     notice.state === "upcoming"
-      ? `Starts ${when(notice.starts_at)}`
+      ? t`Starts ${when(notice.starts_at)}`
       : notice.state === "ended" && notice.ends_at
-        ? `Ended ${formatRelative(notice.ends_at)}`
+        ? t`Ended ${formatRelative(notice.ends_at)}`
         : notice.ends_at
-          ? `Until ${when(notice.ends_at)}`
-          : "Until ended";
+          ? t`Until ${when(notice.ends_at)}`
+          : t`Until ended`;
 
   return (
     <li
@@ -115,44 +119,46 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-center gap-2">
           <Badge className={SEVERITY_CLASS[notice.severity]}>{notice.severity}</Badge>
-          <Badge variant="outline">{STATE_LABEL[notice.state] ?? notice.state}</Badge>
+          <Badge variant="outline">{stateLabel()[notice.state] ?? notice.state}</Badge>
           <span className="text-xs text-muted-foreground">{schedule}</span>
         </span>
         <span className="text-sm break-words whitespace-pre-line">{notice.message}</span>
         <span className="text-xs text-muted-foreground">
-          Posted {formatRelative(notice.created_at)}
-          {notice.created_by_name && ` by ${notice.created_by_name}`}
-          {!notice.dismissible && " · can’t be hidden"}
+          <Trans>
+            Posted {formatRelative(notice.created_at)}
+            {notice.created_by_name && t` by ${notice.created_by_name}`}
+            {!notice.dismissible && t` · can’t be hidden`}
+          </Trans>
         </span>
       </span>
       <span className="flex items-center gap-1.5">
         <NoticeDialog notice={notice}>
           <Button variant="outline" size="sm">
-            Edit
+            <Trans>Edit</Trans>
           </Button>
         </NoticeDialog>
         {notice.state !== "ended" && (
           <ConfirmButton
             variant="outline"
-            title={notice.state === "upcoming" ? "Remove this notice?" : "End this notice?"}
-            description="Users stop seeing it within a few minutes."
-            confirmLabel={notice.state === "upcoming" ? "Remove" : "End"}
+            title={notice.state === "upcoming" ? t`Remove this notice?` : t`End this notice?`}
+            description={t`Users stop seeing it within a few minutes.`}
+            confirmLabel={notice.state === "upcoming" ? t`Remove` : t`End`}
             disabled={end.isPending}
             onConfirm={() => end.mutate()}
           >
-            {notice.state === "upcoming" ? "Remove" : "End now"}
+            {notice.state === "upcoming" ? t`Remove` : t`End now`}
           </ConfirmButton>
         )}
         {notice.state === "ended" && (
           <ConfirmButton
             variant="ghost"
-            title="Delete this notice?"
-            description="It disappears from this list. The audit log keeps that it existed."
-            confirmLabel="Delete"
+            title={t`Delete this notice?`}
+            description={t`It disappears from this list. The audit log keeps that it existed.`}
+            confirmLabel={t`Delete`}
             disabled={remove.isPending}
             onConfirm={() => remove.mutate()}
           >
-            Delete
+            <Trans>Delete</Trans>
           </ConfirmButton>
         )}
       </span>

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Link2, Loader2, Plus, X } from "lucide-react";
@@ -10,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { translateApiMessage } from "@/lib/api-messages";
 import { errorMessage } from "@/lib/errors";
 import { inviteTokenFrom, SLUG_MIN_LENGTH, slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
@@ -40,10 +43,12 @@ function WelcomePage() {
       <main className="flex flex-1 flex-col items-center gap-10 px-4 pt-12 pb-16 md:pt-20">
         <div className="flex max-w-xl flex-col items-center gap-2.5 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            {firstRun ? `Welcome${username ? `, ${username}` : ""}` : "Add a workspace"}
+            {firstRun ? (username ? t`Welcome, ${username}` : t`Welcome`) : t`Add a workspace`}
           </h1>
           <p className="text-muted-foreground">
-            Create a workspace for your stream, or join the one your team already uses.
+            <Trans>
+              Create a workspace for your stream, or join the one your team already uses.
+            </Trans>
           </p>
         </div>
 
@@ -59,7 +64,7 @@ function WelcomePage() {
             className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
           >
             <ArrowLeft className="size-4" />
-            Back to my workspace
+            <Trans>Back to my workspace</Trans>
           </Link>
         )}
       </main>
@@ -102,19 +107,23 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
         <Plus className="size-5" />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold">Create a workspace</h2>
+        <h2 className="text-xl font-semibold">
+          <Trans>Create a workspace</Trans>
+        </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          You’ll be the owner. Add a switcher and invite your mods next.
+          <Trans>You’ll be the owner. Add a switcher and invite your mods next.</Trans>
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="workspace-name">Workspace name</Label>
+        <Label htmlFor="workspace-name">
+          <Trans>Workspace name</Trans>
+        </Label>
         <Input
           id="workspace-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Nomad Live"
+          placeholder={t`Nomad Live`}
           maxLength={60}
           autoFocus={autoFocus}
           className="h-11"
@@ -122,7 +131,9 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="workspace-slug">URL</Label>
+        <Label htmlFor="workspace-slug">
+          <Trans>URL</Trans>
+        </Label>
         <div className="flex h-11 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
           <span className="font-mono text-sm text-muted-foreground">{window.location.host}/</span>
           <input
@@ -142,18 +153,18 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
           )}
         >
           {slug.length < SLUG_MIN_LENGTH ? (
-            "At least 3 characters: letters, numbers and dashes."
+            t`At least 3 characters: letters, numbers and dashes.`
           ) : checking ? (
             <>
-              <Loader2 className="size-3.5 animate-spin" /> Checking…
+              <Loader2 className="size-3.5 animate-spin" /> <Trans>Checking…</Trans>
             </>
           ) : unavailable ? (
             <>
-              <X className="size-3.5" /> {availability.data?.message}
+              <X className="size-3.5" /> {translateApiMessage(availability.data?.message ?? "")}
             </>
           ) : availability.data?.available ? (
             <>
-              <Check className="size-3.5 text-live" /> Available
+              <Check className="size-3.5 text-live" /> <Trans>Available</Trans>
             </>
           ) : null}
         </p>
@@ -167,7 +178,7 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
         className="mt-auto h-12 rounded-xl"
         disabled={!name.trim() || slug.length < SLUG_MIN_LENGTH || unavailable || create.isPending}
       >
-        {create.isPending ? "Creating…" : "Create workspace"}
+        {create.isPending ? t`Creating…` : t`Create workspace`}
       </Button>
     </form>
   );
@@ -194,14 +205,18 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
         <Link2 className="size-5" />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold">Join with an invite</h2>
+        <h2 className="text-xl font-semibold">
+          <Trans>Join with an invite</Trans>
+        </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Mod for someone? Paste the link they sent you.
+          <Trans>Mod for someone? Paste the link they sent you.</Trans>
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="invite-link">Invite link</Label>
+        <Label htmlFor="invite-link">
+          <Trans>Invite link</Trans>
+        </Label>
         <Input
           id="invite-link"
           value={link}
@@ -216,8 +231,8 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
         />
         <p className={cn("text-xs", invalid ? "text-destructive" : "text-muted-foreground")}>
           {invalid
-            ? "That doesn’t look like an invite link."
-            : "Invites expire, so ask for a new one if it doesn’t work."}
+            ? t`That doesn’t look like an invite link.`
+            : t`Invites expire, so ask for a new one if it doesn’t work.`}
         </p>
       </div>
 
@@ -228,7 +243,7 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
         className="mt-auto h-12 rounded-xl"
         disabled={!link.trim()}
       >
-        Continue
+        <Trans>Continue</Trans>
       </Button>
     </form>
   );

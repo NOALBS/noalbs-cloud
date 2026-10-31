@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "espace disque libre : {disk} Go"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Aucune scène LIVE choisie pour l'instant. Choisissez-en une sur la page Scenes."
+msgstr "Aucune scène LIVE choisie pour l'instant. Choisissez-en une sur la page Scènes."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Aucune scène Privacy choisie pour l'instant. Choisissez-en une sur la page Scenes."
+msgstr "Aucune scène Confidentialité choisie pour l'instant. Choisissez-en une sur la page Scènes."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Aucune scène Starting choisie pour l'instant. Choisissez-en une sur la page Scenes."
+msgstr "Aucune scène Début choisie pour l'instant. Choisissez-en une sur la page Scènes."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Aucune scène Ending choisie pour l'instant. Choisissez-en une sur la page Scenes."
+msgstr "Aucune scène Fin choisie pour l'instant. Choisissez-en une sur la page Scènes."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Aucune scène Refresh choisie pour l'instant. Choisissez-en une sur la page Scenes."
+msgstr "Aucune scène Rafraîchir choisie pour l'instant. Choisissez-en une sur la page Scènes."
 
 msgid "Switched to the LIVE scene"
 msgstr "Passage à la scène LIVE"
 
 msgid "Switched to the Privacy scene"
-msgstr "Passage à la scène Privacy"
+msgstr "Passage à la scène Confidentialité"
 
 msgid "Switched to the Starting scene"
-msgstr "Passage à la scène Starting"
+msgstr "Passage à la scène Début"
 
 msgid "Switched to the Ending scene"
-msgstr "Passage à la scène Ending"
+msgstr "Passage à la scène Fin"
 
 msgid "Switched to the Refresh scene"
-msgstr "Passage à la scène Refresh"
+msgstr "Passage à la scène Rafraîchir"
 
 msgid "Chat notifications on"
 msgstr "Notifications du chat activées"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Rien à réparer : aucune source de stream n'est lue sur {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Aucune scène Refresh choisie, réparation à la place. {result}"
+msgstr "Aucune scène Rafraîchir choisie, réparation à la place. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} est maintenant visible"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Temps d'attente hors ligne atteint, arrêt du stream"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Temps d'attente de la scène Ending atteint, arrêt du stream"
+msgstr "Temps d'attente de la scène Fin atteint, arrêt du stream"
 
 msgid "Ignoring {name} from now on"
 msgstr "{name} est ignoré à partir de maintenant"

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Progress } from "@/components/ui/progress";
 
 /**
@@ -33,7 +34,7 @@ export function UsageBar({
       <Progress
         value={Math.min(100, (used / Math.max(max, 1)) * 100)}
         className={full ? "[&>*]:bg-low" : "[&>*]:bg-primary"}
-        aria-label={`${label}: ${used} of ${max}`}
+        aria-label={t`${label}: ${used} of ${max}`}
       />
     </div>
   );

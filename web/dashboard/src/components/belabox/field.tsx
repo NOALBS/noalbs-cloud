@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { signalBars } from "@/lib/belabox";
@@ -46,7 +47,7 @@ export function SignalBars({
   return (
     <span
       role="img"
-      aria-label={signal != null ? `Signal ${signal}%` : "No signal"}
+      aria-label={signal != null ? t`Signal ${signal}%` : t`No signal`}
       className={cn("flex h-3.5 items-end gap-px", className)}
     >
       {[1, 2, 3, 4].map((bar) => (

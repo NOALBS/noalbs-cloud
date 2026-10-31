@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { currentLocale } from "@/lib/locale";
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -20,7 +21,7 @@ export function formatRelative(date: string | Date, now: Date = new Date()): str
       );
     }
   }
-  return "now";
+  return t`now`;
 }
 
 export function formatDate(date: string | Date): string {

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
@@ -55,14 +57,20 @@ function AddServerPage() {
             <AddServerForm request={request} />
           ) : (
             <div className="flex flex-col gap-3">
-              <h1 className="text-lg font-semibold">Nothing to add</h1>
+              <h1 className="text-lg font-semibold">
+                <Trans>Nothing to add</Trans>
+              </h1>
               <p className="text-sm text-muted-foreground">
-                This page opens from an “Add to NOALBS Cloud” link on a stream server’s website. The
-                link may be incomplete, or this tab was closed on the way. Open the link again, or
-                add the server by hand on a switcher’s Stream servers page.
+                <Trans>
+                  This page opens from an “Add to NOALBS Cloud” link on a stream server’s website.
+                  The link may be incomplete, or this tab was closed on the way. Open the link
+                  again, or add the server by hand on a switcher’s Stream servers page.
+                </Trans>
               </p>
               <Button asChild variant="outline" className="h-11 rounded-xl">
-                <Link to="/">Go to my workspaces</Link>
+                <Link to="/">
+                  <Trans>Go to my workspaces</Trans>
+                </Link>
               </Button>
             </div>
           )}
@@ -130,33 +138,41 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <span className="text-sm text-muted-foreground">Add a stream server</span>
+        <span className="text-sm text-muted-foreground">
+          <Trans>Add a stream server</Trans>
+        </span>
         <h1 className="text-2xl font-bold">{info.label}</h1>
         <span className="text-sm text-muted-foreground">
           {host ? (
             <>
-              at <span className="font-mono text-foreground">{host}</span>
+              <Trans>
+                at <span className="font-mono text-foreground">{host}</span>
+              </Trans>
             </>
           ) : (
-            "The address in this link doesn’t look right."
+            t`The address in this link doesn’t look right.`
           )}
         </span>
       </div>
 
       <p className="flex gap-2.5 rounded-2xl border border-divider bg-sunken p-4 text-sm text-muted-foreground">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-low" />
-        <span>Only add servers you stream to</span>
+        <span>
+          <Trans>Only add servers you stream to</Trans>
+        </span>
       </p>
 
       {eligible.length === 0 ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
-            You aren’t an admin or owner of any workspace, so you can’t add stream servers. Create a
-            workspace, or ask an admin to add it.
+            <Trans>
+              You aren’t an admin or owner of any workspace, so you can’t add stream servers. Create
+              a workspace, or ask an admin to add it.
+            </Trans>
           </p>
           <Button asChild variant="outline" className="h-11 rounded-xl">
             <Link to="/welcome" search={{ mode: "create" }}>
-              Create a workspace
+              <Trans>Create a workspace</Trans>
             </Link>
           </Button>
         </div>
@@ -164,7 +180,9 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="add-workspace">Workspace</Label>
+              <Label htmlFor="add-workspace">
+                <Trans>Workspace</Trans>
+              </Label>
               <Select
                 value={workspace?.id}
                 onValueChange={(next) => {
@@ -189,7 +207,9 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="add-switcher">Switcher</Label>
+              <Label htmlFor="add-switcher">
+                <Trans>Switcher</Trans>
+              </Label>
               {switchers.isPending ? (
                 <Skeleton className="h-9" />
               ) : switchers.data?.length ? (
@@ -201,7 +221,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
                     {switchers.data.map((candidate) => (
                       <SelectItem key={candidate.id} value={candidate.id}>
                         {candidate.name}
-                        {candidate.paused && " (paused)"}
+                        {candidate.paused && t` (paused)`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -210,14 +230,16 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
                 <p className="text-sm text-muted-foreground">
                   {switchers.error
                     ? errorMessage(switchers.error)
-                    : "This workspace has no switchers yet."}
+                    : t`This workspace has no switchers yet.`}
                 </p>
               )}
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="add-name">Name</Label>
+            <Label htmlFor="add-name">
+              <Trans>Name</Trans>
+            </Label>
             <Input
               id="add-name"
               value={name}
@@ -227,12 +249,14 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="add-stats-url">Stats URL</Label>
+            <Label htmlFor="add-stats-url">
+              <Trans>Stats URL</Trans>
+            </Label>
             <SecretUrlInput
               id="add-stats-url"
               value={statsUrl}
               onChange={setStatsUrl}
-              label="stats URL"
+              label={t`stats URL`}
             />
           </div>
 
@@ -248,7 +272,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
           <div className="grid grid-cols-2 gap-2.5">
             <Button asChild variant="outline" className="h-12 rounded-xl">
               <Link to="/" onClick={clearAddServer}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Link>
             </Button>
             <Button
@@ -256,7 +280,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
               className="h-12 rounded-xl"
               disabled={!switcher || !name.trim() || !statsUrl.trim() || create.isPending}
             >
-              {create.isPending ? "Adding…" : "Add server"}
+              {create.isPending ? t`Adding…` : t`Add server`}
             </Button>
           </div>
         </>

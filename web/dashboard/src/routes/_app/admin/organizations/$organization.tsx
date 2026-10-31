@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Link2 } from "lucide-react";
@@ -32,7 +34,7 @@ import {
   clientState,
   type LimitsForm,
   limitsForm,
-  ORGANIZATION_ROLE_LABELS,
+  organizationRoleLabels,
   parseLimits,
   poolUsage,
   teamInviteUrl,
@@ -52,13 +54,13 @@ function OrganizationPage() {
       className="flex items-center gap-1 text-sm font-medium text-primary"
     >
       <ChevronLeft className="size-4" />
-      Organizations
+      <Trans>Organizations</Trans>
     </Link>
   );
   const data = detail.data;
   if (!data) {
     return (
-      <Page title="Organization" description={back} className="max-w-5xl">
+      <Page title={t`Organization`} description={back} className="max-w-5xl">
         {detail.isError ? (
           <p className="text-sm">{errorMessage(detail.error)}</p>
         ) : (
@@ -76,19 +78,30 @@ function OrganizationPage() {
       description={
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {back}
-          <span className="font-mono text-xs">/orgs/{organization.url_slug}</span>
-          <span className="text-xs">Created {formatDate(organization.created_at)}</span>
-          {organization.suspension && <Badge variant="destructive">Suspended</Badge>}
+          <span className="font-mono text-xs">
+            <Trans>/orgs/{organization.url_slug}</Trans>
+          </span>
+          <span className="text-xs">
+            <Trans>Created {formatDate(organization.created_at)}</Trans>
+          </span>
+          {organization.suspension && (
+            <Badge variant="destructive">
+              <Trans>Suspended</Trans>
+            </Badge>
+          )}
         </span>
       }
       className="max-w-5xl"
     >
-      <Section title="Pool" description="What its clients use of the switchers it was given.">
+      <Section title={t`Pool`} description={t`What its clients use of the switchers it was given.`}>
         <div className="flex flex-col gap-2 px-5 pb-5">
-          <UsageBar label="Switchers" used={pool.used} max={pool.max} />
+          <UsageBar label={t`Switchers`} used={pool.used} max={pool.max} />
           {pool.over > 0 && (
             <p className="text-sm text-low">
-              {pool.over} over the pool. They keep running; no new switchers fit until usage drops.
+              <Trans>
+                {pool.over} over the pool. They keep running; no new switchers fit until usage
+                drops.
+              </Trans>
             </p>
           )}
         </div>
@@ -120,7 +133,7 @@ function Limits({ detail }: { detail: AdminOrganizationDetail }) {
   const update = useDetailUpdate(organization.id);
   const save = useMutation({
     mutationFn: () => {
-      if (!parsed) throw new Error("Check the limits");
+      if (!parsed) throw new Error(t`Check the limits`);
       return unwrap(
         api.PUT("/admin/organizations/{organization_id}", {
           params: { path: { organization_id: organization.id } },
@@ -130,7 +143,7 @@ function Limits({ detail }: { detail: AdminOrganizationDetail }) {
     },
     onSuccess: (result) => {
       update(result);
-      toast.success("Limits saved");
+      toast.success(t`Limits saved`);
     },
   });
   const changed = JSON.stringify(parsed) !== JSON.stringify(organization.limits);
@@ -138,8 +151,8 @@ function Limits({ detail }: { detail: AdminOrganizationDetail }) {
 
   return (
     <Section
-      title="Limits"
-      description="Comped by staff: there is no subscription behind them yet. Every change applies to all its clients at once."
+      title={t`Limits`}
+      description={t`Comped by staff: there is no subscription behind them yet. Every change applies to all its clients at once.`}
     >
       <div className="flex flex-col gap-4 px-5 pb-5">
         <OrganizationLimitsForm
@@ -154,7 +167,7 @@ function Limits({ detail }: { detail: AdminOrganizationDetail }) {
               onClick={() => save.mutate()}
               disabled={!parsed || !changed || tooLow || save.isPending}
             >
-              {save.isPending ? "Saving…" : "Save limits"}
+              {save.isPending ? t`Saving…` : t`Save limits`}
             </Button>
           </div>
         </OrganizationLimitsForm>
@@ -186,13 +199,13 @@ function Team({ detail }: { detail: AdminOrganizationDetail }) {
 
   return (
     <Section
-      title="Team"
-      description="Its own admins manage the rest. Make the first invite here and send them the link."
+      title={t`Team`}
+      description={t`Its own admins manage the rest. Make the first invite here and send them the link.`}
     >
       <ul>
         {detail.team.length === 0 && (
           <li className="border-t border-divider px-5 py-3 text-sm text-muted-foreground">
-            Nobody yet.
+            <Trans>Nobody yet.</Trans>
           </li>
         )}
         {detail.team.map((member) => (
@@ -203,46 +216,47 @@ function Team({ detail }: { detail: AdminOrganizationDetail }) {
             <UserAvatar name={member.username} avatarUrl={member.avatar_url} className="size-8" />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-semibold">
-                {member.username ?? "Unknown user"}
+                {member.username ?? t`Unknown user`}
               </span>
               <span className="text-xs text-muted-foreground">
-                {[providerLabel(member.provider), `joined ${formatDate(member.joined_at)}`]
+                {[providerLabel(member.provider), t`joined ${formatDate(member.joined_at)}`]
                   .filter(Boolean)
                   .join(" · ")}
               </span>
             </span>
-            <Badge variant="secondary">{ORGANIZATION_ROLE_LABELS[member.role]}</Badge>
+            <Badge variant="secondary">{organizationRoleLabels()[member.role]}</Badge>
           </li>
         ))}
       </ul>
       <div className="flex flex-wrap items-center gap-2.5 border-t border-divider px-5 py-4">
         <Select value={role} onValueChange={(value) => setRole(value as OrganizationRole)}>
-          <SelectTrigger className="w-36" aria-label="Role for the invite">
+          <SelectTrigger className="w-36" aria-label={t`Role for the invite`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {(["admin", "member"] as const).map((value) => (
               <SelectItem key={value} value={value}>
-                {ORGANIZATION_ROLE_LABELS[value]}
+                {organizationRoleLabels()[value]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={() => invite.mutate()} disabled={invite.isPending}>
           <Link2 />
-          Create invite link
+          <Trans>Create invite link</Trans>
         </Button>
       </div>
       {created && (
         <div className="mx-5 mb-5 flex flex-col gap-2 rounded-xl border border-divider bg-sunken p-3.5">
           <p className="text-sm">
-            New {ORGANIZATION_ROLE_LABELS[created.invite.role].toLowerCase()} invite. Copy it now:
-            it won’t be shown again, works once and expires{" "}
-            {formatRelative(created.invite.expires_at)}.
+            <Trans>
+              New invite ({organizationRoleLabels()[created.invite.role]}). Copy it now: it won’t be
+              shown again, works once and expires {formatRelative(created.invite.expires_at)}.
+            </Trans>
           </p>
           <CopyField
             value={teamInviteUrl(window.location.origin, created.token)}
-            label="invite link"
+            label={t`invite link`}
             secret
           />
         </div>
@@ -264,13 +278,16 @@ function Clients({ detail }: { detail: AdminOrganizationDetail }) {
 
   return (
     <Section
-      title="Clients"
-      description={`${total} workspace${total === 1 ? "" : "s"}. Staff open one like any workspace: with its support access.`}
+      title={t`Clients`}
+      description={plural(total, {
+        one: "# workspace. Staff open one like any workspace: with its support access.",
+        other: "# workspaces. Staff open one like any workspace: with its support access.",
+      })}
       actions={
         total > 0 && (
           <Button variant="outline" size="sm" asChild>
             <Link to="/admin/workspaces" search={{ organization: organization.id }}>
-              Open in Workspaces
+              <Trans>Open in Workspaces</Trans>
             </Link>
           </Button>
         )
@@ -278,13 +295,13 @@ function Clients({ detail }: { detail: AdminOrganizationDetail }) {
     >
       {total > 0 && (
         <div className="px-5 pb-3">
-          <SearchBox value={q} onSearch={search} placeholder="Search by name, URL or ID" />
+          <SearchBox value={q} onSearch={search} placeholder={t`Search by name, URL or ID`} />
         </div>
       )}
       <ul>
         {clients.data?.items.length === 0 && (
           <li className="border-t border-divider px-5 py-3 text-sm text-muted-foreground">
-            {q ? "No clients match." : "No clients yet."}
+            {q ? t`No clients match.` : t`No clients yet.`}
           </li>
         )}
         {clients.data?.items.map((client) => (
@@ -302,10 +319,14 @@ function Clients({ detail }: { detail: AdminOrganizationDetail }) {
                 /{client.url_slug}
               </span>
             </Link>
-            {clientState(client) === "suspended" && <Badge variant="destructive">Suspended</Badge>}
+            {clientState(client) === "suspended" && (
+              <Badge variant="destructive">
+                <Trans>Suspended</Trans>
+              </Badge>
+            )}
             <span className="tabular font-mono text-xs text-muted-foreground">
               {client.switchers} / {allocationLabel(client.switcher_allocation)} ·{" "}
-              {client.customers} {client.customers === 1 ? "customer" : "customers"}
+              {plural(client.customers, { one: "# customer", other: "# customers" })}
             </span>
           </li>
         ))}
@@ -336,41 +357,49 @@ function Suspension({ detail }: { detail: AdminOrganizationDetail }) {
       ),
     onSuccess: (result) => {
       update(result);
-      toast.success("Suspension lifted");
+      toast.success(t`Suspension lifted`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
 
   return (
     <Section
-      title="Suspension"
-      description="For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
+      title={t`Suspension`}
+      description={t`For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason.`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5 text-sm">
         {organization.suspension ? (
           <>
             <span>
-              <strong>Suspended</strong> {formatRelative(organization.suspension.since)}:{" "}
-              {organization.suspension.reason}
+              <strong>
+                <Trans>Suspended</Trans>
+              </strong>{" "}
+              {formatRelative(organization.suspension.since)}: {organization.suspension.reason}
             </span>
             <ConfirmButton
               variant="outline"
               disabled={lift.isPending}
-              title="Lift the suspension?"
-              confirmLabel="Lift"
+              title={t`Lift the suspension?`}
+              confirmLabel={t`Lift`}
               onConfirm={() => lift.mutate()}
-              description={<span>Every client’s switchers resume and chat works again.</span>}
+              description={
+                <span>
+                  <Trans>Every client’s switchers resume and chat works again.</Trans>
+                </span>
+              }
             >
-              Lift suspension
+              <Trans>Lift suspension</Trans>
             </ConfirmButton>
           </>
         ) : (
           <>
-            <span className="text-muted-foreground">Not suspended.</span>
+            <span className="text-muted-foreground">
+              <Trans>Not suspended.</Trans>
+            </span>
             <ReasonDialog
-              title={`Suspend ${organization.name}?`}
-              description="Every client’s switchers pause (no switching, no commands) and chat commands stop, until you lift it."
-              confirmLabel="Suspend"
+              title={t`Suspend ${organization.name}?`}
+              description={t`Every client’s switchers pause (no switching, no commands) and chat commands stop, until you lift it.`}
+              confirmLabel={t`Suspend`}
               onConfirm={async (reason) => {
                 update(
                   await unwrap(
@@ -380,14 +409,14 @@ function Suspension({ detail }: { detail: AdminOrganizationDetail }) {
                     }),
                   ),
                 );
-                toast.success(`${organization.name} suspended`);
+                toast.success(t`${organization.name} suspended`);
               }}
             >
               <Button
                 variant="outline"
                 className="border-destructive/50 text-destructive-foreground"
               >
-                Suspend…
+                <Trans>Suspend…</Trans>
               </Button>
             </ReasonDialog>
           </>
@@ -405,17 +434,21 @@ function Delete({ detail }: { detail: AdminOrganizationDetail }) {
 
   return (
     <Section
-      title="Delete organization"
-      description="Only once it has no clients left: delete them from its Clients page first."
+      title={t`Delete organization`}
+      description={t`Only once it has no clients left: delete them from its Clients page first.`}
       className="border-destructive/40"
     >
       <div className="px-5 pb-5">
         <TypeToConfirm
-          trigger={`Delete ${organization.name}`}
-          title={`Delete ${organization.name}?`}
-          description={<p>Its team loses access. This can’t be undone.</p>}
+          trigger={t`Delete ${organization.name}`}
+          title={t`Delete ${organization.name}?`}
+          description={
+            <p>
+              <Trans>Its team loses access. This can’t be undone.</Trans>
+            </p>
+          }
           phrase={organization.url_slug}
-          confirmLabel="Delete organization"
+          confirmLabel={t`Delete organization`}
           disabled={hasClients}
           onConfirm={async () => {
             await unwrap(
@@ -426,7 +459,7 @@ function Delete({ detail }: { detail: AdminOrganizationDetail }) {
             await navigate({ to: "/admin/organizations" });
             await queryClient.invalidateQueries({ queryKey: queryKeys.adminOrganizations });
             await queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
-            toast.success(`${organization.name} deleted`);
+            toast.success(t`${organization.name} deleted`);
           }}
         />
       </div>

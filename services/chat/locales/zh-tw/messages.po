@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "硬碟可用空間：{disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "尚未選擇 LIVE 場景。請到 Scenes 頁面選擇。"
+msgstr "尚未選擇 LIVE 場景。請到場景頁面選擇。"
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "尚未選擇 Privacy 場景。請到 Scenes 頁面選擇。"
+msgstr "尚未選擇隱私場景。請到場景頁面選擇。"
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "尚未選擇 Starting 場景。請到 Scenes 頁面選擇。"
+msgstr "尚未選擇開場場景。請到場景頁面選擇。"
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "尚未選擇 Ending 場景。請到 Scenes 頁面選擇。"
+msgstr "尚未選擇結尾場景。請到場景頁面選擇。"
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "尚未選擇 Refresh 場景。請到 Scenes 頁面選擇。"
+msgstr "尚未選擇重新整理場景。請到場景頁面選擇。"
 
 msgid "Switched to the LIVE scene"
 msgstr "已切換至 LIVE 場景"
 
 msgid "Switched to the Privacy scene"
-msgstr "已切換至 Privacy 場景"
+msgstr "已切換至隱私場景"
 
 msgid "Switched to the Starting scene"
-msgstr "已切換至 Starting 場景"
+msgstr "已切換至開場場景"
 
 msgid "Switched to the Ending scene"
-msgstr "已切換至 Ending 場景"
+msgstr "已切換至結尾場景"
 
 msgid "Switched to the Refresh scene"
-msgstr "已切換至 Refresh 場景"
+msgstr "已切換至重新整理場景"
 
 msgid "Chat notifications on"
 msgstr "聊天室通知已開啟"
@@ -96,10 +96,10 @@ msgid "Public commands off"
 msgstr "公開指令已關閉"
 
 msgid "Mod commands on"
-msgstr "管理員指令已開啟"
+msgstr "版主指令已開啟"
 
 msgid "Mod commands off"
-msgstr "管理員指令已關閉"
+msgstr "版主指令已關閉"
 
 msgid "The LOW trigger is {value} kbps"
 msgstr "LOW 觸發值為 {value} kbps"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "沒有需要修復的項目：{scene} 上沒有正在播放的串流來源"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "尚未選擇 Refresh 場景，改用修復功能。{result}"
+msgstr "尚未選擇重新整理場景，改用修復功能。{result}"
 
 msgid "{name} is now shown"
 msgstr "{name} 現在已顯示"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "已達離線逾時，正在停止實況"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "已達 Ending 場景逾時，正在停止實況"
+msgstr "已達結尾場景逾時，正在停止實況"
 
 msgid "Ignoring {name} from now on"
 msgstr "從現在起忽略 {name}"

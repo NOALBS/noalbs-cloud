@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { eventsQuery } from "@/api/queries";
 import type { SwitcherEvent } from "@/api/types";
@@ -24,13 +26,15 @@ export function ActivityFeed({
   const events = [...live, ...saved.filter((event) => !seen.has(event.id))];
 
   return (
-    <section aria-label="Activity" className="flex flex-col gap-2.5">
-      <h2 className="font-semibold">Activity</h2>
+    <section aria-label={t`Activity`} className="flex flex-col gap-2.5">
+      <h2 className="font-semibold">
+        <Trans>Activity</Trans>
+      </h2>
       <div className="flex max-h-96 flex-col overflow-y-auto overscroll-contain rounded-2xl border bg-card lg:max-h-[27rem]">
         {backlog.isPending && <Skeleton className="m-4 h-24" />}
         {!backlog.isPending && events.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            Nothing yet. Scene switches and stream changes show up here.
+            <Trans>Nothing yet. Scene switches and stream changes show up here.</Trans>
           </p>
         )}
         <ol>
@@ -64,7 +68,7 @@ export function ActivityFeed({
             disabled={backlog.isFetchingNextPage}
             className="min-h-11 shrink-0 border-t border-divider text-sm font-medium text-primary hover:bg-surface-2 disabled:opacity-50"
           >
-            {backlog.isFetchingNextPage ? "Loading…" : "Load older"}
+            {backlog.isFetchingNextPage ? t`Loading…` : t`Load older`}
           </button>
         )}
       </div>

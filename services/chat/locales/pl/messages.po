@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "wolne miejsce na dysku: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Nie wybrano jeszcze sceny LIVE. Wybierz ją na stronie Scenes."
+msgstr "Nie wybrano jeszcze sceny LIVE. Wybierz ją na stronie Sceny."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Nie wybrano jeszcze sceny Privacy. Wybierz ją na stronie Scenes."
+msgstr "Nie wybrano jeszcze sceny Prywatność. Wybierz ją na stronie Sceny."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Nie wybrano jeszcze sceny Starting. Wybierz ją na stronie Scenes."
+msgstr "Nie wybrano jeszcze sceny Początek. Wybierz ją na stronie Sceny."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Nie wybrano jeszcze sceny Ending. Wybierz ją na stronie Scenes."
+msgstr "Nie wybrano jeszcze sceny Koniec. Wybierz ją na stronie Sceny."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Nie wybrano jeszcze sceny Refresh. Wybierz ją na stronie Scenes."
+msgstr "Nie wybrano jeszcze sceny Odśwież. Wybierz ją na stronie Sceny."
 
 msgid "Switched to the LIVE scene"
 msgstr "Przełączono na scenę LIVE"
 
 msgid "Switched to the Privacy scene"
-msgstr "Przełączono na scenę Privacy"
+msgstr "Przełączono na scenę Prywatność"
 
 msgid "Switched to the Starting scene"
-msgstr "Przełączono na scenę Starting"
+msgstr "Przełączono na scenę Początek"
 
 msgid "Switched to the Ending scene"
-msgstr "Przełączono na scenę Ending"
+msgstr "Przełączono na scenę Koniec"
 
 msgid "Switched to the Refresh scene"
-msgstr "Przełączono na scenę Refresh"
+msgstr "Przełączono na scenę Odśwież"
 
 msgid "Chat notifications on"
 msgstr "Powiadomienia na czacie włączone"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Nie ma czego naprawiać: na {scene} nie jest odtwarzane żadne źródło strumienia"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Nie wybrano sceny Refresh, więc zamiast tego naprawianie. {result}"
+msgstr "Nie wybrano sceny Odśwież, więc zamiast tego naprawianie. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name}: teraz widoczne"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Osiągnięto limit czasu offline, zatrzymywanie transmisji"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Osiągnięto limit czasu sceny Ending, zatrzymywanie transmisji"
+msgstr "Osiągnięto limit czasu sceny Koniec, zatrzymywanie transmisji"
 
 msgid "Ignoring {name} from now on"
 msgstr "Od teraz ignorowany: {name}"

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
@@ -129,9 +131,11 @@ export function SourceList({
     );
 
   return (
-    <section aria-label="Sources" className="flex flex-col gap-2.5">
+    <section aria-label={t`Sources`} className="flex flex-col gap-2.5">
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">Sources</h2>
+        <h2 className="font-semibold">
+          <Trans>Sources</Trans>
+        </h2>
         {list.data &&
           onScene.length > 0 &&
           (editing ? (
@@ -141,26 +145,26 @@ export function SourceList({
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
-                {hiddenHere > 0 ? "Show all" : "Hide all"}
+                {hiddenHere > 0 ? t`Show all` : t`Hide all`}
               </button>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
-                Done
+                <Trans>Done</Trans>
               </button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              {hiddenHere > 0 && `${hiddenHere} hidden`}
+              {hiddenHere > 0 && t`${hiddenHere} hidden`}
               <button
                 type="button"
                 onClick={() => setEditing(true)}
                 className={cn(HEADER_BUTTON, "text-primary")}
               >
                 <SlidersHorizontal className="size-3.5" />
-                Customize
+                <Trans>Customize</Trans>
               </button>
             </span>
           ))}
@@ -168,14 +172,16 @@ export function SourceList({
 
       {editing && (
         <p className="text-xs text-muted-foreground">
-          Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t
-          changed.
+          <Trans>
+            Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t
+            changed.
+          </Trans>
         </p>
       )}
 
       {!obsConnected && (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          Sources appear once OBS is connected.
+          <Trans>Sources appear once OBS is connected.</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-32 rounded-2xl" />}
@@ -187,7 +193,7 @@ export function SourceList({
 
       {list.data && sections.length === 0 && (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          This scene has no sources.
+          <Trans>This scene has no sources.</Trans>
         </p>
       )}
 
@@ -197,7 +203,7 @@ export function SourceList({
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
-          All sources are hidden. Tap to pick some.
+          <Trans>All sources are hidden. Tap to pick some.</Trans>
         </button>
       )}
 
@@ -213,8 +219,14 @@ export function SourceList({
               ) : (
                 <Layers className="size-3.5" aria-hidden="true" />
               )}
-              <span className="truncate">In {section.parent}</span>
-              {!section.parentShown && <span className="font-normal normal-case">· hidden</span>}
+              <span className="truncate">
+                <Trans>In {section.parent}</Trans>
+              </span>
+              {!section.parentShown && (
+                <span className="font-normal normal-case">
+                  <Trans>· hidden</Trans>
+                </span>
+              )}
             </h3>
           )}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -246,11 +258,13 @@ export function SourceList({
                     {name}
                     <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider">
                       {listed ? (
-                        <span className="text-primary-soft-foreground">SHOWN</span>
+                        <span className="text-primary-soft-foreground">
+                          <Trans>SHOWN</Trans>
+                        </span>
                       ) : (
                         <>
                           <EyeOff className="size-3" aria-hidden="true" />
-                          HIDDEN
+                          <Trans>HIDDEN</Trans>
                         </>
                       )}
                     </span>
@@ -288,7 +302,7 @@ export function SourceList({
                     ) : (
                       <EyeOff className="size-3" aria-hidden="true" />
                     )}
-                    {source.enabled ? (shown ? "SHOWN" : "SHOWN · PARENT HIDDEN") : "HIDDEN"}
+                    {source.enabled ? (shown ? t`SHOWN` : t`SHOWN · PARENT HIDDEN`) : t`HIDDEN`}
                   </span>
                 </button>
               );

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -32,7 +34,7 @@ export function ObsConnectionForm({ className }: { className?: string }) {
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
       setPassword("");
-      toast.success("Saved");
+      toast.success(t`Saved`);
     },
   });
 
@@ -47,7 +49,9 @@ export function ObsConnectionForm({ className }: { className?: string }) {
     <form onSubmit={submit} className={cn("flex flex-col gap-4", className)}>
       <div className="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="obs-port">Port</Label>
+          <Label htmlFor="obs-port">
+            <Trans>Port</Trans>
+          </Label>
           <Input
             id="obs-port"
             type="number"
@@ -60,26 +64,28 @@ export function ObsConnectionForm({ className }: { className?: string }) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="obs-password">Password</Label>
+          <Label htmlFor="obs-password">
+            <Trans>Password</Trans>
+          </Label>
           <Input
             id="obs-password"
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder={switcher.obs.has_password ? "Saved — type to replace" : "No password"}
+            placeholder={switcher.obs.has_password ? t`Saved — type to replace` : t`No password`}
             disabled={!canManage}
           />
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        The password is stored encrypted and only ever sent to your browser source.
+        <Trans>The password is stored encrypted and only ever sent to your browser source.</Trans>
       </p>
       {save.error && <p className="text-sm text-destructive">{errorMessage(save.error)}</p>}
       {canManage && (
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={!changed || save.isPending}>
-            {save.isPending ? "Saving…" : "Save"}
+            {save.isPending ? t`Saving…` : t`Save`}
           </Button>
           {switcher.obs.has_password && (
             <Button
@@ -88,7 +94,7 @@ export function ObsConnectionForm({ className }: { className?: string }) {
               onClick={() => save.mutate({ clear_password: true })}
               disabled={save.isPending}
             >
-              Remove password
+              <Trans>Remove password</Trans>
             </Button>
           )}
         </div>

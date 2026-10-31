@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
@@ -11,7 +13,7 @@ import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
-import { ACTIVITY_PRESETS, parseActivitySearch } from "@/lib/organizations";
+import { activityPresets, parseActivitySearch } from "@/lib/organizations";
 
 export const Route = createFileRoute("/_app/orgs/$organization/activity")({
   validateSearch: parseActivitySearch,
@@ -37,7 +39,7 @@ function ActivityPage() {
   const { organization } = useOrganization();
   const { q = "", show, client, view } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const kinds = ACTIVITY_PRESETS.find((preset) => preset.value === show)?.kinds;
+  const kinds = activityPresets().find((preset) => preset.value === show)?.kinds;
   const activity = useInfiniteQuery(
     organizationActivityQuery(organization.id, { q, kinds, client }),
   );
@@ -53,17 +55,17 @@ function ActivityPage() {
 
   return (
     <Page
-      title="Activity"
+      title={t`Activity`}
       description={
         view === "changes"
-          ? "What your team, your customers and NOALBS changed in the organization. Kept for a year."
-          : "What happened on your clients’ switchers, and who did it: the automatic switcher, your team, a customer or chat."
+          ? t`What your team, your customers and NOALBS changed in the organization. Kept for a year.`
+          : t`What happened on your clients’ switchers, and who did it: the automatic switcher, your team, a customer or chat.`
       }
     >
-      <fieldset className="flex gap-1" aria-label="View">
+      <fieldset className="flex gap-1" aria-label={t`View`}>
         {[
-          { value: undefined, label: "Switchers" },
-          { value: "changes" as const, label: "Changes" },
+          { value: undefined, label: t`Switchers` },
+          { value: "changes" as const, label: t`Changes` },
         ].map((tab) => (
           <Button
             key={tab.label}
@@ -86,9 +88,9 @@ function ActivityPage() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <SearchBox value={q} onSearch={search} placeholder="Search by client or switcher" />
-            <fieldset className="flex flex-wrap gap-1" aria-label="Show">
-              {ACTIVITY_PRESETS.map((preset) => {
+            <SearchBox value={q} onSearch={search} placeholder={t`Search by client or switcher`} />
+            <fieldset className="flex flex-wrap gap-1" aria-label={t`Show`}>
+              {activityPresets().map((preset) => {
                 const active = (show ?? "all") === preset.value;
                 return (
                   <Button
@@ -118,7 +120,7 @@ function ActivityPage() {
                   void navigate({ search: (previous) => ({ ...previous, client: undefined }) })
                 }
               >
-                One client only
+                <Trans>One client only</Trans>
                 <X />
               </Button>
             )}
@@ -129,8 +131,8 @@ function ActivityPage() {
           ) : events.length === 0 ? (
             <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
               {q || show || client
-                ? "Nothing matches."
-                : "Nothing yet. Scene switches and stream changes of your clients show up here."}
+                ? t`Nothing matches.`
+                : t`Nothing yet. Scene switches and stream changes of your clients show up here.`}
             </p>
           ) : (
             <ActivityList events={events} />
@@ -142,7 +144,7 @@ function ActivityPage() {
               disabled={activity.isFetchingNextPage}
               onClick={() => void activity.fetchNextPage()}
             >
-              {activity.isFetchingNextPage ? "Loading…" : "Load older"}
+              {activity.isFetchingNextPage ? t`Loading…` : t`Load older`}
             </Button>
           )}
         </>

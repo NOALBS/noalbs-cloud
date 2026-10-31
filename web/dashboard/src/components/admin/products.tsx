@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
@@ -35,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { codeFromName, fromCents, toCents, validCode } from "@/lib/admin";
-import { ADDON_STATUS_LABELS, formatPrice } from "@/lib/billing";
+import { addonStatusLabels, countUnits, formatPrice, intervalWord } from "@/lib/billing";
 import { errorMessage } from "@/lib/errors";
 
 type Kind = "plan" | "addon";
@@ -62,16 +64,16 @@ function useProductChange(success: string) {
 
 const STATUSES: AddonVisibility[] = ["hidden", "coming_soon", "unavailable", "available"];
 
-const STATUS_HINTS: Record<AddonVisibility, string> = {
-  hidden: "Not listed. Workspaces that already have it still see it and can lower it.",
-  coming_soon: "Listed, but nobody can buy it yet.",
-  unavailable: "Listed as currently unavailable: nobody can buy more, those who have it keep it.",
-  available: "For sale, as soon as it has a price.",
-};
+const statusHints = (): Record<AddonVisibility, string> => ({
+  hidden: t`Not listed. Workspaces that already have it still see it and can lower it.`,
+  coming_soon: t`Listed, but nobody can buy it yet.`,
+  unavailable: t`Listed as currently unavailable: nobody can buy more, those who have it keep it.`,
+  available: t`For sale, as soon as it has a price.`,
+});
 
-const INTERVALS: { value: BillingInterval; label: string }[] = [
-  { value: "month", label: "Monthly" },
-  { value: "year", label: "Yearly" },
+const intervals = (): { value: BillingInterval; label: string }[] => [
+  { value: "month", label: t`Monthly` },
+  { value: "year", label: t`Yearly` },
 ];
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
@@ -133,7 +135,7 @@ function ToggleRow({
 export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(() => initialPlan(plan));
-  const change = useProductChange(plan ? `${plan.name} saved` : "Plan created");
+  const change = useProductChange(plan ? t`${plan.name} saved` : t`Plan created`);
   const isFree = plan?.code === "free";
   const set = (patch: Partial<typeof form>) => setForm((current) => ({ ...current, ...patch }));
 
@@ -177,14 +179,14 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{plan ? `Edit ${plan.name}` : "New plan"}</DialogTitle>
+            <DialogTitle>{plan ? t`Edit ${plan.name}` : t`New plan`}</DialogTitle>
             <DialogDescription>
               {plan
-                ? "Limits apply to every workspace on this plan right away."
-                : "Set its prices after creating it."}
+                ? t`Limits apply to every workspace on this plan right away.`
+                : t`Set its prices after creating it.`}
             </DialogDescription>
           </DialogHeader>
-          <Field label="Name">
+          <Field label={t`Name`}>
             <Input
               value={form.name}
               onChange={(event) =>
@@ -197,7 +199,7 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
             />
           </Field>
           {!plan && (
-            <Field label="Code" hint="Used in URLs and billing; can't be changed later.">
+            <Field label={t`Code`} hint={t`Used in URLs and billing; can't be changed later.`}>
               <Input
                 value={form.code}
                 onChange={(event) => set({ code: event.target.value })}
@@ -205,43 +207,43 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
               />
             </Field>
           )}
-          <Field label="Description">
+          <Field label={t`Description`}>
             <Input
               value={form.description}
               onChange={(event) => set({ description: event.target.value })}
             />
           </Field>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Switchers">
+            <Field label={t`Switchers`}>
               <NumberInput
-                label="Switchers"
+                label={t`Switchers`}
                 value={form.max_switchers}
                 onChange={(max_switchers) => set({ max_switchers })}
               />
             </Field>
-            <Field label="Servers each">
+            <Field label={t`Servers each`}>
               <NumberInput
-                label="Stream servers per switcher"
+                label={t`Stream servers per switcher`}
                 value={form.max_stream_servers}
                 onChange={(max_stream_servers) => set({ max_stream_servers })}
               />
             </Field>
-            <Field label="Members">
+            <Field label={t`Members`}>
               <NumberInput
-                label="Members"
+                label={t`Members`}
                 value={form.max_members}
                 onChange={(max_members) => set({ max_members })}
               />
             </Field>
-            <Field label="History days">
+            <Field label={t`History days`}>
               <NumberInput
-                label="History days"
+                label={t`History days`}
                 value={form.history_days}
                 onChange={(history_days) => set({ history_days })}
               />
             </Field>
           </div>
-          <Field label="Order" hint="Lower comes first on the Plan page.">
+          <Field label={t`Order`} hint={t`Lower comes first on the Plan page.`}>
             <Input
               type="number"
               value={form.position}
@@ -249,17 +251,17 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
             />
           </Field>
           <ToggleRow
-            label="Own chat bot"
-            hint="Workspaces may connect their own bot account instead of the shared NOALBS bot."
+            label={t`Own chat bot`}
+            hint={t`Workspaces may connect their own bot account instead of the shared NOALBS bot.`}
             checked={form.custom_chat_bot}
             onChange={(custom_chat_bot) => set({ custom_chat_bot })}
           />
           <ToggleRow
-            label="Offered"
+            label={t`Offered`}
             hint={
               isFree
-                ? "Free is where workspaces land without a subscription."
-                : "Hidden plans keep the workspaces already on them."
+                ? t`Free is where workspaces land without a subscription.`
+                : t`Hidden plans keep the workspaces already on them.`
             }
             checked={form.is_active}
             onChange={(is_active) => set({ is_active })}
@@ -267,7 +269,7 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
           />
           <DialogFooter>
             <Button type="submit" disabled={!valid || change.isPending}>
-              {plan ? "Save" : "Create plan"}
+              {plan ? t`Save` : t`Create plan`}
             </Button>
           </DialogFooter>
         </form>
@@ -295,7 +297,7 @@ function initialPlan(plan?: AdminPlan) {
 export function AddonDialog({ addon, children }: { addon?: AdminAddon; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(() => initialAddon(addon));
-  const change = useProductChange(addon ? `${addon.name} saved` : "Add-on created");
+  const change = useProductChange(addon ? t`${addon.name} saved` : t`Add-on created`);
   const set = (patch: Partial<typeof form>) => setForm((current) => ({ ...current, ...patch }));
 
   const submit = (event: FormEvent) => {
@@ -336,14 +338,14 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{addon ? `Edit ${addon.name}` : "New add-on"}</DialogTitle>
+            <DialogTitle>{addon ? t`Edit ${addon.name}` : t`New add-on`}</DialogTitle>
             <DialogDescription>
               {addon
-                ? "Sold per unit on top of any plan."
-                : "Sold per unit on top of any plan. Set its prices after creating it."}
+                ? t`Sold per unit on top of any plan.`
+                : t`Sold per unit on top of any plan. Set its prices after creating it.`}
             </DialogDescription>
           </DialogHeader>
-          <Field label="Name">
+          <Field label={t`Name`}>
             <Input
               value={form.name}
               onChange={(event) =>
@@ -356,7 +358,10 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
             />
           </Field>
           {!addon && (
-            <Field label="Code" hint="Features check it by this code; can't be changed later.">
+            <Field
+              label={t`Code`}
+              hint={t`Features check it by this code; can't be changed later.`}
+            >
               <Input
                 value={form.code}
                 onChange={(event) => set({ code: event.target.value })}
@@ -364,29 +369,29 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
               />
             </Field>
           )}
-          <Field label="Description" hint="Shown on the Plan page and in Checkout.">
+          <Field label={t`Description`} hint={t`Shown on the Plan page and in Checkout.`}>
             <Input
               value={form.description}
               onChange={(event) => set({ description: event.target.value })}
             />
           </Field>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Unit">
+            <Field label={t`Unit`}>
               <Input
                 value={form.unit}
                 onChange={(event) => set({ unit: event.target.value })}
-                placeholder="slot"
+                placeholder={t`slot`}
                 maxLength={20}
               />
             </Field>
-            <Field label="Max per workspace">
+            <Field label={t`Max per workspace`}>
               <NumberInput
-                label="Max per workspace"
+                label={t`Max per workspace`}
                 value={form.max_quantity}
                 onChange={(max_quantity) => set({ max_quantity })}
               />
             </Field>
-            <Field label="Order">
+            <Field label={t`Order`}>
               <Input
                 type="number"
                 value={form.position}
@@ -396,18 +401,18 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
               />
             </Field>
           </div>
-          <Field label="On the Plan page" hint={STATUS_HINTS[form.status]}>
+          <Field label={t`On the Plan page`} hint={statusHints()[form.status]}>
             <Select
               value={form.status}
               onValueChange={(status) => set({ status: status as AddonVisibility })}
             >
-              <SelectTrigger aria-label="On the Plan page" className="w-full">
+              <SelectTrigger aria-label={t`On the Plan page`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {STATUSES.map((status) => (
                   <SelectItem key={status} value={status}>
-                    {ADDON_STATUS_LABELS[status]}
+                    {addonStatusLabels()[status]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -415,7 +420,7 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
           </Field>
           <DialogFooter>
             <Button type="submit" disabled={!valid || change.isPending}>
-              {addon ? "Save" : "Create add-on"}
+              {addon ? t`Save` : t`Create add-on`}
             </Button>
           </DialogFooter>
         </form>
@@ -429,7 +434,7 @@ function initialAddon(addon?: AdminAddon) {
     code: addon?.code ?? "",
     name: addon?.name ?? "",
     description: addon?.description ?? "",
-    unit: addon?.unit ?? "slot",
+    unit: addon?.unit ?? t`slot`,
     max_quantity: addon?.max_quantity ?? 5,
     status: addon?.status ?? ("hidden" as AddonVisibility),
     position: addon?.position ?? 10,
@@ -457,9 +462,9 @@ function PriceDialog({
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(current ? fromCents(current.amount) : "");
   const [cur, setCur] = useState(current?.currency ?? currency ?? "eur");
-  const change = useProductChange(`${name} price set`);
+  const change = useProductChange(t`${name} price set`);
   const cents = toCents(amount);
-  const period = interval === "month" ? "month" : "year";
+  const period = intervalWord(interval);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -489,22 +494,24 @@ function PriceDialog({
     >
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          {current ? "Change price" : "Set price"}
+          {current ? t`Change price` : t`Set price`}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
-              {name}, {interval === "month" ? "monthly" : "yearly"}
+              {name}, {interval === "month" ? t`monthly` : t`yearly`}
             </DialogTitle>
             <DialogDescription>
-              A new price is created in Stripe for new subscriptions.
-              {current && " People already paying keep their current price."}
+              <Trans>
+                A new price is created in Stripe for new subscriptions.
+                {current && t` People already paying keep their current price.`}
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-[1fr_6rem] gap-3">
-            <Field label={unit ? `Per ${unit} per ${period}` : `Per ${period}`}>
+            <Field label={unit ? t`Per ${unit} per ${period}` : t`Per ${period}`}>
               <Input
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
@@ -513,7 +520,7 @@ function PriceDialog({
                 autoFocus
               />
             </Field>
-            <Field label="Currency">
+            <Field label={t`Currency`}>
               <Input
                 value={cur}
                 onChange={(event) => setCur(event.target.value)}
@@ -525,12 +532,14 @@ function PriceDialog({
           </div>
           {currency != null && (
             <p className="text-xs text-muted-foreground">
-              All prices use {currency.toUpperCase()}: one subscription can’t mix currencies.
+              <Trans>
+                All prices use {currency.toUpperCase()}: one subscription can’t mix currencies.
+              </Trans>
             </p>
           )}
           <DialogFooter>
             <Button type="submit" disabled={cents == null || change.isPending}>
-              {cents == null ? "Set price" : `Set to ${formatPrice(cents, cur || "eur")}`}
+              {cents == null ? t`Set price` : t`Set to ${formatPrice(cents, cur || "eur")}`}
             </Button>
           </DialogFooter>
         </form>
@@ -553,7 +562,7 @@ function LinkPriceDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [priceId, setPriceId] = useState("");
-  const change = useProductChange(`${name} linked to the Stripe price`);
+  const change = useProductChange(t`${name} linked to the Stripe price`);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -578,20 +587,23 @@ function LinkPriceDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button size="icon-sm" variant="ghost" aria-label="Link an existing Stripe price">
+        <Button size="icon-sm" variant="ghost" aria-label={t`Link an existing Stripe price`}>
           <Link2 />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Link a Stripe price</DialogTitle>
+            <DialogTitle>
+              <Trans>Link a Stripe price</Trans>
+            </DialogTitle>
             <DialogDescription>
-              Sell {name} {interval === "month" ? "monthly" : "yearly"} at a price you made in the
-              Stripe Dashboard. It must be a flat-rate recurring price billed every {interval}.
+              {interval === "month"
+                ? t`Sell ${name} monthly at a price you made in the Stripe Dashboard. It must be a flat-rate recurring price billed every month.`
+                : t`Sell ${name} yearly at a price you made in the Stripe Dashboard. It must be a flat-rate recurring price billed every year.`}
             </DialogDescription>
           </DialogHeader>
-          <Field label="Price ID">
+          <Field label={t`Price ID`}>
             <Input
               value={priceId}
               onChange={(event) => setPriceId(event.target.value)}
@@ -605,7 +617,7 @@ function LinkPriceDialog({
               type="submit"
               disabled={!priceId.trim().startsWith("price_") || change.isPending}
             >
-              Link price
+              <Trans>Link price</Trans>
             </Button>
           </DialogFooter>
         </form>
@@ -635,7 +647,7 @@ function PriceRow({
   unit?: string;
   billingEnabled: boolean;
 }) {
-  const stop = useProductChange(`${name} is no longer sold ${label.toLowerCase()}`);
+  const stop = useProductChange(t`${name} is no longer sold: ${label}`);
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-divider py-2.5 first:border-t-0">
       <div className="flex min-w-0 flex-col">
@@ -646,7 +658,9 @@ function PriceRow({
             {unit && <span className="font-sans font-normal text-muted-foreground"> / {unit}</span>}
           </span>
         ) : (
-          <span className="text-sm text-muted-foreground">Not sold</span>
+          <span className="text-sm text-muted-foreground">
+            <Trans>Not sold</Trans>
+          </span>
         )}
       </div>
       {billingEnabled && (
@@ -665,8 +679,8 @@ function PriceRow({
             <ConfirmButton
               variant="ghost"
               className="h-8 px-2 text-xs"
-              title={`Stop selling ${name} ${label.toLowerCase()}?`}
-              confirmLabel="Stop selling"
+              title={t`Stop selling ${name}: ${label}?`}
+              confirmLabel={t`Stop selling`}
               onConfirm={() =>
                 stop.mutate(() =>
                   unwrap(
@@ -678,12 +692,14 @@ function PriceRow({
               }
               description={
                 <span>
-                  New subscriptions can’t choose it anymore. People already paying keep it until
-                  they cancel.
+                  <Trans>
+                    New subscriptions can’t choose it anymore. People already paying keep it until
+                    they cancel.
+                  </Trans>
                 </span>
               }
             >
-              Stop
+              <Trans>Stop</Trans>
             </ConfirmButton>
           )}
         </div>
@@ -701,7 +717,7 @@ function StripeLink({ href }: { href: string | null | undefined }) {
       rel="noreferrer"
       className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
     >
-      Stripe
+      <Trans>Stripe</Trans>
       <ExternalLink className="size-3" />
     </a>
   );
@@ -719,15 +735,15 @@ function RemoveButton({
   name: string;
   blockedBy: string | null | undefined;
 }) {
-  const remove = useProductChange(`${name} removed`);
+  const remove = useProductChange(t`${name} removed`);
   if (blockedBy) {
     return (
-      <span title={`Can't remove: ${blockedBy}`}>
+      <span title={t`Can't remove: ${blockedBy}`}>
         <Button
           size="icon-sm"
           variant="ghost"
           disabled
-          aria-label={`Can't remove ${name}: ${blockedBy}`}
+          aria-label={t`Can't remove ${name}: ${blockedBy}`}
         >
           <Trash2 />
         </Button>
@@ -738,10 +754,10 @@ function RemoveButton({
     <ConfirmButton
       variant="ghost"
       className="size-8"
-      ariaLabel={`Remove ${name}`}
+      ariaLabel={t`Remove ${name}`}
       disabled={remove.isPending}
-      title={`Remove ${name}?`}
-      confirmLabel="Remove"
+      title={t`Remove ${name}?`}
+      confirmLabel={t`Remove`}
       onConfirm={() =>
         remove.mutate(() =>
           kind === "plan"
@@ -751,8 +767,10 @@ function RemoveButton({
       }
       description={
         <span>
-          Nobody uses it, so it can go. Its product and prices are archived in Stripe. This can't be
-          undone, but you can create it again.
+          <Trans>
+            Nobody uses it, so it can go. Its product and prices are archived in Stripe. This can't
+            be undone, but you can create it again.
+          </Trans>
         </span>
       }
     >
@@ -806,14 +824,12 @@ function archivedNote(count: number) {
   if (count === 0) return null;
   return (
     <span>
-      {count} earlier {count === 1 ? "price" : "prices"}, kept by existing subscribers
+      {plural(count, {
+        one: "# earlier price, kept by existing subscribers",
+        other: "# earlier prices, kept by existing subscribers",
+      })}
     </span>
   );
-}
-
-/** "1 switcher", "5 switchers". */
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
 export function PlanProduct({
@@ -832,7 +848,13 @@ export function PlanProduct({
       code={plan.code}
       description={plan.description}
       stripeUrl={plan.stripe_product_url}
-      badges={!plan.is_active && <Badge variant="secondary">Hidden</Badge>}
+      badges={
+        !plan.is_active && (
+          <Badge variant="secondary">
+            <Trans>Hidden</Trans>
+          </Badge>
+        )
+      }
       edit={
         <>
           <RemoveButton
@@ -842,7 +864,7 @@ export function PlanProduct({
             blockedBy={plan.removal_blocked_by}
           />
           <PlanDialog plan={plan}>
-            <Button size="icon-sm" variant="ghost" aria-label={`Edit ${plan.name}`}>
+            <Button size="icon-sm" variant="ghost" aria-label={t`Edit ${plan.name}`}>
               <Pencil />
             </Button>
           </PlanDialog>
@@ -851,23 +873,29 @@ export function PlanProduct({
       stats={
         <>
           <span>
-            {plural(plan.max_switchers, "switcher")} ·{" "}
-            {plural(plan.max_stream_servers, "stream server")} each ·{" "}
-            {plural(plan.max_members, "member")} · {plural(plan.history_days, "day")} of history
-            {plan.custom_chat_bot && " · own chat bot"}
+            {plural(plan.max_switchers, { one: "# switcher", other: "# switchers" })} ·{" "}
+            {plural(plan.max_stream_servers, {
+              one: "# stream server each",
+              other: "# stream servers each",
+            })}{" "}
+            · {plural(plan.max_members, { one: "# member", other: "# members" })} ·{" "}
+            {plural(plan.history_days, { one: "# day of history", other: "# days of history" })}
+            {plan.custom_chat_bot && t` · own chat bot`}
           </span>
           <span>
-            {plan.workspaces} {plan.workspaces === 1 ? "workspace" : "workspaces"} on it
-            {!free && `, ${plan.subscribers} paying`}
+            {plural(plan.workspaces, { one: "# workspace on it", other: "# workspaces on it" })}
+            {!free && t`, ${plan.subscribers} paying`}
           </span>
           {archivedNote(plan.archived_prices)}
         </>
       }
     >
       {free ? (
-        <p className="py-2.5 text-sm text-muted-foreground">No price: it’s the free plan.</p>
+        <p className="py-2.5 text-sm text-muted-foreground">
+          <Trans>No price: it’s the free plan.</Trans>
+        </p>
       ) : (
-        INTERVALS.map((interval) => (
+        intervals().map((interval) => (
           <PriceRow
             key={interval.value}
             kind="plan"
@@ -905,7 +933,7 @@ export function AddonProduct({
           variant={addon.status === "available" ? "default" : "secondary"}
           className={addon.status === "available" ? "bg-live/15 text-live" : undefined}
         >
-          {ADDON_STATUS_LABELS[addon.status]}
+          {addonStatusLabels()[addon.status]}
         </Badge>
       }
       edit={
@@ -917,7 +945,7 @@ export function AddonProduct({
             blockedBy={addon.removal_blocked_by}
           />
           <AddonDialog addon={addon}>
-            <Button size="icon-sm" variant="ghost" aria-label={`Edit ${addon.name}`}>
+            <Button size="icon-sm" variant="ghost" aria-label={t`Edit ${addon.name}`}>
               <Pencil />
             </Button>
           </AddonDialog>
@@ -926,19 +954,21 @@ export function AddonProduct({
       stats={
         <>
           <span>
-            Up to {addon.max_quantity} {addon.unit}s per workspace
+            <Trans>Up to {countUnits(addon.max_quantity, addon.unit)} per workspace</Trans>
           </span>
-          <span>{addon.subscribers} paying</span>
+          <span>
+            <Trans>{addon.subscribers} paying</Trans>
+          </span>
           {archivedNote(addon.archived_prices)}
           {addon.status === "available" && addon.prices.length === 0 && (
             <span className="font-medium text-low">
-              No price yet, so the Plan page shows it as coming soon
+              <Trans>No price yet, so the Plan page shows it as coming soon</Trans>
             </span>
           )}
         </>
       }
     >
-      {INTERVALS.map((interval) => (
+      {intervals().map((interval) => (
         <PriceRow
           key={interval.value}
           kind="addon"
@@ -960,7 +990,7 @@ export function NewProductButton({ kind }: { kind: Kind }) {
   const button = (
     <Button size="sm" variant="outline">
       <Plus />
-      {kind === "plan" ? "New plan" : "New add-on"}
+      {kind === "plan" ? t`New plan` : t`New add-on`}
     </Button>
   );
   return kind === "plan" ? <PlanDialog>{button}</PlanDialog> : <AddonDialog>{button}</AddonDialog>;

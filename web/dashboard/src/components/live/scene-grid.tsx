@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
@@ -10,10 +12,10 @@ import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenScenes } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
 
-const ROLE_TAGS: [keyof Scenes, string][] = [
-  ["live", "LIVE SCENE"],
-  ["low", "LOW SCENE"],
-  ["offline", "BRB SCENE"],
+const roleTags = (): [keyof Scenes, string][] => [
+  ["live", t`LIVE SCENE`],
+  ["low", t`LOW SCENE`],
+  ["offline", t`BRB SCENE`],
   ["starting", "STARTING"],
   ["ending", "ENDING"],
   ["privacy", "PRIVACY"],
@@ -69,7 +71,7 @@ export function SceneGrid({
   });
 
   const roleOf = (uuid: string | null | undefined) =>
-    ROLE_TAGS.find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? "SCENE";
+    roleTags().find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? "SCENE";
 
   const hiddenSet = new Set(hidden);
   const all = list.data?.scenes ?? [];
@@ -84,9 +86,11 @@ export function SceneGrid({
     setHidden(hiddenSet.has(key) ? hidden.filter((item) => item !== key) : [...hidden, key]);
 
   return (
-    <section aria-label="Scenes" className="flex flex-col gap-2.5">
+    <section aria-label={t`Scenes`} className="flex flex-col gap-2.5">
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">Scenes</h2>
+        <h2 className="font-semibold">
+          <Trans>Scenes</Trans>
+        </h2>
         {list.data &&
           (editing ? (
             <span className="flex items-center gap-1">
@@ -95,30 +99,30 @@ export function SceneGrid({
                 onClick={() => setHidden(anyHidden ? [] : all.map((scene) => sceneKey(scene)))}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
-                {anyHidden ? "Show all" : "Hide all"}
+                {anyHidden ? t`Show all` : t`Hide all`}
               </button>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
-                Done
+                <Trans>Done</Trans>
               </button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {hiddenCount > 0
-                ? `${hiddenCount} hidden`
+                ? t`${hiddenCount} hidden`
                 : canControl
-                  ? "Tap to switch"
-                  : "Synced from OBS"}
+                  ? t`Tap to switch`
+                  : t`Synced from OBS`}
               <button
                 type="button"
                 onClick={() => setEditing(true)}
                 className={cn(HEADER_BUTTON, "text-primary")}
               >
                 <SlidersHorizontal className="size-3.5" />
-                Customize
+                <Trans>Customize</Trans>
               </button>
             </span>
           ))}
@@ -126,14 +130,16 @@ export function SceneGrid({
 
       {editing && (
         <p className="text-xs text-muted-foreground">
-          Tap scenes to show or hide them here. Only this browser remembers it; the scene on air
-          always shows.
+          <Trans>
+            Tap scenes to show or hide them here. Only this browser remembers it; the scene on air
+            always shows.
+          </Trans>
         </p>
       )}
 
       {!obsConnected && (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          Scenes appear once OBS is connected.
+          <Trans>Scenes appear once OBS is connected.</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-40 rounded-2xl" />}
@@ -159,11 +165,13 @@ export function SceneGrid({
                 <span className="text-sm font-semibold">{scene.name}</span>
                 <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider">
                   {shown ? (
-                    <span className="text-primary-soft-foreground">SHOWN</span>
+                    <span className="text-primary-soft-foreground">
+                      <Trans>SHOWN</Trans>
+                    </span>
                   ) : (
                     <>
                       <EyeOff className="size-3" aria-hidden="true" />
-                      HIDDEN
+                      <Trans>HIDDEN</Trans>
                     </>
                   )}
                 </span>
@@ -206,7 +214,7 @@ export function SceneGrid({
                   {current && (
                     <span className="size-1.5 rounded-full bg-offline" aria-hidden="true" />
                   )}
-                  {current ? "ON AIR" : roleOf(scene.uuid)}
+                  {current ? t`ON AIR` : roleOf(scene.uuid)}
                 </span>
               </button>
             );
@@ -220,7 +228,7 @@ export function SceneGrid({
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
-          All scenes are hidden. Tap to pick some.
+          <Trans>All scenes are hidden. Tap to pick some.</Trans>
         </button>
       )}
     </section>

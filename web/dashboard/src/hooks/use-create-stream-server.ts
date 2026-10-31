@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
@@ -28,7 +29,7 @@ export function useCreateStreamServer(path: { workspace_id: string; switcher_id:
         queryKey: queryKeys.streamServers(path.workspace_id, path.switcher_id),
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.switchers(path.workspace_id) });
-      toast.success(`Added ${server.name}`);
+      toast.success(t`Added ${server.name}`);
     },
   });
 }

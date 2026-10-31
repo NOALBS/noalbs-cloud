@@ -1,3 +1,4 @@
+import { plural, t } from "@lingui/core/macro";
 import type {
   Client,
   ClientCustomer,
@@ -6,15 +7,15 @@ import type {
   OrganizationRole,
 } from "@/api/types";
 
-export const ORGANIZATION_ROLE_LABELS: Record<OrganizationRole, string> = {
-  member: "Member",
-  admin: "Admin",
-};
+export const organizationRoleLabels = (): Record<OrganizationRole, string> => ({
+  member: t`Member`,
+  admin: t`Admin`,
+});
 
-export const ORGANIZATION_ROLE_DESCRIPTIONS: Record<OrganizationRole, string> = {
-  member: "Runs the clients’ switchers, stream servers and settings.",
-  admin: "Also creates and deletes clients, and manages the team.",
-};
+export const organizationRoleDescriptions = (): Record<OrganizationRole, string> => ({
+  member: t`Runs the clients’ switchers, stream servers and settings.`,
+  admin: t`Also creates and deletes clients, and manages the team.`,
+});
 
 /** The most switchers one client may be allocated (as the API). */
 export const MAX_ALLOCATION = 10_000;
@@ -48,12 +49,12 @@ export function clientState(client: Pick<Client, "streaming" | "obs_connected" |
   return "offline" satisfies ClientState;
 }
 
-export const CLIENT_STATE_LABELS: Record<ClientState, string> = {
-  live: "Live",
-  online: "OBS connected",
-  offline: "Offline",
-  suspended: "Suspended",
-};
+export const clientStateLabels = (): Record<ClientState, string> => ({
+  live: t`Live`,
+  online: t`OBS connected`,
+  offline: t`Offline`,
+  suspended: t`Suspended`,
+});
 
 /** Whether the customer has joined yet (the organization runs the workspace either way). */
 export function isClaimed(client: Pick<Client, "customers">): boolean {
@@ -74,7 +75,7 @@ export function parseAllocation(text: string): number | null | undefined {
 
 /** What an allocation shows as in a list: the number, or that only the pool limits it. */
 export function allocationLabel(allocation: number | null | undefined): string {
-  return allocation == null ? "Pool" : String(allocation);
+  return allocation == null ? t`Pool` : String(allocation);
 }
 
 /** The link a customer opens to join their workspace. */
@@ -191,19 +192,19 @@ export function parseClientsSearch(search: Record<string, unknown>): ClientsSear
 export function otherLimits(limits: Organization["limits"]) {
   return [
     {
-      label: "Stream servers",
+      label: t`Stream servers`,
       value: String(limits.max_stream_servers),
-      hint: "per switcher",
+      hint: t`per switcher`,
     },
     {
-      label: "Customers",
+      label: t`Customers`,
       value: String(limits.max_members),
-      hint: "per client",
+      hint: t`per client`,
     },
     {
-      label: "History",
-      value: `${limits.history_days} ${limits.history_days === 1 ? "day" : "days"}`,
-      hint: "of stream history kept",
+      label: t`History`,
+      value: plural(limits.history_days, { one: "# day", other: "# days" }),
+      hint: t`of stream history kept`,
     },
   ];
 }
@@ -261,29 +262,30 @@ export function invitesCsv(
 }
 
 /** What the activity page can narrow to: a name and the kinds of event it lists. */
-export const ACTIVITY_PRESETS = [
-  { value: "all", label: "Everything", kinds: undefined },
-  {
-    value: "streams",
-    label: "Streams",
-    kinds: "stream_started,stream_stopped,offline_timeout,ending_timeout",
-  },
-  { value: "scenes", label: "Scene switches", kinds: "scene_switched" },
-  {
-    value: "problems",
-    label: "Problems",
-    kinds:
-      "obs_disconnected,offline_timeout,ending_timeout,recording_scene_error,belabox_error,belabox_offline,moblin_disconnected,moblin_wrong_password",
-  },
-  {
-    value: "controls",
-    label: "Controls",
-    kinds:
-      "auto_switch_changed,preview_off_air_changed,feed_fixed,marker_created,source_toggled,input_muted",
-  },
-] as const;
+export const activityPresets = () =>
+  [
+    { value: "all", label: t`Everything`, kinds: undefined },
+    {
+      value: "streams",
+      label: t`Streams`,
+      kinds: "stream_started,stream_stopped,offline_timeout,ending_timeout",
+    },
+    { value: "scenes", label: t`Scene switches`, kinds: "scene_switched" },
+    {
+      value: "problems",
+      label: t`Problems`,
+      kinds:
+        "obs_disconnected,offline_timeout,ending_timeout,recording_scene_error,belabox_error,belabox_offline,moblin_disconnected,moblin_wrong_password",
+    },
+    {
+      value: "controls",
+      label: t`Controls`,
+      kinds:
+        "auto_switch_changed,preview_off_air_changed,feed_fixed,marker_created,source_toggled,input_muted",
+    },
+  ] as const;
 
-export type ActivityPreset = (typeof ACTIVITY_PRESETS)[number]["value"];
+export type ActivityPreset = ReturnType<typeof activityPresets>[number]["value"];
 
 /** The activity page's address: a client search, a preset and one client, from the URL. */
 /** What the activity page shows: the switchers' events, or the changes people made. */
@@ -298,7 +300,7 @@ export interface ActivitySearch {
 }
 
 export function parseActivitySearch(search: Record<string, unknown>): ActivitySearch {
-  const preset = ACTIVITY_PRESETS.find(
+  const preset = activityPresets().find(
     (candidate) => candidate.value !== "all" && candidate.value === search.show,
   );
   return {
@@ -334,7 +336,7 @@ export function liveTag(
   className: string;
 } {
   if (item.paused) return { tag: "PAUSED", dot: "bg-idle", className: "text-low" };
-  if (!item.obs_connected) return { tag: "NO OBS", dot: "bg-low", className: "text-low" };
+  if (!item.obs_connected) return { tag: t`NO OBS`, dot: "bg-low", className: "text-low" };
   if (!item.streaming) {
     return { tag: "IDLE", dot: "bg-primary", className: "text-muted-foreground" };
   }

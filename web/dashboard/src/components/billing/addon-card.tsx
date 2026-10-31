@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Addon, BillingInterval, WorkspacePlan } from "@/api/types";
@@ -5,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBillingChange, useStripeRedirect } from "@/hooks/use-billing";
 import {
-  ADDON_STATUS_LABELS,
+  addonStatusLabels,
   countUnits,
   describeAddon,
   formatPrice,
+  intervalWord,
   priceFor,
   prorate,
   quantityRange,
@@ -39,7 +42,7 @@ export function AddonCard({
   useEffect(() => setQuantity(Math.max(billed, subscription ? 0 : 1)), [billed, subscription]);
 
   const checkout = useStripeRedirect();
-  const change = useBillingChange(`${addon.name} updated`);
+  const change = useBillingChange(t`${addon.name} updated`);
   // An existing subscription bills everything with its own period.
   const shownInterval = subscription?.interval ?? interval;
   const price = priceFor(addon.prices, shownInterval);
@@ -55,10 +58,10 @@ export function AddonCard({
     addon.status === "available"
       ? forSale
         ? null
-        : ADDON_STATUS_LABELS.coming_soon
+        : addonStatusLabels().coming_soon
       : addon.status === "hidden"
-        ? "No longer offered"
-        : ADDON_STATUS_LABELS[addon.status];
+        ? t`No longer offered`
+        : addonStatusLabels()[addon.status];
 
   const charged = unitsToCharge(owned, quantity);
   const periodEnd = subscription?.current_period_end
@@ -66,7 +69,7 @@ export function AddonCard({
         day: "numeric",
         month: "long",
       })
-    : "the end of the period";
+    : t`the end of the period`;
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border bg-card p-5.5">
@@ -84,17 +87,21 @@ export function AddonCard({
 
       {price && (
         <p className="flex items-baseline gap-2 text-sm text-muted-foreground">
-          <span className="font-mono text-xl font-semibold text-foreground tabular">
-            {formatPrice(price.amount, price.currency)}
-          </span>
-          per {addon.unit} / {shownInterval}
+          <Trans>
+            <span className="font-mono text-xl font-semibold text-foreground tabular">
+              {formatPrice(price.amount, price.currency)}
+            </span>
+            per {addon.unit} / {intervalWord(shownInterval)}
+          </Trans>
         </p>
       )}
 
       {owned && owned.quantity > 0 && (
         <p className="text-sm">
-          You have <strong>{describeAddon(owned, addon.unit)}</strong>.
-          {!forSale && " You can keep or lower it, but not add more for now."}
+          <Trans>
+            You have <strong>{describeAddon(owned, addon.unit)}</strong>.
+            {!forSale && t` You can keep or lower it, but not add more for now.`}
+          </Trans>
         </p>
       )}
 
@@ -104,7 +111,7 @@ export function AddonCard({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Fewer ${addon.unit}s`}
+              aria-label={t`Fewer`}
               disabled={quantity <= min}
               onClick={() => setQuantity(quantity - 1)}
             >
@@ -116,7 +123,7 @@ export function AddonCard({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`More ${addon.unit}s`}
+              aria-label={t`More`}
               disabled={quantity >= max}
               onClick={() => setQuantity(quantity + 1)}
             >
@@ -131,53 +138,64 @@ export function AddonCard({
               }
               disabled={checkout.isPending}
             >
-              {checkout.isPending ? "Opening checkout…" : `Buy ${countUnits(quantity, addon.unit)}`}
+              {checkout.isPending
+                ? t`Opening checkout…`
+                : t`Buy ${countUnits(quantity, addon.unit)}`}
             </Button>
           ) : quantity !== billed ? (
             <ConfirmButton
               disabled={change.isPending}
-              title={quantity > billed ? `Add ${addon.name}` : `Lower ${addon.name}`}
-              confirmLabel={charged > 0 ? "Pay and update" : "Update"}
+              title={quantity > billed ? t`Add ${addon.name}` : t`Lower ${addon.name}`}
+              confirmLabel={charged > 0 ? t`Pay and update` : t`Update`}
               onConfirm={() => change.mutate({ kind: "addon", code: addon.code, quantity })}
               description={
                 charged > 0 && price ? (
                   <>
                     <span>
-                      You’ll be charged about{" "}
-                      <strong>
-                        {formatPrice(
-                          prorate(
-                            price.amount,
-                            charged,
-                            subscription.current_period_start,
-                            subscription.current_period_end,
-                          ),
-                          price.currency,
-                        )}
-                      </strong>{" "}
-                      now for {countUnits(charged, addon.unit)} for the rest of this period, then{" "}
-                      {formatPrice(price.amount * quantity, price.currency)} per {shownInterval}.
+                      <Trans>
+                        You’ll be charged about{" "}
+                        <strong>
+                          {formatPrice(
+                            prorate(
+                              price.amount,
+                              charged,
+                              subscription.current_period_start,
+                              subscription.current_period_end,
+                            ),
+                            price.currency,
+                          )}
+                        </strong>{" "}
+                        now for {countUnits(charged, addon.unit)} for the rest of this period, then{" "}
+                        {formatPrice(price.amount * quantity, price.currency)} per{" "}
+                        {intervalWord(shownInterval)}.
+                      </Trans>
                     </span>
-                    <span>If the card is declined, nothing changes.</span>
+                    <span>
+                      <Trans>If the card is declined, nothing changes.</Trans>
+                    </span>
                   </>
                 ) : quantity < billed ? (
                   <span>
-                    You keep what you have until {periodEnd}. From then on you’re billed for{" "}
-                    {quantity === 0 ? `no ${addon.unit}s` : countUnits(quantity, addon.unit)}.
+                    <Trans>
+                      You keep what you have until {periodEnd}. From then on you’re billed for{" "}
+                      {quantity === 0 ? t`none` : countUnits(quantity, addon.unit)}.
+                    </Trans>
                   </span>
                 ) : (
-                  <span>Already paid for this period, so nothing is charged now.</span>
+                  <span>
+                    <Trans>Already paid for this period, so nothing is charged now.</Trans>
+                  </span>
                 )
               }
             >
-              {quantity === 0 ? `Remove ${addon.name}` : "Update"}
+              {quantity === 0 ? t`Remove ${addon.name}` : t`Update`}
             </ConfirmButton>
           ) : null}
         </div>
       )}
       {canChange && ending && (
         <p className="mt-auto text-xs text-muted-foreground">
-          Resume the subscription to change add-ons.
+          <Trans>Resume the subscription to change add-ons.</Trans>
         </p>
       )}
     </section>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { type StateSeconds, stateShares } from "@/lib/history";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,7 @@ export function StateBar({
         role="img"
         aria-label={
           empty
-            ? "No feed recorded"
+            ? t`No feed recorded`
             : PARTS.map((part) => `${part.label} ${pct(shares[part.key])}`).join(", ")
         }
       >

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { organizationAuditQuery } from "@/api/queries";
 import type { Organization } from "@/api/types";
@@ -21,7 +23,7 @@ export function AuditLog({ organization }: { organization: Organization }) {
         <Skeleton className="h-64 rounded-2xl" />
       ) : entries.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-          Nothing yet. Changes your team makes show up here.
+          <Trans>Nothing yet. Changes your team makes show up here.</Trans>
         </p>
       ) : (
         <ol className="flex flex-col overflow-hidden rounded-2xl border bg-card">
@@ -51,7 +53,11 @@ export function AuditLog({ organization }: { organization: Organization }) {
                 </span>
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{actorLabel(entry)}</span>
-                  {entry.actor === "staff" && <Badge variant="outline">NOALBS</Badge>}
+                  {entry.actor === "staff" && (
+                    <Badge variant="outline">
+                      <Trans>NOALBS</Trans>
+                    </Badge>
+                  )}
                   {detail && <span>{detail}</span>}
                 </span>
               </li>
@@ -66,7 +72,7 @@ export function AuditLog({ organization }: { organization: Organization }) {
           disabled={audit.isFetchingNextPage}
           onClick={() => void audit.fetchNextPage()}
         >
-          {audit.isFetchingNextPage ? "Loading…" : "Load older"}
+          {audit.isFetchingNextPage ? t`Loading…` : t`Load older`}
         </Button>
       )}
     </>

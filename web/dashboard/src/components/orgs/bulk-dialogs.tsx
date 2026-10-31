@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
@@ -24,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { translateApiMessage } from "@/lib/api-messages";
 import { errorMessage } from "@/lib/errors";
 import {
   BULK_MAX,
@@ -56,7 +59,8 @@ function Failures({ items }: { items: { name: string; error?: BulkError | null }
         // The same name can fail more than once, so the index is part of the key.
         // biome-ignore lint/suspicious/noArrayIndexKey: a static list of results
         <li key={`${item.name}-${index}`}>
-          <span className="font-semibold">{item.name || "A client"}</span>: {item.error?.message}
+          <span className="font-semibold">{item.name || t`A client`}</span>:{" "}
+          {translateApiMessage(item.error?.message ?? "")}
         </li>
       ))}
     </ul>
@@ -121,42 +125,52 @@ export function ImportClientsDialog({
           <div className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>
-                {outcome.ok} client{outcome.ok === 1 ? "" : "s"} created
+                {plural(outcome.ok, { one: "# client created", other: "# clients created" })}
               </DialogTitle>
               <DialogDescription>
                 {outcome.failed > 0
-                  ? `${outcome.failed} could not be created.`
-                  : "Select them in the list to make their invite links."}
+                  ? t`${outcome.failed} could not be created.`
+                  : t`Select them in the list to make their invite links.`}
               </DialogDescription>
             </DialogHeader>
             <Failures items={result.items} />
             <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Done</Button>
+              <Button onClick={() => setOpen(false)}>
+                <Trans>Done</Trans>
+              </Button>
             </DialogFooter>
           </div>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Import clients</DialogTitle>
+              <DialogTitle>
+                <Trans>Import clients</Trans>
+              </DialogTitle>
               <DialogDescription>
-                One client per line, up to {BULK_MAX}. Each URL follows its name (a number is added
-                when it’s taken).
+                <Trans>
+                  One client per line, up to {BULK_MAX}. Each URL follows its name (a number is
+                  added when it’s taken).
+                </Trans>
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="import-names">Names</Label>
+              <Label htmlFor="import-names">
+                <Trans>Names</Trans>
+              </Label>
               <textarea
                 id="import-names"
                 value={text}
                 onChange={(event) => setText(event.target.value)}
-                placeholder={"Nomad Live\nBike Crew\nKate IRL"}
+                placeholder={t`Nomad Live
+Bike Crew
+Kate IRL`}
                 className={TEXTAREA}
                 spellCheck={false}
               />
               <p className={tooMany ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
                 {tooMany
-                  ? `Only the first ${BULK_MAX} are imported: do the rest in another go.`
-                  : `${names.length} client${names.length === 1 ? "" : "s"}`}
+                  ? t`Only the first ${BULK_MAX} are imported: do the rest in another go.`
+                  : plural(names.length, { one: "# client", other: "# clients" })}
               </p>
             </div>
             <AllocationField
@@ -170,15 +184,15 @@ export function ImportClientsDialog({
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
               <Button
                 type="submit"
                 disabled={names.length === 0 || parsed === undefined || create.isPending}
               >
                 {create.isPending
-                  ? "Creating…"
-                  : `Create ${names.length} client${names.length === 1 ? "" : "s"}`}
+                  ? t`Creating…`
+                  : plural(names.length, { one: "Create # client", other: "Create # clients" })}
               </Button>
             </DialogFooter>
           </form>
@@ -223,7 +237,7 @@ export function BulkInvitesDialog({
       (item) => `${item.name}: ${customerInviteUrl(origin, item.token ?? "")}`,
     );
     await navigator.clipboard.writeText(lines.join("\n"));
-    toast.success("Links copied");
+    toast.success(t`Links copied`);
   };
   const download = () => {
     const blob = new Blob([invitesCsv(result?.items ?? [], origin)], { type: "text/csv" });
@@ -250,11 +264,16 @@ export function BulkInvitesDialog({
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            Invite links for {ids.length} client{ids.length === 1 ? "" : "s"}
+            {plural(ids.length, {
+              one: "Invite links for # client",
+              other: "Invite links for # clients",
+            })}
           </DialogTitle>
           <DialogDescription>
-            Each customer signs in with Twitch, Kick or YouTube and gets in as an admin. The links
-            expire after 7 days and are shown only now: copy or download them before closing.
+            <Trans>
+              Each customer signs in with Twitch, Kick or YouTube and gets in as an admin. The links
+              expire after 7 days and are shown only now: copy or download them before closing.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
 
@@ -265,10 +284,10 @@ export function BulkInvitesDialog({
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
               <Button onClick={() => create.mutate()} disabled={create.isPending}>
-                {create.isPending ? "Making links…" : "Make the links"}
+                {create.isPending ? t`Making links…` : t`Make the links`}
               </Button>
             </DialogFooter>
           </>
@@ -280,7 +299,7 @@ export function BulkInvitesDialog({
                   <span className="text-sm font-semibold">{item.name}</span>
                   <CopyField
                     value={customerInviteUrl(origin, item.token ?? "")}
-                    label={`Invite link for ${item.name}`}
+                    label={t`Invite link for ${item.name}`}
                     secret
                   />
                 </li>
@@ -291,15 +310,17 @@ export function BulkInvitesDialog({
               {links.length > 0 && (
                 <>
                   <Button variant="outline" onClick={() => void copyAll()}>
-                    Copy all
+                    <Trans>Copy all</Trans>
                   </Button>
                   <Button variant="outline" onClick={download}>
                     <Download />
-                    Download CSV
+                    <Trans>Download CSV</Trans>
                   </Button>
                 </>
               )}
-              <Button onClick={() => setOpen(false)}>Done</Button>
+              <Button onClick={() => setOpen(false)}>
+                <Trans>Done</Trans>
+              </Button>
             </DialogFooter>
           </div>
         )}
@@ -336,7 +357,7 @@ export function BulkAllocationDialog({
       setResult(done);
       await refresh();
       if (bulkOutcome(done.items).failed === 0) {
-        toast.success("Allocation set");
+        toast.success(t`Allocation set`);
         setOpen(false);
       }
     },
@@ -365,10 +386,15 @@ export function BulkAllocationDialog({
         >
           <DialogHeader>
             <DialogTitle>
-              Allocation for {ids.length} client{ids.length === 1 ? "" : "s"}
+              {plural(ids.length, {
+                one: "Allocation for # client",
+                other: "Allocation for # clients",
+              })}
             </DialogTitle>
             <DialogDescription>
-              The same number of switchers for each. One can’t go below the switchers it has.
+              <Trans>
+                The same number of switchers for each. One can’t go below the switchers it has.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <AllocationField
@@ -380,7 +406,9 @@ export function BulkAllocationDialog({
           {outcome && outcome.failed > 0 && (
             <>
               <p className="text-sm">
-                {outcome.ok} changed, {outcome.failed} not:
+                <Trans>
+                  {outcome.ok} changed, {outcome.failed} not:
+                </Trans>
               </p>
               <Failures items={result?.items ?? []} />
             </>
@@ -388,10 +416,10 @@ export function BulkAllocationDialog({
           {update.error && <p className="text-sm text-destructive">{errorMessage(update.error)}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              {outcome ? "Close" : "Cancel"}
+              {outcome ? t`Close` : t`Cancel`}
             </Button>
             <Button type="submit" disabled={parsed === undefined || update.isPending}>
-              {update.isPending ? "Saving…" : "Set allocation"}
+              {update.isPending ? t`Saving…` : t`Set allocation`}
             </Button>
           </DialogFooter>
         </form>

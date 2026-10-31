@@ -1,9 +1,10 @@
+import { t } from "@lingui/core/macro";
 /** A short, human description of a browser from its user agent, e.g. "Firefox on Linux". */
 export function describeUserAgent(userAgent: string | null | undefined): {
   label: string;
   mobile: boolean;
 } {
-  if (!userAgent) return { label: "Unknown browser", mobile: false };
+  if (!userAgent) return { label: t`Unknown browser`, mobile: false };
   const ua = userAgent;
 
   // Order matters: Edge and Opera also say Chrome; Chrome also says Safari.
@@ -37,6 +38,6 @@ export function describeUserAgent(userAgent: string | null | undefined): {
 
   const mobile = /Mobile|iPhone|Android/.test(ua);
   const label =
-    browser && os ? `${browser} on ${os}` : (browser ?? os ?? ua.split(" ")[0] ?? "Unknown");
+    browser && os ? t`${browser} on ${os}` : (browser ?? os ?? ua.split(" ")[0] ?? t`Unknown`);
   return { label, mobile };
 }

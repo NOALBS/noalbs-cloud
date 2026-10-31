@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Notice } from "@/api/types";
 
 /** Where the notices this browser hid are kept. */
@@ -39,8 +40,9 @@ export function fromLocalInput(value: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-export const SEVERITIES = [
-  { value: "info", label: "Info" },
-  { value: "warning", label: "Warning" },
-  { value: "critical", label: "Critical" },
-] as const;
+export const severities = () =>
+  [
+    { value: "info", label: t`Info` },
+    { value: "warning", label: t`Warning` },
+    { value: "critical", label: t`Critical` },
+  ] as const;

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -15,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { currentLocale } from "@/lib/locale";
-import { ROLE_LABELS, transferCandidates } from "@/lib/permissions";
+import { roleLabels, transferCandidates } from "@/lib/permissions";
 
 function formatDay(date: string): string {
   return new Date(date).toLocaleDateString(currentLocale(), {
@@ -38,80 +40,88 @@ export function TransferOwnership() {
 
   const candidates = transferCandidates(actor, members.data ?? []);
   const target = candidates.find((member) => member.user_id === chosen);
-  const targetName = target?.username ?? "this member";
+  const targetName = target?.username ?? t`this member`;
   const subscription = plan.data?.subscription;
-  const self = actor.role !== "owner" ? "The current owner" : "You";
+  const planName = plan.data?.plan.name ?? "";
 
   return (
     <Section
-      title="Transfer ownership"
+      title={t`Transfer ownership`}
       description={
         actor.role !== "owner"
-          ? "Make another member the owner. The current owner stays as an admin."
-          : "Make an admin the owner, for example so you can leave. You stay as an admin."
+          ? t`Make another member the owner. The current owner stays as an admin.`
+          : t`Make an admin the owner, for example so you can leave. You stay as an admin.`
       }
     >
       <div className="flex flex-wrap items-center gap-2 px-5 pb-5">
         {members.data && candidates.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Only an admin can become the owner.{" "}
-            <Link
-              to="/$workspace/settings/members"
-              params={{ workspace: workspace.url_slug }}
-              className="font-medium text-primary hover:underline"
-            >
-              Make someone an admin
-            </Link>{" "}
-            first.
+            <Trans>
+              Only an admin can become the owner.{" "}
+              <Link
+                to="/$workspace/settings/members"
+                params={{ workspace: workspace.url_slug }}
+                className="font-medium text-primary hover:underline"
+              >
+                Make someone an admin
+              </Link>{" "}
+              first.
+            </Trans>
           </p>
         ) : (
           <>
             <Select value={chosen} onValueChange={setChosen}>
-              <SelectTrigger className="w-56" aria-label="New owner">
-                <SelectValue placeholder="Choose the new owner" />
+              <SelectTrigger className="w-56" aria-label={t`New owner`}>
+                <SelectValue placeholder={t`Choose the new owner`} />
               </SelectTrigger>
               <SelectContent>
                 {candidates.map((member) => (
                   <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.username ?? "Unnamed"}
-                    {actor.staff && ` (${ROLE_LABELS[member.role].toLowerCase()})`}
+                    {member.username ?? t`Unnamed`}
+                    {actor.staff && ` (${roleLabels()[member.role]})`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <TypeToConfirm
-              trigger="Transfer ownership"
+              trigger={t`Transfer ownership`}
               disabled={!target}
-              title={`Make ${targetName} the owner?`}
+              title={t`Make ${targetName} the owner?`}
               description={
                 <>
                   <p>
-                    {targetName} gets the plan, billing and the say over admins, and can delete the
-                    workspace. {self} become{actor.staff ? "s" : ""} an admin.
+                    {actor.role !== "owner"
+                      ? t`${targetName} gets the plan, billing and the say over admins, and can delete the workspace. The current owner becomes an admin.`
+                      : t`${targetName} gets the plan, billing and the say over admins, and can delete the workspace. You become an admin.`}
                   </p>
                   {subscription ? (
                     <p>
-                      {actor.role !== "owner" ? "The owner’s" : "Your"} cards, billing email,
-                      address and tax IDs are removed from the workspace, without a refund. The{" "}
-                      {plan.data?.plan.name} plan keeps running
+                      {actor.role !== "owner"
+                        ? t`The owner’s cards, billing email, address and tax IDs are removed from the workspace, without a refund.`
+                        : t`Your cards, billing email, address and tax IDs are removed from the workspace, without a refund.`}{" "}
                       {subscription.current_period_end
-                        ? ` until ${formatDay(subscription.current_period_end)}`
-                        : " until the period ends"}
-                      ; {targetName} adds a card under Manage billing to renew it.
+                        ? t`The ${planName} plan keeps running until ${formatDay(subscription.current_period_end)}; ${targetName} adds a card under Manage billing to renew it.`
+                        : t`The ${planName} plan keeps running until the period ends; ${targetName} adds a card under Manage billing to renew it.`}
                     </p>
                   ) : (
                     plan.data?.billing_enabled && (
-                      <p>Any card and billing details saved with the workspace are removed.</p>
+                      <p>
+                        <Trans>
+                          Any card and billing details saved with the workspace are removed.
+                        </Trans>
+                      </p>
                     )
                   )}
                   {plan.data?.billing_enabled && (
-                    <p>Past invoices keep the email and card ending that were on them.</p>
+                    <p>
+                      <Trans>Past invoices keep the email and card ending that were on them.</Trans>
+                    </p>
                   )}
                 </>
               }
               phrase={workspace.url_slug}
-              confirmLabel="Transfer ownership"
-              pendingLabel="Transferring…"
+              confirmLabel={t`Transfer ownership`}
+              pendingLabel={t`Transferring…`}
               onConfirm={async () => {
                 await unwrap(
                   api.POST("/workspaces/{workspace_id}/transfer", {
@@ -122,7 +132,7 @@ export function TransferOwnership() {
                 setChosen("");
                 // Roles, members and the plan all sit under this key.
                 await queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
-                toast.success(`${targetName} now owns ${workspace.name}`);
+                toast.success(t`${targetName} now owns ${workspace.name}`);
               }}
             />
           </>

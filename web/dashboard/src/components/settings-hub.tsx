@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
@@ -6,14 +7,14 @@ import type { Scenes } from "@/api/types";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { setupProgress } from "@/lib/setup";
 
-const SCENE_LABELS: [keyof Scenes, string][] = [
+const sceneLabels = (): [keyof Scenes, string][] => [
   ["live", "LIVE"],
   ["low", "LOW"],
   ["offline", "BRB"],
-  ["starting", "Starting"],
-  ["ending", "Ending"],
-  ["privacy", "Privacy"],
-  ["refresh", "Refresh"],
+  ["starting", t`Starting`],
+  ["ending", t`Ending`],
+  ["privacy", t`Privacy`],
+  ["refresh", t`Refresh`],
 ];
 
 /**
@@ -36,38 +37,38 @@ export function SettingsHub() {
     : null;
   const params = { workspace: workspace.url_slug, switcher: switcher.id };
 
-  const scenes = SCENE_LABELS.filter(([key]) => switcher.scenes[key] != null).map(
-    ([, label]) => label,
-  );
+  const scenes = sceneLabels()
+    .filter(([key]) => switcher.scenes[key] != null)
+    .map(([, label]) => label);
   const enabled = servers.data?.filter((server) => server.enabled) ?? [];
   const serversSub = servers.data
     ? enabled.length === 0
-      ? "None active"
-      : `${enabled.length} active · ${enabled[0]?.name} first`
+      ? t`None active`
+      : t`${enabled.length} active · ${enabled[0]?.name ?? ""} first`
     : "…";
 
   const sections = [
     {
-      label: "Scenes",
-      sub: scenes.length ? scenes.join(" · ") : "None picked yet",
+      label: t`Scenes`,
+      sub: scenes.length ? scenes.join(" · ") : t`None picked yet`,
       to: "/$workspace/s/$switcher/scenes",
     },
-    { label: "Stream servers", sub: serversSub, to: "/$workspace/s/$switcher/servers" },
+    { label: t`Stream servers`, sub: serversSub, to: "/$workspace/s/$switcher/servers" },
     {
-      label: "Chat & commands",
-      sub: `Prefix ${switcher.chat.command_prefix}`,
+      label: t`Chat & commands`,
+      sub: t`Prefix ${switcher.chat.command_prefix}`,
       to: "/$workspace/s/$switcher/chat",
     },
     {
-      label: "Switcher settings",
-      sub: `OBS port ${switcher.obs.port} · browser-source link · BELABOX Cloud`,
+      label: t`Switcher settings`,
+      sub: t`OBS port ${switcher.obs.port} · browser-source link · BELABOX Cloud`,
       to: "/$workspace/s/$switcher/obs",
     },
   ] as const;
 
   return (
     <nav
-      aria-label="Settings sections"
+      aria-label={t`Settings sections`}
       className="flex flex-col overflow-hidden rounded-2xl border bg-card md:hidden"
     >
       {progress && !progress.complete && (
@@ -77,8 +78,8 @@ export function SettingsHub() {
           className="flex min-h-14 items-center gap-3 border-b border-divider bg-primary-soft px-3.5 py-2 text-primary-soft-foreground"
         >
           <SectionText
-            label="Finish setup"
-            sub={`${progress.done} of ${progress.total} steps done`}
+            label={t`Finish setup`}
+            sub={t`${progress.done} of ${progress.total} steps done`}
           />
         </Link>
       )}
@@ -97,7 +98,7 @@ export function SettingsHub() {
         params={{ workspace: workspace.url_slug }}
         className="flex min-h-14 items-center gap-3 px-3.5 py-2"
       >
-        <SectionText label="Workspace" sub="Members, invites, plan" />
+        <SectionText label={t`Workspace`} sub={t`Members, invites, plan`} />
       </Link>
     </nav>
   );

@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
 import {
   AlertDialog,
@@ -50,7 +51,9 @@ export function ConfirmButton({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

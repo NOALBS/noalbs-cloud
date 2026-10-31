@@ -48,19 +48,19 @@ msgid "free disk space: {disk} GB"
 msgstr "spazio libero su disco: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Nessuna scena LIVE scelta. Scegline una nella pagina Scenes."
+msgstr "Nessuna scena LIVE scelta. Scegline una nella pagina Scene."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Nessuna scena Privacy scelta. Scegline una nella pagina Scenes."
+msgstr "Nessuna scena Privacy scelta. Scegline una nella pagina Scene."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Nessuna scena Starting scelta. Scegline una nella pagina Scenes."
+msgstr "Nessuna scena Inizio scelta. Scegline una nella pagina Scene."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Nessuna scena Ending scelta. Scegline una nella pagina Scenes."
+msgstr "Nessuna scena Fine scelta. Scegline una nella pagina Scene."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Nessuna scena Refresh scelta. Scegline una nella pagina Scenes."
+msgstr "Nessuna scena Aggiorna scelta. Scegline una nella pagina Scene."
 
 msgid "Switched to the LIVE scene"
 msgstr "Passato alla scena LIVE"
@@ -69,13 +69,13 @@ msgid "Switched to the Privacy scene"
 msgstr "Passato alla scena Privacy"
 
 msgid "Switched to the Starting scene"
-msgstr "Passato alla scena Starting"
+msgstr "Passato alla scena Inizio"
 
 msgid "Switched to the Ending scene"
-msgstr "Passato alla scena Ending"
+msgstr "Passato alla scena Fine"
 
 msgid "Switched to the Refresh scene"
-msgstr "Passato alla scena Refresh"
+msgstr "Passato alla scena Aggiorna"
 
 msgid "Chat notifications on"
 msgstr "Notifiche in chat attivate"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Niente da riparare: nessuna sorgente di stream è in riproduzione su {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Nessuna scena Refresh scelta, quindi riparo al suo posto. {result}"
+msgstr "Nessuna scena Aggiorna scelta, quindi riparo al suo posto. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} ora è visibile"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Tempo limite offline raggiunto, arresto della diretta"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Tempo limite della scena Ending raggiunto, arresto della diretta"
+msgstr "Tempo limite della scena Fine raggiunto, arresto della diretta"
 
 msgid "Ignoring {name} from now on"
 msgstr "{name} sarà ignorato da ora in poi"

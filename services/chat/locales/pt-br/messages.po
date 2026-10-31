@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "espaço livre em disco: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Nenhuma cena LIVE foi escolhida ainda. Escolha uma na página Scenes."
+msgstr "Nenhuma cena LIVE foi escolhida ainda. Escolha uma na página Cenas."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Nenhuma cena Privacy foi escolhida ainda. Escolha uma na página Scenes."
+msgstr "Nenhuma cena Privacidade foi escolhida ainda. Escolha uma na página Cenas."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Nenhuma cena Starting foi escolhida ainda. Escolha uma na página Scenes."
+msgstr "Nenhuma cena Início foi escolhida ainda. Escolha uma na página Cenas."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Nenhuma cena Ending foi escolhida ainda. Escolha uma na página Scenes."
+msgstr "Nenhuma cena Encerramento foi escolhida ainda. Escolha uma na página Cenas."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Nenhuma cena Refresh foi escolhida ainda. Escolha uma na página Scenes."
+msgstr "Nenhuma cena Atualizar foi escolhida ainda. Escolha uma na página Cenas."
 
 msgid "Switched to the LIVE scene"
 msgstr "Trocado para a cena LIVE"
 
 msgid "Switched to the Privacy scene"
-msgstr "Trocado para a cena Privacy"
+msgstr "Trocado para a cena Privacidade"
 
 msgid "Switched to the Starting scene"
-msgstr "Trocado para a cena Starting"
+msgstr "Trocado para a cena Início"
 
 msgid "Switched to the Ending scene"
-msgstr "Trocado para a cena Ending"
+msgstr "Trocado para a cena Encerramento"
 
 msgid "Switched to the Refresh scene"
-msgstr "Trocado para a cena Refresh"
+msgstr "Trocado para a cena Atualizar"
 
 msgid "Chat notifications on"
 msgstr "Notificações no chat ligadas"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Nada para consertar: nenhuma fonte de stream está tocando em {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Nenhuma cena Refresh foi escolhida, consertando em vez disso. {result}"
+msgstr "Nenhuma cena Atualizar foi escolhida, consertando em vez disso. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} agora está visível"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Tempo offline excedido, parando a stream"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Tempo da cena Ending excedido, parando a stream"
+msgstr "Tempo da cena Encerramento excedido, parando a stream"
 
 msgid "Ignoring {name} from now on"
 msgstr "Ignorando {name} a partir de agora"

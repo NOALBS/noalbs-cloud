@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2, LayoutGrid, Link2, Plus, Radio } from "lucide-react";
@@ -22,15 +24,19 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
   return (
     <div className="flex min-h-dvh">
       <aside className="sticky top-0 hidden h-dvh w-66 shrink-0 flex-col gap-5 overflow-y-auto border-r border-divider bg-sunken px-3 py-3.5 md:flex">
-        <Link to="/" aria-label="Home" className="flex h-12 shrink-0 items-center px-2.5">
+        <Link to="/" aria-label={t`Home`} className="flex h-12 shrink-0 items-center px-2.5">
           <Wordmark className="text-base" />
         </Link>
 
-        <nav aria-label="All workspaces" className="flex flex-col gap-0.5">
-          <span className={SECTION_LABEL}>ALL YOUR WORKSPACES</span>
+        <nav aria-label={t`All workspaces`} className="flex flex-col gap-0.5">
+          <span className={SECTION_LABEL}>
+            <Trans>ALL YOUR WORKSPACES</Trans>
+          </span>
           <Link to="/workspaces" activeOptions={{ exact: true }} className={NAV_LINK}>
             <LayoutGrid className="size-4" />
-            <span className="flex-1">Workspaces</span>
+            <span className="flex-1">
+              <Trans>Workspaces</Trans>
+            </span>
             {workspaces.data && (
               <span className="font-mono text-[11px] tabular text-muted-foreground">
                 {workspaces.data.length}
@@ -39,13 +45,17 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
           </Link>
           <Link to="/workspaces/live" className={NAV_LINK}>
             <Radio className="size-4" />
-            <span className="flex-1">Live</span>
+            <span className="flex-1">
+              <Trans>Live</Trans>
+            </span>
           </Link>
         </nav>
 
         {organizations.data && organizations.data.length > 0 && (
-          <nav aria-label="Organizations" className="flex flex-col gap-0.5">
-            <span className={SECTION_LABEL}>ORGANIZATIONS</span>
+          <nav aria-label={t`Organizations`} className="flex flex-col gap-0.5">
+            <span className={SECTION_LABEL}>
+              <Trans>ORGANIZATIONS</Trans>
+            </span>
             {organizations.data.map((organization) => (
               <Link
                 key={organization.id}
@@ -60,14 +70,14 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
           </nav>
         )}
 
-        <nav aria-label="Add" className="flex flex-col gap-0.5">
+        <nav aria-label={t`Add`} className="flex flex-col gap-0.5">
           <Link to="/welcome" search={{ mode: "create" }} className={NAV_LINK}>
             <Plus className="size-4" />
-            Create workspace
+            <Trans>Create workspace</Trans>
           </Link>
           <Link to="/welcome" search={{ mode: "join" }} className={NAV_LINK}>
             <Link2 className="size-4" />
-            Join with invite link
+            <Trans>Join with invite link</Trans>
           </Link>
         </nav>
 
@@ -78,7 +88,7 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-15 items-center justify-between gap-3 border-b border-divider bg-background/95 px-4 backdrop-blur md:hidden">
-          <Link to="/" aria-label="Home" className="flex min-h-11 items-center">
+          <Link to="/" aria-label={t`Home`} className="flex min-h-11 items-center">
             <Wordmark className="text-base" />
           </Link>
           <UserMenu me={me} workspaceSlug={accountWorkspace} compact />
@@ -88,16 +98,16 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
         <main className="flex-1 pb-24 md:pb-0">{children}</main>
 
         <nav
-          aria-label="Primary"
+          aria-label={t`Primary`}
           className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-divider bg-sunken pb-[env(safe-area-inset-bottom)] md:hidden"
         >
           <Link to="/workspaces" activeOptions={{ exact: true }} className={TAB_CLASS}>
             <LayoutGrid className="size-5.5" />
-            Workspaces
+            <Trans>Workspaces</Trans>
           </Link>
           <Link to="/workspaces/live" className={TAB_CLASS}>
             <Radio className="size-5.5" />
-            Live
+            <Trans>Live</Trans>
           </Link>
         </nav>
       </div>

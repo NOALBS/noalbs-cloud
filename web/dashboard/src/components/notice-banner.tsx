@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Info, OctagonAlert, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -57,7 +59,7 @@ export function NoticeBanners() {
   if (shown.length === 0) return null;
 
   return (
-    <section aria-label="Notices">
+    <section aria-label={t`Notices`}>
       {shown.map((notice) => (
         <NoticeRow key={notice.id} notice={notice} onDismiss={() => dismiss(notice.id)} />
       ))}
@@ -85,7 +87,7 @@ function NoticeRow({ notice, onDismiss }: { notice: Notice; onDismiss: () => voi
         {notice.message}
         {notice.ends_at && (
           <span className="ml-2 text-xs opacity-70">
-            Until {new Date(notice.ends_at).toLocaleString(currentLocale())}
+            <Trans>Until {new Date(notice.ends_at).toLocaleString(currentLocale())}</Trans>
           </span>
         )}
       </span>
@@ -93,7 +95,7 @@ function NoticeRow({ notice, onDismiss }: { notice: Notice; onDismiss: () => voi
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label={t`Dismiss`}
           className="-my-1 -mr-2 flex size-8 shrink-0 items-center justify-center rounded-md opacity-70 hover:opacity-100"
         >
           <X className="size-4" />

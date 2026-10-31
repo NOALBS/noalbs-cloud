@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ObsScenes } from "@/api/types";
 import {
   Select,
@@ -17,7 +18,7 @@ export function ScenePicker({
   obs,
   disabled,
   onChange,
-  noneLabel = "Not set",
+  noneLabel = t`Not set`,
   className,
 }: {
   label: string;
@@ -37,13 +38,13 @@ export function ScenePicker({
       onValueChange={(next) => onChange(next === NOT_SET ? null : next)}
       disabled={disabled}
     >
-      <SelectTrigger className={cn("w-full sm:w-56", className)} aria-label={`Scene for ${label}`}>
+      <SelectTrigger className={cn("w-full sm:w-56", className)} aria-label={t`Scene for ${label}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={NOT_SET}>{noneLabel}</SelectItem>
         {value != null && !known && (
-          <SelectItem value={value}>{obs ? "Scene not in OBS" : "Set"}</SelectItem>
+          <SelectItem value={value}>{obs ? t`Scene not in OBS` : t`Set`}</SelectItem>
         )}
         {scenes.map((scene) => (
           <SelectItem key={scene.uuid} value={scene.uuid as string}>

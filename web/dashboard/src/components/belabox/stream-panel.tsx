@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { BelaboxDetails } from "@/api/types";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,15 +46,15 @@ export function AudioPanel({ details, form, errors, patch, disabled }: FormProps
 
   return (
     <div className="flex flex-col gap-3">
-      <Section title="Encoder" description="What the BELABOX encodes the picture with.">
-        <Field label="Pipeline" error={errors.pipeline}>
+      <Section title={t`Encoder`} description={t`What the BELABOX encodes the picture with.`}>
+        <Field label={t`Pipeline`} error={errors.pipeline}>
           <Select
             value={form.pipeline}
             onValueChange={(value) => patch({ pipeline: value })}
             disabled={disabled}
           >
-            <SelectTrigger className="w-full" aria-label="Pipeline">
-              <SelectValue placeholder="Pick a pipeline" />
+            <SelectTrigger className="w-full" aria-label={t`Pipeline`}>
+              <SelectValue placeholder={t`Pick a pipeline`} />
             </SelectTrigger>
             <SelectContent>
               {details.pipelines.map((option) => (
@@ -68,45 +70,47 @@ export function AudioPanel({ details, form, errors, patch, disabled }: FormProps
           className="flex items-center justify-between gap-3 text-sm"
         >
           <span className="flex flex-col">
-            Bitrate overlay
-            <span className="text-xs text-muted-foreground">
-              Shows the bitrate on the video. Leave it off for a stream.
-            </span>
+            <Trans>
+              Bitrate overlay
+              <span className="text-xs text-muted-foreground">
+                Shows the bitrate on the video. Leave it off for a stream.
+              </span>
+            </Trans>
           </span>
           <Switch
             id="belabox-overlay"
             checked={form.bitrateOverlay}
             onCheckedChange={(bitrateOverlay) => patch({ bitrateOverlay })}
             disabled={disabled}
-            aria-label="Bitrate overlay"
+            aria-label={t`Bitrate overlay`}
           />
         </label>
       </Section>
 
       <Section
-        title="Audio"
+        title={t`Audio`}
         description={
           pipeline && !pipeline.audio_source && !pipeline.audio_codec
-            ? "This pipeline has no audio settings."
+            ? t`This pipeline has no audio settings.`
             : undefined
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">
           {pipeline?.audio_source && (
-            <Field label="Audio source" error={errors.audioSource}>
+            <Field label={t`Audio source`} error={errors.audioSource}>
               <Select
                 value={form.audioSource}
                 onValueChange={(audioSource) => patch({ audioSource })}
                 disabled={disabled}
               >
-                <SelectTrigger className="w-full" aria-label="Audio source">
-                  <SelectValue placeholder="Pick a source" />
+                <SelectTrigger className="w-full" aria-label={t`Audio source`}>
+                  <SelectValue placeholder={t`Pick a source`} />
                 </SelectTrigger>
                 <SelectContent>
                   {sources.map((source) => (
                     <SelectItem key={source} value={source}>
                       {source}
-                      {!details.audio_sources.includes(source) && " (not found now)"}
+                      {!details.audio_sources.includes(source) && t` (not found now)`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -114,14 +118,14 @@ export function AudioPanel({ details, form, errors, patch, disabled }: FormProps
             </Field>
           )}
           {pipeline?.audio_codec && (
-            <Field label="Audio codec" error={errors.audioCodec}>
+            <Field label={t`Audio codec`} error={errors.audioCodec}>
               <Select
                 value={form.audioCodec}
                 onValueChange={(audioCodec) => patch({ audioCodec })}
                 disabled={disabled}
               >
-                <SelectTrigger className="w-full" aria-label="Audio codec">
-                  <SelectValue placeholder="Pick a codec" />
+                <SelectTrigger className="w-full" aria-label={t`Audio codec`}>
+                  <SelectValue placeholder={t`Pick a codec`} />
                 </SelectTrigger>
                 <SelectContent>
                   {details.audio_codecs.map((codec) => (
@@ -134,10 +138,10 @@ export function AudioPanel({ details, form, errors, patch, disabled }: FormProps
             </Field>
           )}
           <Field
-            label="Audio delay (ms)"
+            label={t`Audio delay (ms)`}
             htmlFor="belabox-audio-delay"
             error={errors.audioDelay}
-            hint={`Shifts the audio against the video, ${AUDIO_DELAY_MIN} to ${AUDIO_DELAY_MAX}.`}
+            hint={t`Shifts the audio against the video, ${AUDIO_DELAY_MIN} to ${AUDIO_DELAY_MAX}.`}
           >
             <Input
               id="belabox-audio-delay"
@@ -161,12 +165,12 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
 
   return (
     <div className="flex flex-col gap-3">
-      <Section title="Latency">
+      <Section title={t`Latency`}>
         <Field
-          label="SRT latency (ms)"
+          label={t`SRT latency (ms)`}
           htmlFor="belabox-srt-latency"
           error={errors.srtLatency}
-          hint={`More latency survives worse connections, ${SRT_LATENCY_MIN} to ${SRT_LATENCY_MAX}.`}
+          hint={t`More latency survives worse connections, ${SRT_LATENCY_MIN} to ${SRT_LATENCY_MAX}.`}
         >
           <Input
             id="belabox-srt-latency"
@@ -180,16 +184,16 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
         </Field>
       </Section>
 
-      <Section title="Server" description="Where the BELABOX sends the stream.">
+      <Section title={t`Server`} description={t`Where the BELABOX sends the stream.`}>
         <div
           role="radiogroup"
-          aria-label="Server"
+          aria-label={t`Server`}
           className="flex gap-1.5 rounded-lg bg-surface-2 p-1"
         >
           {(
             [
-              ["relay", "BELABOX relay"],
-              ["own", "Own server"],
+              ["relay", t`BELABOX relay`],
+              ["own", t`Own server`],
             ] as const
           ).map(([server, label]) => (
             <button
@@ -212,14 +216,14 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
 
         {form.server === "relay" ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Relay server" error={errors.relayServer}>
+            <Field label={t`Relay server`} error={errors.relayServer}>
               <Select
                 value={form.relayServer}
                 onValueChange={(relayServer) => patch({ relayServer })}
                 disabled={disabled}
               >
-                <SelectTrigger className="w-full" aria-label="Relay server">
-                  <SelectValue placeholder="Pick a server" />
+                <SelectTrigger className="w-full" aria-label={t`Relay server`}>
+                  <SelectValue placeholder={t`Pick a server`} />
                 </SelectTrigger>
                 <SelectContent>
                   {details.relay_servers.map((server) => (
@@ -230,7 +234,7 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Relay account" error={errors.relayAccount}>
+            <Field label={t`Relay account`} error={errors.relayAccount}>
               <Select
                 value={form.relayAccount === "" ? NO_ACCOUNT : form.relayAccount}
                 onValueChange={(value) =>
@@ -238,15 +242,17 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
                 }
                 disabled={disabled}
               >
-                <SelectTrigger className="w-full" aria-label="Relay account">
+                <SelectTrigger className="w-full" aria-label={t`Relay account`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_ACCOUNT}>Use a stream ID instead</SelectItem>
+                  <SelectItem value={NO_ACCOUNT}>
+                    <Trans>Use a stream ID instead</Trans>
+                  </SelectItem>
                   {details.relay_accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id} disabled={account.disabled}>
                       {account.name}
-                      {account.disabled && " (disabled)"}
+                      {account.disabled && t` (disabled)`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,25 +261,25 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
-            <Field label="SRTLA address" error={errors.address}>
+            <Field label={t`SRTLA address`} error={errors.address}>
               <Input
                 value={form.address}
                 onChange={(event) => patch({ address: event.target.value })}
                 disabled={disabled}
                 autoComplete="off"
                 spellCheck={false}
-                aria-label="SRTLA address"
+                aria-label={t`SRTLA address`}
                 aria-invalid={Boolean(errors.address)}
               />
             </Field>
-            <Field label="Port" error={errors.port}>
+            <Field label={t`Port`} error={errors.port}>
               <Input
                 inputMode="numeric"
                 value={form.port}
                 onChange={(event) => patch({ port: event.target.value.replace(/\D/g, "") })}
                 disabled={disabled}
                 className="font-mono tabular"
-                aria-label="SRTLA port"
+                aria-label={t`SRTLA port`}
                 aria-invalid={Boolean(errors.port)}
               />
             </Field>
@@ -282,12 +288,12 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
 
         {!usesAccount && (
           <Field
-            label="Stream ID"
+            label={t`Stream ID`}
             error={errors.streamId}
             hint={
               details.settings.has_stream_id
-                ? "Leave empty to keep the one the BELABOX has."
-                : "The key your server gives you for this stream."
+                ? t`Leave empty to keep the one the BELABOX has.`
+                : t`The key your server gives you for this stream.`
             }
           >
             <Input
@@ -295,9 +301,9 @@ export function StreamPanel({ details, form, errors, patch, disabled }: FormProp
               autoComplete="new-password"
               value={form.streamId}
               onChange={(event) => patch({ streamId: event.target.value })}
-              placeholder={details.settings.has_stream_id ? "Unchanged" : ""}
+              placeholder={details.settings.has_stream_id ? t`Unchanged` : ""}
               disabled={disabled}
-              aria-label="Stream ID"
+              aria-label={t`Stream ID`}
               aria-invalid={Boolean(errors.streamId)}
             />
           </Field>

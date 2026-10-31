@@ -6,7 +6,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ApiRequestError } from "@/api/client";
 import { NotFound } from "@/components/not-found";
-import { initLocale } from "@/lib/locale";
+import { initLocale, useLocale } from "@/lib/locale";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -36,6 +36,12 @@ declare module "@tanstack/react-router" {
   }
 }
 
+/** `t` reads the language when it runs, so a new language renders everything anew. */
+function App() {
+  const { locale } = useLocale();
+  return <RouterProvider key={locale} router={router} />;
+}
+
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root element");
 
@@ -46,7 +52,7 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider i18n={i18n}>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <App />
       </QueryClientProvider>
     </I18nProvider>
   </StrictMode>,

@@ -1,17 +1,18 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { belowUsage, digitsOnly, type LimitsForm } from "@/lib/organizations";
 
-const FIELDS: { key: keyof LimitsForm; label: string; hint: string }[] = [
+const fields = (): { key: keyof LimitsForm; label: string; hint: string }[] => [
   {
     key: "maxSwitchers",
-    label: "Switchers in the pool",
-    hint: "All client workspaces together. Can’t go below the switchers in use; a limit never stops a running one.",
+    label: t`Switchers in the pool`,
+    hint: t`All client workspaces together. Can’t go below the switchers in use; a limit never stops a running one.`,
   },
-  { key: "maxStreamServers", label: "Stream servers per switcher", hint: "In every client." },
-  { key: "maxMembers", label: "Customers per client", hint: "The team isn't counted." },
-  { key: "historyDays", label: "Days of stream history", hint: "Kept for every client." },
+  { key: "maxStreamServers", label: t`Stream servers per switcher`, hint: t`In every client.` },
+  { key: "maxMembers", label: t`Customers per client`, hint: t`The team isn't counted.` },
+  { key: "historyDays", label: t`Days of stream history`, hint: t`Kept for every client.` },
 ];
 
 /** What staff grant an organization: the pooled limits every client workspace shares. */
@@ -36,7 +37,7 @@ export function OrganizationLimitsForm({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        {FIELDS.map((field) => (
+        {fields().map((field) => (
           <div key={field.key} className="flex flex-col gap-1.5">
             <Label htmlFor={`limit-${field.key}`}>{field.label}</Label>
             <Input
@@ -61,7 +62,7 @@ export function OrganizationLimitsForm({
               }
             >
               {field.key === "maxSwitchers" && poolTooLow
-                ? `${switchersInUse} in use: delete some first, or keep at least that many.`
+                ? t`${switchersInUse} in use: delete some first, or keep at least that many.`
                 : field.hint}
             </span>
           </div>

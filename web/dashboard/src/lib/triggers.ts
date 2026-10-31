@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Triggers } from "@/api/types";
 import { currentLocale } from "@/lib/locale";
 
@@ -17,20 +18,20 @@ export function triggerError(triggers: Triggers): string | null {
     value == null || (Number.isInteger(value) && value >= 1 && value <= max);
 
   if (!inRange(triggers.low, 100_000) || !inRange(triggers.offline, 100_000)) {
-    return "Bitrate triggers must be between 1 and 100,000 kbps.";
+    return t`Bitrate triggers must be between 1 and 100,000 kbps.`;
   }
   if (!inRange(triggers.rtt, 60_000) || !inRange(triggers.rtt_offline, 60_000)) {
-    return "RTT triggers must be between 1 and 60,000 ms.";
+    return t`RTT triggers must be between 1 and 60,000 ms.`;
   }
   if (triggers.low != null && triggers.offline != null && triggers.offline >= triggers.low) {
-    return "The BRB bitrate must be lower than the LOW bitrate.";
+    return t`The BRB bitrate must be lower than the LOW bitrate.`;
   }
   if (
     triggers.rtt != null &&
     triggers.rtt_offline != null &&
     triggers.rtt_offline <= triggers.rtt
   ) {
-    return "The BRB RTT must be higher than the LOW RTT.";
+    return t`The BRB RTT must be higher than the LOW RTT.`;
   }
   return null;
 }
@@ -83,16 +84,16 @@ export function bitrateRules(
   const { low, offline } = triggers;
   const rules: { role: SceneRole; range: string }[] = [];
 
-  rules.push({ role: "live", range: low ? `above ${kbps(low)}` : "any bitrate" });
+  rules.push({ role: "live", range: low ? t`above ${kbps(low)}` : t`any bitrate` });
   if (low) {
     rules.push({
       role: "low",
-      range: offline ? `${kbps(offline + 1)} to ${kbps(low)}` : `${kbps(low)} or less`,
+      range: offline ? t`${kbps(offline + 1)} to ${kbps(low)}` : t`${kbps(low)} or less`,
     });
   }
   rules.push({
     role: "offline",
-    range: offline ? `${kbps(offline)} or less, or no feed` : "no feed",
+    range: offline ? t`${kbps(offline)} or less, or no feed` : t`no feed`,
   });
   return rules;
 }

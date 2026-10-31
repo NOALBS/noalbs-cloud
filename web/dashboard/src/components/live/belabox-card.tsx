@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Minus, Pencil, Play, Plus, Square, X } from "lucide-react";
@@ -137,21 +139,23 @@ export function BelaboxCard({
   const online = view.kind === "online" ? view.status : null;
 
   const chip = {
-    loading: { label: "CONNECTING…", tone: "text-muted-foreground", fill: "bg-idle" },
-    idle: { label: "NOT CONNECTED", tone: "text-muted-foreground", fill: "bg-idle" },
-    connecting: { label: "CONNECTING…", tone: "text-muted-foreground", fill: "bg-idle" },
-    invalid_key: { label: "KEY REFUSED", tone: "text-offline", fill: "bg-offline" },
-    offline: { label: "OFFLINE", tone: "text-offline", fill: "bg-offline" },
+    loading: { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" },
+    idle: { label: t`NOT CONNECTED`, tone: "text-muted-foreground", fill: "bg-idle" },
+    connecting: { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" },
+    invalid_key: { label: t`KEY REFUSED`, tone: "text-offline", fill: "bg-offline" },
+    offline: { label: t`OFFLINE`, tone: "text-offline", fill: "bg-offline" },
     online: online?.streaming
-      ? { label: "STREAMING", tone: "text-live", fill: "bg-live" }
-      : { label: "READY", tone: "text-muted-foreground", fill: "bg-idle" },
+      ? { label: t`STREAMING`, tone: "text-live", fill: "bg-live" }
+      : { label: t`READY`, tone: "text-muted-foreground", fill: "bg-idle" },
   }[view.kind];
 
   return (
     <section aria-label="BELABOX" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">BELABOX</span>
+          <span className="text-sm font-semibold">
+            <Trans>BELABOX</Trans>
+          </span>
           <span
             className={cn(
               "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
@@ -172,27 +176,33 @@ export function BelaboxCard({
 
       {view.kind === "idle" && (
         <p className="text-sm text-muted-foreground">
-          Connects to BELABOX Cloud while OBS is open with the browser source.
+          <Trans>Connects to BELABOX Cloud while OBS is open with the browser source.</Trans>
         </p>
       )}
       {view.kind === "connecting" && (
-        <p className="text-sm text-muted-foreground">Connecting to BELABOX Cloud…</p>
+        <p className="text-sm text-muted-foreground">
+          <Trans>Connecting to BELABOX Cloud…</Trans>
+        </p>
       )}
       {view.kind === "offline" && (
         <p className="text-sm text-muted-foreground">
-          The BELABOX isn’t connected to BELABOX Cloud. Check that it’s on and online.
+          <Trans>
+            The BELABOX isn’t connected to BELABOX Cloud. Check that it’s on and online.
+          </Trans>
         </p>
       )}
       {view.kind === "invalid_key" && (
         <p className="text-sm text-muted-foreground">
-          BELABOX Cloud refused the secret URL.{" "}
-          <Link
-            to="/$workspace/s/$switcher/obs"
-            params={settingsLink}
-            className="font-semibold text-primary hover:underline"
-          >
-            Check it in the settings
-          </Link>
+          <Trans>
+            BELABOX Cloud refused the secret URL.{" "}
+            <Link
+              to="/$workspace/s/$switcher/obs"
+              params={settingsLink}
+              className="font-semibold text-primary hover:underline"
+            >
+              Check it in the settings
+            </Link>
+          </Trans>
         </p>
       )}
 
@@ -200,7 +210,10 @@ export function BelaboxCard({
         <>
           <span className="font-mono text-xl font-semibold tabular">
             {formatKbps(online.total_kbps)}
-            <span className="text-xs font-normal text-muted-foreground"> kbps sent</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {" "}
+              <Trans>kbps sent</Trans>
+            </span>
           </span>
           <MaxBitrate
             controls={controls}
@@ -229,7 +242,7 @@ export function BelaboxCard({
             ))}
             {online.interfaces.length === 0 && (
               <li className="py-2 text-sm text-muted-foreground">
-                No network interfaces reported.
+                <Trans>No network interfaces reported.</Trans>
               </li>
             )}
           </ul>
@@ -261,11 +274,11 @@ export function BelaboxCard({
           <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
             {[
               ...online.sensors.map((sensor) => [sensor.name, sensor.value] as const),
-              ...(online.pipeline ? [["Pipeline", online.pipeline] as const] : []),
+              ...(online.pipeline ? [[t`Pipeline`, online.pipeline] as const] : []),
               ...(online.srt_latency != null
-                ? [["SRT latency", `${formatKbps(online.srt_latency)} ms`] as const]
+                ? [[t`SRT latency`, `${formatKbps(online.srt_latency)} ms`] as const]
                 : []),
-              ...(online.relay ? [["Relay", online.relay] as const] : []),
+              ...(online.relay ? [[t`Relay`, online.relay] as const] : []),
             ].map(([name, value]) => (
               <div
                 key={name}
@@ -288,7 +301,7 @@ function StreamToggle({ controls, streaming }: { controls: Controls; streaming: 
     return (
       <Button size="sm" onClick={() => stream.mutate(true)} disabled={stream.isPending}>
         <Play className="size-3.5" />
-        Start
+        <Trans>Start</Trans>
       </Button>
     );
   }
@@ -297,20 +310,24 @@ function StreamToggle({ controls, streaming }: { controls: Controls; streaming: 
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="outline" disabled={stream.isPending}>
           <Square className="size-3.5" />
-          Stop
+          <Trans>Stop</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Stop the BELABOX stream?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Stop the BELABOX stream?</Trans>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            The BELABOX stops sending, so the stream server loses the feed.
+            <Trans>The BELABOX stops sending, so the stream server loses the feed.</Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep streaming</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Keep streaming</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => stream.mutate(false)}>
-            Stop BELABOX
+            <Trans>Stop BELABOX</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -351,21 +368,23 @@ function MaxBitrate({
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs tracking-wider text-muted-foreground uppercase">Max bitrate</span>
+        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+          <Trans>Max bitrate</Trans>
+        </span>
         {canControl ? (
           <div className="flex items-center gap-1.5">
             <Button
               size="icon"
               variant="outline"
               className="size-8"
-              aria-label="Lower the max bitrate"
+              aria-label={t`Lower the max bitrate`}
               onClick={() => maxBr != null && set(stepBitrate(maxBr, -1))}
               disabled={bitrate.isPending || maxBr == null || maxBr <= BELABOX_MIN_BITRATE}
             >
               <Minus className="size-3.5" />
             </Button>
             <Input
-              aria-label="Max bitrate in kbps"
+              aria-label={t`Max bitrate in kbps`}
               inputMode="numeric"
               value={draft ?? (maxBr != null ? String(maxBr) : "")}
               placeholder="kbps"
@@ -382,13 +401,15 @@ function MaxBitrate({
               size="icon"
               variant="outline"
               className="size-8"
-              aria-label="Raise the max bitrate"
+              aria-label={t`Raise the max bitrate`}
               onClick={() => maxBr != null && set(stepBitrate(maxBr, 1))}
               disabled={bitrate.isPending || maxBr == null || maxBr >= BELABOX_MAX_BITRATE}
             >
               <Plus className="size-3.5" />
             </Button>
-            <span className="text-xs text-muted-foreground">kbps</span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>kbps</Trans>
+            </span>
           </div>
         ) : (
           <span className="font-mono text-sm tabular">
@@ -398,7 +419,7 @@ function MaxBitrate({
       </div>
       {canControl && !streaming && (
         <span className="text-[11px] text-muted-foreground">
-          Used from the next start (here, chat or with the OBS stream).
+          <Trans>Used from the next start (here, chat or with the OBS stream).</Trans>
         </span>
       )}
     </div>
@@ -476,7 +497,7 @@ function InterfaceRow({
             checked={netif.enabled}
             onCheckedChange={(enabled) => toggle.mutate({ name: netif.name, enabled })}
             disabled={toggle.isPending || (netif.enabled && !canTurnOff)}
-            aria-label={`${netif.enabled ? "Turn off" : "Turn on"} ${netif.name}`}
+            aria-label={`${netif.enabled ? t`Turn off` : t`Turn on`} ${netif.name}`}
           />
         )}
       </div>
@@ -520,7 +541,7 @@ function RenameInterface({
       <PopoverTrigger asChild>
         <button
           type="button"
-          title="Name this interface"
+          title={t`Name this interface`}
           className="group flex max-w-full items-center gap-1 text-left font-[inherit] hover:text-primary"
         >
           <span className="min-w-0">{title}</span>
@@ -541,17 +562,19 @@ function RenameInterface({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             maxLength={INTERFACE_LABEL_MAX}
-            placeholder="Name, e.g. Phone A"
-            aria-label="Interface name"
+            placeholder={t`Name, e.g. Phone A`}
+            aria-label={t`Interface name`}
           />
           <p className="text-xs text-muted-foreground">
-            The name tries to follow the device when its port changes (usb0 → usb1), but the BELABOX
-            doesn’t always let us tell devices apart, so it can end up on the wrong one, e.g. with
-            two identical WiFi adapters or ethernet ports. Check the interface name shown under it.
-            Leave it empty to remove the name.
+            <Trans>
+              The name tries to follow the device when its port changes (usb0 → usb1), but the
+              BELABOX doesn’t always let us tell devices apart, so it can end up on the wrong one,
+              e.g. with two identical WiFi adapters or ethernet ports. Check the interface name
+              shown under it. Leave it empty to remove the name.
+            </Trans>
           </p>
           <Button type="submit" size="sm" disabled={pending}>
-            Save
+            <Trans>Save</Trans>
           </Button>
         </form>
       </PopoverContent>
@@ -572,7 +595,9 @@ function SavedNames({
   if (names.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-      <span>Names without a device:</span>
+      <span>
+        <Trans>Names without a device:</Trans>
+      </span>
       {names.map(({ key, label }) => (
         <span
           key={key}
@@ -583,7 +608,7 @@ function SavedNames({
             type="button"
             disabled={pending}
             onClick={() => onForget(key)}
-            aria-label={`Remove the name ${label}`}
+            aria-label={t`Remove the name ${label}`}
             className="rounded-full p-0.5 hover:bg-muted hover:text-foreground"
           >
             <X className="size-3" />

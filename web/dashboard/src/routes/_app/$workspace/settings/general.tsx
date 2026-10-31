@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
@@ -25,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { errorMessage } from "@/lib/errors";
-import { can, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/permissions";
+import { can, roleDescriptions, roleLabels } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/$workspace/settings/general")({
   component: GeneralSettings,
@@ -48,7 +50,7 @@ function GeneralSettings() {
       ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
-      toast.success("Workspace renamed");
+      toast.success(t`Workspace renamed`);
     },
   });
 
@@ -64,7 +66,7 @@ function GeneralSettings() {
       await navigate({ to: "/" });
       await queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
       await queryClient.invalidateQueries({ queryKey: queryKeys.me });
-      toast.success(`You left ${workspace.name}`);
+      toast.success(t`You left ${workspace.name}`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -75,11 +77,13 @@ function GeneralSettings() {
   };
 
   return (
-    <Page title="Settings" description="The basics of this workspace.">
-      <Section title="Workspace">
+    <Page title={t`Settings`} description={t`The basics of this workspace.`}>
+      <Section title={t`Workspace`}>
         <form onSubmit={submit} className="flex flex-col gap-5 px-5 pb-5">
           <div className="flex max-w-md flex-col gap-2">
-            <Label htmlFor="workspace-name">Name</Label>
+            <Label htmlFor="workspace-name">
+              <Trans>Name</Trans>
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="workspace-name"
@@ -93,7 +97,7 @@ function GeneralSettings() {
                   type="submit"
                   disabled={!name.trim() || name.trim() === workspace.name || rename.isPending}
                 >
-                  Save
+                  <Trans>Save</Trans>
                 </Button>
               )}
             </div>
@@ -102,7 +106,9 @@ function GeneralSettings() {
             )}
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold">URL</span>
+            <span className="text-sm font-semibold">
+              <Trans>URL</Trans>
+            </span>
             <span className="font-mono text-sm text-muted-foreground">
               {window.location.host}/{workspace.url_slug}
             </span>
@@ -110,21 +116,21 @@ function GeneralSettings() {
         </form>
       </Section>
 
-      <Section title="Your role">
+      <Section title={t`Your role`}>
         <div className="flex flex-col gap-1 px-5 pb-5 text-sm">
           <span className="font-semibold">
             {workspace.role
-              ? ROLE_LABELS[workspace.role]
+              ? roleLabels()[workspace.role]
               : workspace.organization_role
-                ? `Team of ${workspace.managed_by?.name ?? "the organization"}`
-                : "Staff (not a member)"}
+                ? t`Team of ${workspace.managed_by?.name ?? "the organization"}`
+                : t`Staff (not a member)`}
           </span>
           <span className="text-muted-foreground">
             {workspace.role
-              ? ROLE_DESCRIPTIONS[workspace.role]
+              ? roleDescriptions()[workspace.role]
               : workspace.organization_role
-                ? "You run this workspace as part of the organization that owns it."
-                : "You're here as NOALBS support, with the workspace's permission or emergency access. Its owners and admins see everything you do here, and its secrets are hidden from you."}
+                ? t`You run this workspace as part of the organization that owns it.`
+                : t`You're here as NOALBS support, with the workspace's permission or emergency access. Its owners and admins see everything you do here, and its secrets are hidden from you.`}
           </span>
         </div>
       </Section>
@@ -133,8 +139,8 @@ function GeneralSettings() {
 
       {workspace.role && workspace.role !== "owner" && (
         <Section
-          title="Leave workspace"
-          description="You’ll lose access until someone invites you again."
+          title={t`Leave workspace`}
+          description={t`You’ll lose access until someone invites you again.`}
           className="border-destructive/40"
         >
           <div className="px-5 pb-5">
@@ -144,20 +150,24 @@ function GeneralSettings() {
                   variant="outline"
                   className="border-destructive/50 text-destructive-foreground"
                 >
-                  Leave {workspace.name}
+                  <Trans>Leave {workspace.name}</Trans>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Leave {workspace.name}?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    <Trans>Leave {workspace.name}</Trans>?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    You’ll lose access to its switchers straight away.
+                    <Trans>You’ll lose access to its switchers straight away.</Trans>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Stay</AlertDialogCancel>
+                  <AlertDialogCancel>
+                    <Trans>Stay</Trans>
+                  </AlertDialogCancel>
                   <AlertDialogAction variant="destructive" onClick={() => leave.mutate()}>
-                    Leave
+                    <Trans>Leave</Trans>
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -176,25 +186,29 @@ function GeneralSettings() {
 
       {can(actor, "workspace.delete") && (
         <Section
-          title="Delete workspace"
-          description="Deletes its switchers, stream history, members and invites. This can’t be undone."
+          title={t`Delete workspace`}
+          description={t`Deletes its switchers, stream history, members and invites. This can’t be undone.`}
           className="border-destructive/40"
         >
           <div className="px-5 pb-5">
             <TypeToConfirm
-              trigger={`Delete ${workspace.name}`}
-              title={`Delete ${workspace.name}?`}
+              trigger={t`Delete ${workspace.name}`}
+              title={t`Delete ${workspace.name}?`}
               description={
                 <>
                   <p>
-                    Everything in it is deleted for good: switchers, stream history, members and
-                    invites. OBS browser sources stop working.
+                    <Trans>
+                      Everything in it is deleted for good: switchers, stream history, members and
+                      invites. OBS browser sources stop working.
+                    </Trans>
                   </p>
-                  <p>A subscription ends straight away, without a refund.</p>
+                  <p>
+                    <Trans>A subscription ends straight away, without a refund.</Trans>
+                  </p>
                 </>
               }
               phrase={workspace.url_slug}
-              confirmLabel="Delete workspace"
+              confirmLabel={t`Delete workspace`}
               onConfirm={async () => {
                 await unwrap(
                   api.DELETE("/workspaces/{workspace_id}", {
@@ -205,7 +219,7 @@ function GeneralSettings() {
                 await navigate({ to: "/" });
                 await queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
                 await queryClient.invalidateQueries({ queryKey: queryKeys.me });
-                toast.success(`${workspace.name} deleted`);
+                toast.success(t`${workspace.name} deleted`);
               }}
             />
           </div>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import createClient from "openapi-fetch";
 import type { components, paths } from "./schema";
 
@@ -15,8 +16,8 @@ export class NetworkError extends Error {
   constructor(readonly timedOut: boolean) {
     super(
       timedOut
-        ? "NOALBS didn't answer in time. Check your connection and try again."
-        : "Couldn't reach NOALBS. Check your connection and try again.",
+        ? t`NOALBS didn't answer in time. Check your connection and try again.`
+        : t`Couldn't reach NOALBS. Check your connection and try again.`,
     );
     this.name = "NetworkError";
   }
@@ -93,10 +94,10 @@ export async function unwrap<T>(request: Promise<FetchResult<T>>): Promise<T> {
       throw new ApiRequestError(
         response.status,
         "unavailable",
-        "NOALBS isn't answering right now. Try again in a moment.",
+        t`NOALBS isn't answering right now. Try again in a moment.`,
       );
     }
-    throw new ApiRequestError(response.status, "unknown", `Request failed (${response.status})`);
+    throw new ApiRequestError(response.status, "unknown", t`Request failed (${response.status})`);
   }
 
   return data as T;

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -44,14 +46,16 @@ export function AllocationField({
   const tooLow = parsed !== undefined && belowUsage(parsed, inUse);
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor="client-allocation">Switchers</Label>
+      <Label htmlFor="client-allocation">
+        <Trans>Switchers</Trans>
+      </Label>
       <Input
         id="client-allocation"
         value={value}
         onChange={(event) => onChange(digitsOnly(event.target.value))}
         inputMode="numeric"
         maxLength={String(MAX_ALLOCATION).length}
-        placeholder={`No cap (the pool of ${pool})`}
+        placeholder={t`No cap (the pool of ${pool})`}
         aria-invalid={invalid || tooLow}
         className="h-10"
       />
@@ -59,10 +63,10 @@ export function AllocationField({
         className={invalid || tooLow ? "text-xs text-destructive" : "text-xs text-muted-foreground"}
       >
         {invalid
-          ? `A whole number from 0 to ${MAX_ALLOCATION}, or empty.`
+          ? t`A whole number from 0 to ${MAX_ALLOCATION}, or empty.`
           : tooLow
-            ? `${inUse} in use: delete some first, or keep at least that many.`
-            : "The most switchers this client can have. Leave empty to let the pool decide."}
+            ? t`${inUse} in use: delete some first, or keep at least that many.`
+            : t`The most switchers this client can have. Leave empty to let the pool decide.`}
       </p>
     </div>
   );
@@ -101,7 +105,7 @@ export function NewClientDialog({
         queryClient.invalidateQueries({ queryKey: queryKeys.clients(organization.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.organizations }),
       ]);
-      toast.success(`${client.name} was added`);
+      toast.success(t`${client.name} was added`);
       setOpen(false);
       setName("");
       setCustomSlug(null);
@@ -120,20 +124,26 @@ export function NewClientDialog({
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>New client</DialogTitle>
+            <DialogTitle>
+              <Trans>New client</Trans>
+            </DialogTitle>
             <DialogDescription>
-              A workspace for one of your customers. You run it from here; invite the customer when
-              they should get in.
+              <Trans>
+                A workspace for one of your customers. You run it from here; invite the customer
+                when they should get in.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="client-name">Name</Label>
+            <Label htmlFor="client-name">
+              <Trans>Name</Trans>
+            </Label>
             <Input
               id="client-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={60}
-              placeholder="Nomad Live"
+              placeholder={t`Nomad Live`}
               autoFocus
               className="h-10"
             />
@@ -148,13 +158,13 @@ export function NewClientDialog({
           {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="submit"
               disabled={!name.trim() || !slug.ready || parsed === undefined || create.isPending}
             >
-              {create.isPending ? "Creating…" : "Create client"}
+              {create.isPending ? t`Creating…` : t`Create client`}
             </Button>
           </DialogFooter>
         </form>
@@ -192,7 +202,7 @@ export function EditClientDialog({
         queryClient.invalidateQueries({ queryKey: queryKeys.clients(organization.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
       ]);
-      toast.success("Saved");
+      toast.success(t`Saved`);
       setOpen(false);
     },
   });
@@ -218,14 +228,20 @@ export function EditClientDialog({
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Edit {client.name}</DialogTitle>
+            <DialogTitle>
+              <Trans>Edit {client.name}</Trans>
+            </DialogTitle>
             <DialogDescription>
-              The allocation can’t go below the switchers the client has. A limit never stops a
-              running switcher.
+              <Trans>
+                The allocation can’t go below the switchers the client has. A limit never stops a
+                running switcher.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="client-name">Name</Label>
+            <Label htmlFor="client-name">
+              <Trans>Name</Trans>
+            </Label>
             <Input
               id="client-name"
               value={name}
@@ -244,7 +260,7 @@ export function EditClientDialog({
           {save.error && <p className="text-sm text-destructive">{errorMessage(save.error)}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="submit"
@@ -255,7 +271,7 @@ export function EditClientDialog({
                 save.isPending
               }
             >
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? t`Saving…` : t`Save`}
             </Button>
           </DialogFooter>
         </form>

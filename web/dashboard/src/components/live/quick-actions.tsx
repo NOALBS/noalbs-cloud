@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Circle, Play, Square, Wrench } from "lucide-react";
 import { useState } from "react";
@@ -72,8 +74,8 @@ export function useObsControls(path: Path) {
       ),
     onSuccess: ({ scene, sources }) =>
       sources.length > 0
-        ? toast.success(`Reconnecting ${sources.join(", ")}`)
-        : toast.info(`Nothing to fix: no stream source is playing on ${scene}`),
+        ? toast.success(t`Reconnecting ${sources.join(", ")}`)
+        : toast.info(t`Nothing to fix: no stream source is playing on ${scene}`),
     onError,
   });
 
@@ -86,7 +88,7 @@ export function useObsControls(path: Path) {
         }),
       ),
     onSuccess: ({ offset_seconds }) => {
-      toast.success(`Marker added at ${formatOffset(offset_seconds)}`);
+      toast.success(t`Marker added at ${formatOffset(offset_seconds)}`);
       queryClient.invalidateQueries({
         queryKey: queryKeys.streams(path.workspace_id, path.switcher_id),
       });
@@ -130,20 +132,28 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
             className={cn(className, "border-primary bg-primary text-primary-foreground")}
           >
             <Play className="size-4" />
-            Start stream
+            <Trans>Start stream</Trans>
           </button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Start the stream?</AlertDialogTitle>
+            <AlertDialogTitle>
+              <Trans>Start the stream?</Trans>
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              OBS goes live with the scene on air now
-              {status?.current_scene ? ` (${status.current_scene.name})` : ""}.
+              <Trans>
+                OBS goes live with the scene on air now
+                {status?.current_scene ? ` (${status.current_scene.name})` : ""}.
+              </Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Not yet</AlertDialogCancel>
-            <AlertDialogAction onClick={() => stream.mutate(true)}>Start stream</AlertDialogAction>
+            <AlertDialogCancel>
+              <Trans>Not yet</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => stream.mutate(true)}>
+              <Trans>Start stream</Trans>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -159,18 +169,24 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
           className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
         >
           <Square className="size-4" />
-          Stop stream
+          <Trans>Stop stream</Trans>
         </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Stop the stream?</AlertDialogTitle>
-          <AlertDialogDescription>Your viewers will see the stream end.</AlertDialogDescription>
+          <AlertDialogTitle>
+            <Trans>Stop the stream?</Trans>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>Your viewers will see the stream end.</Trans>
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep streaming</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Keep streaming</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => stream.mutate(false)}>
-            Stop stream
+            <Trans>Stop stream</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -205,9 +221,9 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
       <span className="font-mono tabular">
         {recording
           ? paused
-            ? "REC paused"
+            ? t`REC paused`
             : `REC ${status?.recording_started_at ? formatUptime(status.recording_started_at, now) : ""}`
-          : "Record"}
+          : t`Record`}
       </span>
     </button>
   );
@@ -219,15 +235,19 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
       <AlertDialogTrigger asChild>{button}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Stop recording?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Stop recording?</Trans>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            OBS saves the recording so far. Recording again starts a new file.
+            <Trans>OBS saves the recording so far. Recording again starts a new file.</Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep recording</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Keep recording</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => record.mutate(false)}>
-            Stop recording
+            <Trans>Stop recording</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -244,11 +264,11 @@ export function FixButton({ controls, disabled, variant }: Omit<ControlProps, "s
       type="button"
       disabled={disabled || fix.isPending}
       onClick={() => fix.mutate()}
-      title="Reconnect the stream sources playing on the scene on air"
+      title={t`Reconnect the stream sources playing on the scene on air`}
       className={cn(BASE, VARIANT[variant], "bg-card")}
     >
       <Wrench className={cn("size-4", fix.isPending && "animate-pulse")} />
-      Fix feed
+      <Trans>Fix feed</Trans>
     </button>
   );
 }
@@ -272,11 +292,11 @@ export function MarkerButton({
         <button
           type="button"
           disabled={disabled || !streaming}
-          title={streaming ? "Mark this moment on the stream" : "Markers go on a running stream"}
+          title={streaming ? t`Mark this moment on the stream` : t`Markers go on a running stream`}
           className={cn(BASE, VARIANT[variant], "bg-card", className)}
         >
           <Bookmark className="size-4" />
-          Marker
+          <Trans>Marker</Trans>
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))]">
@@ -297,11 +317,11 @@ export function MarkerButton({
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             maxLength={200}
-            placeholder="What happened? (optional)"
-            aria-label="Marker description"
+            placeholder={t`What happened? (optional)`}
+            aria-label={t`Marker description`}
           />
           <Button type="submit" size="sm" disabled={marker.isPending}>
-            Add marker
+            <Trans>Add marker</Trans>
           </Button>
         </form>
       </PopoverContent>
@@ -340,20 +360,22 @@ export function AutoSwitchToggle({
       )}
     >
       <span className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold">Auto switch</span>
+        <span className="text-sm font-semibold">
+          <Trans>Auto switch</Trans>
+        </span>
         <span className="text-xs text-muted-foreground">
           {waiting
-            ? "Waiting: switches once OBS is streaming"
+            ? t`Waiting: switches once OBS is streaming`
             : on
-              ? "Switching scenes on bitrate & RTT"
-              : "Paused: manual scene switching only"}
+              ? t`Switching scenes on bitrate & RTT`
+              : t`Paused: manual scene switching only`}
         </span>
       </span>
       <Switch
         checked={on}
         onCheckedChange={(enabled) => autoSwitch.mutate(enabled)}
         disabled={!canControl || autoSwitch.isPending}
-        aria-label="Auto switch"
+        aria-label={t`Auto switch`}
       />
     </div>
   );

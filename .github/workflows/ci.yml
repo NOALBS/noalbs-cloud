@@ -152,6 +152,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Translation catalogs up to date
+        run: |
+          pnpm i18n:extract
+          git diff --exit-code src/locales
+
       - name: Build
         run: pnpm build
 

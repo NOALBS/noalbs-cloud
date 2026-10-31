@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Lock, RefreshCw, Wifi as WifiIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import type {
@@ -52,7 +54,7 @@ export function WifiPanel({
   if (details.wifi.length === 0) {
     return (
       <p className="rounded-xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-        This BELABOX reports no WiFi adapter.
+        <Trans>This BELABOX reports no WiFi adapter.</Trans>
       </p>
     );
   }
@@ -81,7 +83,7 @@ function Adapter({
   return (
     <Section
       title={title}
-      description={hotspot ? "Running as a hotspot" : "Connected as a WiFi client"}
+      description={hotspot ? t`Running as a hotspot` : t`Connected as a WiFi client`}
     >
       {hotspot ? (
         <HotspotSettings device={device} hotspot={hotspot} config={config} canManage={canManage} />
@@ -107,7 +109,7 @@ function HotspotToggle({ device, config }: { device: BelaboxWifiDevice; config: 
         disabled={config.hotspot.isPending}
         onClick={() => config.hotspot.mutate({ device: device.id, active: false })}
       >
-        Stop hotspot
+        <Trans>Stop hotspot</Trans>
       </Button>
     );
   }
@@ -115,23 +117,29 @@ function HotspotToggle({ device, config }: { device: BelaboxWifiDevice; config: 
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="outline" disabled={config.hotspot.isPending}>
-          Start hotspot
+          <Trans>Start hotspot</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Start the hotspot on {device.interface}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Start the hotspot on {device.interface}</Trans>?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            The adapter leaves its WiFi network and other devices can connect to it instead. The
-            BELABOX can’t use that WiFi to stream until you stop the hotspot.
+            <Trans>
+              The adapter leaves its WiFi network and other devices can connect to it instead. The
+              BELABOX can’t use that WiFi to stream until you stop the hotspot.
+            </Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => config.hotspot.mutate({ device: device.id, active: true })}
           >
-            Start hotspot
+            <Trans>Start hotspot</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -152,7 +160,7 @@ function CurrentNetwork({ device }: { device: BelaboxWifiDevice }) {
             <span className="flex items-center gap-1.5 text-sm font-semibold">
               <span className="truncate">{current.ssid}</span>
               {current.security && (
-                <Lock className="size-3 shrink-0 text-muted-foreground" aria-label="Secured" />
+                <Lock className="size-3 shrink-0 text-muted-foreground" aria-label={t`Secured`} />
               )}
             </span>
             <span className="text-[11px] text-muted-foreground">
@@ -163,7 +171,7 @@ function CurrentNetwork({ device }: { device: BelaboxWifiDevice }) {
       ) : (
         <span className="flex min-w-0 flex-1 items-center gap-3 text-sm text-muted-foreground">
           <WifiIcon className="size-3.5 shrink-0" aria-hidden />
-          Not connected to a WiFi network
+          <Trans>Not connected to a WiFi network</Trans>
         </span>
       )}
     </div>
@@ -184,14 +192,16 @@ function NetworkPicker({
     <Dialog>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          Choose network…
+          <Trans>Choose network…</Trans>
         </Button>
       </DialogTrigger>
       <DialogContent className="flex max-h-[85dvh] flex-col gap-3 sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>WiFi networks</DialogTitle>
+          <DialogTitle>
+            <Trans>WiFi networks</Trans>
+          </DialogTitle>
           <DialogDescription>
-            {device.interface} · the list refreshes by itself; scan to look again.
+            <Trans>{device.interface} · the list refreshes by itself; scan to look again.</Trans>
           </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-3">
@@ -203,7 +213,7 @@ function NetworkPicker({
             disabled={config.scanWifi.isPending}
           >
             <RefreshCw className={cn("size-3.5", config.scanWifi.isPending && "animate-spin")} />
-            Scan
+            <Trans>Scan</Trans>
           </Button>
           <ul className="flex flex-col divide-y divide-divider border-y border-divider">
             {device.networks.map((network) => (
@@ -217,7 +227,7 @@ function NetworkPicker({
             ))}
             {device.networks.length === 0 && (
               <li className="py-2 text-sm text-muted-foreground">
-                No networks found. Scan again, or add one below.
+                <Trans>No networks found. Scan again, or add one below.</Trans>
               </li>
             )}
           </ul>
@@ -255,12 +265,12 @@ function NetworkRow({
           <span className="flex items-center gap-1.5 text-sm font-semibold">
             <span className="truncate">{network.ssid}</span>
             {network.security && (
-              <Lock className="size-3 shrink-0 text-muted-foreground" aria-label="Secured" />
+              <Lock className="size-3 shrink-0 text-muted-foreground" aria-label={t`Secured`} />
             )}
           </span>
           <span className="text-[11px] text-muted-foreground">
             {[
-              network.available ? wifiBand(network.frequency) : "Out of range",
+              network.available ? wifiBand(network.frequency) : t`Out of range`,
               network.connected ? "connected" : saved ? "saved" : null,
             ]
               .filter(Boolean)
@@ -275,7 +285,7 @@ function NetworkRow({
               disabled={busy}
               onClick={() => config.disconnectWifi.mutate(saved)}
             >
-              Disconnect
+              <Trans>Disconnect</Trans>
             </Button>
           )}
           {!network.connected && saved && network.available && (
@@ -285,12 +295,12 @@ function NetworkRow({
               disabled={busy}
               onClick={() => config.connectWifi.mutate(saved)}
             >
-              Connect
+              <Trans>Connect</Trans>
             </Button>
           )}
           {!saved && network.available && canManage && (
             <Button size="sm" variant="outline" onClick={() => setJoining((open) => !open)}>
-              Join
+              <Trans>Join</Trans>
             </Button>
           )}
           {saved && canManage && <Forget ssid={network.ssid} uuid={saved} config={config} />}
@@ -314,20 +324,26 @@ function Forget({ ssid, uuid, config }: { ssid: string; uuid: string; config: Be
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="ghost" disabled={config.forgetWifi.isPending}>
-          Forget
+          <Trans>Forget</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Forget {ssid}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Forget {ssid}</Trans>?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            The BELABOX deletes the saved password and stops joining this network by itself.
+            <Trans>
+              The BELABOX deletes the saved password and stops joining this network by itself.
+            </Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep it</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Keep it</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => config.forgetWifi.mutate(uuid)}>
-            Forget network
+            <Trans>Forget network</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -364,14 +380,14 @@ function JoinForm({
 
   return (
     <form onSubmit={submit} className="flex items-start gap-2">
-      <Field label="Password" error={errors.password} className="flex-1">
+      <Field label={t`Password`} error={errors.password} className="flex-1">
         <Input
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder={secured ? "WiFi password" : "Open network: no password"}
-          aria-label={`Password for ${ssid}`}
+          placeholder={secured ? t`WiFi password` : t`Open network: no password`}
+          aria-label={t`Password for ${ssid}`}
           aria-invalid={Boolean(errors.password)}
         />
       </Field>
@@ -381,7 +397,7 @@ function JoinForm({
         className="mt-[1.4rem]"
         disabled={config.addWifi.isPending || missing || Boolean(errors.password)}
       >
-        Join
+        <Trans>Join</Trans>
       </Button>
     </form>
   );
@@ -397,7 +413,7 @@ function HiddenNetwork({ device, config }: { device: BelaboxWifiDevice; config: 
   if (!open) {
     return (
       <Button size="sm" variant="ghost" className="self-start" onClick={() => setOpen(true)}>
-        Add a network by name…
+        <Trans>Add a network by name…</Trans>
       </Button>
     );
   }
@@ -419,18 +435,18 @@ function HiddenNetwork({ device, config }: { device: BelaboxWifiDevice; config: 
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-start">
-      <Field label="Network name" error={ssid ? errors.ssid : undefined} className="flex-1">
+      <Field label={t`Network name`} error={ssid ? errors.ssid : undefined} className="flex-1">
         <Input
           value={ssid}
           onChange={(event) => setSsid(event.target.value)}
           autoComplete="off"
-          aria-label="Network name"
+          aria-label={t`Network name`}
         />
       </Field>
       <Field
-        label="Password"
+        label={t`Password`}
         error={errors.password}
-        hint="Leave empty for an open network."
+        hint={t`Leave empty for an open network.`}
         className="flex-1"
       >
         <Input
@@ -438,15 +454,15 @@ function HiddenNetwork({ device, config }: { device: BelaboxWifiDevice; config: 
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          aria-label="Password"
+          aria-label={t`Password`}
         />
       </Field>
       <div className="flex gap-2 sm:mt-[1.4rem]">
         <Button type="submit" size="sm" disabled={config.addWifi.isPending || Boolean(errors.ssid)}>
-          Join
+          <Trans>Join</Trans>
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          <Trans>Cancel</Trans>
         </Button>
       </div>
     </form>
@@ -483,36 +499,39 @@ function HotspotSettings({
     <form onSubmit={submit} className="flex flex-col gap-3">
       {hotspot.warnings.includes("modified") && (
         <p className="rounded-lg bg-low/12 px-2.5 py-1.5 text-xs text-low">
-          The hotspot’s settings were changed outside the BELABOX software. Saving here resets them.
+          <Trans>
+            The hotspot’s settings were changed outside the BELABOX software. Saving here resets
+            them.
+          </Trans>
         </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Name" error={errors.name}>
+        <Field label={t`Name`} error={errors.name}>
           <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
             disabled={!canManage}
-            aria-label="Hotspot name"
+            aria-label={t`Hotspot name`}
           />
         </Field>
         <Field
-          label="Password"
+          label={t`Password`}
           error={errors.password}
-          hint={canManage ? "Leave empty to keep the current one." : "Only admins can change it."}
+          hint={canManage ? t`Leave empty to keep the current one.` : t`Only admins can change it.`}
         >
           <Input
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder={hotspot.has_password ? "Unchanged" : ""}
+            placeholder={hotspot.has_password ? t`Unchanged` : ""}
             disabled={!canManage}
-            aria-label="Hotspot password"
+            aria-label={t`Hotspot password`}
           />
         </Field>
-        <Field label="Band">
+        <Field label={t`Band`}>
           <Select value={channel} onValueChange={setChannel} disabled={!canManage}>
-            <SelectTrigger className="w-full" aria-label="Hotspot band">
+            <SelectTrigger className="w-full" aria-label={t`Hotspot band`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -532,7 +551,7 @@ function HotspotSettings({
           className="self-start"
           disabled={!dirty || config.hotspotConfig.isPending}
         >
-          {config.hotspotConfig.isPending ? "Restarting hotspot…" : "Save hotspot"}
+          {config.hotspotConfig.isPending ? t`Restarting hotspot…` : t`Save hotspot`}
         </Button>
       )}
     </form>

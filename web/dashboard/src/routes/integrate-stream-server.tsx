@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { StreamServerKind } from "@/api/types";
@@ -24,7 +26,7 @@ import {
   displayHost,
   LINK_DETAIL_FIELDS,
 } from "@/lib/add-server";
-import { kindInfo, STREAM_SERVER_KINDS } from "@/lib/stream-server-kinds";
+import { kindInfo, streamServerKinds } from "@/lib/stream-server-kinds";
 
 export const Route = createFileRoute("/integrate-stream-server")({
   component: IntegratePage,
@@ -54,39 +56,50 @@ function IntegratePage() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="flex h-16 items-center justify-between border-b border-divider px-4 md:px-8">
-        <Link to="/" aria-label="Home">
+        <Link to="/" aria-label={t`Home`}>
           <Wordmark className="text-base" />
         </Link>
       </header>
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-10">
         <div className="flex flex-col gap-2.5">
-          <h1 className="text-3xl font-bold tracking-tight">Add to NOALBS Cloud</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            <Trans>Add to NOALBS Cloud</Trans>
+          </h1>
           <p className="text-muted-foreground">
-            Running a stream server? Put a link on your site that opens NOALBS Cloud with your stats
-            URL filled in. The streamer signs in, picks a workspace and a switcher, and confirms.
+            <Trans>
+              Running a stream server? Put a link on your site that opens NOALBS Cloud with your
+              stats URL filled in. The streamer signs in, picks a workspace and a switcher, and
+              confirms.
+            </Trans>
           </p>
         </div>
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">The link</h2>
+          <h2 className="text-lg font-semibold">
+            <Trans>The link</Trans>
+          </h2>
           <CopyField
             value={`${window.location.origin}${ADD_SERVER_PATH}#kind=…&url=…`}
-            label="Link format"
+            label={t`Link format`}
           />
           <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
             <li>
-              Everything is in the part after the <code className="font-mono">#</code>, which
-              browsers never send to a server, so stats URLs and keys stay out of our logs. Encode
-              the values (<code className="font-mono">encodeURIComponent</code>).
+              <Trans>
+                Everything is in the part after the <code className="font-mono">#</code>, which
+                browsers never send to a server, so stats URLs and keys stay out of our logs. Encode
+                the values (<code className="font-mono">encodeURIComponent</code>).
+              </Trans>
             </li>
             <li>
-              <code className="font-mono">kind</code> and <code className="font-mono">url</code> are
-              required, <code className="font-mono">name</code> is optional (the streamer can change
-              it). Settings a kind doesn’t use are ignored.
+              <Trans>
+                <code className="font-mono">kind</code> and <code className="font-mono">url</code>{" "}
+                are required, <code className="font-mono">name</code> is optional (the streamer can
+                change it). Settings a kind doesn’t use are ignored.
+              </Trans>
             </li>
             <li>
-              Kinds:{" "}
-              {STREAM_SERVER_KINDS.map((option, index) => (
+              <Trans>Kinds:</Trans>{" "}
+              {streamServerKinds().map((option, index) => (
                 <span key={option.kind}>
                   {index > 0 && ", "}
                   <code className="font-mono">{option.kind}</code>
@@ -95,22 +108,29 @@ function IntegratePage() {
               .
             </li>
             <li>
-              Other settings by kind: <code className="font-mono">publisher</code>,{" "}
-              <code className="font-mono">application</code>, <code className="font-mono">key</code>
-              , <code className="font-mono">listener_id</code>,{" "}
-              <code className="font-mono">username</code>,{" "}
-              <code className="font-mono">password</code> and{" "}
-              <code className="font-mono">api_key</code> (a token for IRLHosting WebSocket). The
-              builder below shows which ones each kind takes.
+              <Trans>
+                Other settings by kind: <code className="font-mono">publisher</code>,{" "}
+                <code className="font-mono">application</code>,{" "}
+                <code className="font-mono">key</code>,{" "}
+                <code className="font-mono">listener_id</code>,{" "}
+                <code className="font-mono">username</code>,{" "}
+                <code className="font-mono">password</code> and{" "}
+                <code className="font-mono">api_key</code> (a token for IRLHosting WebSocket). The
+                builder below shows which ones each kind takes.
+              </Trans>
             </li>
           </ul>
         </section>
 
         <section className="flex flex-col gap-5 rounded-3xl border bg-card p-6">
-          <h2 className="text-lg font-semibold">Link builder</h2>
+          <h2 className="text-lg font-semibold">
+            <Trans>Link builder</Trans>
+          </h2>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="b-kind">Kind</Label>
+            <Label htmlFor="b-kind">
+              <Trans>Kind</Trans>
+            </Label>
             <Select
               value={kind}
               onValueChange={(next) => {
@@ -122,7 +142,7 @@ function IntegratePage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STREAM_SERVER_KINDS.map((option) => (
+                {streamServerKinds().map((option) => (
                   <SelectItem key={option.kind} value={option.kind}>
                     {option.label} ({option.blurb})
                   </SelectItem>
@@ -132,7 +152,9 @@ function IntegratePage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="b-url">Stats URL</Label>
+            <Label htmlFor="b-url">
+              <Trans>Stats URL</Trans>
+            </Label>
             <Input
               id="b-url"
               value={url}
@@ -146,7 +168,9 @@ function IntegratePage() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="b-name">
-              Name <span className="font-normal text-muted-foreground">(optional)</span>
+              <Trans>
+                Name <span className="font-normal text-muted-foreground">(optional)</span>
+              </Trans>
             </Label>
             <Input
               id="b-name"
@@ -159,22 +183,30 @@ function IntegratePage() {
 
           <ServerDetailsFields kind={kind} form={details} onChange={setDetails} idPrefix="b" />
           {detailFieldsOf(kind).length === 0 && (
-            <p className="text-xs text-muted-foreground">This kind has no other settings.</p>
+            <p className="text-xs text-muted-foreground">
+              <Trans>This kind has no other settings.</Trans>
+            </p>
           )}
 
           <div className="flex flex-col gap-2">
-            <Label>Link</Label>
-            <CopyField value={link} label="Link" />
+            <Label>
+              <Trans>Link</Trans>
+            </Label>
+            <CopyField value={link} label={t`Link`} />
             {url && displayHost(url) === null && (
               <p className="text-xs text-destructive">
-                The stats URL must start with{" "}
-                {info.label.includes("WebSocket") ? "ws:// or wss://" : "http:// or https://"}.
+                <Trans>
+                  The stats URL must start with{" "}
+                  {info.label.includes("WebSocket") ? "ws:// or wss://" : "http:// or https://"}.
+                </Trans>
               </p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>HTML</Label>
+            <Label>
+              <Trans>HTML</Trans>
+            </Label>
             <CopyField value={snippet} label="HTML" />
           </div>
 
@@ -184,7 +216,7 @@ function IntegratePage() {
             rel="noreferrer"
             className="text-sm font-semibold text-primary hover:underline"
           >
-            Try it
+            <Trans>Try it</Trans>
           </a>
         </section>
       </main>

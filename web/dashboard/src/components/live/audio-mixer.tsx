@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
@@ -312,9 +314,11 @@ export function AudioMixer({
     );
 
   return (
-    <section aria-label="Audio" className="flex flex-col gap-2.5">
+    <section aria-label={t`Audio`} className="flex flex-col gap-2.5">
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">Audio</h2>
+        <h2 className="font-semibold">
+          <Trans>Audio</Trans>
+        </h2>
         {obsConnected &&
           (editing ? (
             <span className="flex items-center gap-1">
@@ -323,25 +327,29 @@ export function AudioMixer({
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
-                {hiddenHere > 0 ? "Show all" : "Hide all"}
+                {hiddenHere > 0 ? t`Show all` : t`Hide all`}
               </button>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
-                Done
+                <Trans>Done</Trans>
               </button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              {hiddenHere > 0 && <span className="mr-1">{hiddenHere} hidden</span>}
+              {hiddenHere > 0 && (
+                <span className="mr-1">
+                  <Trans>{hiddenHere} hidden</Trans>
+                </span>
+              )}
               <span className="flex items-center gap-2">
-                Levels
+                <Trans>Levels</Trans>
                 <Switch
                   checked={metersOn}
                   onCheckedChange={setMetersOn}
-                  aria-label="Show audio levels"
+                  aria-label={t`Show audio levels`}
                 />
               </span>
               {inputs.length > 0 && (
@@ -351,7 +359,7 @@ export function AudioMixer({
                   className={cn(HEADER_BUTTON, "ml-1 text-primary")}
                 >
                   <SlidersHorizontal className="size-3.5" />
-                  Customize
+                  <Trans>Customize</Trans>
                 </button>
               )}
             </span>
@@ -360,14 +368,16 @@ export function AudioMixer({
 
       {editing && (
         <p className="text-xs text-muted-foreground">
-          Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t
-          changed.
+          <Trans>
+            Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t
+            changed.
+          </Trans>
         </p>
       )}
 
       {!obsConnected && (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          Audio appears once OBS is connected.
+          <Trans>Audio appears once OBS is connected.</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-28 rounded-2xl" />}
@@ -378,7 +388,7 @@ export function AudioMixer({
       )}
       {list.data && inputs.length === 0 && (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          Nothing on this scene has audio.
+          <Trans>Nothing on this scene has audio.</Trans>
         </p>
       )}
 
@@ -415,7 +425,7 @@ export function AudioMixer({
                     shown && "text-primary-soft-foreground",
                   )}
                 >
-                  {shown ? "SHOWN" : "HIDDEN"}
+                  {shown ? t`SHOWN` : t`HIDDEN`}
                 </span>
               </button>
             );
@@ -429,7 +439,7 @@ export function AudioMixer({
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
-          All audio inputs are hidden. Tap to pick some.
+          <Trans>All audio inputs are hidden. Tap to pick some.</Trans>
         </button>
       )}
 
@@ -484,8 +494,8 @@ function AudioStrip({
       <button
         type="button"
         aria-pressed={input.muted}
-        aria-label={`${input.muted ? "Unmute" : "Mute"} ${input.name}`}
-        title={input.muted ? "Unmute" : "Mute"}
+        aria-label={`${input.muted ? t`Unmute` : t`Mute`} ${input.name}`}
+        title={input.muted ? t`Unmute` : t`Mute`}
         disabled={!canControl || muting}
         onClick={() => onMute(!input.muted)}
         className={cn(
@@ -514,7 +524,7 @@ function AudioStrip({
             if (position !== undefined) onVolume(faderDb(position));
           }}
           disabled={!canControl}
-          aria-label={`Volume of ${input.name}`}
+          aria-label={t`Volume of ${input.name}`}
           aria-valuetext={formatDb(input.volume_db)}
           className="py-1"
         />
@@ -539,7 +549,7 @@ function AudioStrip({
 function GlobalTag() {
   return (
     <span className="rounded bg-primary-soft px-1.5 py-px text-[10px] font-semibold tracking-wider text-primary-soft-foreground uppercase">
-      Global
+      <Trans>Global</Trans>
     </span>
   );
 }

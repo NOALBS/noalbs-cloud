@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -21,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
+import { formatKbps } from "@/lib/live-format";
 import { SCENE_ROLES } from "@/lib/scene-roles";
 import { bitrateRules, bitrateZones, rttZones, triggerError } from "@/lib/triggers";
 
@@ -34,73 +37,72 @@ type BehaviourKey = Exclude<keyof Behaviour, "retry_attempts" | TimeoutKey | "re
 /** Minutes, when a "Stop …" timeout is turned on. */
 const TIMEOUT_FALLBACK: Record<TimeoutKey, number> = { offline_timeout: 10, ending_timeout: 5 };
 
-const TIMEOUT_NAMES: Record<TimeoutKey, string> = {
-  offline_timeout: "offline timeout",
-  ending_timeout: "ending timeout",
-};
+const timeoutErrors = (): Record<TimeoutKey, string> => ({
+  offline_timeout: t`The offline timeout must be between 1 and 1440 minutes.`,
+  ending_timeout: t`The ending timeout must be between 1 and 1440 minutes.`,
+});
 
 const validTimeout = (minutes: number | null) =>
   minutes === null || (Number.isInteger(minutes) && minutes >= 1 && minutes <= 1440);
 
-const SWITCHING: {
+const switching = (): {
   key: BehaviourKey;
   title: string;
   description: string;
   note?: string;
   /** Only means something while this other setting is on. */
   requires?: BehaviourKey;
-}[] = [
+}[] => [
   {
     key: "bitrate_switcher_enabled",
-    title: "Auto switch",
-    description: "Switch scenes automatically using the triggers.",
+    title: t`Auto switch`,
+    description: t`Switch scenes automatically using the triggers.`,
   },
   {
     key: "only_switch_when_streaming",
-    title: "Only while streaming",
-    description: "Leave OBS alone when you aren’t live.",
+    title: t`Only while streaming`,
+    description: t`Leave OBS alone when you aren’t live.`,
   },
   {
     key: "instantly_switch_on_recover",
-    title: "Instant recovery",
-    description: "Go back to LIVE the moment the feed recovers.",
+    title: t`Instant recovery`,
+    description: t`Go back to LIVE the moment the feed recovers.`,
   },
   {
     key: "auto_switch_notification",
-    title: "Chat notification",
-    description:
-      "Post in chat when a scene switches automatically. Pick the channels on the Chat page.",
-    note: "Needs chat bot",
+    title: t`Chat notification`,
+    description: t`Post in chat when a scene switches automatically. Pick the channels on the Chat page.`,
+    note: t`Needs chat bot`,
   },
 ];
 
-const START_END: typeof SWITCHING = [
+const startEnd = (): ReturnType<typeof switching> => [
   {
     key: "switch_to_starting",
-    title: "Starting scene on go-live",
-    description: "Show the Starting scene when the stream starts.",
+    title: t`Starting scene on go-live`,
+    description: t`Show the Starting scene when the stream starts.`,
   },
   {
     key: "switch_to_live",
-    title: "Then switch to LIVE",
-    description: "Leave the Starting scene as soon as your feed arrives.",
+    title: t`Then switch to LIVE`,
+    description: t`Leave the Starting scene as soon as your feed arrives.`,
   },
   {
     key: "record_while_streaming",
-    title: "Record while streaming",
-    description: "Start and stop recording together with the stream.",
+    title: t`Record while streaming`,
+    description: t`Start and stop recording together with the stream.`,
   },
   {
     key: "auto_stop_on_raid",
-    title: "Stop stream after a raid",
-    description: "End the stream once you raid out (Twitch and Kick).",
-    note: "Needs chat bot",
+    title: t`Stop stream after a raid`,
+    description: t`End the stream once you raid out (Twitch and Kick).`,
+    note: t`Needs chat bot`,
   },
   {
     key: "announce_raid",
-    title: "Announce raids",
-    description: "Say in chat when the stream stops for a raid (Twitch and Kick).",
-    note: "Needs chat bot",
+    title: t`Announce raids`,
+    description: t`Say in chat when the stream stops for a raid (Twitch and Kick).`,
+    note: t`Needs chat bot`,
     requires: "auto_stop_on_raid",
   },
 ];
@@ -146,8 +148,8 @@ function TriggersPage() {
     behaviour.retry_attempts >= 0 &&
     behaviour.retry_attempts <= 100
       ? null
-      : "Checks before switching must be between 0 and 100.") ??
-    (badTimeout ? `The ${TIMEOUT_NAMES[badTimeout]} must be between 1 and 1440 minutes.` : null);
+      : t`Checks before switching must be between 0 and 100.`) ??
+    (badTimeout ? timeoutErrors()[badTimeout] : null);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -176,7 +178,7 @@ function TriggersPage() {
         setBase(formOf(result));
         setForm(formOf(result));
       }
-      toast.success("Saved");
+      toast.success(t`Saved`);
     },
   });
 
@@ -186,11 +188,15 @@ function TriggersPage() {
     <SwitcherPage
       title={
         <>
-          <span className="md:hidden">Settings</span>
-          <span className="hidden md:inline">Switching</span>
+          <span className="md:hidden">
+            <Trans>Settings</Trans>
+          </span>
+          <span className="hidden md:inline">
+            <Trans>Switching</Trans>
+          </span>
         </>
       }
-      description={`When and how NOALBS switches scenes for ${switcher.name}.`}
+      description={t`When and how NOALBS switches scenes for ${switcher.name}.`}
       className="max-w-5xl"
     >
       <SettingsHub />
@@ -199,19 +205,19 @@ function TriggersPage() {
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
         <div className="flex flex-col gap-4 lg:col-span-7">
           <Section
-            title="Bitrate triggers"
-            description="Measured on the highest-priority server that is receiving video. Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone."
+            title={t`Bitrate triggers`}
+            description={t`Measured on the highest-priority server that is receiving video. Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone.`}
           >
             <div className="flex flex-col gap-5 px-5 pb-5">
               <TriggerScale
                 zones={bitrateZones(triggers)}
-                ticks={["0", "2,000", "4,000", "6,000", "8,000+ kbps"]}
-                label={`Bitrate scale: LOW at ${triggers.low ?? "off"}, BRB at ${triggers.offline ?? "off"} kbps`}
+                ticks={[0, 2000, 4000, 6000].map(formatKbps).concat(`${formatKbps(8000)}+ kbps`)}
+                label={t`Bitrate scale: LOW at ${triggers.low ?? "off"}, BRB at ${triggers.offline ?? "off"} kbps`}
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 <TriggerField
                   id="trigger-low"
-                  label="Switch to LOW at or below"
+                  label={t`Switch to LOW at or below`}
                   sceneRole="low"
                   unit="kbps"
                   value={triggers.low ?? null}
@@ -221,7 +227,7 @@ function TriggersPage() {
                 />
                 <TriggerField
                   id="trigger-offline"
-                  label="Switch to BRB at or below"
+                  label={t`Switch to BRB at or below`}
                   sceneRole="offline"
                   unit="kbps"
                   value={triggers.offline ?? null}
@@ -248,19 +254,19 @@ function TriggersPage() {
           </Section>
 
           <Section
-            title="Latency (RTT) triggers"
-            description="Catch a struggling uplink before the bitrate drops. Only SRT servers report RTT."
+            title={t`Latency (RTT) triggers`}
+            description={t`Catch a struggling uplink before the bitrate drops. Only SRT servers report RTT.`}
           >
             <div className="flex flex-col gap-5 px-5 pb-5">
               <TriggerScale
                 zones={rttZones(triggers)}
-                ticks={["0", "1,250", "2,500", "3,750", "5,000+ ms"]}
-                label={`RTT scale: LOW at ${triggers.rtt ?? "off"}, BRB at ${triggers.rtt_offline ?? "off"} ms`}
+                ticks={[0, 1250, 2500, 3750].map(formatKbps).concat(`${formatKbps(5000)}+ ms`)}
+                label={t`RTT scale: LOW at ${triggers.rtt ?? "off"}, BRB at ${triggers.rtt_offline ?? "off"} ms`}
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 <TriggerField
                   id="trigger-rtt"
-                  label="Switch to LOW at or above"
+                  label={t`Switch to LOW at or above`}
                   sceneRole="low"
                   unit="ms"
                   value={triggers.rtt ?? null}
@@ -270,7 +276,7 @@ function TriggersPage() {
                 />
                 <TriggerField
                   id="trigger-rtt-offline"
-                  label="Switch to BRB at or above"
+                  label={t`Switch to BRB at or above`}
                   sceneRole="offline"
                   unit="ms"
                   value={triggers.rtt_offline ?? null}
@@ -284,8 +290,8 @@ function TriggersPage() {
         </div>
 
         <div className="flex flex-col gap-4 lg:col-span-5">
-          <Section title="Switching">
-            {SWITCHING.map((row) => (
+          <Section title={t`Switching`}>
+            {switching().map((row) => (
               <ToggleRow
                 key={row.key}
                 id={`behaviour-${row.key}`}
@@ -302,9 +308,11 @@ function TriggersPage() {
               className="flex min-h-16 items-center gap-4 border-t border-divider px-5 py-3"
             >
               <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-sm font-semibold">Checks before switching</span>
+                <span className="text-sm font-semibold">
+                  <Trans>Checks before switching</Trans>
+                </span>
                 <span className="text-sm text-muted-foreground">
-                  Bad checks in a row before leaving LIVE; one check per second.
+                  <Trans>Bad checks in a row before leaving LIVE; one check per second.</Trans>
                 </span>
               </span>
               <Input
@@ -320,8 +328,8 @@ function TriggersPage() {
             </label>
           </Section>
 
-          <Section title="Start, end & raids">
-            {START_END.map((row) => (
+          <Section title={t`Start, end & raids`}>
+            {startEnd().map((row) => (
               <ToggleRow
                 key={row.key}
                 id={`behaviour-${row.key}`}
@@ -342,10 +350,10 @@ function TriggersPage() {
             />
             <TimeoutSetting
               setting="offline_timeout"
-              title="Stop when offline"
-              description="End the stream once the BRB scene has been on air this long without a feed, and say so in chat."
-              minutesTitle="Minutes offline"
-              minutesDescription="Counts while auto switch is on and BRB is on air; the feed coming back starts it over."
+              title={t`Stop when offline`}
+              description={t`End the stream once the BRB scene has been on air this long without a feed, and say so in chat.`}
+              minutesTitle={t`Minutes offline`}
+              minutesDescription={t`Counts while auto switch is on and BRB is on air; the feed coming back starts it over.`}
               behaviour={behaviour}
               saved={base.behaviour}
               setBehaviour={setBehaviour}
@@ -353,11 +361,11 @@ function TriggersPage() {
             />
             <TimeoutSetting
               setting="ending_timeout"
-              title="Stop on the Ending scene"
-              description="End the stream once the Ending scene has been on air this long, and say so in chat."
-              note={switcher.scenes.ending ? undefined : "Needs Ending scene"}
-              minutesTitle="Minutes on Ending"
-              minutesDescription="Counts while streaming with the Ending scene on air, even with auto switch off; leaving it starts it over."
+              title={t`Stop on the Ending scene`}
+              description={t`End the stream once the Ending scene has been on air this long, and say so in chat.`}
+              note={switcher.scenes.ending ? undefined : t`Needs Ending scene`}
+              minutesTitle={t`Minutes on Ending`}
+              minutesDescription={t`Counts while streaming with the Ending scene on air, even with auto switch off; leaving it starts it over.`}
               behaviour={behaviour}
               saved={base.behaviour}
               setBehaviour={setBehaviour}
@@ -408,31 +416,38 @@ function RecordingScenesSetting({
     availableSelectedNames.length > 0
       ? availableSelectedNames.length <= 2
         ? availableSelectedNames.join(", ")
-        : `${availableSelectedNames.slice(0, 2).join(", ")} +${availableSelectedNames.length - 2} more`
+        : t`${availableSelectedNames.slice(0, 2).join(", ")} +${availableSelectedNames.length - 2} more`
       : unavailable.length > 0
-        ? `${unavailable.length} missing`
-        : "Off";
+        ? t`${unavailable.length} missing`
+        : t`Off`;
   const clearUnavailable = () => onChange(selected.filter((id) => !unavailable.includes(id)));
 
   return (
     <div className="border-t border-divider px-5 py-4">
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold">Only record on these scenes</span>
+        <span className="text-sm font-semibold">
+          <Trans>Only record on these scenes</Trans>
+        </span>
         <span className="text-sm text-muted-foreground">
-          The recording pauses on any scene not picked here and resumes when you come back to one
-          that is. Leave it empty to record on every scene. If you resume it yourself on another
-          scene, it keeps recording until the next scene change.
+          <Trans>
+            The recording pauses on any scene not picked here and resumes when you come back to one
+            that is. Leave it empty to record on every scene. If you resume it yourself on another
+            scene, it keeps recording until the next scene change.
+          </Trans>
         </span>
       </div>
       {!obsAvailable ? (
         <p className="mt-3 text-sm text-muted-foreground">
           {selected.length === 0
-            ? "Connect OBS to choose scenes."
-            : `Connect OBS to edit ${selected.length} selected scene${selected.length === 1 ? "" : "s"}.`}
+            ? t`Connect OBS to choose scenes.`
+            : plural(selected.length, {
+                one: "Connect OBS to edit # selected scene.",
+                other: "Connect OBS to edit # selected scenes.",
+              })}
         </p>
       ) : selectable.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          OBS did not return any scenes with UUIDs.
+          <Trans>OBS did not return any scenes with UUIDs.</Trans>
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-2">
@@ -441,7 +456,7 @@ function RecordingScenesSetting({
               <Button variant="outline" className="w-full justify-between">
                 <span className="truncate">{summary}</span>
                 <span className="ml-3 text-xs text-muted-foreground">
-                  {selected.length === 0 ? "Select scenes" : `${selected.length} selected`}
+                  {selected.length === 0 ? t`Select scenes` : t`${selected.length} selected`}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -467,9 +482,10 @@ function RecordingScenesSetting({
           {unavailable.length > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
               <span>
-                {unavailable.length === 1
-                  ? "1 selected scene is no longer in OBS."
-                  : `${unavailable.length} selected scenes are no longer in OBS.`}
+                {plural(unavailable.length, {
+                  one: "# selected scene is no longer in OBS.",
+                  other: "# selected scenes are no longer in OBS.",
+                })}
               </span>
               <Button
                 type="button"
@@ -478,14 +494,14 @@ function RecordingScenesSetting({
                 onClick={clearUnavailable}
                 disabled={disabled}
               >
-                Remove missing
+                <Trans>Remove missing</Trans>
               </Button>
             </div>
           )}
           <p className="text-sm text-muted-foreground">
             {selected.length === 0
-              ? "Recording control is off until you pick at least one scene."
-              : `Recording stays on for ${summary}.`}
+              ? t`Recording control is off until you pick at least one scene.`
+              : t`Recording stays on for ${summary}.`}
           </p>
         </div>
       )}

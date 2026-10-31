@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type {
   Me,
   OrganizationRole,
@@ -155,17 +156,17 @@ export function canRemove(actor: Actor, removingSelf: boolean, target: Workspace
   return actor.role === "admin" && target === "operator";
 }
 
-export const ROLE_LABELS: Record<WorkspaceRole, string> = {
-  operator: "Operator",
-  admin: "Admin",
-  owner: "Owner",
-};
+export const roleLabels = (): Record<WorkspaceRole, string> => ({
+  operator: t`Operator`,
+  admin: t`Admin`,
+  owner: t`Owner`,
+});
 
-export const ROLE_DESCRIPTIONS: Record<WorkspaceRole, string> = {
-  operator: "Runs the stream: switch scenes, start and stop, see stats.",
-  admin: "Also manages switchers, stream servers, members and invites.",
-  owner: "Also handles the plan and billing. One per workspace.",
-};
+export const roleDescriptions = (): Record<WorkspaceRole, string> => ({
+  operator: t`Runs the stream: switch scenes, start and stop, see stats.`,
+  admin: t`Also manages switchers, stream servers, members and invites.`,
+  owner: t`Also handles the plan and billing. One per workspace.`,
+});
 
 /** The members `actor` may make the owner: an admin, or anyone but the owner for staff. */
 export function transferCandidates<M extends { role: WorkspaceRole }>(

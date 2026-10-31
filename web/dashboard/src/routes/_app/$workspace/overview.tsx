@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Plus, Radio, UserPlus } from "lucide-react";
@@ -25,17 +27,17 @@ function WorkspaceHome() {
   const params = { workspace: workspace.url_slug };
 
   return (
-    <Page title={workspace.name} description="Your switchers, team and plan at a glance.">
+    <Page title={workspace.name} description={t`Your switchers, team and plan at a glance.`}>
       <Section
-        title="Switchers"
-        description="A switcher connects one OBS to your stream servers and switches scenes for you."
+        title={t`Switchers`}
+        description={t`A switcher connects one OBS to your stream servers and switches scenes for you.`}
         actions={
           canAddSwitcher &&
           (switchers.data?.length ?? 0) > 0 && (
             <CreateSwitcherDialog workspace={workspace}>
               <Button variant="outline" size="sm">
                 <Plus />
-                Add switcher
+                <Trans>Add switcher</Trans>
               </Button>
             </CreateSwitcherDialog>
           )
@@ -47,17 +49,19 @@ function WorkspaceHome() {
             <span className="flex size-11 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
               <Radio className="size-5" />
             </span>
-            <p className="font-semibold">No switchers yet</p>
+            <p className="font-semibold">
+              <Trans>No switchers yet</Trans>
+            </p>
             <p className="max-w-sm text-sm text-muted-foreground">
               {canAddSwitcher
-                ? "Add one to connect your OBS. Setup takes a couple of minutes."
-                : "An admin of this workspace can add one."}
+                ? t`Add one to connect your OBS. Setup takes a couple of minutes.`
+                : t`An admin of this workspace can add one.`}
             </p>
             {canAddSwitcher && (
               <CreateSwitcherDialog workspace={workspace}>
                 <Button>
                   <Plus />
-                  Add switcher
+                  <Trans>Add switcher</Trans>
                 </Button>
               </CreateSwitcherDialog>
             )}
@@ -79,9 +83,10 @@ function WorkspaceHome() {
                       <span className="font-semibold">{switcher.name}</span>
                       <span className="text-xs text-muted-foreground">
                         {status.label} ·{" "}
-                        {switcher.stream_server_count === 1
-                          ? "1 stream server"
-                          : `${switcher.stream_server_count} stream servers`}
+                        {plural(switcher.stream_server_count, {
+                          one: "# stream server",
+                          other: "# stream servers",
+                        })}
                       </span>
                     </span>
                     <ArrowRight className="size-4 text-muted-foreground" />
@@ -95,13 +100,13 @@ function WorkspaceHome() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Section
-          title="Team"
+          title={t`Team`}
           actions={
             can(actor, "account.manage") && (
               <Button asChild variant="outline" size="sm">
                 <Link to="/$workspace/settings/members" params={params}>
                   <UserPlus />
-                  Invite
+                  <Trans>Invite</Trans>
                 </Link>
               </Button>
             )
@@ -127,23 +132,25 @@ function WorkspaceHome() {
               params={params}
               className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
-              {members.data?.length === 1 ? "1 member" : `${members.data?.length ?? "…"} members`}
+              {members.data
+                ? plural(members.data.length, { one: "# member", other: "# members" })
+                : t`… members`}
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
         </Section>
 
-        <Section title="Plan">
+        <Section title={t`Plan`}>
           <div className="flex flex-col gap-4 px-5 pb-5">
             {plan.data ? (
               <>
                 <UsageBar
-                  label="Switchers"
+                  label={t`Switchers`}
                   used={plan.data.usage.switchers}
                   max={plan.data.plan.max_switchers}
                 />
                 <UsageBar
-                  label="Members"
+                  label={t`Members`}
                   used={plan.data.usage.members}
                   max={plan.data.plan.max_members}
                 />
@@ -156,7 +163,7 @@ function WorkspaceHome() {
               params={params}
               className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
-              {plan.data?.plan.name ?? "…"} plan
+              <Trans>{plan.data?.plan.name ?? "…"} plan</Trans>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>

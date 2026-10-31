@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
@@ -32,13 +34,13 @@ export const Route = createFileRoute("/_app/$workspace/s/$switcher/chat")({
   component: ChatPage,
 });
 
-const ROLE_LABELS: Record<ChatRole, string> = {
-  public: "Everyone",
-  subscriber: "Subscribers",
-  vip: "VIPs",
-  moderator: "Moderators",
-  admin: "Admins",
-};
+const roleLabels = (): Record<ChatRole, string> => ({
+  public: t`Everyone`,
+  subscriber: t`Subscribers`,
+  vip: t`VIPs`,
+  moderator: t`Moderators`,
+  admin: t`Admins`,
+});
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English",
@@ -61,7 +63,7 @@ type Path = { workspace_id: string; switcher_id: string };
 function ChatPage() {
   const { workspace, switcher, canManage, path } = useSwitcher();
   const chat = useQuery(chatQuery(workspace.id, switcher.id));
-  useGrantOutcome(Route.useSearch(), (platform) => `${platform} connected`);
+  useGrantOutcome(Route.useSearch(), (platform) => t`${platform} connected`);
   const [filter, setFilter] = useState<Filter>("all");
 
   const commands = chat.data?.commands.filter(
@@ -78,8 +80,8 @@ function ChatPage() {
 
   return (
     <SwitcherPage
-      title="Chat & commands"
-      description="What viewers and mods can do from chat."
+      title={t`Chat & commands`}
+      description={t`What viewers and mods can do from chat.`}
       backToSettings
       className="max-w-5xl"
     >
@@ -101,10 +103,14 @@ function ChatPage() {
       )}
 
       <Section
-        title="Commands"
-        description="Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in."
+        title={t`Commands`}
+        description={t`Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in.`}
         actions={
-          <div role="radiogroup" aria-label="Show commands for" className="flex flex-wrap gap-1.5">
+          <div
+            role="radiogroup"
+            aria-label={t`Show commands for`}
+            className="flex flex-wrap gap-1.5"
+          >
             {filters.map((option) => (
               <label
                 key={option}
@@ -117,7 +123,9 @@ function ChatPage() {
                   checked={filter === option}
                   onChange={() => setFilter(option)}
                 />
-                {option === "all" ? `All ${chat.data?.commands.length ?? ""}` : ROLE_LABELS[option]}
+                {option === "all"
+                  ? t`All ${chat.data?.commands.length ?? ""}`
+                  : roleLabels()[option]}
               </label>
             ))}
           </div>
@@ -173,7 +181,7 @@ function ChatSettingsSection({
           queryKey: queryKeys.switcher(path.workspace_id, path.switcher_id),
         }),
       ]);
-      toast.success("Saved");
+      toast.success(t`Saved`);
     },
   });
 
@@ -183,11 +191,13 @@ function ChatSettingsSection({
   };
 
   return (
-    <Section title="Settings">
+    <Section title={t`Settings`}>
       <form onSubmit={submit} className="flex flex-col">
         <div className="grid gap-4 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="chat-prefix">Command prefix</Label>
+            <Label htmlFor="chat-prefix">
+              <Trans>Command prefix</Trans>
+            </Label>
             <Input
               id="chat-prefix"
               value={form.command_prefix}
@@ -199,7 +209,9 @@ function ChatSettingsSection({
           </div>
           {languages.length > 1 && (
             <div className="flex flex-col gap-2">
-              <Label htmlFor="chat-language">Bot language</Label>
+              <Label htmlFor="chat-language">
+                <Trans>Bot language</Trans>
+              </Label>
               <Select
                 value={form.language}
                 onValueChange={(language) => setForm({ ...form, language })}
@@ -219,7 +231,9 @@ function ChatSettingsSection({
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="chat-reply-mode">Reply mode</Label>
+            <Label htmlFor="chat-reply-mode">
+              <Trans>Reply mode</Trans>
+            </Label>
             <Select
               value={form.threaded_replies ? "reply" : "message"}
               onValueChange={(mode) => setForm({ ...form, threaded_replies: mode === "reply" })}
@@ -229,8 +243,12 @@ function ChatSettingsSection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="reply">Reply</SelectItem>
-                <SelectItem value="message">Normal message</SelectItem>
+                <SelectItem value="reply">
+                  <Trans>Reply</Trans>
+                </SelectItem>
+                <SelectItem value="message">
+                  <Trans>Normal message</Trans>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -239,13 +257,13 @@ function ChatSettingsSection({
           [
             [
               "public_commands_enabled",
-              "Public commands",
-              "Let everyone in chat use commands like !bitrate.",
+              t`Public commands`,
+              t`Let everyone in chat use commands like !bitrate.`,
             ],
             [
               "mod_commands_enabled",
-              "Moderator commands",
-              "Let your moderators run moderator commands.",
+              t`Moderator commands`,
+              t`Let your moderators run moderator commands.`,
             ],
           ] as const
         ).map(([key, title, description]) => (
@@ -272,10 +290,10 @@ function ChatSettingsSection({
               <span className="flex-1 text-sm text-destructive">{errorMessage(save.error)}</span>
             )}
             <Button type="button" variant="ghost" onClick={() => setForm(settings)}>
-              Discard
+              <Trans>Discard</Trans>
             </Button>
             <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? "Saving…" : "Save"}
+              {save.isPending ? t`Saving…` : t`Save`}
             </Button>
           </div>
         )}
@@ -376,7 +394,7 @@ function CommandRow({
                 <button
                   type="button"
                   onClick={() => removeAlias.mutate(alias)}
-                  aria-label={`Remove alias ${alias}`}
+                  aria-label={t`Remove alias ${alias}`}
                   className="rounded p-0.5 hover:bg-primary/20"
                 >
                   <X className="size-3" />
@@ -392,7 +410,7 @@ function CommandRow({
                 className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               >
                 <Plus className="size-3" />
-                Alias
+                <Trans>Alias</Trans>
               </button>
             ) : (
               <form onSubmit={submitAlias} className="flex items-center gap-1.5">
@@ -400,13 +418,13 @@ function CommandRow({
                   value={aliasInput}
                   onChange={(event) => setAliasInput(event.target.value)}
                   onKeyDown={(event) => event.key === "Escape" && setAliasInput(null)}
-                  placeholder="alias"
-                  aria-label={`New alias for ${command.command}`}
+                  placeholder={t`alias`}
+                  aria-label={t`New alias for ${command.command}`}
                   autoFocus
                   className="h-7 w-28 font-mono text-xs"
                 />
                 <Button type="submit" size="xs" disabled={addAlias.isPending}>
-                  Add
+                  <Trans>Add</Trans>
                 </Button>
                 {addAlias.error && (
                   <span className="text-xs text-destructive">{errorMessage(addAlias.error)}</span>
@@ -423,14 +441,14 @@ function CommandRow({
         }
         disabled={!canManage || setCommand.isPending}
       >
-        <SelectTrigger className="h-9 w-full" aria-label={`Who can use ${command.command}`}>
+        <SelectTrigger className="h-9 w-full" aria-label={t`Who can use ${command.command}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {(["public", "subscriber", "vip", "moderator", "admin"] as const).map((role) => (
             <SelectItem key={role} value={role}>
-              {ROLE_LABELS[role]}
-              {role === command.default_role && " (default)"}
+              {roleLabels()[role]}
+              {role === command.default_role && t` (default)`}
             </SelectItem>
           ))}
         </SelectContent>
@@ -440,7 +458,7 @@ function CommandRow({
         checked={command.enabled}
         onCheckedChange={(enabled) => setCommand.mutate({ enabled, role: command.role })}
         disabled={!canManage || setCommand.isPending}
-        aria-label={`Enable ${command.command}`}
+        aria-label={t`Enable ${command.command}`}
       />
     </li>
   );

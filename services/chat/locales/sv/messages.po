@@ -48,34 +48,34 @@ msgid "free disk space: {disk} GB"
 msgstr "ledigt diskutrymme: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Ingen LIVE-scen är vald än. Välj en på sidan Scenes."
+msgstr "Ingen LIVE-scen är vald än. Välj en på sidan Scener."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Ingen Privacy-scen är vald än. Välj en på sidan Scenes."
+msgstr "Ingen Sekretess-scen är vald än. Välj en på sidan Scener."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Ingen Starting-scen är vald än. Välj en på sidan Scenes."
+msgstr "Ingen Start-scen är vald än. Välj en på sidan Scener."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Ingen Ending-scen är vald än. Välj en på sidan Scenes."
+msgstr "Ingen Slut-scen är vald än. Välj en på sidan Scener."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Ingen Refresh-scen är vald än. Välj en på sidan Scenes."
+msgstr "Ingen Uppdatera-scen är vald än. Välj en på sidan Scener."
 
 msgid "Switched to the LIVE scene"
 msgstr "Bytte till LIVE-scenen"
 
 msgid "Switched to the Privacy scene"
-msgstr "Bytte till Privacy-scenen"
+msgstr "Bytte till Sekretess-scenen"
 
 msgid "Switched to the Starting scene"
-msgstr "Bytte till Starting-scenen"
+msgstr "Bytte till Start-scenen"
 
 msgid "Switched to the Ending scene"
-msgstr "Bytte till Ending-scenen"
+msgstr "Bytte till Slut-scenen"
 
 msgid "Switched to the Refresh scene"
-msgstr "Bytte till Refresh-scenen"
+msgstr "Bytte till Uppdatera-scenen"
 
 msgid "Chat notifications on"
 msgstr "Chattaviseringar på"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Inget att fixa: ingen strömkälla spelas på {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Ingen Refresh-scen är vald, så fixar i stället. {result}"
+msgstr "Ingen Uppdatera-scen är vald, så fixar i stället. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} visas nu"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Tidsgränsen för offline nåddes, stoppar strömmen"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Tidsgränsen för Ending-scenen nåddes, stoppar strömmen"
+msgstr "Tidsgränsen för Slut-scenen nåddes, stoppar strömmen"
 
 msgid "Ignoring {name} from now on"
 msgstr "Ignorerar {name} från och med nu"

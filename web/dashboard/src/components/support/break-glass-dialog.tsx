@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { errorMessage } from "@/lib/errors";
-import { SUPPORT_LEVEL_DESCRIPTIONS, SUPPORT_LEVEL_LABELS } from "@/lib/support";
+import { supportLevelDescriptions, supportLevelLabels } from "@/lib/support";
 
 const MIN_REASON = 10;
 
@@ -62,7 +64,7 @@ export function BreakGlassDialog({
       setOpen(false);
       setReason("");
       setLevel("view");
-      toast.success(`Emergency access to ${workspaceName} for one hour`);
+      toast.success(t`Emergency access to ${workspaceName} for one hour`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -72,15 +74,21 @@ export function BreakGlassDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Emergency access to {workspaceName}?</DialogTitle>
+          <DialogTitle>
+            <Trans>Emergency access to {workspaceName}</Trans>?
+          </DialogTitle>
           <DialogDescription>
-            Only for abuse, a legal obligation or a security problem, for one hour. Members, billing
-            and secrets stay off-limits. Its owners and admins see your name, the level and this
-            reason until they mark it as seen, and everything you do is in their log.
+            <Trans>
+              Only for abuse, a legal obligation or a security problem, for one hour. Members,
+              billing and secrets stay off-limits. Its owners and admins see your name, the level
+              and this reason until they mark it as seen, and everything you do is in their log.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="break-glass-level">Access</Label>
+          <Label htmlFor="break-glass-level">
+            <Trans>Access</Trans>
+          </Label>
           <Select value={level} onValueChange={(next) => setLevel(next as SupportLevel)}>
             <SelectTrigger id="break-glass-level" className="w-full">
               <SelectValue />
@@ -88,15 +96,17 @@ export function BreakGlassDialog({
             <SelectContent>
               {(["view", "control"] as const).map((option) => (
                 <SelectItem key={option} value={option}>
-                  {SUPPORT_LEVEL_LABELS[option]}
+                  {supportLevelLabels()[option]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">{SUPPORT_LEVEL_DESCRIPTIONS[level]}</p>
+          <p className="text-xs text-muted-foreground">{supportLevelDescriptions()[level]}</p>
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="break-glass-reason">Reason</Label>
+          <Label htmlFor="break-glass-reason">
+            <Trans>Reason</Trans>
+          </Label>
           <textarea
             id="break-glass-reason"
             value={reason}
@@ -108,14 +118,14 @@ export function BreakGlassDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button
             variant="destructive"
             onClick={() => breakGlass.mutate()}
             disabled={reason.trim().length < MIN_REASON || breakGlass.isPending}
           >
-            Open for one hour
+            <Trans>Open for one hour</Trans>
           </Button>
         </DialogFooter>
       </DialogContent>

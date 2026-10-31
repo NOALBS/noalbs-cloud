@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Eye, Settings2 } from "lucide-react";
@@ -21,7 +23,7 @@ import {
   formatBytes,
   fpsLabel,
   previewOn,
-  QUALITY_OPTIONS,
+  qualityOptions,
   usePreviewSettings,
   WIDTH_OPTIONS,
   watchingLine,
@@ -96,16 +98,16 @@ function useObsFrames(
           } else {
             setProblem(
               response.status === 503
-                ? "OBS isn’t connected."
+                ? t`OBS isn’t connected.`
                 : response.status === 403
-                  ? OFF_AIR
-                  : "OBS didn’t send a picture. Trying again…",
+                  ? offAir()
+                  : t`OBS didn’t send a picture. Trying again…`,
             );
             wait = Math.max(wait, 3000);
           }
         } catch {
           if (signal.aborted) return;
-          setProblem("Couldn’t reach NOALBS. Trying again…");
+          setProblem(t`Couldn’t reach NOALBS. Trying again…`);
           wait = Math.max(wait, 3000);
         }
         await sleep(Math.max(0, wait - (performance.now() - started)), signal);
@@ -122,7 +124,7 @@ function useObsFrames(
   return { frame, problem };
 }
 
-const OFF_AIR = "Off air, the preview is hidden. It shows again when the stream goes live.";
+const offAir = () => t`Off air, the preview is hidden. It shows again when the stream goes live.`;
 
 /**
  * A live still of the OBS output. Off by default on phones, to spare data.
@@ -166,9 +168,11 @@ export function ObsPreview({
   // Laid out like the other Live sections: heading above, content below, and
   // the controls under it on the right.
   return (
-    <section aria-label="OBS preview" className="flex flex-col gap-2.5">
+    <section aria-label={t`OBS preview`} className="flex flex-col gap-2.5">
       <div className="flex min-h-8 items-center">
-        <h2 className="font-semibold">Preview</h2>
+        <h2 className="font-semibold">
+          <Trans>Preview</Trans>
+        </h2>
       </div>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
@@ -176,11 +180,15 @@ export function ObsPreview({
         {on ? (
           <div className="relative flex aspect-video items-center justify-center bg-black">
             {frame && obsConnected && !hidden && (
-              <img src={frame.url} alt="What OBS is showing" className="size-full object-contain" />
+              <img
+                src={frame.url}
+                alt={t`What OBS is showing`}
+                className="size-full object-contain"
+              />
             )}
             {obsConnected && hidden ? (
               <div className="absolute flex max-w-[85%] flex-col items-center gap-1 rounded-lg bg-black/70 px-3 py-2 text-center text-sm text-white">
-                <p>{OFF_AIR}</p>
+                <p>{offAir()}</p>
                 {privacyLink && (
                   <Link
                     to="/$workspace/s/$switcher/obs"
@@ -188,21 +196,21 @@ export function ObsPreview({
                     hash="preview"
                     className="text-xs underline underline-offset-2"
                   >
-                    Choose who sees it off air
+                    <Trans>Choose who sees it off air</Trans>
                   </Link>
                 )}
               </div>
             ) : (
               (!obsConnected || problem || !frame) && (
                 <p className="absolute rounded-lg bg-black/70 px-3 py-1.5 text-sm text-white">
-                  {!obsConnected ? "OBS isn’t connected." : (problem ?? "Loading…")}
+                  {!obsConnected ? t`OBS isn’t connected.` : (problem ?? t`Loading…`)}
                 </p>
               )
             )}
           </div>
         ) : (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            The preview is off. Turn it on to see what OBS is showing.
+            <Trans>The preview is off. Turn it on to see what OBS is showing.</Trans>
           </p>
         )}
 
@@ -218,14 +226,14 @@ export function ObsPreview({
             {on &&
               frame &&
               !hidden &&
-              `${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
+              t`${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
           </p>
           <span className="flex items-center gap-2">
             {on && (
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Preview settings"
+                aria-label={t`Preview settings`}
                 aria-expanded={showSettings}
                 onClick={() => setShowSettings((shown) => !shown)}
                 className={cn(showSettings && "bg-surface-2")}
@@ -236,7 +244,7 @@ export function ObsPreview({
             <Switch
               checked={on}
               onCheckedChange={(enabled) => update({ enabled })}
-              aria-label="Show the OBS preview"
+              aria-label={t`Show the OBS preview`}
             />
           </span>
         </div>
@@ -244,21 +252,21 @@ export function ObsPreview({
         {on && showSettings && (
           <div className="grid grid-cols-3 gap-2 border-t border-divider p-3">
             <PreviewSelect
-              label="Rate"
+              label={t`Rate`}
               value={settings.fps}
               options={FPS_OPTIONS.map((fps) => ({ value: fps, label: fpsLabel(fps) }))}
               onChange={(fps) => update({ fps })}
             />
             <PreviewSelect
-              label="Size"
+              label={t`Size`}
               value={settings.width}
               options={WIDTH_OPTIONS.map((width) => ({ value: width, label: `${width} px` }))}
               onChange={(width) => update({ width })}
             />
             <PreviewSelect
-              label="Quality"
+              label={t`Quality`}
               value={settings.quality}
-              options={QUALITY_OPTIONS.map((option) => ({ ...option }))}
+              options={qualityOptions().map((option) => ({ ...option }))}
               onChange={(quality) => update({ quality })}
             />
           </div>

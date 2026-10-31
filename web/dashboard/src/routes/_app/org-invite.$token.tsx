@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Building2, Check } from "lucide-react";
@@ -9,19 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { providerLabel, UserAvatar } from "@/components/user-avatar";
 import { errorMessage } from "@/lib/errors";
-import { ORGANIZATION_ROLE_DESCRIPTIONS, ORGANIZATION_ROLE_LABELS } from "@/lib/organizations";
+import { organizationRoleDescriptions, organizationRoleLabels } from "@/lib/organizations";
 import { formatRelative } from "@/lib/time";
 
 export const Route = createFileRoute("/_app/org-invite/$token")({
   component: TeamInvitePage,
 });
 
-const GONE = {
-  expired: "This invite has expired",
-  revoked: "This invite was revoked",
-  used: "This invite has already been used",
-  open: "",
-} as const;
+const gone = () =>
+  ({
+    expired: t`This invite has expired`,
+    revoked: t`This invite was revoked`,
+    used: t`This invite has already been used`,
+    open: "",
+  }) as const;
 
 function TeamInvitePage() {
   const { token } = Route.useParams();
@@ -56,10 +59,10 @@ function TeamInvitePage() {
             <Problem
               title={
                 preview.error instanceof ApiRequestError && preview.error.status === 404
-                  ? "This invite link doesn’t exist"
-                  : "Couldn’t open this invite"
+                  ? t`This invite link doesn’t exist`
+                  : t`Couldn’t open this invite`
               }
-              detail="Check the link, or ask for a new invite."
+              detail={t`Check the link, or ask for a new invite.`}
             />
           )}
 
@@ -73,13 +76,15 @@ function TeamInvitePage() {
                   <span className="text-sm text-muted-foreground">
                     {preview.data.invited_by ? (
                       <>
-                        <span className="font-semibold text-foreground">
-                          {preview.data.invited_by}
-                        </span>{" "}
-                        invited you to the team of
+                        <Trans>
+                          <span className="font-semibold text-foreground">
+                            {preview.data.invited_by}
+                          </span>{" "}
+                          invited you to the team of
+                        </Trans>
                       </>
                     ) : (
-                      "You’re invited to the team of"
+                      t`You’re invited to the team of`
                     )}
                   </span>
                   <span className="text-2xl font-bold">{preview.data.organization_name}</span>
@@ -88,37 +93,42 @@ function TeamInvitePage() {
 
               {preview.data.already_member ? (
                 <Problem
-                  title="You’re already on the team"
-                  detail="Open the organization to carry on."
+                  title={t`You’re already on the team`}
+                  detail={t`Open the organization to carry on.`}
                   action={
                     <Button asChild className="h-11 rounded-xl">
                       <Link
                         to="/orgs/$organization/clients"
                         params={{ organization: preview.data.organization_slug }}
                       >
-                        Open {preview.data.organization_name}
+                        <Trans>Open {preview.data.organization_name}</Trans>
                       </Link>
                     </Button>
                   }
                 />
               ) : preview.data.status !== "open" ? (
-                <Problem title={GONE[preview.data.status]} detail="Ask for a new invite link." />
+                <Problem
+                  title={gone()[preview.data.status]}
+                  detail={t`Ask for a new invite link.`}
+                />
               ) : (
                 <>
                   <div className="flex flex-col gap-3 rounded-2xl border border-divider bg-sunken p-4">
                     <span className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">You’ll join as</span>
+                      <span className="text-sm font-semibold">
+                        <Trans>You’ll join as</Trans>
+                      </span>
                       <span className="rounded-md bg-primary-soft px-2 py-0.5 text-xs font-bold tracking-wider text-primary-soft-foreground uppercase">
-                        {ORGANIZATION_ROLE_LABELS[preview.data.role]}
+                        {organizationRoleLabels()[preview.data.role]}
                       </span>
                     </span>
                     <span className="flex items-start gap-2.5 text-sm">
                       <Check className="mt-0.5 size-4 shrink-0 text-live" />
-                      {ORGANIZATION_ROLE_DESCRIPTIONS[preview.data.role]}
+                      {organizationRoleDescriptions()[preview.data.role]}
                     </span>
                     <span className="flex items-start gap-2.5 text-sm">
                       <Check className="mt-0.5 size-4 shrink-0 text-live" />
-                      See and run every client workspace of the organization
+                      <Trans>See and run every client workspace of the organization</Trans>
                     </span>
                   </div>
 
@@ -128,7 +138,9 @@ function TeamInvitePage() {
                       avatarUrl={connection?.avatar_url}
                       className="size-6"
                     />
-                    Signed in as {connection?.username} · {providerLabel(connection?.provider)}
+                    <Trans>
+                      Signed in as {connection?.username} · {providerLabel(connection?.provider)}
+                    </Trans>
                   </span>
 
                   {accept.error && (
@@ -137,18 +149,20 @@ function TeamInvitePage() {
 
                   <div className="grid grid-cols-2 gap-2.5">
                     <Button asChild variant="outline" className="h-12 rounded-xl">
-                      <Link to="/">Decline</Link>
+                      <Link to="/">
+                        <Trans>Decline</Trans>
+                      </Link>
                     </Button>
                     <Button
                       className="h-12 rounded-xl"
                       onClick={() => accept.mutate()}
                       disabled={accept.isPending}
                     >
-                      {accept.isPending ? "Joining…" : "Accept and join"}
+                      {accept.isPending ? t`Joining…` : t`Accept and join`}
                     </Button>
                   </div>
                   <span className="text-center font-mono text-xs text-subtle-foreground">
-                    Invite expires {formatRelative(preview.data.expires_at)}
+                    <Trans>Invite expires {formatRelative(preview.data.expires_at)}</Trans>
                   </span>
                 </>
               )}
@@ -175,7 +189,9 @@ function Problem({
       <p className="text-sm text-muted-foreground">{detail}</p>
       {action ?? (
         <Button asChild variant="outline" className="h-11 rounded-xl">
-          <Link to="/">Go to my workspaces</Link>
+          <Link to="/">
+            <Trans>Go to my workspaces</Trans>
+          </Link>
         </Button>
       )}
     </div>

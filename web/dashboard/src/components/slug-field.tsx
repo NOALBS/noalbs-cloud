@@ -1,9 +1,12 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2, X } from "lucide-react";
 import { useId } from "react";
 import { slugAvailableQuery } from "@/api/queries";
 import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { translateApiMessage } from "@/lib/api-messages";
 import { SLUG_MIN_LENGTH, slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +78,9 @@ export function SlugField({
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>URL</Label>
+      <Label htmlFor={id}>
+        <Trans>URL</Trans>
+      </Label>
       <div className="flex h-10 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
         <span className="font-mono text-sm text-muted-foreground">{prefix}</span>
         <input
@@ -93,18 +98,18 @@ export function SlugField({
         )}
       >
         {status.slug.length < SLUG_MIN_LENGTH ? (
-          "At least 3 characters: letters, numbers and dashes."
+          t`At least 3 characters: letters, numbers and dashes.`
         ) : status.checking ? (
           <>
-            <Loader2 className="size-3.5 animate-spin" /> Checking…
+            <Loader2 className="size-3.5 animate-spin" /> <Trans>Checking…</Trans>
           </>
         ) : status.unavailable ? (
           <>
-            <X className="size-3.5" /> {status.message}
+            <X className="size-3.5" /> {translateApiMessage(status.message ?? "")}
           </>
         ) : status.verified ? (
           <>
-            <Check className="size-3.5 text-live" /> Available
+            <Check className="size-3.5 text-live" /> <Trans>Available</Trans>
           </>
         ) : null}
       </p>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type {
   BelaboxDetails,
   BelaboxInterface,
@@ -152,29 +153,29 @@ export function describeResult(result: BelaboxResult): { ok: boolean; message: s
   const ok = result.error == null;
   switch (result.kind) {
     case "wifi_new":
-      if (ok) return { ok, message: "Joined the network and saved it" };
+      if (ok) return { ok, message: t`Joined the network and saved it` };
       return {
         ok,
         message:
           result.error === "auth"
-            ? "Wrong WiFi password"
-            : "The BELABOX couldn't join that network",
+            ? t`Wrong WiFi password`
+            : t`The BELABOX couldn't join that network`,
       };
     case "wifi_connect":
       return {
         ok,
-        message: ok ? "Connected to the network" : "The BELABOX couldn't connect to that network",
+        message: ok ? t`Connected to the network` : t`The BELABOX couldn't connect to that network`,
       };
     case "hotspot_config":
-      if (ok) return { ok, message: "Hotspot updated" };
+      if (ok) return { ok, message: t`Hotspot updated` };
       return {
         ok,
         message:
           {
-            name: "The BELABOX refused the hotspot name",
-            password: "The BELABOX refused the hotspot password",
-            channel: "The BELABOX refused the hotspot band",
-          }[result.error ?? ""] ?? "The BELABOX couldn't apply the hotspot settings",
+            name: t`The BELABOX refused the hotspot name`,
+            password: t`The BELABOX refused the hotspot password`,
+            channel: t`The BELABOX refused the hotspot band`,
+          }[result.error ?? ""] ?? t`The BELABOX couldn't apply the hotspot settings`,
       };
   }
 }
@@ -238,41 +239,41 @@ export function wholeNumber(text: string): number | null {
 export function validateSettings(form: SettingsForm, details: BelaboxDetails): SettingsErrors {
   const errors: SettingsErrors = {};
   const pipeline = selectedPipeline(details, form);
-  if (!pipeline) errors.pipeline = "Pick an encoder";
+  if (!pipeline) errors.pipeline = t`Pick an encoder`;
 
   if (pipeline?.audio_codec && !details.audio_codecs.some((codec) => codec.id === form.audioCodec))
-    errors.audioCodec = "Pick an audio codec";
+    errors.audioCodec = t`Pick an audio codec`;
   if (pipeline?.audio_source) {
     const known =
       details.audio_sources.includes(form.audioSource) ||
       form.audioSource === details.settings.audio_source;
-    if (!known) errors.audioSource = "Pick an audio source";
+    if (!known) errors.audioSource = t`Pick an audio source`;
   }
 
   const delay = wholeNumber(form.audioDelay);
   if (delay == null || delay < AUDIO_DELAY_MIN || delay > AUDIO_DELAY_MAX)
-    errors.audioDelay = `Between ${AUDIO_DELAY_MIN} and ${AUDIO_DELAY_MAX} ms`;
+    errors.audioDelay = t`Between ${AUDIO_DELAY_MIN} and ${AUDIO_DELAY_MAX} ms`;
   const latency = wholeNumber(form.srtLatency);
   if (latency == null || latency < SRT_LATENCY_MIN || latency > SRT_LATENCY_MAX)
-    errors.srtLatency = `Between ${SRT_LATENCY_MIN} and ${SRT_LATENCY_MAX} ms`;
+    errors.srtLatency = t`Between ${SRT_LATENCY_MIN} and ${SRT_LATENCY_MAX} ms`;
 
   if (form.server === "relay") {
     if (!details.relay_servers.some((server) => server.id === form.relayServer))
-      errors.relayServer = "Pick a relay server";
+      errors.relayServer = t`Pick a relay server`;
     if (form.relayAccount) {
       const account = details.relay_accounts.find((a) => a.id === form.relayAccount);
-      if (!account) errors.relayAccount = "Pick a relay account";
+      if (!account) errors.relayAccount = t`Pick a relay account`;
     }
   } else {
     if (!form.address.trim() || /\s/.test(form.address.trim()))
-      errors.address = "Enter the server's address";
+      errors.address = t`Enter the server's address`;
     const port = wholeNumber(form.port);
-    if (port == null || port < 1 || port > 65535) errors.port = "Between 1 and 65535";
+    if (port == null || port < 1 || port > 65535) errors.port = t`Between 1 and 65535`;
   }
 
   const usesAccount = form.server === "relay" && form.relayAccount !== "";
   if (!usesAccount && !form.streamId && !details.settings.has_stream_id)
-    errors.streamId = "Enter your stream ID";
+    errors.streamId = t`Enter your stream ID`;
 
   return errors;
 }
@@ -326,8 +327,8 @@ export function modemErrors(
   modem: BelaboxModemDetails,
 ): Partial<Record<keyof ModemForm, string>> {
   const errors: Partial<Record<keyof ModemForm, string>> = {};
-  if (!form.autoconfig && !form.apn.trim()) errors.apn = "Enter the APN";
-  if (!modem.network_types.includes(form.networkType)) errors.networkType = "Pick a network type";
+  if (!form.autoconfig && !form.apn.trim()) errors.apn = t`Enter the APN`;
+  if (!modem.network_types.includes(form.networkType)) errors.networkType = t`Pick a network type`;
   return errors;
 }
 
@@ -348,7 +349,7 @@ export function operatorChoices(
   }));
   const saved = modem.config?.network ?? "";
   if (saved && !choices.some((choice) => choice.id === saved))
-    choices.unshift({ id: saved, label: `Operator ${saved}`, disabled: false });
+    choices.unshift({ id: saved, label: t`Operator ${saved}`, disabled: false });
   return choices;
 }
 
@@ -359,9 +360,9 @@ export function hotspotErrors(
 ): { name?: string; password?: string } {
   const errors: { name?: string; password?: string } = {};
   if (!name.trim() || utf8Length(name) > NAME_MAX_BYTES)
-    errors.name = `1 to ${NAME_MAX_BYTES} characters`;
+    errors.name = t`1 to ${NAME_MAX_BYTES} characters`;
   if (password && (password.length < WIFI_PASSWORD_MIN || password.length > HOTSPOT_PASSWORD_MAX))
-    errors.password = `${WIFI_PASSWORD_MIN} to ${HOTSPOT_PASSWORD_MAX} characters`;
+    errors.password = t`${WIFI_PASSWORD_MIN} to ${HOTSPOT_PASSWORD_MAX} characters`;
   return errors;
 }
 
@@ -371,8 +372,9 @@ export function wifiJoinErrors(
   password: string,
 ): { ssid?: string; password?: string } {
   const errors: { ssid?: string; password?: string } = {};
-  if (!ssid || utf8Length(ssid) > NAME_MAX_BYTES) errors.ssid = `1 to ${NAME_MAX_BYTES} characters`;
+  if (!ssid || utf8Length(ssid) > NAME_MAX_BYTES)
+    errors.ssid = t`1 to ${NAME_MAX_BYTES} characters`;
   if (password && (password.length < WIFI_PASSWORD_MIN || password.length > WIFI_PASSWORD_MAX))
-    errors.password = `${WIFI_PASSWORD_MIN} to ${WIFI_PASSWORD_MAX} characters`;
+    errors.password = t`${WIFI_PASSWORD_MIN} to ${WIFI_PASSWORD_MAX} characters`;
   return errors;
 }

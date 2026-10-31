@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, X } from "lucide-react";
@@ -10,27 +12,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { providerLabel, UserAvatar } from "@/components/user-avatar";
 import { WorkspaceTile } from "@/components/workspace-tile";
 import { errorMessage } from "@/lib/errors";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { roleLabels } from "@/lib/permissions";
 import { formatRelative } from "@/lib/time";
 
 export const Route = createFileRoute("/_app/invite/$token")({
   component: InvitePage,
 });
 
-const ROLE_ABILITIES = {
-  operator: {
-    can: ["Switch scenes, start and stop the stream", "See bitrate, servers and activity"],
-    cannot: ["Manage members, switchers or billing"],
-  },
-  admin: {
-    can: [
-      "Switch scenes, start and stop the stream",
-      "Manage switchers, stream servers and members",
-    ],
-    cannot: ["Change the plan or billing"],
-  },
-  owner: { can: ["Everything"], cannot: [] },
-} as const;
+const roleAbilities = () =>
+  ({
+    operator: {
+      can: [t`Switch scenes, start and stop the stream`, t`See bitrate, servers and activity`],
+      cannot: [t`Manage members, switchers or billing`],
+    },
+    admin: {
+      can: [
+        t`Switch scenes, start and stop the stream`,
+        t`Manage switchers, stream servers and members`,
+      ],
+      cannot: [t`Change the plan or billing`],
+    },
+    owner: { can: [t`Everything`], cannot: [] },
+  }) as const;
 
 function InvitePage() {
   const { token } = Route.useParams();
@@ -62,10 +65,10 @@ function InvitePage() {
             <Problem
               title={
                 preview.error instanceof ApiRequestError && preview.error.status === 404
-                  ? "This invite link doesn’t exist"
-                  : "Couldn’t open this invite"
+                  ? t`This invite link doesn’t exist`
+                  : t`Couldn’t open this invite`
               }
-              detail="Check the link, or ask for a new invite."
+              detail={t`Check the link, or ask for a new invite.`}
             />
           )}
 
@@ -81,13 +84,15 @@ function InvitePage() {
                   <span className="text-sm text-muted-foreground">
                     {preview.data.invited_by ? (
                       <>
-                        <span className="font-semibold text-foreground">
-                          {preview.data.invited_by}
-                        </span>{" "}
-                        invited you to
+                        <Trans>
+                          <span className="font-semibold text-foreground">
+                            {preview.data.invited_by}
+                          </span>{" "}
+                          invited you to
+                        </Trans>
                       </>
                     ) : (
-                      "You’re invited to"
+                      t`You’re invited to`
                     )}
                   </span>
                   <span className="text-2xl font-bold">{preview.data.workspace_name}</span>
@@ -96,12 +101,12 @@ function InvitePage() {
 
               {preview.data.already_member ? (
                 <Problem
-                  title="You’re already a member"
-                  detail="Open the workspace to carry on."
+                  title={t`You’re already a member`}
+                  detail={t`Open the workspace to carry on.`}
                   action={
                     <Button asChild className="h-11 rounded-xl">
                       <Link to="/$workspace" params={{ workspace: preview.data.workspace_slug }}>
-                        Open {preview.data.workspace_name}
+                        <Trans>Open {preview.data.workspace_name}</Trans>
                       </Link>
                     </Button>
                   }
@@ -110,30 +115,32 @@ function InvitePage() {
                 <Problem
                   title={
                     {
-                      expired: "This invite has expired",
-                      revoked: "This invite was revoked",
-                      used: "This invite has already been used",
+                      expired: t`This invite has expired`,
+                      revoked: t`This invite was revoked`,
+                      used: t`This invite has already been used`,
                       open: "",
                     }[preview.data.status]
                   }
-                  detail="Ask for a new invite link."
+                  detail={t`Ask for a new invite link.`}
                 />
               ) : (
                 <>
                   <div className="flex flex-col gap-3 rounded-2xl border border-divider bg-sunken p-4">
                     <span className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">You’ll join as</span>
+                      <span className="text-sm font-semibold">
+                        <Trans>You’ll join as</Trans>
+                      </span>
                       <span className="rounded-md bg-primary-soft px-2 py-0.5 text-xs font-bold tracking-wider text-primary-soft-foreground uppercase">
-                        {ROLE_LABELS[preview.data.role]}
+                        {roleLabels()[preview.data.role]}
                       </span>
                     </span>
-                    {ROLE_ABILITIES[preview.data.role].can.map((line) => (
+                    {roleAbilities()[preview.data.role].can.map((line) => (
                       <span key={line} className="flex items-center gap-2.5 text-sm">
                         <Check className="size-4 text-live" />
                         {line}
                       </span>
                     ))}
-                    {ROLE_ABILITIES[preview.data.role].cannot.map((line) => (
+                    {roleAbilities()[preview.data.role].cannot.map((line) => (
                       <span
                         key={line}
                         className="flex items-center gap-2.5 text-sm text-muted-foreground"
@@ -146,12 +153,14 @@ function InvitePage() {
 
                   {preview.data.managed_by && (
                     <p className="rounded-2xl border border-divider p-4 text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">
-                        {preview.data.managed_by}
-                      </span>{" "}
-                      manages this workspace. Their team can see and run everything in it, including
-                      your stream and its stats. You can leave any time, and you can still create
-                      workspaces of your own.
+                      <Trans>
+                        <span className="font-semibold text-foreground">
+                          {preview.data.managed_by}
+                        </span>{" "}
+                        manages this workspace. Their team can see and run everything in it,
+                        including your stream and its stats. You can leave any time, and you can
+                        still create workspaces of your own.
+                      </Trans>
                     </p>
                   )}
 
@@ -162,7 +171,9 @@ function InvitePage() {
                         avatarUrl={connection?.avatar_url}
                         className="size-6"
                       />
-                      Signed in as {connection?.username} · {providerLabel(connection?.provider)}
+                      <Trans>
+                        Signed in as {connection?.username} · {providerLabel(connection?.provider)}
+                      </Trans>
                     </span>
                   </div>
 
@@ -172,18 +183,20 @@ function InvitePage() {
 
                   <div className="grid grid-cols-2 gap-2.5">
                     <Button asChild variant="outline" className="h-12 rounded-xl">
-                      <Link to="/">Decline</Link>
+                      <Link to="/">
+                        <Trans>Decline</Trans>
+                      </Link>
                     </Button>
                     <Button
                       className="h-12 rounded-xl"
                       onClick={() => accept.mutate()}
                       disabled={accept.isPending}
                     >
-                      {accept.isPending ? "Joining…" : "Accept and join"}
+                      {accept.isPending ? t`Joining…` : t`Accept and join`}
                     </Button>
                   </div>
                   <span className="text-center font-mono text-xs text-subtle-foreground">
-                    Invite expires {formatRelative(preview.data.expires_at)}
+                    <Trans>Invite expires {formatRelative(preview.data.expires_at)}</Trans>
                   </span>
                 </>
               )}
@@ -210,7 +223,9 @@ function Problem({
       <p className="text-sm text-muted-foreground">{detail}</p>
       {action ?? (
         <Button asChild variant="outline" className="h-11 rounded-xl">
-          <Link to="/">Go to my workspaces</Link>
+          <Link to="/">
+            <Trans>Go to my workspaces</Trans>
+          </Link>
         </Button>
       )}
     </div>

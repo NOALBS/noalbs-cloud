@@ -48,19 +48,19 @@ msgid "free disk space: {disk} GB"
 msgstr "vrije schijfruimte: {disk} GB"
 
 msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
-msgstr "Er is nog geen LIVE-scène gekozen. Kies er een op de Scenes-pagina."
+msgstr "Er is nog geen LIVE-scène gekozen. Kies er een op de Scènes-pagina."
 
 msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
-msgstr "Er is nog geen Privacy-scène gekozen. Kies er een op de Scenes-pagina."
+msgstr "Er is nog geen Privacy-scène gekozen. Kies er een op de Scènes-pagina."
 
 msgid "No Starting scene is picked yet. Choose one on the Scenes page."
-msgstr "Er is nog geen Starting-scène gekozen. Kies er een op de Scenes-pagina."
+msgstr "Er is nog geen Start-scène gekozen. Kies er een op de Scènes-pagina."
 
 msgid "No Ending scene is picked yet. Choose one on the Scenes page."
-msgstr "Er is nog geen Ending-scène gekozen. Kies er een op de Scenes-pagina."
+msgstr "Er is nog geen Einde-scène gekozen. Kies er een op de Scènes-pagina."
 
 msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
-msgstr "Er is nog geen Refresh-scène gekozen. Kies er een op de Scenes-pagina."
+msgstr "Er is nog geen Vernieuwen-scène gekozen. Kies er een op de Scènes-pagina."
 
 msgid "Switched to the LIVE scene"
 msgstr "Overgeschakeld naar de LIVE-scène"
@@ -69,13 +69,13 @@ msgid "Switched to the Privacy scene"
 msgstr "Overgeschakeld naar de Privacy-scène"
 
 msgid "Switched to the Starting scene"
-msgstr "Overgeschakeld naar de Starting-scène"
+msgstr "Overgeschakeld naar de Start-scène"
 
 msgid "Switched to the Ending scene"
-msgstr "Overgeschakeld naar de Ending-scène"
+msgstr "Overgeschakeld naar de Einde-scène"
 
 msgid "Switched to the Refresh scene"
-msgstr "Overgeschakeld naar de Refresh-scène"
+msgstr "Overgeschakeld naar de Vernieuwen-scène"
 
 msgid "Chat notifications on"
 msgstr "Chatmeldingen aan"
@@ -288,7 +288,7 @@ msgid "Nothing to fix: no stream source is playing on {scene}"
 msgstr "Niets te repareren: er speelt geen streambron op {scene}"
 
 msgid "No Refresh scene is picked, so fixing instead. {result}"
-msgstr "Er is geen Refresh-scène gekozen, dus in plaats daarvan repareren. {result}"
+msgstr "Er is geen Vernieuwen-scène gekozen, dus in plaats daarvan repareren. {result}"
 
 msgid "{name} is now shown"
 msgstr "{name} wordt nu getoond"
@@ -360,7 +360,7 @@ msgid "Offline timeout reached, stopping the stream"
 msgstr "Offline time-out bereikt, de stream wordt gestopt"
 
 msgid "Ending scene timeout reached, stopping the stream"
-msgstr "Time-out van de Ending-scène bereikt, de stream wordt gestopt"
+msgstr "Time-out van de Einde-scène bereikt, de stream wordt gestopt"
 
 msgid "Ignoring {name} from now on"
 msgstr "{name} wordt vanaf nu genegeerd"

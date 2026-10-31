@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { initials } from "./workspace-tile";
@@ -21,14 +22,14 @@ export function UserAvatar({
   );
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
+const providerLabels = (): Record<string, string> => ({
   TWITCH: "Twitch",
   KICK: "Kick",
   YOUTUBE: "YouTube",
   DISCORD: "Discord",
-  DEV: "Dev login",
-};
+  DEV: t`Dev login`,
+});
 
 export function providerLabel(provider: string | null | undefined): string {
-  return provider ? (PROVIDER_LABELS[provider] ?? provider) : "";
+  return provider ? (providerLabels()[provider] ?? provider) : "";
 }

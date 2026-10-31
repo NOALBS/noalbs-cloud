@@ -1,5 +1,5 @@
 import type { StreamServerKind } from "@/api/types";
-import { kindInfo, STREAM_SERVER_KINDS } from "@/lib/stream-server-kinds";
+import { kindInfo, streamServerKinds } from "@/lib/stream-server-kinds";
 
 /**
  * "Add to NOALBS Cloud" links: a stream server provider links to
@@ -50,7 +50,7 @@ export function parseAddServerFragment(hash: string): AddServerRequest | null {
   const kind = params.get("kind")?.trim().toLowerCase();
   const url = params.get("url")?.trim();
   if (!kind || !url || url.length > MAX_URL) return null;
-  if (!STREAM_SERVER_KINDS.some((info) => info.kind === kind)) return null;
+  if (!streamServerKinds().some((info) => info.kind === kind)) return null;
 
   const details: AddServerRequest["details"] = {};
   for (const field of detailFieldsOf(kind as StreamServerKind)) {

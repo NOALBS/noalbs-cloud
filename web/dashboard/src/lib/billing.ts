@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type {
   Addon,
   AddonVisibility,
@@ -50,28 +51,33 @@ export function describeSubscription(subscription: Subscription): {
   warning: boolean;
 } {
   const end = subscription.current_period_end ? formatDay(subscription.current_period_end) : null;
-  const period = subscription.interval === "year" ? "Yearly" : "Monthly";
+  const period = subscription.interval === "year" ? t`Yearly` : t`Monthly`;
 
   if (subscription.status === "past_due") {
     return {
       text: end
-        ? `A payment failed. Update your card in Manage billing; the plan stays active while we retry (period ends ${end}).`
-        : "A payment failed. Update your card in Manage billing; the plan stays active while we retry.",
+        ? t`A payment failed. Update your card in Manage billing; the plan stays active while we retry (period ends ${end}).`
+        : t`A payment failed. Update your card in Manage billing; the plan stays active while we retry.`,
       warning: true,
     };
   }
   if (subscription.cancel_at_period_end) {
     return {
       text: end
-        ? `Canceled. The plan stays active until ${end}, then the workspace moves to Free.`
-        : "Canceled. The plan stays active until the end of the period.",
+        ? t`Canceled. The plan stays active until ${end}, then the workspace moves to Free.`
+        : t`Canceled. The plan stays active until the end of the period.`,
       warning: true,
     };
   }
   return {
-    text: end ? `${period} billing, renews on ${end}.` : `${period} billing.`,
+    text: end ? t`${period} billing, renews on ${end}.` : t`${period} billing.`,
     warning: false,
   };
+}
+
+/** The word for a billing period, in the viewer's language. */
+export function intervalWord(interval: BillingInterval): string {
+  return interval === "year" ? t`year` : t`month`;
 }
 
 /** "1 slot", "3 slots". */
@@ -111,18 +117,18 @@ export function prorate(
 export function describeAddon(addon: WorkspaceAddon, unit: string): string {
   const now = countUnits(addon.quantity, unit);
   if (addon.billed < addon.quantity && addon.held_until) {
-    const then = addon.billed === 0 ? "then none" : `then ${addon.billed}`;
-    return `${now} until ${formatDay(addon.held_until)}, ${then}`;
+    const then = addon.billed === 0 ? t`then none` : t`then ${addon.billed}`;
+    return t`${now} until ${formatDay(addon.held_until)}, ${then}`;
   }
   return now;
 }
 
-export const ADDON_STATUS_LABELS: Record<AddonVisibility, string> = {
-  hidden: "Hidden",
-  coming_soon: "Coming soon",
-  unavailable: "Currently unavailable",
-  available: "Available",
-};
+export const addonStatusLabels = (): Record<AddonVisibility, string> => ({
+  hidden: t`Hidden`,
+  coming_soon: t`Coming soon`,
+  unavailable: t`Currently unavailable`,
+  available: t`Available`,
+});
 
 /** Hidden add-ons still show to workspaces that have them, so they can lower them. */
 export function showsAddon(addon: Addon, owned: WorkspaceAddon | undefined): boolean {
@@ -153,6 +159,6 @@ export function missingCardReminder(
   if (!plan.needs_payment_method) return null;
   const end = plan.subscription?.current_period_end;
   return end
-    ? `There’s no card on file. Add one under Manage billing before ${formatDay(end)}, or the ${plan.plan.name} plan ends.`
-    : `There’s no card on file. Add one under Manage billing, or the ${plan.plan.name} plan ends with this period.`;
+    ? t`There’s no card on file. Add one under Manage billing before ${formatDay(end)}, or the ${plan.plan.name} plan ends.`
+    : t`There’s no card on file. Add one under Manage billing, or the ${plan.plan.name} plan ends with this period.`;
 }

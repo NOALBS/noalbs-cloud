@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { adminOverviewQuery } from "@/api/queries";
@@ -19,17 +21,19 @@ function OverviewPage() {
 
   return (
     <Page
-      title="Overview"
-      description="NOALBS Cloud at a glance."
+      title={t`Overview`}
+      description={t`NOALBS Cloud at a glance.`}
       className="max-w-6xl"
       actions={
         data &&
         (data.billing_enabled ? (
           <Badge variant={data.stripe_test_mode ? "secondary" : "default"}>
-            Stripe {data.stripe_test_mode ? "test mode" : "live"}
+            {data.stripe_test_mode ? t`Stripe test mode` : t`Stripe live`}
           </Badge>
         ) : (
-          <Badge variant="secondary">Billing off</Badge>
+          <Badge variant="secondary">
+            <Trans>Billing off</Trans>
+          </Badge>
         ))
       }
     >
@@ -38,33 +42,37 @@ function OverviewPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Stat label="Users" value={data.users} hint={`${data.new_users_7d} new this week`} />
-            <Stat label="Workspaces" value={data.workspaces} />
             <Stat
-              label="Paying"
+              label={t`Users`}
+              value={data.users}
+              hint={t`${data.new_users_7d} new this week`}
+            />
+            <Stat label={t`Workspaces`} value={data.workspaces} />
+            <Stat
+              label={t`Paying`}
               value={data.paying_workspaces}
               hint={
                 data.workspaces > 0
-                  ? `${Math.round((data.paying_workspaces / data.workspaces) * 100)}% of workspaces`
+                  ? t`${Math.round((data.paying_workspaces / data.workspaces) * 100)}% of workspaces`
                   : undefined
               }
             />
             <Stat
-              label="MRR"
+              label={t`MRR`}
               value={
                 data.mrr.length === 0
                   ? "—"
                   : data.mrr.map((mrr) => formatPrice(mrr.amount, mrr.currency)).join(" + ")
               }
-              hint="Yearly prices ÷ 12"
+              hint={t`Yearly prices ÷ 12`}
             />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Section title="Workspaces per plan">
+            <Section title={t`Workspaces per plan`}>
               <Bars rows={data.plans} total={data.workspaces} />
             </Section>
-            <Section title="Add-ons sold" description="Units on live subscriptions.">
+            <Section title={t`Add-ons sold`} description={t`Units on live subscriptions.`}>
               <Bars
                 rows={data.addons}
                 total={Math.max(1, ...data.addons.map((addon) => addon.count))}
@@ -73,10 +81,10 @@ function OverviewPage() {
           </div>
 
           <Section
-            title="Newest users"
+            title={t`Newest users`}
             actions={
               <Link to="/admin/users" className="text-sm font-medium text-primary hover:underline">
-                All users
+                <Trans>All users</Trans>
               </Link>
             }
           >
@@ -90,7 +98,7 @@ function OverviewPage() {
                   >
                     <UserAvatar name={user.username} avatarUrl={user.avatar_url} />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                      {user.username ?? "No sign-in"}
+                      {user.username ?? t`No sign-in`}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {formatRelative(user.created_at)}
@@ -114,7 +122,11 @@ function Bars({
   total: number;
 }) {
   if (rows.length === 0) {
-    return <p className="px-5 pb-5 text-sm text-muted-foreground">Nothing yet.</p>;
+    return (
+      <p className="px-5 pb-5 text-sm text-muted-foreground">
+        <Trans>Nothing yet.</Trans>
+      </p>
+    );
   }
   return (
     <ul className="flex flex-col gap-3 px-5 pb-5">

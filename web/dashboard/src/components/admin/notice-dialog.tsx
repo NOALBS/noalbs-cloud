@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -18,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { errorMessage } from "@/lib/errors";
-import { fromLocalInput, SEVERITIES, toLocalInput } from "@/lib/notices";
+import { fromLocalInput, severities, toLocalInput } from "@/lib/notices";
 import { cn } from "@/lib/utils";
 
 const MAX_MESSAGE = 500;
@@ -59,7 +61,7 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
         queryClient.invalidateQueries({ queryKey: queryKeys.adminNotices }),
         queryClient.invalidateQueries({ queryKey: queryKeys.notices }),
       ]);
-      toast.success(notice ? "Notice updated" : "Notice posted");
+      toast.success(notice ? t`Notice updated` : t`Notice posted`);
       setOpen(false);
       if (!notice) {
         setMessage("");
@@ -80,14 +82,18 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{notice ? "Edit notice" : "New notice"}</DialogTitle>
+          <DialogTitle>{notice ? t`Edit notice` : t`New notice`}</DialogTitle>
           <DialogDescription>
-            Shown at the top of the dashboard to everyone who is signed in. Plain text only.
+            <Trans>
+              Shown at the top of the dashboard to everyone who is signed in. Plain text only.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="notice-message">Message</Label>
+            <Label htmlFor="notice-message">
+              <Trans>Message</Trans>
+            </Label>
             <textarea
               id="notice-message"
               value={message}
@@ -102,9 +108,11 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
           </div>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm leading-none font-medium">Severity</legend>
+            <legend className="mb-2 text-sm leading-none font-medium">
+              <Trans>Severity</Trans>
+            </legend>
             <div className="flex gap-1.5">
-              {SEVERITIES.map((option) => (
+              {severities().map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -125,7 +133,9 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="notice-starts">Starts (empty = now)</Label>
+              <Label htmlFor="notice-starts">
+                <Trans>Starts (empty = now)</Trans>
+              </Label>
               <Input
                 id="notice-starts"
                 type="datetime-local"
@@ -134,7 +144,9 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="notice-ends">Ends (empty = until ended)</Label>
+              <Label htmlFor="notice-ends">
+                <Trans>Ends (empty = until ended)</Trans>
+              </Label>
               <Input
                 id="notice-ends"
                 type="datetime-local"
@@ -146,10 +158,10 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
 
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="notice-dismissible" className="flex flex-col items-start gap-0.5">
-              Users can hide it
+              <Trans>Users can hide it</Trans>
               {severity === "critical" && (
                 <span className="text-xs font-normal text-muted-foreground">
-                  Critical notices can’t be hidden.
+                  <Trans>Critical notices can’t be hidden.</Trans>
                 </span>
               )}
             </Label>
@@ -165,10 +177,10 @@ export function NoticeDialog({ notice, children }: { notice?: AdminNotice; child
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button onClick={() => save.mutate()} disabled={!message.trim() || save.isPending}>
-            {notice ? "Save" : "Post notice"}
+            {notice ? t`Save` : t`Post notice`}
           </Button>
         </DialogFooter>
       </DialogContent>

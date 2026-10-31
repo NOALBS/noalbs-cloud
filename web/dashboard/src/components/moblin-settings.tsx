@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -67,10 +69,10 @@ export function MoblinSettings() {
       });
       toast.success(
         change.clear_password
-          ? "Moblin disconnected"
+          ? t`Moblin disconnected`
           : change.generate_password || change.password !== undefined
-            ? "Password saved. Enter it in Moblin."
-            : "Saved",
+            ? t`Password saved. Enter it in Moblin.`
+            : t`Saved`,
       );
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -85,14 +87,16 @@ export function MoblinSettings() {
             <ConnectionDetails save={save.mutate} saving={save.isPending} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Moblin is set up. Its password and URL are hidden from NOALBS support.
+              <Trans>Moblin is set up. Its password and URL are hidden from NOALBS support.</Trans>
             </p>
           ))
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              Moblin connects to NOALBS Cloud as a remote control “streamer”. Set it up to get a
-              password and the URL to enter in Moblin.
+              <Trans>
+                Moblin connects to NOALBS Cloud as a remote control “streamer”. Set it up to get a
+                password and the URL to enter in Moblin.
+              </Trans>
             </p>
             {canManage && (
               <div className="flex flex-wrap gap-2">
@@ -100,7 +104,7 @@ export function MoblinSettings() {
                   onClick={() => save.mutate({ generate_password: true })}
                   disabled={save.isPending}
                 >
-                  {save.isPending ? "Setting up…" : "Set up Moblin"}
+                  {save.isPending ? t`Setting up…` : t`Set up Moblin`}
                 </Button>
                 <OwnPassword save={save.mutate} saving={save.isPending} />
               </div>
@@ -110,21 +114,21 @@ export function MoblinSettings() {
       </div>
       <ToggleRow
         id="moblin-start-with-stream"
-        title="Start Moblin with the OBS stream"
-        description="When the OBS stream starts (from OBS, the dashboard or !start), Moblin goes live."
+        title={t`Start Moblin with the OBS stream`}
+        description={t`When the OBS stream starts (from OBS, the dashboard or !start), Moblin goes live.`}
         checked={startWithStream}
         onCheckedChange={(checked) => save.mutate({ start_with_stream: checked })}
         disabled={!canManage || !hasPassword || save.isPending}
-        note={hasPassword ? undefined : "Needs Moblin set up"}
+        note={hasPassword ? undefined : t`Needs Moblin set up`}
       />
       <ToggleRow
         id="moblin-stop-with-stream"
-        title="Stop Moblin with the OBS stream"
-        description="When the OBS stream stops (from OBS, the dashboard, !stop or a raid), Moblin stops too. Leave off to keep it running."
+        title={t`Stop Moblin with the OBS stream`}
+        description={t`When the OBS stream stops (from OBS, the dashboard, !stop or a raid), Moblin stops too. Leave off to keep it running.`}
         checked={stopWithStream}
         onCheckedChange={(checked) => save.mutate({ stop_with_stream: checked })}
         disabled={!canManage || !hasPassword || save.isPending}
-        note={hasPassword ? undefined : "Needs Moblin set up"}
+        note={hasPassword ? undefined : t`Needs Moblin set up`}
       />
     </div>
   );
@@ -153,52 +157,64 @@ function ConnectionDetails({
     <>
       <ol className="flex list-decimal flex-col gap-1 pl-5 text-sm text-muted-foreground">
         <li>
-          In Moblin, open <strong>Settings → Remote control</strong> and set the{" "}
-          <strong>Password</strong> to:
+          <Trans>
+            In Moblin, open <strong>Settings → Remote control</strong> and set the{" "}
+            <strong>Password</strong> to:
+          </Trans>
         </li>
       </ol>
       {connection.data ? (
         connection.data.password && (
-          <CopyField value={connection.data.password} label="Moblin password" secret />
+          <CopyField value={connection.data.password} label={t`Moblin password`} secret />
         )
       ) : (
         <p className="text-sm text-muted-foreground">
-          {connection.error ? errorMessage(connection.error) : "Loading…"}
+          {connection.error ? errorMessage(connection.error) : t`Loading…`}
         </p>
       )}
       <ol start={2} className="flex list-decimal flex-col gap-1 pl-5 text-sm text-muted-foreground">
         <li>
-          Open <strong>Streamer → Assistant</strong> and enter this URL:
+          <Trans>
+            Open <strong>Streamer → Assistant</strong> and enter this URL:
+          </Trans>
         </li>
       </ol>
-      {connection.data && <CopyField value={connection.data.url} label="Moblin Assistant URL" />}
+      {connection.data && <CopyField value={connection.data.url} label={t`Moblin Assistant URL`} />}
       <ol start={3} className="flex list-decimal flex-col gap-1 pl-5 text-sm text-muted-foreground">
         <li>
-          Turn <strong>Enabled</strong> on under <strong>Streamer</strong>.
+          <Trans>
+            Turn <strong>Enabled</strong> on under <strong>Streamer</strong>.
+          </Trans>
         </li>
       </ol>
       <p className="text-xs text-muted-foreground">
-        Moblin uses one remote control password, so if it already has one you use elsewhere, enter
-        that here instead. A new password disconnects the Moblin connected now.
+        <Trans>
+          Moblin uses one remote control password, so if it already has one you use elsewhere, enter
+          that here instead. A new password disconnects the Moblin connected now.
+        </Trans>
       </p>
       <div className="flex flex-wrap gap-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" disabled={saving}>
-              New password
+              <Trans>New password</Trans>
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Generate a new Moblin password?</AlertDialogTitle>
+              <AlertDialogTitle>
+                <Trans>Generate a new Moblin password?</Trans>
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Moblin disconnects until you enter the new password in it.
+                <Trans>Moblin disconnects until you enter the new password in it.</Trans>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
               <AlertDialogAction onClick={() => save({ generate_password: true })}>
-                Generate
+                <Trans>Generate</Trans>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -211,7 +227,7 @@ function ConnectionDetails({
           }
           disabled={saving}
         >
-          Disconnect
+          <Trans>Disconnect</Trans>
         </Button>
       </div>
     </>
@@ -227,7 +243,7 @@ function OwnPassword({ save, saving }: { save: (change: MoblinChange) => void; s
   if (!open) {
     return (
       <Button variant="ghost" onClick={() => setOpen(true)}>
-        Use my own password
+        <Trans>Use my own password</Trans>
       </Button>
     );
   }
@@ -241,7 +257,9 @@ function OwnPassword({ save, saving }: { save: (change: MoblinChange) => void; s
 
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-2">
-      <Label htmlFor="moblin-password">Moblin’s remote control password</Label>
+      <Label htmlFor="moblin-password">
+        <Trans>Moblin’s remote control password</Trans>
+      </Label>
       <div className="flex gap-2">
         <Input
           id="moblin-password"
@@ -250,14 +268,14 @@ function OwnPassword({ save, saving }: { save: (change: MoblinChange) => void; s
           spellCheck={false}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder={`At least ${MOBLIN_MIN_PASSWORD} characters`}
+          placeholder={t`At least ${MOBLIN_MIN_PASSWORD} characters`}
           className="font-mono"
         />
         <Button type="submit" disabled={!valid || saving}>
-          Save
+          <Trans>Save</Trans>
         </Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          <Trans>Cancel</Trans>
         </Button>
       </div>
     </form>

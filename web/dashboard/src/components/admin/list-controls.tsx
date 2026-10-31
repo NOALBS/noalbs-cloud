@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export function Pager({
       <Button
         size="icon-sm"
         variant="outline"
-        aria-label="Previous page"
+        aria-label={t`Previous page`}
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       >
@@ -66,7 +67,7 @@ export function Pager({
       <Button
         size="icon-sm"
         variant="outline"
-        aria-label="Next page"
+        aria-label={t`Next page`}
         disabled={page >= pages}
         onClick={() => onPage(page + 1)}
       >

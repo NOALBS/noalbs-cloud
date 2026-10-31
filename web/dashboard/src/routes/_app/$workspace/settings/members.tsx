@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Link2, X } from "lucide-react";
@@ -38,8 +40,8 @@ import {
   can,
   canRemove,
   invitableRoles,
-  ROLE_DESCRIPTIONS,
-  ROLE_LABELS,
+  roleDescriptions,
+  roleLabels,
 } from "@/lib/permissions";
 import { formatDate, formatRelative } from "@/lib/time";
 
@@ -53,13 +55,13 @@ function MembersPage() {
   const plan = useQuery(workspacePlanQuery(workspace.id));
 
   const limit = plan.data
-    ? `${plan.data.usage.members} of ${plan.data.plan.max_members} on ${plan.data.plan.name}`
+    ? t`${plan.data.usage.members} of ${plan.data.plan.max_members} on ${plan.data.plan.name}`
     : undefined;
 
   return (
-    <Page title="Members & invites" description="Who can see and run this workspace.">
+    <Page title={t`Members & invites`} description={t`Who can see and run this workspace.`}>
       <Section
-        title="Members"
+        title={t`Members`}
         actions={
           limit && <span className="tabular font-mono text-xs text-muted-foreground">{limit}</span>
         }
@@ -89,15 +91,15 @@ function MembersPage() {
 
       {can(actor, "account.manage") && <Invites />}
 
-      <Section title="Roles">
+      <Section title={t`Roles`}>
         <dl className="grid gap-3 px-5 pb-5 text-sm sm:grid-cols-3">
           {(["operator", "admin", "owner"] as const).map((role) => (
             <div
               key={role}
               className="flex flex-col gap-1 rounded-xl border border-divider bg-sunken p-3.5"
             >
-              <dt className="font-semibold">{ROLE_LABELS[role]}</dt>
-              <dd className="text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</dd>
+              <dt className="font-semibold">{roleLabels()[role]}</dt>
+              <dd className="text-muted-foreground">{roleDescriptions()[role]}</dd>
             </div>
           ))}
         </dl>
@@ -118,7 +120,7 @@ function MemberRow({
   workspaceId: string;
 }) {
   const queryClient = useQueryClient();
-  const name = member.username ?? "Unknown user";
+  const name = member.username ?? t`Unknown user`;
   const roles = isYou ? [] : assignableRoles(actor, member.role);
   const path = { workspace_id: workspaceId, user_id: member.user_id };
 
@@ -138,7 +140,7 @@ function MemberRow({
       ),
     onSuccess: async (_, role) => {
       await refresh();
-      toast.success(`${name}'s role is now ${ROLE_LABELS[role]}`);
+      toast.success(t`${name}'s role is now ${roleLabels()[role]}`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -148,7 +150,7 @@ function MemberRow({
       unwrap(api.DELETE("/workspaces/{workspace_id}/members/{user_id}", { params: { path } })),
     onSuccess: async () => {
       await refresh();
-      toast.success(`${name} was removed`);
+      toast.success(t`${name} was removed`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -159,10 +161,15 @@ function MemberRow({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-semibold">
           {name}
-          {isYou && <span className="font-normal text-muted-foreground"> (you)</span>}
+          {isYou && (
+            <span className="font-normal text-muted-foreground">
+              {" "}
+              <Trans>(you)</Trans>
+            </span>
+          )}
         </span>
         <span className="text-xs text-muted-foreground">
-          {[providerLabel(member.provider), `joined ${formatDate(member.joined_at)}`]
+          {[providerLabel(member.provider), t`joined ${formatDate(member.joined_at)}`]
             .filter(Boolean)
             .join(" · ")}
         </span>
@@ -174,13 +181,13 @@ function MemberRow({
           onValueChange={(role) => changeRole.mutate(role as WorkspaceRole)}
           disabled={changeRole.isPending}
         >
-          <SelectTrigger className="w-36" aria-label={`Role of ${name}`}>
+          <SelectTrigger className="w-36" aria-label={t`Role of ${name}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {[...new Set([member.role, ...roles])].map((role) => (
               <SelectItem key={role} value={role}>
-                {ROLE_LABELS[role]}
+                {roleLabels()[role]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -188,30 +195,36 @@ function MemberRow({
       ) : (
         <Badge
           variant={member.role === "owner" ? "default" : "secondary"}
-          className="w-20 justify-center"
+          className="min-w-20 justify-center"
         >
-          {ROLE_LABELS[member.role]}
+          {roleLabels()[member.role]}
         </Badge>
       )}
 
       {!isYou && canRemove(actor, false, member.role) ? (
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={`Remove ${name}`}>
+            <Button variant="ghost" size="icon" aria-label={t`Remove ${name}`}>
               <X />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove {name}?</AlertDialogTitle>
+              <AlertDialogTitle>
+                <Trans>Remove {name}</Trans>?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                They lose access to this workspace straight away. You can invite them again later.
+                <Trans>
+                  They lose access to this workspace straight away. You can invite them again later.
+                </Trans>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
               <AlertDialogAction variant="destructive" onClick={() => remove.mutate()}>
-                Remove
+                <Trans>Remove</Trans>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -223,10 +236,10 @@ function MemberRow({
   );
 }
 
-const EXPIRY_OPTIONS = [
-  { days: 1, label: "In 1 day" },
-  { days: 7, label: "In 7 days" },
-  { days: 30, label: "In 30 days" },
+const expiryOptions = () => [
+  { days: 1, label: t`In 1 day` },
+  { days: 7, label: t`In 7 days` },
+  { days: 30, label: t`In 30 days` },
 ];
 
 function Invites() {
@@ -263,19 +276,21 @@ function Invites() {
     onSuccess: async (_, inviteId) => {
       if (created?.invite.id === inviteId) setCreated(null);
       await queryClient.invalidateQueries({ queryKey: queryKeys.invites(workspace.id) });
-      toast.success("Invite revoked");
+      toast.success(t`Invite revoked`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
 
   return (
     <Section
-      title="Invite links"
-      description="Anyone with a link can join once, with the chosen role, until it expires."
+      title={t`Invite links`}
+      description={t`Anyone with a link can join once, with the chosen role, until it expires.`}
     >
       <div className="flex flex-wrap items-end gap-3 px-5 pb-5">
         <fieldset className="flex flex-col gap-1.5">
-          <legend className="pb-1.5 text-sm font-semibold">Role</legend>
+          <legend className="pb-1.5 text-sm font-semibold">
+            <Trans>Role</Trans>
+          </legend>
           <div className="flex h-10 overflow-hidden rounded-lg border border-input">
             {roles.map((option) => (
               <label
@@ -290,21 +305,21 @@ function Invites() {
                   onChange={() => setRole(option)}
                   className="sr-only"
                 />
-                {ROLE_LABELS[option]}
+                {roleLabels()[option]}
               </label>
             ))}
           </div>
         </fieldset>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold" id="invite-expiry">
-            Expires
+            <Trans>Expires</Trans>
           </span>
           <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
             <SelectTrigger className="h-10 w-36" aria-labelledby="invite-expiry">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {EXPIRY_OPTIONS.map((option) => (
+              {expiryOptions().map((option) => (
                 <SelectItem key={option.days} value={String(option.days)}>
                   {option.label}
                 </SelectItem>
@@ -314,7 +329,7 @@ function Invites() {
         </div>
         <Button className="h-10" onClick={() => create.mutate()} disabled={create.isPending}>
           <Link2 />
-          Create link
+          <Trans>Create link</Trans>
         </Button>
       </div>
 
@@ -327,7 +342,7 @@ function Invites() {
               params={{ workspace: workspace.url_slug }}
               className="font-semibold underline"
             >
-              See plans
+              <Trans>See plans</Trans>
             </Link>
           )}
         </p>
@@ -341,10 +356,12 @@ function Invites() {
             key={invite.id}
             className="flex flex-wrap items-center gap-3 border-t border-divider px-5 py-3"
           >
-            <Badge variant="secondary">{ROLE_LABELS[invite.role]}</Badge>
+            <Badge variant="secondary">{roleLabels()[invite.role]}</Badge>
             <span className="flex-1 text-sm text-muted-foreground">
-              Created {formatRelative(invite.created_at)} · expires{" "}
-              {formatRelative(invite.expires_at)}
+              <Trans>
+                Created {formatRelative(invite.created_at)} · expires{" "}
+                {formatRelative(invite.expires_at)}
+              </Trans>
             </span>
             <Button
               variant="ghost"
@@ -353,13 +370,13 @@ function Invites() {
               onClick={() => revoke.mutate(invite.id)}
               disabled={revoke.isPending}
             >
-              Revoke
+              <Trans>Revoke</Trans>
             </Button>
           </li>
         ))}
         {invites.data?.length === 0 && !created && (
           <li className="border-t border-divider px-5 py-4 text-sm text-muted-foreground">
-            No open invites.
+            <Trans>No open invites.</Trans>
           </li>
         )}
       </ul>
@@ -374,10 +391,11 @@ function NewInviteLink({ invite }: { invite: CreatedInvite }) {
   return (
     <div className="mx-5 mb-5 flex flex-col gap-2.5 rounded-xl border border-live/30 bg-live/8 p-3.5">
       <span className="text-sm font-semibold">
-        New {ROLE_LABELS[invite.invite.role].toLowerCase()} invite. Copy it now: it won’t be shown
-        again.
+        <Trans>
+          New invite ({roleLabels()[invite.invite.role]}). Copy it now: it won’t be shown again.
+        </Trans>
       </span>
-      <CopyField value={url} label="invite link" secret />
+      <CopyField value={url} label={t`invite link`} secret />
     </div>
   );
 }

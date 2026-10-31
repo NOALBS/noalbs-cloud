@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export function CopyField({
           size="icon-sm"
           variant="ghost"
           onClick={() => setRevealed(!revealed)}
-          aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+          aria-label={hidden ? t`Show ${label}` : t`Hide ${label}`}
           aria-pressed={!hidden}
         >
           {hidden ? <Eye /> : <EyeOff />}
@@ -45,7 +46,7 @@ export function CopyField({
       )}
       <Button size="sm" variant="outline" onClick={copy}>
         {copied ? <Check /> : <Copy />}
-        {copied ? "Copied" : "Copy"}
+        {copied ? t`Copied` : t`Copy`}
       </Button>
     </div>
   );

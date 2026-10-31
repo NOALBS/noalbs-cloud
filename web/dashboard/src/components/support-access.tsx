@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,10 +23,10 @@ import { can, isSupport } from "@/lib/permissions";
 import {
   describeSupportAccess,
   isSupportChange,
-  SUPPORT_DURATIONS,
-  SUPPORT_LEVEL_DESCRIPTIONS,
-  SUPPORT_LEVEL_LABELS,
   supportAccessBasis,
+  supportDurations,
+  supportLevelDescriptions,
+  supportLevelLabels,
 } from "@/lib/support";
 import { formatRelative } from "@/lib/time";
 
@@ -41,27 +43,31 @@ export function SupportAccess() {
 
   return (
     <Section
-      title="NOALBS support access"
-      description="Let NOALBS support into this workspace while they help you. They see your stream servers’ stats URLs, to help fix them, but never passwords or raw stats, and everything they do here is listed below."
+      title={t`NOALBS support access`}
+      description={t`Let NOALBS support into this workspace while they help you. They see your stream servers’ stats URLs, to help fix them, but never passwords or raw stats, and everything they do here is listed below.`}
     >
       <div className="flex flex-col gap-5 px-5 pb-5">
         {grant ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-surface-2 px-4 py-3">
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="font-semibold">
-                {SUPPORT_LEVEL_LABELS[grant.level]} until{" "}
-                {new Date(grant.expires_at).toLocaleString(currentLocale())}
+                <Trans>
+                  {supportLevelLabels()[grant.level]} until{" "}
+                  {new Date(grant.expires_at).toLocaleString(currentLocale())}
+                </Trans>
               </span>
               <span className="text-muted-foreground">
-                Allowed {formatRelative(grant.created_at)}
-                {grant.granted_by && ` by ${grant.granted_by}`}.{" "}
-                {SUPPORT_LEVEL_DESCRIPTIONS[grant.level]}
+                <Trans>
+                  Allowed {formatRelative(grant.created_at)}
+                  {grant.granted_by && t` by ${grant.granted_by}`}.{" "}
+                  {supportLevelDescriptions()[grant.level]}
+                </Trans>
               </span>
             </div>
             {canGrant && !editing && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setEditing(true)}>
-                  Change
+                  <Trans>Change</Trans>
                 </Button>
                 <EndButton workspaceId={workspace.id} />
               </div>
@@ -70,9 +76,11 @@ export function SupportAccess() {
         ) : (
           access.isSuccess && (
             <p className="text-sm text-muted-foreground">
-              NOALBS support can’t open this workspace right now. Only in an emergency (abuse, a
-              legal obligation or a security problem) can staff look without your permission, for an
-              hour, and you’ll see who and why here.
+              <Trans>
+                NOALBS support can’t open this workspace right now. Only in an emergency (abuse, a
+                legal obligation or a security problem) can staff look without your permission, for
+                an hour, and you’ll see who and why here.
+              </Trans>
             </p>
           )
         )}
@@ -109,7 +117,7 @@ function GrantForm({
 }) {
   const queryClient = useQueryClient();
   const [level, setLevel] = useState<SupportLevel>(initialLevel);
-  const [hours, setHours] = useState<number>(SUPPORT_DURATIONS[0].hours);
+  const [hours, setHours] = useState<number>(supportDurations()[0].hours);
 
   const grant = useMutation({
     mutationFn: () =>
@@ -122,7 +130,7 @@ function GrantForm({
     onSuccess: (data) => {
       queryClient.setQueryData(supportAccessQuery(workspaceId).queryKey, data);
       onDone();
-      toast.success("NOALBS support can come in now");
+      toast.success(t`NOALBS support can come in now`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -131,23 +139,23 @@ function GrantForm({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={level} onValueChange={(next) => setLevel(next as SupportLevel)}>
-          <SelectTrigger className="w-48" aria-label="What support may do">
+          <SelectTrigger className="w-48" aria-label={t`What support may do`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {(["view", "control"] as const).map((option) => (
               <SelectItem key={option} value={option}>
-                {SUPPORT_LEVEL_LABELS[option]}
+                {supportLevelLabels()[option]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={String(hours)} onValueChange={(next) => setHours(Number(next))}>
-          <SelectTrigger className="w-32" aria-label="For how long">
+          <SelectTrigger className="w-32" aria-label={t`For how long`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SUPPORT_DURATIONS.map((duration) => (
+            {supportDurations().map((duration) => (
               <SelectItem key={duration.hours} value={String(duration.hours)}>
                 {duration.label}
               </SelectItem>
@@ -155,15 +163,15 @@ function GrantForm({
           </SelectContent>
         </Select>
         <Button onClick={() => grant.mutate()} disabled={grant.isPending}>
-          Allow support access
+          <Trans>Allow support access</Trans>
         </Button>
         {onCancel && (
           <Button variant="ghost" onClick={onCancel}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
         )}
       </div>
-      <p className="text-sm text-muted-foreground">{SUPPORT_LEVEL_DESCRIPTIONS[level]}</p>
+      <p className="text-sm text-muted-foreground">{supportLevelDescriptions()[level]}</p>
     </div>
   );
 }
@@ -181,7 +189,7 @@ function EndButton({ workspaceId }: { workspaceId: string }) {
       queryClient.setQueryData(supportAccessQuery(workspaceId).queryKey, (current) =>
         current ? { ...current, grant: null } : current,
       );
-      toast.success("Support access ended");
+      toast.success(t`Support access ended`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -193,7 +201,7 @@ function EndButton({ workspaceId }: { workspaceId: string }) {
       onClick={() => end.mutate()}
       disabled={end.isPending}
     >
-      End now
+      <Trans>End now</Trans>
     </Button>
   );
 }
@@ -204,10 +212,14 @@ function AccessLog({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold">What staff did here</h3>
+      <h3 className="text-sm font-semibold">
+        <Trans>What staff did here</Trans>
+      </h3>
       {log.isError && <p className="text-sm text-destructive">{errorMessage(log.error)}</p>}
       {log.isSuccess && entries.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing: NOALBS staff haven’t been here.</p>
+        <p className="text-sm text-muted-foreground">
+          <Trans>Nothing: NOALBS staff haven’t been here.</Trans>
+        </p>
       )}
       {entries.length > 0 && (
         <ul className="flex flex-col divide-y divide-divider rounded-xl border">
@@ -223,11 +235,13 @@ function AccessLog({ workspaceId }: { workspaceId: string }) {
           onClick={() => log.fetchNextPage()}
           disabled={log.isFetchingNextPage}
         >
-          Show older
+          <Trans>Show older</Trans>
         </Button>
       )}
       <p className="text-xs text-muted-foreground">
-        Looking around is listed once an hour per page, every change each time. Kept for a year.
+        <Trans>
+          Looking around is listed once an hour per page, every change each time. Kept for a year.
+        </Trans>
       </p>
     </div>
   );
@@ -284,7 +298,9 @@ function EmergencyList({
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-low/40 bg-low/5 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Emergency access without your permission</h3>
+        <h3 className="text-sm font-semibold">
+          <Trans>Emergency access without your permission</Trans>
+        </h3>
         {unseen && (
           <Button
             size="sm"
@@ -292,19 +308,23 @@ function EmergencyList({
             onClick={() => acknowledge.mutate()}
             disabled={acknowledge.isPending}
           >
-            Mark as seen
+            <Trans>Mark as seen</Trans>
           </Button>
         )}
       </div>
       <ul className="flex flex-col gap-2 text-sm">
         {emergency.map((item) => (
           <li key={item.id} className="flex flex-col">
-            <span className={item.acknowledged ? undefined : "font-semibold"}>“{item.reason}”</span>
+            <span className={item.acknowledged ? undefined : "font-semibold"}>
+              <Trans>“{item.reason}”</Trans>
+            </span>
             <span className="text-xs text-muted-foreground">
-              {item.staff_name ?? "NOALBS staff"} ·{" "}
-              {new Date(item.created_at).toLocaleString(currentLocale())},
-              {SUPPORT_LEVEL_LABELS[item.level].toLowerCase()} until{" "}
-              {new Date(item.expires_at).toLocaleTimeString(currentLocale())}
+              <Trans>
+                {item.staff_name ?? t`NOALBS staff`} ·{" "}
+                {new Date(item.created_at).toLocaleString(currentLocale())},{" "}
+                {supportLevelLabels()[item.level]} until{" "}
+                {new Date(item.expires_at).toLocaleTimeString(currentLocale())}
+              </Trans>
             </span>
           </li>
         ))}

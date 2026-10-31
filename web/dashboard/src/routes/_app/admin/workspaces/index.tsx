@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Building2, X } from "lucide-react";
@@ -45,21 +47,21 @@ function WorkspacesPage() {
 
   return (
     <Page
-      title="Workspaces"
-      description={workspaces.data ? `${workspaces.data.total} workspaces` : undefined}
+      title={t`Workspaces`}
+      description={workspaces.data ? t`${workspaces.data.total} workspaces` : undefined}
       className="max-w-6xl"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={q} onSearch={search} placeholder="Search by name, slug or ID" />
+        <SearchBox value={q} onSearch={search} placeholder={t`Search by name, slug or ID`} />
         {organization && (
           <Link
             to="/admin/workspaces"
             search={{ q: q || undefined }}
             className="flex min-h-9 items-center gap-1.5 rounded-full border border-divider bg-surface-2 px-3 text-sm"
-            title="Show every workspace"
+            title={t`Show every workspace`}
           >
             <Building2 className="size-4" />
-            Clients of {filteredBy.data?.organization.name ?? "…"}
+            <Trans>Clients of {filteredBy.data?.organization.name ?? "…"}</Trans>
             <X className="size-3.5 text-muted-foreground" />
           </Link>
         )}
@@ -68,16 +70,26 @@ function WorkspacesPage() {
         <Skeleton className="h-64" />
       ) : workspaces.data.items.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          No workspaces match.
+          <Trans>No workspaces match.</Trans>
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
           <li className="hidden grid-cols-[1fr_10rem_7rem_6rem_8rem] gap-4 border-b border-divider px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase md:grid">
-            <span>Workspace</span>
-            <span>Plan / organization</span>
-            <span>Members</span>
-            <span>Switchers</span>
-            <span>Created</span>
+            <span>
+              <Trans>Workspace</Trans>
+            </span>
+            <span>
+              <Trans>Plan / organization</Trans>
+            </span>
+            <span>
+              <Trans>Members</Trans>
+            </span>
+            <span>
+              <Trans>Switchers</Trans>
+            </span>
+            <span>
+              <Trans>Created</Trans>
+            </span>
           </li>
           {workspaces.data.items.map((workspace) => (
             <li key={workspace.id} className="border-b border-divider last:border-b-0">
@@ -94,7 +106,11 @@ function WorkspacesPage() {
                   </span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
-                  {workspace.suspended_at && <Badge variant="destructive">Suspended</Badge>}
+                  {workspace.suspended_at && (
+                    <Badge variant="destructive">
+                      <Trans>Suspended</Trans>
+                    </Badge>
+                  )}
                   {workspace.organization ? (
                     <Badge variant="outline" className="max-w-full gap-1 truncate">
                       <Building2 className="size-3 shrink-0" />
@@ -136,13 +152,15 @@ function WorkspacesPage() {
 function StatusDot({ status }: { status: string }) {
   return (
     <span
-      title={`Subscription ${status.replace("_", " ")}`}
+      title={t`Subscription ${status.replace("_", " ")}`}
       className={cn(
         "size-2 rounded-full",
         status === "past_due" ? "bg-low" : status === "active" ? "bg-live" : "bg-idle",
       )}
     >
-      <span className="sr-only">Subscription {status.replace("_", " ")}</span>
+      <span className="sr-only">
+        <Trans>Subscription {status.replace("_", " ")}</Trans>
+      </span>
     </span>
   );
 }

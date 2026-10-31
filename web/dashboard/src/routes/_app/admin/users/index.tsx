@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -24,17 +26,17 @@ interface ListSearch {
   sort?: UserSort;
 }
 
-const ACTIVITY: { value: UserActivity | "any"; label: string }[] = [
-  { value: "any", label: "Active any time" },
-  { value: "day", label: "Active today" },
-  { value: "week", label: "Active this week" },
-  { value: "month", label: "Active this month" },
-  { value: "inactive", label: "Inactive 30+ days" },
+const activity = (): { value: UserActivity | "any"; label: string }[] => [
+  { value: "any", label: t`Active any time` },
+  { value: "day", label: t`Active today` },
+  { value: "week", label: t`Active this week` },
+  { value: "month", label: t`Active this month` },
+  { value: "inactive", label: t`Inactive 30+ days` },
 ];
 
-const SORTS: { value: UserSort; label: string }[] = [
-  { value: "joined", label: "Newest first" },
-  { value: "active", label: "Recently active" },
+const sorts = (): { value: UserSort; label: string }[] => [
+  { value: "joined", label: t`Newest first` },
+  { value: "active", label: t`Recently active` },
 ];
 
 const oneOf = <T extends string>(values: { value: T | "any" }[], value: unknown) =>
@@ -44,8 +46,8 @@ export const Route = createFileRoute("/_app/admin/users/")({
   validateSearch: (search: Record<string, unknown>): ListSearch => ({
     q: typeof search.q === "string" && search.q ? search.q : undefined,
     page: Number(search.page) > 1 ? Number(search.page) : undefined,
-    active: oneOf<UserActivity>(ACTIVITY, search.active),
-    sort: oneOf<UserSort>(SORTS, search.sort === "joined" ? undefined : search.sort),
+    active: oneOf<UserActivity>(activity(), search.active),
+    sort: oneOf<UserSort>(sorts(), search.sort === "joined" ? undefined : search.sort),
   }),
   component: UsersPage,
 });
@@ -67,21 +69,21 @@ function UsersPage() {
 
   return (
     <Page
-      title="Users"
-      description={users.data ? `${users.data.total} users` : "Everyone who signed in."}
+      title={t`Users`}
+      description={users.data ? t`${users.data.total} users` : t`Everyone who signed in.`}
       className="max-w-6xl"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={q} onSearch={search} placeholder="Search by name or ID" />
+        <SearchBox value={q} onSearch={search} placeholder={t`Search by name or ID`} />
         <Select
           value={active ?? "any"}
-          onValueChange={(value) => filter({ active: oneOf<UserActivity>(ACTIVITY, value) })}
+          onValueChange={(value) => filter({ active: oneOf<UserActivity>(activity(), value) })}
         >
-          <SelectTrigger className="w-44" aria-label="Last active">
+          <SelectTrigger className="w-44" aria-label={t`Last active`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ACTIVITY.map((option) => (
+            {activity().map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -91,14 +93,14 @@ function UsersPage() {
         <Select
           value={sort ?? "joined"}
           onValueChange={(value) =>
-            filter({ sort: value === "joined" ? undefined : oneOf<UserSort>(SORTS, value) })
+            filter({ sort: value === "joined" ? undefined : oneOf<UserSort>(sorts(), value) })
           }
         >
-          <SelectTrigger className="w-40" aria-label="Sort">
+          <SelectTrigger className="w-40" aria-label={t`Sort`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SORTS.map((option) => (
+            {sorts().map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -110,15 +112,23 @@ function UsersPage() {
         <Skeleton className="h-64" />
       ) : users.data.items.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          No users match.
+          <Trans>No users match.</Trans>
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
           <li className="hidden grid-cols-[1fr_7rem_9rem_8rem] gap-4 border-b border-divider px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase md:grid">
-            <span>User</span>
-            <span>Workspaces</span>
-            <span>Last active</span>
-            <span>Joined</span>
+            <span>
+              <Trans>User</Trans>
+            </span>
+            <span>
+              <Trans>Workspaces</Trans>
+            </span>
+            <span>
+              <Trans>Last active</Trans>
+            </span>
+            <span>
+              <Trans>Joined</Trans>
+            </span>
           </li>
           {users.data.items.map((user) => (
             <li key={user.id} className="border-b border-divider last:border-b-0">
@@ -131,9 +141,17 @@ function UsersPage() {
                   <UserAvatar name={user.username} avatarUrl={user.avatar_url} />
                   <span className="flex min-w-0 flex-col">
                     <span className="flex items-center gap-2 truncate text-sm font-medium">
-                      {user.username ?? "No sign-in"}
-                      {user.staff && <Badge variant="secondary">Staff</Badge>}
-                      {user.disabled_at && <Badge variant="destructive">Disabled</Badge>}
+                      {user.username ?? t`No sign-in`}
+                      {user.staff && (
+                        <Badge variant="secondary">
+                          <Trans>Staff</Trans>
+                        </Badge>
+                      )}
+                      {user.disabled_at && (
+                        <Badge variant="destructive">
+                          <Trans>Disabled</Trans>
+                        </Badge>
+                      )}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {user.provider?.toLowerCase() ?? "—"}
@@ -141,11 +159,13 @@ function UsersPage() {
                   </span>
                 </span>
                 <span className="text-sm text-muted-foreground md:text-foreground">
-                  <span className="md:hidden">Workspaces: </span>
+                  <span className="md:hidden">
+                    <Trans>Workspaces:</Trans>{" "}
+                  </span>
                   {user.workspaces}
                 </span>
                 <span className="hidden text-sm text-muted-foreground md:block">
-                  {user.last_active_at ? formatRelative(user.last_active_at) : "Never"}
+                  {user.last_active_at ? formatRelative(user.last_active_at) : t`Never`}
                 </span>
                 <span className="hidden text-sm text-muted-foreground md:block">
                   {formatDate(user.created_at)}

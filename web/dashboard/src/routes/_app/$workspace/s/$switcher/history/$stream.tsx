@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Trash2, ZoomOut } from "lucide-react";
@@ -67,13 +69,13 @@ function StreamPage() {
       className="-mb-2 flex min-h-11 items-center gap-1 self-start text-sm font-medium text-primary"
     >
       <ChevronLeft className="size-4" />
-      History
+      <Trans>History</Trans>
     </Link>
   );
 
   if (detail.isPending) {
     return (
-      <SwitcherPage title="Stream" back={back}>
+      <SwitcherPage title={t`Stream`} back={back}>
         <Skeleton className="h-24" />
         <Skeleton className="h-64" />
       </SwitcherPage>
@@ -81,9 +83,9 @@ function StreamPage() {
   }
   if (detail.isError) {
     return (
-      <SwitcherPage title="Stream" back={back}>
+      <SwitcherPage title={t`Stream`} back={back}>
         <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          {errorMessage(detail.error)} It may be older than your plan keeps.
+          <Trans>{errorMessage(detail.error)} It may be older than your plan keeps.</Trans>
         </p>
       </SwitcherPage>
     );
@@ -108,14 +110,14 @@ function StreamPage() {
         month: "long",
       })}
       description={`${formatClock(Date.parse(stream.started_at))} – ${
-        running ? "now" : formatClock(Date.parse(stream.ended_at ?? ""))
+        running ? t`now` : formatClock(Date.parse(stream.ended_at ?? ""))
       } · ${formatDuration(stream.duration_seconds)}`}
       actions={
         <>
           {running && (
             <span className="flex h-8 items-center gap-1.5 rounded-full bg-live/12 px-3 text-xs font-bold tracking-wider text-live">
               <span className="size-1.5 animate-pulse rounded-full bg-live" />
-              LIVE NOW
+              <Trans>LIVE NOW</Trans>
             </span>
           )}
           {canManage && <DeleteStream streamId={stream.id} />}
@@ -127,18 +129,18 @@ function StreamPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div
           role="tablist"
-          aria-label="View"
+          aria-label={t`View`}
           className="flex rounded-full border bg-card p-1 text-sm font-medium"
         >
           <TabButton active={tab === "overview"} onClick={() => setTab("overview")}>
-            Overview
+            <Trans>Overview</Trans>
           </TabButton>
           <TabButton active={tab === "markers"} onClick={() => setTab("markers")}>
-            Markers
+            <Trans>Markers</Trans>
           </TabButton>
           {canReadSecrets && (
             <TabButton active={tab === "raw"} onClick={() => setTab("raw")}>
-              Raw stats
+              <Trans>Raw stats</Trans>
             </TabButton>
           )}
         </div>
@@ -147,17 +149,25 @@ function StreamPage() {
             (range ? (
               <>
                 <span className="font-mono tabular">
-                  {formatClock(from, true)} – {formatClock(to, true)}
+                  <Trans>
+                    {formatClock(from, true)} – {formatClock(to, true)}
+                  </Trans>
                 </span>
                 <Button size="sm" variant="outline" onClick={() => setRange(undefined)}>
                   <ZoomOut />
-                  Whole stream
+                  <Trans>Whole stream</Trans>
                 </Button>
               </>
             ) : (
-              <span className="hidden md:inline">Drag across a chart to zoom in</span>
+              <span className="hidden md:inline">
+                <Trans>Drag across a chart to zoom in</Trans>
+              </span>
             ))}
-          {detail.isFetching && <span className="sr-only">Loading…</span>}
+          {detail.isFetching && (
+            <span className="sr-only">
+              <Trans>Loading…</Trans>
+            </span>
+          )}
         </div>
       </div>
 
@@ -237,7 +247,7 @@ function useServerPoints(data: StreamDetail) {
         .filter((series) => !known.has(series.server_id))
         .map((series) => ({
           server_id: series.server_id,
-          name: "Removed server",
+          name: t`Removed server`,
           kind: "belabox" as const,
         })),
     ];
@@ -260,18 +270,18 @@ function Summary({ data }: { data: StreamDetail }) {
   const rtt = rtts.length > 0 ? rtts.reduce((sum, value) => sum + value, 0) / rtts.length : null;
 
   return (
-    <section aria-label="Summary" className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
+    <section aria-label={t`Summary`} className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
       <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
-        <Tile label="Duration" value={formatDuration(stream.duration_seconds)} />
+        <Tile label={t`Duration`} value={formatDuration(stream.duration_seconds)} />
         <Tile label="LIVE" value={formatDuration(stream.live_seconds)} tone="text-live" />
         <Tile label="LOW" value={formatDuration(stream.low_seconds)} tone="text-low" />
         <Tile label="BRB" value={formatDuration(stream.offline_seconds)} tone="text-offline" />
-        <Tile label="Auto switches" value={String(stream.auto_switches)} />
+        <Tile label={t`Auto switches`} value={String(stream.auto_switches)} />
         <Tile
-          label={main && servers.length > 1 ? `Avg · ${main.source.name}` : "Avg bitrate"}
+          label={main && servers.length > 1 ? t`Avg · ${main.source.name}` : t`Avg bitrate`}
           value={average != null ? `${formatKbps(Math.round(average))}` : "—"}
           unit={average != null ? "kbps" : undefined}
-          hint={rtt != null ? `RTT ${Math.round(rtt)} ms` : undefined}
+          hint={rtt != null ? t`RTT ${Math.round(rtt)} ms` : undefined}
         />
       </div>
       <StateBar seconds={stream} legend />
@@ -334,7 +344,7 @@ function Overview({
       <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
         {servers.length === 0 && (
           <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-            No stream server stats were recorded for this stream.
+            <Trans>No stream server stats were recorded for this stream.</Trans>
           </p>
         )}
         {servers.map(({ source, points }) => (
@@ -416,13 +426,13 @@ function ServerHistory({
           {switcher.triggers.low != null && (
             <span className="flex items-center gap-1.5">
               <span className="w-3.5 border-t border-dashed border-low" />
-              Low {formatKbps(switcher.triggers.low)}
+              <Trans>Low {formatKbps(switcher.triggers.low)}</Trans>
             </span>
           )}
           {switcher.triggers.offline != null && (
             <span className="flex items-center gap-1.5">
               <span className="w-3.5 border-t border-dashed border-offline" />
-              BRB {formatKbps(switcher.triggers.offline)}
+              <Trans>BRB {formatKbps(switcher.triggers.offline)}</Trans>
             </span>
           )}
         </div>
@@ -433,20 +443,28 @@ function ServerHistory({
           <>
             <span className="text-muted-foreground">{formatClock(hoveredAt.at, true)}</span>
             <span>
-              <strong className="text-base">{formatKbps(Math.round(hoveredAt.bitrate))}</strong>{" "}
-              kbps
+              <Trans>
+                <strong className="text-base">{formatKbps(Math.round(hoveredAt.bitrate))}</strong>{" "}
+                kbps
+              </Trans>
             </span>
             <span className="text-muted-foreground">
-              {formatKbps(hoveredAt.bitrate_min)}–{formatKbps(hoveredAt.bitrate_max)}
+              <Trans>
+                {formatKbps(hoveredAt.bitrate_min)}–{formatKbps(hoveredAt.bitrate_max)}
+              </Trans>
             </span>
-            {hoveredAt.rtt != null && <span>RTT {Math.round(hoveredAt.rtt)} ms</span>}
+            {hoveredAt.rtt != null && (
+              <span>
+                <Trans>RTT {Math.round(hoveredAt.rtt)} ms</Trans>
+              </span>
+            )}
             {look && <span className={cn("font-semibold", look.text)}>{look.label}</span>}
           </>
         ) : (
           <span className="text-muted-foreground">
             {points.length === 0
-              ? "No stats from this server."
-              : "Hover or tap a chart for the numbers at that moment."}
+              ? t`No stats from this server.`
+              : t`Hover or tap a chart for the numbers at that moment.`}
           </span>
         )}
       </Readout>
@@ -475,7 +493,9 @@ function ServerHistory({
 
       {hasRtt && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs tracking-wider text-muted-foreground uppercase">RTT (ms)</span>
+          <span className="text-xs tracking-wider text-muted-foreground uppercase">
+            <Trans>RTT (ms)</Trans>
+          </span>
           <HistoryChart
             from={from}
             to={to}
@@ -522,12 +542,14 @@ function StreamActivity({
   onPick: (event: SwitcherEvent | null) => void;
 }) {
   return (
-    <section aria-label="Activity" className="flex flex-col gap-2.5">
-      <h2 className="font-semibold">Activity</h2>
+    <section aria-label={t`Activity`} className="flex flex-col gap-2.5">
+      <h2 className="font-semibold">
+        <Trans>Activity</Trans>
+      </h2>
       <div className="flex max-h-[32rem] flex-col overflow-y-auto overscroll-contain rounded-2xl border bg-card">
         {events.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            Nothing happened during this stream.
+            <Trans>Nothing happened during this stream.</Trans>
           </p>
         )}
         <ol>
@@ -584,7 +606,7 @@ function DeleteStream({ streamId }: { streamId: string }) {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.streams(workspace.id, switcher.id),
       });
-      toast.success("Stream deleted");
+      toast.success(t`Stream deleted`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -594,21 +616,27 @@ function DeleteStream({ streamId }: { streamId: string }) {
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="outline" disabled={remove.isPending}>
           <Trash2 />
-          Delete
+          <Trans>Delete</Trans>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this stream?</AlertDialogTitle>
+          <AlertDialogTitle>
+            <Trans>Delete this stream?</Trans>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Its stats and raw stats are removed from the history for everyone. The activity log
-            keeps its events.
+            <Trans>
+              Its stats and raw stats are removed from the history for everyone. The activity log
+              keeps its events.
+            </Trans>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={() => remove.mutate()}>
-            Delete
+            <Trans>Delete</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

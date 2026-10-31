@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -31,11 +33,11 @@ import { WifiPanel } from "./wifi-panel";
 type Path = { workspace_id: string; switcher_id: string };
 type Tab = "wifi" | "modems" | "audio" | "stream";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "wifi", label: "WiFi" },
-  { id: "modems", label: "Modems" },
-  { id: "audio", label: "Audio & encoding" },
-  { id: "stream", label: "Stream" },
+const tabs = (): { id: Tab; label: string }[] => [
+  { id: "wifi", label: t`WiFi` },
+  { id: "modems", label: t`Modems` },
+  { id: "audio", label: t`Audio & encoding` },
+  { id: "stream", label: t`Stream` },
 ];
 
 /** How often the open dialog asks obs-link for the BELABOX's WiFi, modems and settings. */
@@ -99,7 +101,7 @@ export function BelaboxSettingsDialog({ path, canManage }: { path: Path; canMana
     config.settings.mutate(settingsUpdate(form, details), {
       onSuccess: () => {
         setDraft(null);
-        toast.success("Saved. The BELABOX uses these from its next start.");
+        toast.success(t`Saved. The BELABOX uses these from its next start.`);
       },
     });
   };
@@ -110,15 +112,20 @@ export function BelaboxSettingsDialog({ path, canManage }: { path: Path; canMana
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="outline" className="size-8" aria-label="BELABOX settings">
+        <Button size="icon" variant="outline" className="size-8" aria-label={t`BELABOX settings`}>
           <SlidersHorizontal className="size-3.5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="flex h-[min(42rem,88dvh)] flex-col gap-3 p-0 sm:max-w-2xl">
         <DialogHeader className="px-5 pt-5">
-          <DialogTitle>BELABOX settings</DialogTitle>
+          <DialogTitle>
+            <Trans>BELABOX settings</Trans>
+          </DialogTitle>
           <DialogDescription>
-            WiFi, modems, audio and the stream’s server, sent to the BELABOX through BELABOX Cloud.
+            <Trans>
+              WiFi, modems, audio and the stream’s server, sent to the BELABOX through BELABOX
+              Cloud.
+            </Trans>
           </DialogDescription>
         </DialogHeader>
 
@@ -126,10 +133,10 @@ export function BelaboxSettingsDialog({ path, canManage }: { path: Path; canMana
 
         <div
           role="tablist"
-          aria-label="BELABOX settings"
+          aria-label={t`BELABOX settings`}
           className="flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-divider px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {TABS.map(({ id, label }) => (
+          {tabs().map(({ id, label }) => (
             <button
               key={id}
               type="button"
@@ -206,13 +213,13 @@ export function BelaboxSettingsDialog({ path, canManage }: { path: Path; canMana
                 invalid ? "text-destructive-foreground" : "text-muted-foreground",
               )}
             >
-              {invalid ? "Fix the highlighted fields to save." : "Unsaved changes"}
+              {invalid ? t`Fix the highlighted fields to save.` : t`Unsaved changes`}
             </span>
             <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>
-              Discard
+              <Trans>Discard</Trans>
             </Button>
             <Button size="sm" onClick={save} disabled={invalid || locked}>
-              {config.settings.isPending ? "Saving…" : "Save"}
+              {config.settings.isPending ? t`Saving…` : t`Save`}
             </Button>
           </div>
         )}
@@ -226,15 +233,15 @@ function Notice({ details }: { details: { streaming: boolean; settings_pending: 
   if (details.streaming) {
     return (
       <p className="rounded-xl bg-low/12 px-3 py-2 text-sm text-low">
-        The BELABOX is streaming. Stop it to change these settings.
+        <Trans>The BELABOX is streaming. Stop it to change these settings.</Trans>
       </p>
     );
   }
   return (
     <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted-foreground">
       {details.settings_pending
-        ? "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
-        : "The BELABOX only saves these when it starts a stream, so changes are used from its next start from here."}
+        ? t`Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them.`
+        : t`The BELABOX only saves these when it starts a stream, so changes are used from its next start from here.`}
     </p>
   );
 }
@@ -246,9 +253,12 @@ function Notice({ details }: { details: { streaming: boolean; settings_pending: 
 function FallbackNotice() {
   return (
     <p className="mx-5 shrink-0 rounded-xl bg-low/12 px-3 py-2 text-xs text-low">
-      Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something breaks,
-      for example it can’t get online anymore, use the <strong>official BELABOX remote</strong>{" "}
-      (with your secret URL) or the BELABOX’s local UI to fix it.
+      <Trans>
+        Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something
+        breaks, for example it can’t get online anymore, use the{" "}
+        <strong>official BELABOX remote</strong> (with your secret URL) or the BELABOX’s local UI to
+        fix it.
+      </Trans>
     </p>
   );
 }

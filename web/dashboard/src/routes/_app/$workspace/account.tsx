@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Download, Monitor, Smartphone } from "lucide-react";
@@ -45,13 +47,11 @@ export const Route = createFileRoute("/_app/$workspace/account")({
   component: AccountPage,
 });
 
-const LINK_ERRORS: Record<string, string> = {
-  account_already_linked:
-    "That account is already linked to another NOALBS user. Sign in with it and disconnect it there first.",
-  oauth_denied: "Connecting was cancelled.",
-  no_youtube_channel:
-    "That Google account has no YouTube channel. Pick the account (or brand account) you stream with.",
-};
+const linkErrors = (): Record<string, string> => ({
+  account_already_linked: t`That account is already linked to another NOALBS user. Sign in with it and disconnect it there first.`,
+  oauth_denied: t`Connecting was cancelled.`,
+  no_youtube_channel: t`That Google account has no YouTube channel. Pick the account (or brand account) you stream with.`,
+});
 
 function AccountPage() {
   const { me } = useWorkspace();
@@ -65,17 +65,17 @@ function AccountPage() {
     shown.current = true;
     if (search.linked) {
       const platform = PLATFORMS.find((item) => item.path === search.linked);
-      toast.success(`${platform?.label ?? "Account"} connected`);
+      toast.success(t`${platform?.label ?? t`Account`} connected`);
     } else if (search.link_error) {
       toast.error(
-        LINK_ERRORS[search.link_error] ?? "Couldn’t connect the account. Please try again.",
+        linkErrors()[search.link_error] ?? t`Couldn’t connect the account. Please try again.`,
       );
     }
     void navigate({ to: ".", search: {}, replace: true });
   }, [search.linked, search.link_error, navigate]);
 
   return (
-    <Page title="Account" description="How you sign in, and where you’re signed in.">
+    <Page title={t`Account`} description={t`How you sign in, and where you’re signed in.`}>
       <ConnectedAccounts connections={me.connections} />
       <Sessions />
       <YourData username={me.connections[0]?.username ?? "delete"} />
@@ -96,76 +96,94 @@ function YourData({ username }: { username: string }) {
 
   return (
     <Section
-      title="Your data"
+      title={t`Your data`}
       description={
         <>
-          What we keep and why is in the{" "}
-          <a href="/privacy" className="font-medium text-primary hover:underline">
-            privacy policy
-          </a>
-          ; the rules for using NOALBS Cloud are in the{" "}
-          <a href="/terms" className="font-medium text-primary hover:underline">
-            terms of service
-          </a>
-          .
+          <Trans>
+            What we keep and why is in the{" "}
+            <a href="/privacy" className="font-medium text-primary hover:underline">
+              privacy policy
+            </a>
+            ; the rules for using NOALBS Cloud are in the{" "}
+            <a href="/terms" className="font-medium text-primary hover:underline">
+              terms of service
+            </a>
+            .
+          </Trans>
         </>
       }
     >
       <div className="flex flex-col gap-5 px-5 pb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">Download my data</span>
+            <span className="text-sm font-semibold">
+              <Trans>Download my data</Trans>
+            </span>
             <span className="text-sm text-muted-foreground">
-              Your account, sign-ins, workspaces, switchers and their settings, and what you did in
-              teams and chat, as a JSON file. It holds your stats URLs and stream keys: keep it
-              private.
+              <Trans>
+                Your account, sign-ins, workspaces, switchers and their settings, and what you did
+                in teams and chat, as a JSON file. It holds your stats URLs and stream keys: keep it
+                private.
+              </Trans>
             </span>
           </span>
           <Button variant="outline" disabled={download.isPending} onClick={() => download.mutate()}>
             <Download />
-            Download
+            <Trans>Download</Trans>
           </Button>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">
           <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">Download stream history</span>
+            <span className="text-sm font-semibold">
+              <Trans>Download stream history</Trans>
+            </span>
             <span className="text-sm text-muted-foreground">
-              The stream history, stats, markers and activity log of your own switchers, one JSON
-              object per line. It can be large.
+              <Trans>
+                The stream history, stats, markers and activity log of your own switchers, one JSON
+                object per line. It can be large.
+              </Trans>
             </span>
           </span>
           <Button variant="outline" asChild>
             <a href="/api/me/export/history" download>
               <Download />
-              Download
+              <Trans>Download</Trans>
             </a>
           </Button>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">
           <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">Delete account</span>
+            <span className="text-sm font-semibold">
+              <Trans>Delete account</Trans>
+            </span>
             <span className="text-sm text-muted-foreground">
-              Removes your account and every workspace you own on your own. This can’t be undone.
+              <Trans>
+                Removes your account and every workspace you own on your own. This can’t be undone.
+              </Trans>
             </span>
           </span>
           <TypeToConfirm
-            trigger="Delete account"
-            title="Delete your account?"
+            trigger={t`Delete account`}
+            title={t`Delete your account?`}
             description={
               <>
                 <p>
-                  Your account, sign-ins and memberships are deleted. Workspaces you own on your own
-                  go too, with their switchers and stream history, and their subscriptions end
-                  straight away without a refund.
+                  <Trans>
+                    Your account, sign-ins and memberships are deleted. Workspaces you own on your
+                    own go too, with their switchers and stream history, and their subscriptions end
+                    straight away without a refund.
+                  </Trans>
                 </p>
                 <p>
-                  If you own a workspace with other members, transfer it to an admin, remove them or
-                  delete that workspace first.
+                  <Trans>
+                    If you own a workspace with other members, transfer it to an admin, remove them
+                    or delete that workspace first.
+                  </Trans>
                 </p>
               </>
             }
             phrase={username}
-            confirmLabel="Delete my account"
+            confirmLabel={t`Delete my account`}
             onConfirm={async () => {
               await unwrap(api.DELETE("/me"));
               queryClient.clear();
@@ -188,8 +206,8 @@ function ConnectedAccounts({ connections }: { connections: Connection[] }) {
 
   return (
     <Section
-      title="Connected accounts"
-      description="Sign in with any of these. Connect both to keep a way in if one has trouble."
+      title={t`Connected accounts`}
+      description={t`Sign in with any of these. Connect both to keep a way in if one has trouble.`}
     >
       <ul>
         {PLATFORMS.map((platform) => {
@@ -208,18 +226,20 @@ function ConnectedAccounts({ connections }: { connections: Connection[] }) {
                 <div className="flex min-h-16 flex-wrap items-center gap-3 px-5 py-3">
                   <span className="flex flex-1 flex-col gap-0.5">
                     <span className="font-semibold">{platform.label}</span>
-                    <span className="text-sm text-muted-foreground">Not connected</span>
+                    <span className="text-sm text-muted-foreground">
+                      <Trans>Not connected</Trans>
+                    </span>
                   </span>
                   {available ? (
                     <a
                       href={`/api/auth/link/${platform.path}?redirect=${encodeURIComponent(returnTo)}`}
                       className={`flex h-9 items-center rounded-lg px-3.5 text-sm font-semibold ${platform.button}`}
                     >
-                      Connect {platform.label}
+                      <Trans>Connect {platform.label}</Trans>
                     </a>
                   ) : (
                     <span className="text-sm text-muted-foreground">
-                      {providers.isPending ? "…" : "Not available on this server"}
+                      {providers.isPending ? "…" : t`Not available on this server`}
                     </span>
                   )}
                 </div>
@@ -253,7 +273,7 @@ function ConnectionRow({ connection, onlyOne }: { connection: Connection; onlyOn
         queryClient.invalidateQueries({ queryKey: queryKeys.me }),
         queryClient.invalidateQueries({ queryKey: queryKeys.sessions }),
       ]);
-      toast.success(`${label} disconnected`);
+      toast.success(t`${label} disconnected`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -267,30 +287,38 @@ function ConnectionRow({ connection, onlyOne }: { connection: Connection; onlyOn
           <span className="truncate font-normal text-muted-foreground">{connection.username}</span>
         </span>
         <span className="text-sm text-muted-foreground">
-          Connected {formatDate(connection.connected_at)}
-          {onlyOne && " · your only way to sign in"}
+          <Trans>
+            Connected {formatDate(connection.connected_at)}
+            {onlyOne && t` · your only way to sign in`}
+          </Trans>
         </span>
       </span>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="outline" size="sm" disabled={onlyOne || disconnect.isPending}>
-            Disconnect
+            <Trans>Disconnect</Trans>
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Disconnect {label} ({connection.username})?
+              <Trans>
+                Disconnect {label} ({connection.username})?
+              </Trans>
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You won’t be able to sign in with it anymore. Other browsers signed in with it are
-              signed out; this one stays signed in.
+              <Trans>
+                You won’t be able to sign in with it anymore. Other browsers signed in with it are
+                signed out; this one stays signed in.
+              </Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={() => disconnect.mutate()}>
-              Disconnect
+              <Trans>Disconnect</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -309,7 +337,10 @@ function Sessions() {
     onSuccess: async ({ signed_out }) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
       toast.success(
-        signed_out === 1 ? "Signed out 1 other session" : `Signed out ${signed_out} sessions`,
+        plural(signed_out, {
+          one: "Signed out # other session",
+          other: "Signed out # sessions",
+        }),
       );
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -317,30 +348,34 @@ function Sessions() {
 
   return (
     <Section
-      title="Sessions"
-      description="Browsers signed in to your account. Sign out any you don’t recognise."
+      title={t`Sessions`}
+      description={t`Browsers signed in to your account. Sign out any you don’t recognise.`}
       actions={
         others.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" disabled={signOutOthers.isPending}>
-                Sign out other sessions
+                <Trans>Sign out other sessions</Trans>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Sign out everywhere else?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  <Trans>Sign out everywhere else?</Trans>
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  {others.length === 1
-                    ? "1 other browser will need to sign in again."
-                    : `${others.length} other browsers will need to sign in again.`}{" "}
-                  This one stays signed in.
+                  {plural(others.length, {
+                    one: "# other browser will need to sign in again. This one stays signed in.",
+                    other: "# other browsers will need to sign in again. This one stays signed in.",
+                  })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>
+                  <Trans>Cancel</Trans>
+                </AlertDialogCancel>
                 <AlertDialogAction variant="destructive" onClick={() => signOutOthers.mutate()}>
-                  Sign out others
+                  <Trans>Sign out others</Trans>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -352,7 +387,7 @@ function Sessions() {
       {sessions.isError && (
         <p className="px-5 pb-5 text-sm text-destructive">{errorMessage(sessions.error)}</p>
       )}
-      <ul aria-label="Sessions">
+      <ul aria-label={t`Sessions`}>
         {sessions.data?.map((session) => (
           <SessionRow key={session.id} session={session} />
         ))}
@@ -375,7 +410,7 @@ function SessionRow({ session }: { session: Session }) {
       ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
-      toast.success(`Signed out ${device.label}`);
+      toast.success(t`Signed out ${device.label}`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -388,12 +423,18 @@ function SessionRow({ session }: { session: Session }) {
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-2 font-semibold">
           {device.label}
-          {session.current && <Badge variant="secondary">This browser</Badge>}
+          {session.current && (
+            <Badge variant="secondary">
+              <Trans>This browser</Trans>
+            </Badge>
+          )}
         </span>
         <span className="text-sm text-muted-foreground">
-          {providerLabel(session.provider)} ·{" "}
-          {session.current ? "Active now" : `Active ${formatRelative(session.last_used_at)}`} ·
-          Signed in {formatDate(session.created_at)}
+          <Trans>
+            {providerLabel(session.provider)} ·{" "}
+            {session.current ? t`Active now` : t`Active ${formatRelative(session.last_used_at)}`} ·
+            Signed in {formatDate(session.created_at)}
+          </Trans>
         </span>
       </span>
       {!session.current && (
@@ -403,7 +444,7 @@ function SessionRow({ session }: { session: Session }) {
           onClick={() => signOut.mutate()}
           disabled={signOut.isPending}
         >
-          Sign out
+          <Trans>Sign out</Trans>
         </Button>
       )}
     </li>

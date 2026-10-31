@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
@@ -36,7 +38,7 @@ function UserPage() {
     onSuccess: async (result) => {
       queryClient.setQueryData(queryKeys.adminUser(userId), result);
       await queryClient.invalidateQueries({ queryKey: queryKeys.admin });
-      toast.success(result.user.staff ? "Staff access granted" : "Staff access removed");
+      toast.success(result.user.staff ? t`Staff access granted` : t`Staff access removed`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -44,13 +46,13 @@ function UserPage() {
   const back = (
     <Link to="/admin/users" className="flex items-center gap-1 text-sm font-medium text-primary">
       <ChevronLeft className="size-4" />
-      Users
+      <Trans>Users</Trans>
     </Link>
   );
   const data = detail.data;
   if (!data) {
     return (
-      <Page title="User" description={back} className="max-w-5xl">
+      <Page title={t`User`} description={back} className="max-w-5xl">
         {detail.isError ? (
           <p className="text-sm">{errorMessage(detail.error)}</p>
         ) : (
@@ -64,28 +66,30 @@ function UserPage() {
 
   return (
     <Page
-      title={user.username ?? "User"}
+      title={user.username ?? t`User`}
       description={back}
       className="max-w-5xl"
       actions={
         isMe && user.staff ? (
-          <span className="text-xs text-muted-foreground">You</span>
+          <span className="text-xs text-muted-foreground">
+            <Trans>You</Trans>
+          </span>
         ) : (
           <ConfirmButton
             variant={user.staff ? "outline" : "default"}
             disabled={staff.isPending}
-            title={user.staff ? "Remove staff access?" : "Make staff?"}
-            confirmLabel={user.staff ? "Remove staff" : "Make staff"}
+            title={user.staff ? t`Remove staff access?` : t`Make staff?`}
+            confirmLabel={user.staff ? t`Remove staff` : t`Make staff`}
             onConfirm={() => staff.mutate(!user.staff)}
             description={
               <span>
                 {user.staff
-                  ? "They lose the admin section and access to workspaces they aren't a member of."
-                  : "Staff can open every workspace, change plans and prices, and manage other staff."}
+                  ? t`They lose the admin section and access to workspaces they aren't a member of.`
+                  : t`Staff can open every workspace, change plans and prices, and manage other staff.`}
               </span>
             }
           >
-            {user.staff ? "Remove staff" : "Make staff"}
+            {user.staff ? t`Remove staff` : t`Make staff`}
           </ConfirmButton>
         )
       }
@@ -94,26 +98,34 @@ function UserPage() {
         <UserAvatar name={user.username} avatarUrl={user.avatar_url} className="size-12" />
         <div className="flex flex-col gap-0.5">
           <span className="flex items-center gap-2 font-semibold">
-            {user.username ?? "No sign-in"}
-            {user.staff && <Badge variant="secondary">Staff</Badge>}
-            {user.disabled_at && <Badge variant="destructive">Disabled</Badge>}
+            {user.username ?? t`No sign-in`}
+            {user.staff && (
+              <Badge variant="secondary">
+                <Trans>Staff</Trans>
+              </Badge>
+            )}
+            {user.disabled_at && (
+              <Badge variant="destructive">
+                <Trans>Disabled</Trans>
+              </Badge>
+            )}
           </span>
           <code className="text-xs text-muted-foreground">{user.id}</code>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <Stat label="Joined" value={formatDate(user.created_at)} />
+        <Stat label={t`Joined`} value={formatDate(user.created_at)} />
         <Stat
-          label="Last active"
+          label={t`Last active`}
           value={user.last_active_at ? formatRelative(user.last_active_at) : "Never"}
         />
-        <Stat label="Workspaces" value={user.workspaces} />
+        <Stat label={t`Workspaces`} value={user.workspaces} />
       </div>
 
       {!isMe && <AccountActions userId={userId} user={user} />}
 
-      <Section title="Sign-ins">
+      <Section title={t`Sign-ins`}>
         <ul className="flex flex-col pb-2">
           {data.connections.map((connection) => (
             <li
@@ -126,16 +138,18 @@ function UserPage() {
               </span>
               <Badge variant="outline">{connection.provider.toLowerCase()}</Badge>
               <span className="hidden text-xs text-muted-foreground sm:inline">
-                since {formatDate(connection.created_at)}
+                <Trans>since {formatDate(connection.created_at)}</Trans>
               </span>
             </li>
           ))}
         </ul>
       </Section>
 
-      <Section title="Workspaces">
+      <Section title={t`Workspaces`}>
         {data.workspaces.length === 0 ? (
-          <p className="px-5 pb-5 text-sm text-muted-foreground">Not a member of any.</p>
+          <p className="px-5 pb-5 text-sm text-muted-foreground">
+            <Trans>Not a member of any.</Trans>
+          </p>
         ) : (
           <ul className="flex flex-col pb-2">
             {data.workspaces.map((workspace) => (
@@ -178,9 +192,10 @@ function AccountActions({ userId, user }: { userId: string; user: AdminUser }) {
       ),
     onSuccess: (result) =>
       toast.success(
-        result.sessions === 1
-          ? "Signed out of 1 session"
-          : `Signed out of ${result.sessions} sessions`,
+        plural(result.sessions, {
+          one: "Signed out of # session",
+          other: "Signed out of # sessions",
+        }),
       ),
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -193,47 +208,58 @@ function AccountActions({ userId, user }: { userId: string; user: AdminUser }) {
       ),
     onSuccess: async (result) => {
       await refresh(result);
-      toast.success("They can sign in again");
+      toast.success(t`They can sign in again`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
 
   return (
-    <Section title="Account" description="Recorded in the staff audit log.">
+    <Section title={t`Account`} description={t`Recorded in the staff audit log.`}>
       <div className="flex flex-col gap-3 px-5 pb-5 text-sm">
         {user.disabled_at && (
           <p>
-            <strong>Disabled</strong> {formatRelative(user.disabled_at)}: {user.disabled_reason}
+            <strong>
+              <Trans>Disabled</Trans>
+            </strong>{" "}
+            {formatRelative(user.disabled_at)}: {user.disabled_reason}
           </p>
         )}
         <div className="flex flex-wrap gap-2">
           <ConfirmButton
             variant="outline"
             disabled={signOut.isPending}
-            title="Sign them out everywhere?"
-            confirmLabel="Sign out everywhere"
+            title={t`Sign them out everywhere?`}
+            confirmLabel={t`Sign out everywhere`}
             onConfirm={() => signOut.mutate()}
-            description={<span>Every browser they're signed in on. They can sign in again.</span>}
+            description={
+              <span>
+                <Trans>Every browser they're signed in on. They can sign in again.</Trans>
+              </span>
+            }
           >
-            Sign out everywhere
+            <Trans>Sign out everywhere</Trans>
           </ConfirmButton>
           {user.disabled_at ? (
             <ConfirmButton
               variant="outline"
               disabled={enable.isPending}
-              title="Enable the account?"
-              confirmLabel="Enable"
+              title={t`Enable the account?`}
+              confirmLabel={t`Enable`}
               onConfirm={() => enable.mutate()}
-              description={<span>They can sign in again.</span>}
+              description={
+                <span>
+                  <Trans>They can sign in again.</Trans>
+                </span>
+              }
             >
-              Enable account
+              <Trans>Enable account</Trans>
             </ConfirmButton>
           ) : (
             !user.staff && (
               <ReasonDialog
-                title="Disable this account?"
-                description="They're signed out everywhere and can't sign in until enabled. Their workspaces keep running; suspend those separately."
-                confirmLabel="Disable"
+                title={t`Disable this account?`}
+                description={t`They're signed out everywhere and can't sign in until enabled. Their workspaces keep running; suspend those separately.`}
+                confirmLabel={t`Disable`}
                 onConfirm={async (reason) => {
                   const result = await unwrap(
                     api.PUT("/admin/users/{user_id}/disabled", {
@@ -242,14 +268,14 @@ function AccountActions({ userId, user }: { userId: string; user: AdminUser }) {
                     }),
                   );
                   await refresh(result);
-                  toast.success("Account disabled");
+                  toast.success(t`Account disabled`);
                 }}
               >
                 <Button
                   variant="outline"
                   className="border-destructive/50 text-destructive-foreground"
                 >
-                  Disable account…
+                  <Trans>Disable account…</Trans>
                 </Button>
               </ReasonDialog>
             )

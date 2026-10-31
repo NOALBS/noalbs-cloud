@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Check, CreditCard, HeartHandshake, Info } from "lucide-react";
@@ -19,6 +21,7 @@ import {
   describeSubscription,
   FREE_PLAN,
   formatPrice,
+  intervalWord,
   missingCardReminder,
   priceFor,
   prorate,
@@ -57,7 +60,7 @@ function formatDay(date: string | null | undefined): string {
         month: "long",
         year: "numeric",
       })
-    : "the end of the period";
+    : t`the end of the period`;
 }
 
 function PlanPage() {
@@ -75,7 +78,7 @@ function PlanPage() {
   const plans = useQuery(plansQuery);
   const addons = useQuery(addonsQuery);
   const portal = useStripeRedirect();
-  const resume = useBillingChange("Your subscription continues");
+  const resume = useBillingChange(t`Your subscription continues`);
   const [interval, setBillingInterval] = useState<BillingInterval>("month");
   // Show prices for the period the workspace already pays by.
   const paidInterval = current.data?.subscription?.interval;
@@ -87,7 +90,7 @@ function PlanPage() {
     if (!search.checkout) return;
     if (search.checkout === "success") {
       setWaitingSince(Date.now());
-      toast.success("Thanks! Your payment went through.");
+      toast.success(t`Thanks! Your payment went through.`);
     }
     void navigate({ to: ".", search: {}, replace: true });
   }, [search.checkout, navigate]);
@@ -96,7 +99,7 @@ function PlanPage() {
   useEffect(() => {
     if (waitingSince == null || !subscribed) return;
     setWaitingSince(null);
-    toast.success("Your subscription is active.");
+    toast.success(t`Your subscription is active.`);
     void queryClient.invalidateQueries({ queryKey: queryKeys.switchers(workspace.id) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
   }, [waitingSince, subscribed, queryClient, workspace.id]);
@@ -118,8 +121,8 @@ function PlanPage() {
 
   return (
     <Page
-      title="Plan"
-      description="What this workspace can use."
+      title={t`Plan`}
+      description={t`What this workspace can use.`}
       actions={
         manages &&
         subscription && (
@@ -129,16 +132,16 @@ function PlanPage() {
             disabled={portal.isPending}
           >
             <CreditCard />
-            Manage billing
+            <Trans>Manage billing</Trans>
           </Button>
         )
       }
     >
       <Section
-        title={data ? `${data.plan.name} plan` : "Plan"}
+        title={data ? t`${data.plan.name} plan` : t`Plan`}
         description={
           waitingSince != null
-            ? "Confirming your payment… this takes a few seconds."
+            ? t`Confirming your payment… this takes a few seconds.`
             : status && !status.warning
               ? status.text
               : undefined
@@ -156,7 +159,7 @@ function PlanPage() {
                 disabled={resume.isPending}
                 onClick={() => resume.mutate({ kind: "resume" })}
               >
-                Resume subscription
+                <Trans>Resume subscription</Trans>
               </Button>
             )}
           </div>
@@ -169,19 +172,21 @@ function PlanPage() {
         )}
         {subscription?.held_plan_code && subscription.held_plan_until && (
           <p className="mx-5 mb-4 text-sm text-muted-foreground">
-            Moving to Free on {formatDay(subscription.held_plan_until)}; {data?.plan.name} stays
-            until then.
+            <Trans>
+              Moving to Free on {formatDay(subscription.held_plan_until)}; {data?.plan.name} stays
+              until then.
+            </Trans>
           </p>
         )}
         <div className="grid gap-5 px-5 pb-5 sm:grid-cols-2">
           {data ? (
             <>
               <UsageBar
-                label="Switchers"
+                label={t`Switchers`}
                 used={data.usage.switchers}
                 max={data.plan.max_switchers}
               />
-              <UsageBar label="Members" used={data.usage.members} max={data.plan.max_members} />
+              <UsageBar label={t`Members`} used={data.usage.members} max={data.plan.max_members} />
             </>
           ) : (
             <Skeleton className="h-12 sm:col-span-2" />
@@ -191,8 +196,10 @@ function PlanPage() {
           data.plan.max_switchers != null &&
           data.usage.switchers > data.plan.max_switchers && (
             <p className="mx-5 mb-5 text-sm text-muted-foreground">
-              The newest switchers beyond {data.plan.max_switchers} are paused: they stay connected
-              but don’t switch. Upgrade, or delete switchers you no longer need.
+              <Trans>
+                The newest switchers beyond {data.plan.max_switchers} are paused: they stay
+                connected but don’t switch. Upgrade, or delete switchers you no longer need.
+              </Trans>
             </p>
           )}
       </Section>
@@ -200,7 +207,7 @@ function PlanPage() {
       {sold && (
         <div className="flex flex-wrap items-center gap-3">
           <fieldset
-            aria-label="Billing period"
+            aria-label={t`Billing period`}
             className="flex rounded-full border bg-card p-1 text-sm font-medium"
           >
             {(["month", "year"] as const).map((option) => (
@@ -214,7 +221,7 @@ function PlanPage() {
                   interval === option && "bg-primary-soft text-primary-soft-foreground",
                 )}
               >
-                {option === "month" ? "Monthly" : "Yearly"}
+                {option === "month" ? t`Monthly` : t`Yearly`}
               </button>
             ))}
           </fieldset>
@@ -234,22 +241,26 @@ function PlanPage() {
         <div className="rounded-2xl border border-dashed border-muted-foreground/30 bg-card px-5 py-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
             <Info className="size-4 text-muted-foreground" />
-            Plans are currently unavailable
+            <Trans>Plans are currently unavailable</Trans>
           </div>
           <p className="text-sm text-muted-foreground">
-            We’re not offering paid plans at the moment. If you need more capacity or a custom
-            setup, contact us and we’ll work out something that fits.
+            <Trans>
+              We’re not offering paid plans at the moment. If you need more capacity or a custom
+              setup, contact us and we’ll work out something that fits.
+            </Trans>
           </p>
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              If you’d like to support the project and help cover server costs, sponsoring is a
-              great way to do it. Sponsorship does not unlock extra capabilities or plan limits.
+              <Trans>
+                If you’d like to support the project and help cover server costs, sponsoring is a
+                great way to do it. Sponsorship does not unlock extra capabilities or plan limits.
+              </Trans>
             </p>
             <div className="flex justify-start">
               <Button asChild variant="outline" size="sm" className="shrink-0">
                 <a href="https://github.com/sponsors/715209" target="_blank" rel="noreferrer">
                   <HeartHandshake className="size-4" />
-                  Sponsor on GitHub
+                  <Trans>Sponsor on GitHub</Trans>
                 </a>
               </Button>
             </div>
@@ -258,12 +269,16 @@ function PlanPage() {
       )}
 
       {data && shownAddons.length > 0 && (
-        <section aria-label="Add-ons" className="flex flex-col gap-3">
+        <section aria-label={t`Add-ons`} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold">Add-ons</h2>
+            <h2 className="text-lg font-semibold">
+              <Trans>Add-ons</Trans>
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Buy on top of any plan, including Free. Adding is charged now for the rest of the
-              period; lowering applies when the period ends.
+              <Trans>
+                Buy on top of any plan, including Free. Adding is charged now for the rest of the
+                period; lowering applies when the period ends.
+              </Trans>
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -276,15 +291,17 @@ function PlanPage() {
 
       {me.staff && (
         <p className="text-sm text-muted-foreground">
-          Staff:{" "}
-          <Link
-            to="/admin/workspaces/$workspace"
-            params={{ workspace: workspace.id }}
-            className="font-medium text-primary hover:underline"
-          >
-            this workspace in Admin
-          </Link>{" "}
-          (set its plan, see its billing).
+          <Trans>
+            Staff:{" "}
+            <Link
+              to="/admin/workspaces/$workspace"
+              params={{ workspace: workspace.id }}
+              className="font-medium text-primary hover:underline"
+            >
+              this workspace in Admin
+            </Link>{" "}
+            (set its plan, see its billing).
+          </Trans>
         </p>
       )}
     </Page>
@@ -302,13 +319,13 @@ function IntervalSwitch({
   target: BillingInterval;
 }) {
   const change = useBillingChange(
-    `Switched to ${target === "year" ? "yearly" : "monthly"} billing`,
+    target === "year" ? t`Switched to yearly billing` : t`Switched to monthly billing`,
   );
   const subscription = workspacePlan.subscription;
   if (!subscription || subscription.interval === target) {
     return (
       <span className="text-sm text-muted-foreground">
-        Billed {subscription?.interval === "year" ? "yearly" : "monthly"}.
+        {subscription?.interval === "year" ? t`Billed yearly.` : t`Billed monthly.`}
       </span>
     );
   }
@@ -316,30 +333,30 @@ function IntervalSwitch({
     plans.find((plan) => plan.code === subscription.plan_code)?.prices ?? [],
     target,
   );
-  const word = target === "year" ? "yearly" : "monthly";
 
   return (
     <ConfirmButton
       variant="outline"
       disabled={change.isPending}
-      title={`Switch to ${word} billing?`}
-      confirmLabel={`Switch to ${word}`}
+      title={target === "year" ? t`Switch to yearly billing?` : t`Switch to monthly billing?`}
+      confirmLabel={target === "year" ? t`Switch to yearly` : t`Switch to monthly`}
       onConfirm={() => change.mutate({ kind: "interval", interval: target })}
       description={
         <>
           <span>
-            Your period restarts today. The unused part of the current period is credited, and the
-            new {target} is charged now
-            {planPrice
-              ? ` (${formatPrice(planPrice.amount, planPrice.currency)} for the plan)`
-              : ""}
-            .
+            {target === "year"
+              ? t`Your period restarts today. The unused part of the current period is credited, and the new year is charged now.`
+              : t`Your period restarts today. The unused part of the current period is credited, and the new month is charged now.`}
+            {planPrice &&
+              ` ${t`${formatPrice(planPrice.amount, planPrice.currency)} is for the plan.`}`}
           </span>
-          <span>If the card is declined, nothing changes.</span>
+          <span>
+            <Trans>If the card is declined, nothing changes.</Trans>
+          </span>
         </>
       }
     >
-      Switch to {word} billing
+      {target === "year" ? t`Switch to yearly billing` : t`Switch to monthly billing`}
     </ConfirmButton>
   );
 }
@@ -358,13 +375,19 @@ function PlanCard({
   const price = priceFor(plan.prices, interval);
   const saving = yearlySaving(plan.prices);
   const perks = [
-    plan.max_switchers === 1 ? "1 switcher" : `${plan.max_switchers ?? 0} switchers`,
-    `${plan.max_stream_servers} stream servers per switcher`,
-    `${plan.max_members} members`,
-    `${plan.history_days} days of stream history`,
-    "Automatic LIVE / LOW / BRB switching",
-    "Chat commands on Twitch, Kick and YouTube",
-    ...(plan.custom_chat_bot ? ["Your own chat bot account"] : []),
+    plural(plan.max_switchers ?? 0, { one: "# switcher", other: "# switchers" }),
+    plural(plan.max_stream_servers, {
+      one: "# stream server per switcher",
+      other: "# stream servers per switcher",
+    }),
+    plural(plan.max_members, { one: "# member", other: "# members" }),
+    plural(plan.history_days, {
+      one: "# day of stream history",
+      other: "# days of stream history",
+    }),
+    t`Automatic LIVE / LOW / BRB switching`,
+    t`Chat commands on Twitch, Kick and YouTube`,
+    ...(plan.custom_chat_bot ? [t`Your own chat bot account`] : []),
   ];
 
   return (
@@ -383,21 +406,31 @@ function PlanCard({
                 <span className="font-mono text-2xl font-semibold text-foreground tabular">
                   {formatPrice(price.amount, price.currency)}
                 </span>
-                / {interval === "month" ? "month" : "year"}
+                / {interval === "month" ? t`month` : t`year`}
                 {interval === "year" && saving > 0 && (
-                  <span className="font-semibold text-live">save {saving}%</span>
+                  <span className="font-semibold text-live">
+                    <Trans>save {saving}%</Trans>
+                  </span>
                 )}
               </>
             ) : plan.code === FREE_PLAN ? (
-              <span>Always free</span>
+              <span>
+                <Trans>Always free</Trans>
+              </span>
             ) : plan.prices.length === 0 ? (
-              <span>Not for sale yet</span>
+              <span>
+                <Trans>Not for sale yet</Trans>
+              </span>
             ) : (
-              <span>Not sold {interval === "month" ? "monthly" : "yearly"}</span>
+              <span>{interval === "month" ? t`Not sold monthly` : t`Not sold yearly`}</span>
             )}
           </p>
         </div>
-        {current && <Badge>Current plan</Badge>}
+        {current && (
+          <Badge>
+            <Trans>Current plan</Trans>
+          </Badge>
+        )}
       </div>
       <ul className="flex flex-col gap-2.5 text-sm">
         {perks.map((perk) => (
@@ -432,7 +465,7 @@ function PlanAction({
   subscriptionPrice: ReturnType<typeof priceFor>;
 }) {
   const checkout = useStripeRedirect();
-  const change = useBillingChange(`Plan updated`);
+  const change = useBillingChange(t`Plan updated`);
   const subscription = workspacePlan.subscription;
   const current = plan.code === workspacePlan.plan.code;
   const free = plan.code === FREE_PLAN;
@@ -443,7 +476,7 @@ function PlanAction({
   const note = (text: string) => (
     <div className="mt-auto flex flex-col gap-2">
       <Button className={button} disabled>
-        Switch to {plan.name}
+        <Trans>Switch to {plan.name}</Trans>
       </Button>
       <p className="text-center text-xs text-muted-foreground">{text}</p>
     </div>
@@ -458,23 +491,23 @@ function PlanAction({
         disabled={change.isPending || !workspacePlan.can_manage_billing}
         onClick={() => change.mutate({ kind: "plan", plan_code: plan.code })}
       >
-        Keep {plan.name}
+        <Trans>Keep {plan.name}</Trans>
       </Button>
     );
   }
   if (current) return null;
-  if (unpriced) return note("Not for sale yet.");
+  if (unpriced) return note(t`Not for sale yet.`);
   if (free && subscription?.held_plan_code) {
     return (
       <p className="mt-auto text-center text-sm text-muted-foreground">
-        Starts on {formatDay(subscription.held_plan_until)}.
+        <Trans>Starts on {formatDay(subscription.held_plan_until)}.</Trans>
       </p>
     );
   }
-  if (!workspacePlan.billing_enabled) return note("Plan changes open soon.");
+  if (!workspacePlan.billing_enabled) return note(t`Plan changes open soon.`);
   if (!workspacePlan.can_manage_billing)
-    return note("Only the workspace owner can change the plan.");
-  if (subscription?.cancel_at_period_end) return note("Resume the subscription to change it.");
+    return note(t`Only the workspace owner can change the plan.`);
+  if (subscription?.cancel_at_period_end) return note(t`Resume the subscription to change it.`);
 
   if (!subscription) {
     if (free || !priceFor(plan.prices, interval)) return null;
@@ -484,7 +517,7 @@ function PlanAction({
         disabled={checkout.isPending}
         onClick={() => checkout.mutate({ plan_code: plan.code, interval })}
       >
-        {checkout.isPending ? "Opening checkout…" : `Upgrade to ${plan.name}`}
+        {checkout.isPending ? t`Opening checkout…` : t`Upgrade to ${plan.name}`}
       </Button>
     );
   }
@@ -496,63 +529,75 @@ function PlanAction({
         className={button}
         variant="outline"
         disabled={change.isPending}
-        title="Move to Free?"
-        confirmLabel="Move to Free"
+        title={t`Move to Free?`}
+        confirmLabel={t`Move to Free`}
         onConfirm={() => change.mutate({ kind: "plan", plan_code: plan.code })}
         description={
           <>
             <span>
-              {workspacePlan.plan.name} stays until {formatDay(subscription.current_period_end)},
-              then the workspace moves to Free. Nothing is refunded.
+              <Trans>
+                {workspacePlan.plan.name} stays until {formatDay(subscription.current_period_end)},
+                then the workspace moves to Free. Nothing is refunded.
+              </Trans>
             </span>
             {keepsAddons ? (
-              <span>Your add-ons keep running and are billed as before.</span>
+              <span>
+                <Trans>Your add-ons keep running and are billed as before.</Trans>
+              </span>
             ) : (
-              <span>That ends the subscription.</span>
+              <span>
+                <Trans>That ends the subscription.</Trans>
+              </span>
             )}
             <span>
-              Switchers beyond Free’s limit pause then; they stay connected but don’t switch.
+              <Trans>
+                Switchers beyond Free’s limit pause then; they stay connected but don’t switch.
+              </Trans>
             </span>
           </>
         }
       >
-        Move to Free
+        <Trans>Move to Free</Trans>
       </ConfirmButton>
     );
   }
 
-  if (!subscriptionPrice) return note(`Not sold with your billing period.`);
+  if (!subscriptionPrice) return note(t`Not sold with your billing period.`);
   return (
     <ConfirmButton
       className={button}
       disabled={change.isPending}
-      title={`Upgrade to ${plan.name}?`}
-      confirmLabel="Pay and upgrade"
+      title={t`Upgrade to ${plan.name}?`}
+      confirmLabel={t`Pay and upgrade`}
       onConfirm={() => change.mutate({ kind: "plan", plan_code: plan.code })}
       description={
         <>
           <span>
-            You’ll be charged about{" "}
-            <strong>
-              {formatPrice(
-                prorate(
-                  subscriptionPrice.amount,
-                  1,
-                  subscription.current_period_start,
-                  subscription.current_period_end,
-                ),
-                subscriptionPrice.currency,
-              )}
-            </strong>{" "}
-            now for the rest of this period, then{" "}
-            {formatPrice(subscriptionPrice.amount, subscriptionPrice.currency)} per{" "}
-            {subscription.interval}, together with your add-ons.
+            <Trans>
+              You’ll be charged about{" "}
+              <strong>
+                {formatPrice(
+                  prorate(
+                    subscriptionPrice.amount,
+                    1,
+                    subscription.current_period_start,
+                    subscription.current_period_end,
+                  ),
+                  subscriptionPrice.currency,
+                )}
+              </strong>{" "}
+              now for the rest of this period, then{" "}
+              {formatPrice(subscriptionPrice.amount, subscriptionPrice.currency)} per{" "}
+              {intervalWord(subscription.interval)}, together with your add-ons.
+            </Trans>
           </span>
-          <span>If the card is declined, nothing changes.</span>
+          <span>
+            <Trans>If the card is declined, nothing changes.</Trans>
+          </span>
         </>
       }
     >
-      Upgrade to {plan.name}
+      <Trans>Upgrade to {plan.name}</Trans>
     </ConfirmButton>
   );
 }

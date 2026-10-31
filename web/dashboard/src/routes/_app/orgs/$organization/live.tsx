@@ -1,3 +1,5 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -13,10 +15,10 @@ import { formatUptime } from "@/lib/live-format";
 import { type LiveSearch, liveTag, parseLiveSearch } from "@/lib/organizations";
 import { cn } from "@/lib/utils";
 
-const SHOW: { value: LiveSearch["show"]; label: string }[] = [
-  { value: undefined, label: "All connected" },
-  { value: "live", label: "Live" },
-  { value: "obs", label: "OBS connected" },
+const showOptions = (): { value: LiveSearch["show"]; label: string }[] => [
+  { value: undefined, label: t`All connected` },
+  { value: "live", label: t`Live` },
+  { value: "obs", label: t`OBS connected` },
 ];
 
 export const Route = createFileRoute("/_app/orgs/$organization/live")({
@@ -42,26 +44,28 @@ function LivePage() {
 
   return (
     <Page
-      title="Live"
-      description="Every switcher of your clients that is connected now, live ones first."
+      title={t`Live`}
+      description={t`Every switcher of your clients that is connected now, live ones first.`}
     >
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Live now" value={counts?.live ?? "–"} hint={liveHint(counts)} />
-        <Stat label="OBS connected" value={counts?.obs_connected ?? "–"} />
-        <Stat label="Connected" value={counts?.connected ?? "–"} hint="browser source up" />
+        <Stat label={t`Live now`} value={counts?.live ?? "–"} hint={liveHint(counts)} />
+        <Stat label={t`OBS connected`} value={counts?.obs_connected ?? "–"} />
+        <Stat label={t`Connected`} value={counts?.connected ?? "–"} hint={t`browser source up`} />
         <Stat
-          label="Switchers"
+          label={t`Switchers`}
           value={counts?.switchers ?? "–"}
           hint={
-            counts ? `in ${counts.clients} client${counts.clients === 1 ? "" : "s"}` : undefined
+            counts
+              ? plural(counts.clients, { one: "in # client", other: "in # clients" })
+              : undefined
           }
         />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={q} onSearch={search} placeholder="Search by client or switcher" />
-        <fieldset className="flex flex-wrap gap-1" aria-label="Show">
-          {SHOW.map((option) => (
+        <SearchBox value={q} onSearch={search} placeholder={t`Search by client or switcher`} />
+        <fieldset className="flex flex-wrap gap-1" aria-label={t`Show`}>
+          {showOptions().map((option) => (
             <Button
               key={option.label}
               size="sm"
@@ -84,8 +88,8 @@ function LivePage() {
       ) : live.data.items.length === 0 ? (
         <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
           {q || show
-            ? "Nothing matches."
-            : "No switcher is connected right now. Connected ones show up here."}
+            ? t`Nothing matches.`
+            : t`No switcher is connected right now. Connected ones show up here.`}
         </p>
       ) : (
         <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
@@ -110,14 +114,18 @@ function LivePage() {
                     </span>
                   </Link>
                   <span className="truncate text-xs text-muted-foreground">
-                    {item.scene ? `On ${item.scene}` : "No scene"}
+                    {item.scene ? t`On ${item.scene}` : t`No scene`}
                     {item.streaming && item.stream_started_at
-                      ? ` · live for ${formatUptime(item.stream_started_at, now)}`
+                      ? t` · live for ${formatUptime(item.stream_started_at, now)}`
                       : ""}
                   </span>
                 </span>
                 <span className="flex items-center gap-2">
-                  {item.recording && <Badge variant="outline">REC</Badge>}
+                  {item.recording && (
+                    <Badge variant="outline">
+                      <Trans>REC</Trans>
+                    </Badge>
+                  )}
                   <span className={cn("font-mono text-xs font-semibold", tag.className)}>
                     {tag.tag}
                   </span>
@@ -143,8 +151,8 @@ function LivePage() {
 function liveHint(counts: { live: number; low: number; offline: number } | undefined) {
   if (!counts || counts.live === 0) return undefined;
   const parts = [
-    counts.low > 0 && `${counts.low} low`,
-    counts.offline > 0 && `${counts.offline} without a feed`,
+    counts.low > 0 && t`${counts.low} low`,
+    counts.offline > 0 && t`${counts.offline} without a feed`,
   ].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : "all with a feed";
+  return parts.length > 0 ? parts.join(" · ") : t`all with a feed`;
 }

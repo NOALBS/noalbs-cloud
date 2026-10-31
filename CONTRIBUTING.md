@@ -37,15 +37,24 @@ A few rules that are easy to miss:
 
 ## Translations
 
-The chat bot's translations are in `services/chat/locales/<language>/messages.po`, the same format as
-the dashboard's. Any `.po` editor works. Keep `{placeholders}` as they are (a test checks), along with
-what people type, like `on|off` and `rem`. An empty `msgstr` falls back to English, so a new message
-doesn't have to be translated in the same pull request. Add your name to the top of the file.
+The dashboard's translations are in `web/dashboard/src/locales/<language>/messages.po`, the chat bot's
+in `services/chat/locales/<language>/messages.po`. Any `.po` editor works. Keep `{placeholders}` and
+`<0>` tags as they are (tests check), along with what people type, like `on|off` and `rem`. An empty
+`msgstr` falls back to English, so a new message doesn't have to be translated in the same pull request.
+Add your name to the top of the bot's file.
 
-Most of what's there was finished with AI help and hasn't been checked by a native speaker yet, so
-fixes are very welcome.
+In the dashboard, put text in `<Trans>` in JSX and in `t` from `@lingui/core/macro` anywhere else, and
+use `plural` rather than choosing a word on the count, then run `pnpm i18n:extract`. A whole sentence
+translates, a sentence built from pieces doesn't: languages order their words differently. `t` runs
+when it's read, so it can't be at the top level of a module: put a table of text in a function.
 
-To add a language: add its code to `LANGUAGES` in `crates/db/src/chat_commands.rs`, its catalog to
+Most of what's there was translated or finished with AI help and hasn't been checked by a native
+speaker yet, so fixes are very welcome.
+
+To add a language to the dashboard: add it to `locales` in `lingui.config.ts` and `LOCALES` in
+`src/lib/locale.ts`, then run `pnpm i18n:extract`.
+
+To add a language to the chat bot: add its code to `LANGUAGES` in `crates/db/src/chat_commands.rs`, its catalog to
 `CATALOGS` in `services/chat/src/i18n.rs` (with the header of an existing `.po`) and its name to
 `LANGUAGE_NAMES` in the dashboard's `chat.tsx`, then update the catalogs as above. `number_format`
 in `messages.rs` says how the language writes numbers.

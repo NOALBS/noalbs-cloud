@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Eye, EyeOff } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function SecretUrlInput({
           type="button"
           id={id}
           onClick={reveal}
-          aria-label={`Hidden ${label}. Show it`}
+          aria-label={t`Hidden ${label}. Show it`}
           className="flex h-9 min-w-0 flex-1 items-center rounded-md border bg-transparent px-3 text-left font-mono text-sm text-muted-foreground dark:bg-input/30"
         >
           <span className="truncate">{mask(value)}</span>
@@ -69,7 +70,7 @@ export function SecretUrlInput({
           variant="outline"
           size="icon"
           onClick={() => (hidden ? reveal() : setRevealed(false))}
-          aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+          aria-label={hidden ? t`Show ${label}` : t`Hide ${label}`}
           aria-pressed={!hidden}
         >
           {hidden ? <Eye /> : <EyeOff />}

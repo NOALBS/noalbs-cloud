@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FeedState, SwitcherStatus } from "@/api/types";
 
 export interface StateLook {
@@ -12,7 +13,7 @@ export interface StateLook {
   pulse: boolean;
 }
 
-const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
+const looks = (): Record<FeedState | "disconnected" | "obs_offline", StateLook> => ({
   live: {
     label: "LIVE",
     text: "text-live",
@@ -22,7 +23,7 @@ const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
     pulse: true,
   },
   low: {
-    label: "LOW BITRATE",
+    label: t`LOW BITRATE`,
     text: "text-low",
     soft: "bg-low/12",
     border: "border-low/40",
@@ -30,7 +31,7 @@ const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
     pulse: false,
   },
   offline: {
-    label: "OFFLINE",
+    label: t`OFFLINE`,
     text: "text-offline",
     soft: "bg-offline/14",
     border: "border-offline/45",
@@ -38,7 +39,7 @@ const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
     pulse: false,
   },
   idle: {
-    label: "NOT STREAMING",
+    label: t`NOT STREAMING`,
     text: "text-muted-foreground",
     soft: "bg-muted",
     border: "border-border",
@@ -46,7 +47,7 @@ const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
     pulse: false,
   },
   disconnected: {
-    label: "NOT CONNECTED",
+    label: t`NOT CONNECTED`,
     text: "text-muted-foreground",
     soft: "bg-muted",
     border: "border-border",
@@ -54,22 +55,22 @@ const LOOKS: Record<FeedState | "disconnected" | "obs_offline", StateLook> = {
     pulse: false,
   },
   obs_offline: {
-    label: "OBS DISCONNECTED",
+    label: t`OBS DISCONNECTED`,
     text: "text-low",
     soft: "bg-low/12",
     border: "border-low/40",
     fill: "bg-low",
     pulse: false,
   },
-};
+});
 
 /** How to show a switcher's overall state. */
 export function lookFor(status: SwitcherStatus | null | undefined): StateLook {
-  if (!status) return LOOKS.disconnected;
-  if (!status.obs_connected) return LOOKS.obs_offline;
-  return LOOKS[status.state];
+  if (!status) return looks().disconnected;
+  if (!status.obs_connected) return looks().obs_offline;
+  return looks()[status.state];
 }
 
 export function lookForState(state: FeedState): StateLook {
-  return LOOKS[state];
+  return looks()[state];
 }

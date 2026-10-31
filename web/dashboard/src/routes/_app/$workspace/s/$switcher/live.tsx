@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MonitorPlay, PauseCircle, PlugZap, Radio, WifiOff } from "lucide-react";
@@ -66,15 +68,15 @@ function LivePage() {
 
   return (
     <SwitcherPage
-      title="Live"
-      description={`${switcher.name} · ${activeServer ? activeServer.name : "No stream server"} → OBS`}
+      title={t`Live`}
+      description={`${switcher.name} · ${activeServer ? activeServer.name : t`No stream server`} → OBS`}
       actions={
         <div className="hidden flex-wrap items-center gap-2.5 lg:flex">
-          <Health ok={Boolean(status?.browser_source)} label="Browser source" />
+          <Health ok={Boolean(status?.browser_source)} label={t`Browser source`} />
           <ObsStatsPopover path={path} connected={Boolean(status?.obs_connected)}>
             <Health ok={Boolean(status?.obs_connected)} label="OBS" interactive />
           </ObsStatsPopover>
-          {live.connection === "reconnecting" && <Health ok={false} label="Live feed" />}
+          {live.connection === "reconnecting" && <Health ok={false} label={t`Live feed`} />}
           <MarkerButton controls={controls} status={status} disabled={disabled} variant="compact" />
           <FixButton controls={controls} disabled={disabled} variant="compact" />
           <RecordButton controls={controls} status={status} disabled={disabled} variant="compact" />
@@ -88,20 +90,29 @@ function LivePage() {
           <p className="flex-1 text-sm">
             {workspace.suspension.reason ? (
               <>
-                <strong>Suspended by NOALBS.</strong> {workspace.suspension.reason} This switcher
-                stays connected but doesn't switch or take commands. Questions:{" "}
-                <a
-                  href="mailto:support@noalbs.com"
-                  className="font-semibold text-primary hover:underline"
-                >
-                  support@noalbs.com
-                </a>
+                <Trans>
+                  <strong>Suspended by NOALBS.</strong> {workspace.suspension.reason} This switcher
+                  stays connected but doesn't switch or take commands. Questions:{" "}
+                  <a
+                    href="mailto:support@noalbs.com"
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    support@noalbs.com
+                  </a>
+                </Trans>
               </>
             ) : (
               <>
-                <strong>This workspace is paused.</strong> This switcher stays connected but doesn't
-                switch or take commands.
-                {workspace.managed_by && <> Ask {workspace.managed_by.name} about it.</>}
+                <Trans>
+                  <strong>This workspace is paused.</strong> This switcher stays connected but
+                  doesn't switch or take commands.
+                </Trans>
+                {workspace.managed_by && (
+                  <>
+                    {" "}
+                    <Trans>Ask {workspace.managed_by.name} about it.</Trans>
+                  </>
+                )}
               </>
             )}
           </p>
@@ -111,16 +122,18 @@ function LivePage() {
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-low/40 bg-low/10 p-4">
           <PauseCircle className="size-5 text-low" />
           <p className="flex-1 text-sm">
-            <strong>Paused.</strong> This workspace has more switchers than its plan includes, so
-            this one stays connected but doesn't switch or take commands. Upgrade the plan, or
-            delete a switcher you no longer use.
+            <Trans>
+              <strong>Paused.</strong> This workspace has more switchers than its plan includes, so
+              this one stays connected but doesn't switch or take commands. Upgrade the plan, or
+              delete a switcher you no longer use.
+            </Trans>
           </p>
           <Link
             to="/$workspace/settings/plan"
             params={{ workspace: workspace.url_slug }}
             className="text-sm font-semibold text-primary hover:underline"
           >
-            See plans
+            <Trans>See plans</Trans>
           </Link>
         </div>
       )}
@@ -132,8 +145,10 @@ function LivePage() {
         >
           <WifiOff className="size-5 text-low" />
           <p className="flex-1 text-sm">
-            <strong>Reconnecting to NOALBS…</strong> This page is out of date until it’s back.
-            Switching keeps running without it; check your phone’s signal.
+            <Trans>
+              <strong>Reconnecting to NOALBS…</strong> This page is out of date until it’s back.
+              Switching keeps running without it; check your phone’s signal.
+            </Trans>
           </p>
         </div>
       )}
@@ -142,14 +157,16 @@ function LivePage() {
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed p-4">
           <MonitorPlay className="size-5 text-primary" />
           <p className="flex-1 text-sm text-muted-foreground">
-            The browser source isn’t connected. Open OBS with the NOALBS browser source active.
+            <Trans>
+              The browser source isn’t connected. Open OBS with the NOALBS browser source active.
+            </Trans>
           </p>
           <Link
             to="/$workspace/s/$switcher/setup"
             params={params}
             className="text-sm font-semibold text-primary hover:underline"
           >
-            Setup help
+            <Trans>Setup help</Trans>
           </Link>
         </div>
       )}
@@ -158,15 +175,17 @@ function LivePage() {
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-low/40 bg-low/10 p-4">
           <PlugZap className="size-5 text-low" />
           <p className="flex-1 text-sm">
-            <strong>The browser source can’t reach OBS.</strong> Check that WebSocket is on in OBS
-            (Tools → WebSocket Server Settings) and that the port and password match Setup.
+            <Trans>
+              <strong>The browser source can’t reach OBS.</strong> Check that WebSocket is on in OBS
+              (Tools → WebSocket Server Settings) and that the port and password match Setup.
+            </Trans>
           </p>
           <Link
             to="/$workspace/s/$switcher/setup"
             params={params}
             className="text-sm font-semibold text-primary hover:underline"
           >
-            Open Setup
+            <Trans>Open Setup</Trans>
           </Link>
         </div>
       )}
@@ -201,7 +220,7 @@ function LivePage() {
         />
 
         <section
-          aria-label="Bitrate"
+          aria-label={t`Bitrate`}
           className={cn(
             "hidden flex-col gap-3 rounded-2xl border bg-card p-5 lg:col-span-8 lg:flex",
             feedDown && "opacity-50",
@@ -209,31 +228,39 @@ function LivePage() {
         >
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex items-end gap-8">
-              <Stat label="Bitrate">
+              <Stat label={t`Bitrate`}>
                 <span className="text-5xl">{sample ? formatKbps(sample.bitrate) : "—"}</span>
-                <span className="text-base font-normal text-muted-foreground"> kbps</span>
+                <span className="text-base font-normal text-muted-foreground">
+                  {" "}
+                  <Trans>kbps</Trans>
+                </span>
               </Stat>
               <Stat label="RTT">
                 <span className="text-2xl">
                   {sample?.rtt != null ? Math.round(sample.rtt) : "—"}
                 </span>
-                <span className="text-sm font-normal text-muted-foreground"> ms</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {" "}
+                  <Trans>ms</Trans>
+                </span>
               </Stat>
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               {switcher.triggers.low != null && (
                 <span className="flex items-center gap-1.5">
                   <span className="w-3.5 border-t border-dashed border-low" />
-                  Low {formatKbps(switcher.triggers.low)}
+                  <Trans>Low {formatKbps(switcher.triggers.low)}</Trans>
                 </span>
               )}
               {switcher.triggers.offline != null && (
                 <span className="flex items-center gap-1.5">
                   <span className="w-3.5 border-t border-dashed border-offline" />
-                  BRB {formatKbps(switcher.triggers.offline)}
+                  <Trans>BRB {formatKbps(switcher.triggers.offline)}</Trans>
                 </span>
               )}
-              <span>Last 2 min</span>
+              <span>
+                <Trans>Last 2 min</Trans>
+              </span>
             </div>
           </div>
           <BitrateChart
@@ -245,20 +272,22 @@ function LivePage() {
           />
         </section>
 
-        <section aria-label="Stream servers" className="flex flex-col gap-2.5 lg:col-span-4">
+        <section aria-label={t`Stream servers`} className="flex flex-col gap-2.5 lg:col-span-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-semibold">Stream servers</h2>
+            <h2 className="font-semibold">
+              <Trans>Stream servers</Trans>
+            </h2>
             <Link
               to="/$workspace/s/$switcher/servers"
               params={params}
               className="text-sm text-primary hover:underline"
             >
-              Manage
+              <Trans>Manage</Trans>
             </Link>
           </div>
           {servers.data?.length === 0 && (
             <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-              No stream servers yet.
+              <Trans>No stream servers yet.</Trans>
             </p>
           )}
           {servers.data?.map((server) => (
@@ -347,7 +376,7 @@ function MobileActions({
   onlyWhileStreaming: boolean;
 }) {
   return (
-    <section aria-label="Quick actions" className="grid grid-cols-2 gap-2.5 lg:hidden">
+    <section aria-label={t`Quick actions`} className="grid grid-cols-2 gap-2.5 lg:hidden">
       <StreamButton controls={controls} status={status} disabled={disabled} variant="tile" />
       <RecordButton controls={controls} status={status} disabled={disabled} variant="tile" />
       <AutoSwitchToggle
@@ -401,7 +430,7 @@ function StatusCard({
 
   return (
     <section
-      aria-label="Stream status"
+      aria-label={t`Stream status`}
       className={cn("flex flex-col gap-5 rounded-2xl border bg-card p-5", look.border, className)}
     >
       <div className="flex items-center justify-between gap-3">
@@ -414,7 +443,7 @@ function StatusCard({
           role="status"
         >
           <span className={cn("size-2.5 rounded-full", look.fill, look.pulse && "animate-pulse")} />
-          {feedDown ? "RECONNECTING…" : status === undefined ? "CONNECTING…" : look.label}
+          {feedDown ? t`RECONNECTING…` : status === undefined ? t`CONNECTING…` : look.label}
         </span>
         <span className="font-mono text-sm text-muted-foreground tabular">
           {status?.streaming && status.stream_started_at
@@ -427,18 +456,26 @@ function StatusCard({
       <div
         className={cn("flex items-end justify-between gap-4 lg:hidden", feedDown && "opacity-50")}
       >
-        <Stat label={`Bitrate${serverName ? ` · ${serverName}` : ""}`}>
+        <Stat label={serverName ? t`Bitrate · ${serverName}` : t`Bitrate`}>
           <span className="text-[44px]">{sample ? formatKbps(sample.bitrate) : "—"}</span>
-          <span className="text-base font-normal text-muted-foreground"> kbps</span>
+          <span className="text-base font-normal text-muted-foreground">
+            {" "}
+            <Trans>kbps</Trans>
+          </span>
         </Stat>
         <Stat label="RTT">
           <span className="text-2xl">{sample?.rtt != null ? Math.round(sample.rtt) : "—"}</span>
-          <span className="text-sm font-normal text-muted-foreground"> ms</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            {" "}
+            <Trans>ms</Trans>
+          </span>
         </Stat>
       </div>
 
       <div className="flex flex-col gap-1 max-lg:flex-row max-lg:items-center max-lg:justify-between max-lg:border-t max-lg:border-divider max-lg:pt-4">
-        <span className="text-xs tracking-wider text-muted-foreground uppercase">On air</span>
+        <span className="text-xs tracking-wider text-muted-foreground uppercase">
+          <Trans>On air</Trans>
+        </span>
         <span className="flex items-center gap-2 text-base font-semibold lg:text-3xl lg:font-bold">
           <Radio className={cn("size-4 lg:hidden", look.text)} />
           {status?.current_scene?.name ?? "—"}
@@ -464,7 +501,7 @@ function Health({
     <>
       <span className={cn("size-1.5 rounded-full", ok ? "bg-live" : "bg-offline")} />
       {label}
-      <span className="sr-only">{ok ? "connected" : "not connected"}</span>
+      <span className="sr-only">{ok ? t`connected` : t`not connected`}</span>
     </>
   );
   const className =
@@ -473,7 +510,7 @@ function Health({
   return (
     <button
       type="button"
-      title={`${label} stats`}
+      title={t`${label} stats`}
       className={cn(
         className,
         "transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Link2, X } from "lucide-react";
@@ -33,8 +35,8 @@ import { providerLabel, UserAvatar } from "@/components/user-avatar";
 import { useOrganization } from "@/hooks/use-organization";
 import { errorMessage } from "@/lib/errors";
 import {
-  ORGANIZATION_ROLE_DESCRIPTIONS,
-  ORGANIZATION_ROLE_LABELS,
+  organizationRoleDescriptions,
+  organizationRoleLabels,
   teamInviteUrl,
 } from "@/lib/organizations";
 import { formatDate, formatRelative } from "@/lib/time";
@@ -50,8 +52,8 @@ function TeamPage() {
   const team = useQuery(teamQuery(organization.id));
 
   return (
-    <Page title="Team" description="Who can see and run your clients.">
-      <Section title="Members" description={`${organization.usage.team} on the team`}>
+    <Page title={t`Team`} description={t`Who can see and run your clients.`}>
+      <Section title={t`Members`} description={t`${organization.usage.team} on the team`}>
         {!team.data ? (
           <Skeleton className="mx-5 mb-5 h-24" />
         ) : (
@@ -71,12 +73,12 @@ function TeamPage() {
 
       {isAdmin && <Invites />}
 
-      <Section title="Roles">
+      <Section title={t`Roles`}>
         <dl className="flex flex-col gap-2 px-5 pb-5 text-sm">
           {ROLES.map((role) => (
             <div key={role} className="flex gap-3">
-              <dt className="w-20 shrink-0 font-semibold">{ORGANIZATION_ROLE_LABELS[role]}</dt>
-              <dd className="text-muted-foreground">{ORGANIZATION_ROLE_DESCRIPTIONS[role]}</dd>
+              <dt className="w-20 shrink-0 font-semibold">{organizationRoleLabels()[role]}</dt>
+              <dd className="text-muted-foreground">{organizationRoleDescriptions()[role]}</dd>
             </div>
           ))}
         </dl>
@@ -98,7 +100,7 @@ function MemberRow({
 }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const name = member.username ?? "Unknown user";
+  const name = member.username ?? t`Unknown user`;
   const path = { organization_id: organizationId, user_id: member.user_id };
 
   const refresh = () =>
@@ -117,7 +119,7 @@ function MemberRow({
       ),
     onSuccess: async (_, role) => {
       await refresh();
-      toast.success(`${name}’s role is now ${ORGANIZATION_ROLE_LABELS[role]}`);
+      toast.success(t`${name}’s role is now ${organizationRoleLabels()[role]}`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -133,7 +135,7 @@ function MemberRow({
         await navigate({ to: "/" });
         return;
       }
-      toast.success(`${name} was removed`);
+      toast.success(t`${name} was removed`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -144,10 +146,15 @@ function MemberRow({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-semibold">
           {name}
-          {isYou && <span className="font-normal text-muted-foreground"> (you)</span>}
+          {isYou && (
+            <span className="font-normal text-muted-foreground">
+              {" "}
+              <Trans>(you)</Trans>
+            </span>
+          )}
         </span>
         <span className="text-xs text-muted-foreground">
-          {[providerLabel(member.provider), `joined ${formatDate(member.joined_at)}`]
+          {[providerLabel(member.provider), t`joined ${formatDate(member.joined_at)}`]
             .filter(Boolean)
             .join(" · ")}
         </span>
@@ -159,20 +166,20 @@ function MemberRow({
           onValueChange={(role) => changeRole.mutate(role as OrganizationRole)}
           disabled={changeRole.isPending}
         >
-          <SelectTrigger className="w-36" aria-label={`Role of ${name}`}>
+          <SelectTrigger className="w-36" aria-label={t`Role of ${name}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {ROLES.map((role) => (
               <SelectItem key={role} value={role}>
-                {ORGANIZATION_ROLE_LABELS[role]}
+                {organizationRoleLabels()[role]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       ) : (
         <Badge variant="secondary" className="w-20 justify-center">
-          {ORGANIZATION_ROLE_LABELS[member.role]}
+          {organizationRoleLabels()[member.role]}
         </Badge>
       )}
 
@@ -182,24 +189,26 @@ function MemberRow({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isYou ? "Leave the team" : `Remove ${name}`}
+              aria-label={isYou ? t`Leave the team` : t`Remove ${name}`}
             >
               <X />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{isYou ? "Leave the team?" : `Remove ${name}?`}</AlertDialogTitle>
+              <AlertDialogTitle>{isYou ? t`Leave the team?` : t`Remove ${name}?`}</AlertDialogTitle>
               <AlertDialogDescription>
-                {isYou ? "You" : "They"} lose access to the organization and all its clients
-                straight away. {isYou ? "An admin" : "You"} can invite {isYou ? "you" : "them"}{" "}
-                again later. The last admin can’t go.
+                {isYou
+                  ? t`You lose access to the organization and all its clients straight away. An admin can invite you again later. The last admin can’t go.`
+                  : t`They lose access to the organization and all its clients straight away. You can invite them again later. The last admin can’t go.`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
               <AlertDialogAction variant="destructive" onClick={() => remove.mutate()}>
-                {isYou ? "Leave" : "Remove"}
+                {isYou ? t`Leave` : t`Remove`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -244,44 +253,46 @@ function Invites() {
     onSuccess: async (_, inviteId) => {
       if (created?.invite.id === inviteId) setCreated(null);
       await queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites(organization.id) });
-      toast.success("Invite revoked");
+      toast.success(t`Invite revoked`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
 
   return (
     <Section
-      title="Invite links"
-      description="Someone who opens a link signs in and joins your team. A link works once and expires after 7 days."
+      title={t`Invite links`}
+      description={t`Someone who opens a link signs in and joins your team. A link works once and expires after 7 days.`}
     >
       <div className="flex flex-wrap items-center gap-2.5 px-5 pb-4">
         <Select value={role} onValueChange={(value) => setRole(value as OrganizationRole)}>
-          <SelectTrigger className="w-36" aria-label="Role for the invite">
+          <SelectTrigger className="w-36" aria-label={t`Role for the invite`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {ROLES.map((value) => (
               <SelectItem key={value} value={value}>
-                {ORGANIZATION_ROLE_LABELS[value]}
+                {organizationRoleLabels()[value]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Button onClick={() => create.mutate()} disabled={create.isPending}>
           <Link2 />
-          Create invite link
+          <Trans>Create invite link</Trans>
         </Button>
       </div>
 
       {created && (
         <div className="mx-5 mb-4 flex flex-col gap-2 rounded-xl border border-divider bg-sunken p-3.5">
           <p className="text-sm">
-            New {ORGANIZATION_ROLE_LABELS[created.invite.role].toLowerCase()} invite. Copy it now:
-            it won’t be shown again.
+            <Trans>
+              New invite ({organizationRoleLabels()[created.invite.role]}). Copy it now: it won’t be
+              shown again.
+            </Trans>
           </p>
           <CopyField
             value={teamInviteUrl(window.location.origin, created.token)}
-            label="invite link"
+            label={t`invite link`}
             secret
           />
         </div>
@@ -293,15 +304,17 @@ function Invites() {
             key={invite.id}
             className="flex items-center gap-3 border-t border-divider px-5 py-2.5 text-sm"
           >
-            <Badge variant="secondary">{ORGANIZATION_ROLE_LABELS[invite.role]}</Badge>
+            <Badge variant="secondary">{organizationRoleLabels()[invite.role]}</Badge>
             <span className="flex-1 text-muted-foreground">
-              Created {formatRelative(invite.created_at)} · expires{" "}
-              {formatRelative(invite.expires_at)}
+              <Trans>
+                Created {formatRelative(invite.created_at)} · expires{" "}
+                {formatRelative(invite.expires_at)}
+              </Trans>
             </span>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Revoke invite"
+              aria-label={t`Revoke invite`}
               onClick={() => revoke.mutate(invite.id)}
               disabled={revoke.isPending}
             >
@@ -311,7 +324,7 @@ function Invites() {
         ))}
         {invites.data?.length === 0 && !created && (
           <li className="border-t border-divider px-5 py-3 text-sm text-muted-foreground">
-            No open invites.
+            <Trans>No open invites.</Trans>
           </li>
         )}
       </ul>

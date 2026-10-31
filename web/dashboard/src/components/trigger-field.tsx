@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SCENE_ROLES } from "@/lib/scene-roles";
@@ -42,7 +43,7 @@ export function TriggerField({
           checked={on}
           onCheckedChange={(checked) => onChange(checked ? fallback : null)}
           disabled={disabled}
-          aria-label={`${label}: ${on ? "on" : "off"}`}
+          aria-label={`${label}: ${on ? t`on` : t`off`}`}
         />
       </div>
       <div className="flex h-12 items-center rounded-xl border border-input bg-background pr-3 focus-within:ring-[3px] focus-within:ring-ring/50">
@@ -52,7 +53,7 @@ export function TriggerField({
           inputMode="numeric"
           min={1}
           value={on ? value : ""}
-          placeholder="Off"
+          placeholder={t`Off`}
           disabled={disabled || !on}
           onChange={(event) =>
             onChange(event.target.value === "" ? 0 : Math.round(Number(event.target.value)))

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Copy, Download } from "lucide-react";
 import { useState } from "react";
@@ -32,16 +34,18 @@ export function MarkersPanel({
   };
 
   return (
-    <section aria-label="Markers" className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <section aria-label={t`Markers`} className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Times are from the start of the stream. Add them with the Marker button on the Live page
-          or <span className="font-mono">!marker</span> in chat.
+          <Trans>
+            Times are from the start of the stream. Add them with the Marker button on the Live page
+            or <span className="font-mono">!marker</span> in chat.
+          </Trans>
         </p>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" disabled={list.length === 0} onClick={copy}>
             {copied ? <Check /> : <Copy />}
-            {copied ? "Copied" : "Copy"}
+            {copied ? t`Copied` : t`Copy`}
           </Button>
           <Button
             size="sm"
@@ -52,7 +56,7 @@ export function MarkersPanel({
             }
           >
             <Download />
-            Download
+            <Trans>Download</Trans>
           </Button>
         </div>
       </div>
@@ -61,7 +65,7 @@ export function MarkersPanel({
       {markers.isError && <p className="text-sm text-destructive">{errorMessage(markers.error)}</p>}
       {markers.isSuccess && list.length === 0 && (
         <p className="rounded-xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          No markers on this stream.
+          <Trans>No markers on this stream.</Trans>
         </p>
       )}
       {list.length > 0 && (
@@ -72,7 +76,11 @@ export function MarkersPanel({
                 {formatOffset(marker.offset_seconds)}
               </span>
               <span className="min-w-0 flex-1 break-words">
-                {marker.description ?? <span className="text-muted-foreground">Marker</span>}
+                {marker.description ?? (
+                  <span className="text-muted-foreground">
+                    <Trans>Marker</Trans>
+                  </span>
+                )}
               </span>
               {marker.created_by && (
                 <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">

@@ -1,8 +1,10 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ServerDetails, ServerDetailsInput, StreamServerKind } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type DetailField, FIELD_LABELS, kindInfo } from "@/lib/stream-server-kinds";
+import { type DetailField, fieldLabels, kindInfo } from "@/lib/stream-server-kinds";
 import { SecretUrlInput } from "./secret-url-input";
 
 /** The kind-specific settings being edited. Secrets start empty (write-only). */
@@ -87,7 +89,7 @@ export function ServerDetailsFields({
               key={field}
               id={id(field)}
               field={field}
-              labels={info.fieldLabels?.[field] ?? FIELD_LABELS[field]}
+              labels={info.fieldLabels?.[field] ?? fieldLabels()[field]}
               optional={optional}
               value={form[field]}
               onChange={(value) => set({ [field]: value })}
@@ -102,7 +104,7 @@ export function ServerDetailsFields({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor={id("username")}>
-              Username <Optional />
+              <Trans>Username</Trans> <Optional />
             </Label>
             <Input
               id={id("username")}
@@ -115,7 +117,7 @@ export function ServerDetailsFields({
           </div>
           <SecretField
             id={id("password")}
-            label="Password"
+            label={t`Password`}
             value={form.password}
             cleared={form.clear_password}
             isStored={Boolean(stored?.has_password)}
@@ -129,7 +131,7 @@ export function ServerDetailsFields({
       {info.apiKey && (
         <SecretField
           id={id("api-key")}
-          label={info.apiKeyLabel ?? "API key"}
+          label={info.apiKeyLabel ?? t`API key`}
           value={form.api_key}
           cleared={form.clear_api_key}
           isStored={Boolean(stored?.has_api_key)}
@@ -143,7 +145,11 @@ export function ServerDetailsFields({
 }
 
 function Optional() {
-  return <span className="font-normal text-muted-foreground">(optional)</span>;
+  return (
+    <span className="font-normal text-muted-foreground">
+      <Trans>(optional)</Trans>
+    </span>
+  );
 }
 
 function DetailInput({
@@ -175,7 +181,7 @@ function DetailInput({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          label="stream key"
+          label={t`stream key`}
           mask={() => "••••••••"}
           readOnly={disabled}
         />
@@ -228,11 +234,11 @@ function SecretField({
           onChange={(event) => onChange(event.target.value)}
           placeholder={
             cleared
-              ? "Will be removed"
+              ? t`Will be removed`
               : isStored
                 ? disabled
-                  ? "Saved"
-                  : "Saved. Type to replace"
+                  ? t`Saved`
+                  : t`Saved. Type to replace`
                 : undefined
           }
           autoComplete="new-password"
@@ -246,7 +252,7 @@ function SecretField({
             onClick={() => onClear(!cleared)}
             disabled={disabled}
           >
-            {cleared ? "Keep" : "Remove"}
+            {cleared ? t`Keep` : t`Remove`}
           </Button>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot } from "lucide-react";
 import { toast } from "sonner";
@@ -33,11 +35,11 @@ export function OrganizationBotsSection({
 
   return (
     <Section
-      title="Your bot"
+      title={t`Your bot`}
       description={
         isAdmin
-          ? "Answers in the chat of all your clients, in place of the shared NOALBS bot. Sign in as the bot account (not your own) when the platform asks."
-          : "Answers in the chat of all your clients, in place of the shared NOALBS bot."
+          ? t`Answers in the chat of all your clients, in place of the shared NOALBS bot. Sign in as the bot account (not your own) when the platform asks.`
+          : t`Answers in the chat of all your clients, in place of the shared NOALBS bot.`
       }
     >
       {!bots.data || !providers.data ? (
@@ -88,7 +90,7 @@ function BotRow({
       await queryClient.invalidateQueries({
         queryKey: queryKeys.organizationChatBots(organization.id),
       });
-      toast.success(`${label} bot disconnected`);
+      toast.success(t`${label} bot disconnected`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -103,32 +105,34 @@ function BotRow({
         </span>
         <span className="text-sm text-muted-foreground">
           {!configured
-            ? `${label} sign-in isn’t configured on this server.`
+            ? t`${label} sign-in isn’t configured on this server.`
             : bot
-              ? `Connected ${formatRelative(bot.connected_at)}`
-              : `Not connected: your ${label} clients get the shared NOALBS bot.`}
+              ? t`Connected ${formatRelative(bot.connected_at)}`
+              : t`Not connected: your ${label} clients get the shared NOALBS bot.`}
         </span>
       </span>
       {bot?.status === "revoked" && (
-        <Badge className="bg-low/15 text-low">Needs reconnecting</Badge>
+        <Badge className="bg-low/15 text-low">
+          <Trans>Needs reconnecting</Trans>
+        </Badge>
       )}
       {isAdmin && configured && (
         <Button variant={bot ? "outline" : "default"} size="sm" asChild>
           <a href={organizationBotConnectUrl(organization.id, platform, window.location.pathname)}>
-            {bot ? "Reconnect" : "Connect"}
+            {bot ? t`Reconnect` : t`Connect`}
           </a>
         </Button>
       )}
       {isAdmin && bot && (
         <ConfirmButton
           variant="ghost"
-          title={`Disconnect the ${label} bot?`}
-          description={`Your ${label} clients get the shared NOALBS bot again.`}
-          confirmLabel="Disconnect"
+          title={t`Disconnect the ${label} bot?`}
+          description={t`Your ${label} clients get the shared NOALBS bot again.`}
+          confirmLabel={t`Disconnect`}
           disabled={remove.isPending}
           onConfirm={() => remove.mutate()}
         >
-          Disconnect
+          <Trans>Disconnect</Trans>
         </ConfirmButton>
       )}
     </li>
@@ -155,21 +159,27 @@ export function CustomerBotSetting({
       ),
     onSuccess: async (_, custom_chat_bot) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.organizations });
-      toast.success(custom_chat_bot ? "Customers can use their own bot" : "Customers use your bot");
+      toast.success(
+        custom_chat_bot ? t`Customers can use their own bot` : t`Customers use your bot`,
+      );
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
 
   return (
     <Section
-      title="Customers’ own bots"
-      description="Lets a customer connect a bot account of their own on a client’s Chat page. It answers in their channels instead of yours. Turning it off keeps what they connected but stops it answering."
+      title={t`Customers’ own bots`}
+      description={t`Lets a customer connect a bot account of their own on a client’s Chat page. It answers in their channels instead of yours. Turning it off keeps what they connected but stops it answering.`}
     >
       <div className="flex items-center justify-between gap-4 px-5 pb-5">
         <Label htmlFor="customer-bot" className="flex flex-col items-start gap-0.5">
-          <span>Customers can connect their own bot</span>
+          <span>
+            <Trans>Customers can connect their own bot</Trans>
+          </span>
           <span className="text-xs font-normal text-muted-foreground">
-            {allowed ? "On" : "Off: your bot, or the shared NOALBS bot, answers for every client."}
+            {allowed
+              ? t`On`
+              : t`Off: your bot, or the shared NOALBS bot, answers for every client.`}
           </span>
         </Label>
         <Switch

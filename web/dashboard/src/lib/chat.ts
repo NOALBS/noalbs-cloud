@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ChatBot, ChatPlatform, WorkspaceChatBots } from "@/api/types";
 
 /**
@@ -38,21 +39,19 @@ export const organizationBotConnectUrl = (
 export const sharedBotConnectUrl = (platform: ChatPlatform, returnTo: string) =>
   withReturn(`/admin/chat-bots/connect/${platform}`, returnTo);
 
-const GRANT_ERRORS: Record<string, string> = {
-  oauth_denied: "Connecting was cancelled.",
-  missing_scopes: "Not every permission was allowed. Try again and allow them all.",
-  plan_limit: "Your plan doesn’t include your own chat bot.",
-  forbidden: "You can’t connect that here.",
-  provider_not_configured: "That platform isn’t set up on this server.",
-  oauth_state: "That took too long or was started in another tab. Try again.",
-  missing_refresh_token:
-    "YouTube didn’t allow offline access. Remove NOALBS under your Google account’s third-party access, then connect again.",
-  no_youtube_channel:
-    "That Google account has no YouTube channel. Pick the account (or brand account) you stream with.",
-};
+const grantErrors = (): Record<string, string> => ({
+  oauth_denied: t`Connecting was cancelled.`,
+  missing_scopes: t`Not every permission was allowed. Try again and allow them all.`,
+  plan_limit: t`Your plan doesn’t include your own chat bot.`,
+  forbidden: t`You can’t connect that here.`,
+  provider_not_configured: t`That platform isn’t set up on this server.`,
+  oauth_state: t`That took too long or was started in another tab. Try again.`,
+  missing_refresh_token: t`YouTube didn’t allow offline access. Remove NOALBS under your Google account’s third-party access, then connect again.`,
+  no_youtube_channel: t`That Google account has no YouTube channel. Pick the account (or brand account) you stream with.`,
+});
 
 export function grantErrorMessage(code: string): string {
-  return GRANT_ERRORS[code] ?? "Couldn’t connect. Please try again.";
+  return grantErrors()[code] ?? t`Couldn’t connect. Please try again.`;
 }
 
 /** Whose bot answers: the workspace's own, its organization's, or the shared NOALBS one. */
