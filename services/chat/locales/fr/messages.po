@@ -8,6 +8,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: fr\n"
 
+msgid "SoC temperature"
+msgstr "Température du SoC"
+
+msgid "SoC voltage"
+msgstr "Tension du SoC"
+
+msgid "SoC current"
+msgstr "Courant du SoC"
+
+msgid "SRT ingest"
+msgstr "Entrée SRT"
+
+msgid "RTMP ingest - {stream}"
+msgstr "Entrée RTMP - {stream}"
+
 msgid "scene: {scene}"
 msgstr "scène : {scene}"
 

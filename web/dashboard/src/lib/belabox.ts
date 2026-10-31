@@ -14,6 +14,19 @@ export const BELABOX_MIN_BITRATE = 300;
 export const BELABOX_MAX_BITRATE = 12000;
 export const BELABOX_BITRATE_STEP = 250;
 
+/** BELABOX names its sensors in English: in the viewer's language, a name we don't know as sent. */
+export function sensorLabel(name: string): string {
+  const stream = name.match(/^RTMP ingest - (.+)$/)?.[1];
+  if (stream) return t`RTMP ingest - ${stream}`;
+  const labels: Record<string, string> = {
+    "SoC temperature": t`SoC temperature`,
+    "SoC voltage": t`SoC voltage`,
+    "SoC current": t`SoC current`,
+    "SRT ingest": t`SRT ingest`,
+  };
+  return labels[name] ?? name;
+}
+
 /** A status older than this is gone: obs-link rewrites it at least every 10 s. */
 const STALE_MS = 45_000;
 

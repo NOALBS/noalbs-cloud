@@ -7,6 +7,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: zh-cn\n"
 
+msgid "SoC temperature"
+msgstr "SoC 温度"
+
+msgid "SoC voltage"
+msgstr "SoC 电压"
+
+msgid "SoC current"
+msgstr "SoC 电流"
+
+msgid "SRT ingest"
+msgstr "SRT 输入"
+
+msgid "RTMP ingest - {stream}"
+msgstr "RTMP 输入 - {stream}"
+
 msgid "scene: {scene}"
 msgstr "场景：{scene}"
 

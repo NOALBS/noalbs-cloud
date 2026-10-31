@@ -34,6 +34,7 @@ import {
   interfaceTitle,
   modemLabel,
   roundBitrate,
+  sensorLabel,
   stepBitrate,
   unmatchedLabels,
   withLabel,
@@ -273,7 +274,7 @@ export function BelaboxCard({
 
           <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
             {[
-              ...online.sensors.map((sensor) => [sensor.name, sensor.value] as const),
+              ...online.sensors.map((sensor) => [sensorLabel(sensor.name), sensor.value] as const),
               ...(online.pipeline ? [[t`Pipeline`, online.pipeline] as const] : []),
               ...(online.srt_latency != null
                 ? [[t`SRT latency`, `${formatKbps(online.srt_latency)} ms`] as const]

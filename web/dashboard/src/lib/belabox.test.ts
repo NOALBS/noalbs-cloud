@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { i18n } from "@lingui/core";
+import { afterEach, describe, expect, it } from "vitest";
 import type {
   BelaboxDetails,
   BelaboxInterface,
@@ -19,6 +20,7 @@ import {
   operatorChoices,
   roundBitrate,
   type SettingsForm,
+  sensorLabel,
   settingsForm,
   settingsUpdate,
   signalBars,
@@ -380,5 +382,22 @@ describe("describeResult", () => {
     expect(describeResult(result("wifi_connect", "generic")).ok).toBe(false);
     expect(describeResult(result("hotspot_config", "password")).message).toContain("password");
     expect(describeResult(result("hotspot_config", "saving")).ok).toBe(false);
+  });
+});
+
+describe("sensorLabel", () => {
+  afterEach(() => i18n.activate("en"));
+
+  it("translates the names BELABOX sends", async () => {
+    const locale = "de";
+    const { messages } = await import(`../locales/${locale}/messages.po`);
+    i18n.loadAndActivate({ locale, messages });
+    expect(sensorLabel("SoC temperature")).toBe("SoC-Temperatur");
+    expect(sensorLabel("SRT ingest")).toBe("SRT-Eingang");
+    expect(sensorLabel("RTMP ingest - live")).toBe("RTMP-Eingang - live");
+  });
+
+  it("leaves a name it doesn’t know as sent", () => {
+    expect(sensorLabel("Fan speed")).toBe("Fan speed");
   });
 });

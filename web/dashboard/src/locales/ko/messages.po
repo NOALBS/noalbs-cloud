@@ -6481,6 +6481,10 @@ msgstr "{name}의 역할"
 msgid "Roles"
 msgstr "역할"
 
+#: src/lib/belabox.ts
+msgid "RTMP ingest - {stream}"
+msgstr "RTMP 입력 - {stream}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "RTT (ms)"
 msgstr "RTT(ms)"
@@ -7098,6 +7102,18 @@ msgstr "스냅샷"
 msgid "Snapshot <0>{0}</0>"
 msgstr "스냅샷 <0>{0}</0>"
 
+#: src/lib/belabox.ts
+msgid "SoC current"
+msgstr "SoC 전류"
+
+#: src/lib/belabox.ts
+msgid "SoC temperature"
+msgstr "SoC 온도"
+
+#: src/lib/belabox.ts
+msgid "SoC voltage"
+msgstr "SoC 전압"
+
 #: src/components/admin/products.tsx
 msgid "Sold per unit on top of any plan."
 msgstr "모든 플랜에 추가로 단위별 판매돼요."
@@ -7135,6 +7151,10 @@ msgstr "OBS가 연결되면 소스가 표시돼요."
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
 msgstr "GitHub에서 후원"
+
+#: src/lib/belabox.ts
+msgid "SRT ingest"
+msgstr "SRT 입력"
 
 #: src/components/live/belabox-card.tsx
 msgid "SRT latency"

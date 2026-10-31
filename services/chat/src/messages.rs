@@ -203,6 +203,20 @@ pub enum Usage {
     Noalbs,
 }
 
+/// BELABOX names its sensors in English; one we don't know stays as it sent it.
+fn sensor_name(lang: &str, name: &str) -> String {
+    match name {
+        "SoC temperature" => tr!(lang, "SoC temperature"),
+        "SoC voltage" => tr!(lang, "SoC voltage"),
+        "SoC current" => tr!(lang, "SoC current"),
+        "SRT ingest" => tr!(lang, "SRT ingest"),
+        _ => match name.strip_prefix("RTMP ingest - ") {
+            Some(stream) => tr!(lang, "RTMP ingest - {stream}", stream = stream),
+            None => name.to_owned(),
+        },
+    }
+}
+
 /// How a language writes numbers: what groups thousands, and the decimal mark.
 fn number_format(lang: &str) -> (char, char) {
     match lang {
@@ -822,7 +836,7 @@ fn render(lang: &str, msg: &Msg) -> String {
         }
         Msg::BelaboxSensors(sensors) => sensors
             .iter()
-            .map(|(name, value)| format!("{name}: {value}"))
+            .map(|(name, value)| format!("{}: {value}", sensor_name(lang, name)))
             .collect::<Vec<_>>()
             .join(" | "),
         Msg::MoblinUnreachable => moblin_unreachable(lang),
@@ -1208,6 +1222,23 @@ mod tests {
         assert_eq!(text("en", &set), "Sprache auf de gesetzt");
         let back = Msg::LanguageSet("en".into());
         assert_eq!(text("de", &back), "Language set to en");
+    }
+
+    #[test]
+    fn belabox_sensors_are_named_in_the_language() {
+        let sensors = Msg::BelaboxSensors(vec![
+            ("SoC temperature".to_owned(), "45.3 °C".to_owned()),
+            ("RTMP ingest - live".to_owned(), "2048 Kbps".to_owned()),
+            ("Something new".to_owned(), "1".to_owned()),
+        ]);
+        assert_eq!(
+            text("en", &sensors),
+            "SoC temperature: 45.3 °C | RTMP ingest - live: 2048 Kbps | Something new: 1"
+        );
+        assert_eq!(
+            text("de", &sensors),
+            "SoC-Temperatur: 45.3 °C | RTMP-Eingang - live: 2048 Kbps | Something new: 1"
+        );
     }
 
     #[test]

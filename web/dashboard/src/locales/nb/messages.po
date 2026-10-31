@@ -6481,6 +6481,10 @@ msgstr "Rollen til {name}"
 msgid "Roles"
 msgstr "Roller"
 
+#: src/lib/belabox.ts
+msgid "RTMP ingest - {stream}"
+msgstr "RTMP-inngang - {stream}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "RTT (ms)"
 msgstr "RTT (ms)"
@@ -7098,6 +7102,18 @@ msgstr "Øyeblikksbilde"
 msgid "Snapshot <0>{0}</0>"
 msgstr "Øyeblikksbilde <0>{0}</0>"
 
+#: src/lib/belabox.ts
+msgid "SoC current"
+msgstr "SoC-strøm"
+
+#: src/lib/belabox.ts
+msgid "SoC temperature"
+msgstr "SoC-temperatur"
+
+#: src/lib/belabox.ts
+msgid "SoC voltage"
+msgstr "SoC-spenning"
+
 #: src/components/admin/products.tsx
 msgid "Sold per unit on top of any plan."
 msgstr "Selges per enhet i tillegg til et hvilket som helst abonnement."
@@ -7135,6 +7151,10 @@ msgstr "Kilder vises når OBS er tilkoblet."
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
 msgstr "Spons på GitHub"
+
+#: src/lib/belabox.ts
+msgid "SRT ingest"
+msgstr "SRT-inngang"
 
 #: src/components/live/belabox-card.tsx
 msgid "SRT latency"

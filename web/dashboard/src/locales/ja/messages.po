@@ -6481,6 +6481,10 @@ msgstr "{name} さんのロール"
 msgid "Roles"
 msgstr "ロール"
 
+#: src/lib/belabox.ts
+msgid "RTMP ingest - {stream}"
+msgstr "RTMP入力 - {stream}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "RTT (ms)"
 msgstr "RTT（ms）"
@@ -7098,6 +7102,18 @@ msgstr "スナップショット"
 msgid "Snapshot <0>{0}</0>"
 msgstr "スナップショット <0>{0}</0>"
 
+#: src/lib/belabox.ts
+msgid "SoC current"
+msgstr "SoC電流"
+
+#: src/lib/belabox.ts
+msgid "SoC temperature"
+msgstr "SoC温度"
+
+#: src/lib/belabox.ts
+msgid "SoC voltage"
+msgstr "SoC電圧"
+
 #: src/components/admin/products.tsx
 msgid "Sold per unit on top of any plan."
 msgstr "どのプランにも追加できる、単位ごとの販売です。"
@@ -7135,6 +7151,10 @@ msgstr "OBSに接続するとソースが表示されます。"
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
 msgstr "GitHubでスポンサーになる"
+
+#: src/lib/belabox.ts
+msgid "SRT ingest"
+msgstr "SRT入力"
 
 #: src/components/live/belabox-card.tsx
 msgid "SRT latency"

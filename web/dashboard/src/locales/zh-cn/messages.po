@@ -6481,6 +6481,10 @@ msgstr "{name} 的角色"
 msgid "Roles"
 msgstr "角色"
 
+#: src/lib/belabox.ts
+msgid "RTMP ingest - {stream}"
+msgstr "RTMP 输入 - {stream}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "RTT (ms)"
 msgstr "RTT（ms）"
@@ -7098,6 +7102,18 @@ msgstr "快照"
 msgid "Snapshot <0>{0}</0>"
 msgstr "快照 <0>{0}</0>"
 
+#: src/lib/belabox.ts
+msgid "SoC current"
+msgstr "SoC 电流"
+
+#: src/lib/belabox.ts
+msgid "SoC temperature"
+msgstr "SoC 温度"
+
+#: src/lib/belabox.ts
+msgid "SoC voltage"
+msgstr "SoC 电压"
+
 #: src/components/admin/products.tsx
 msgid "Sold per unit on top of any plan."
 msgstr "按单位销售，可在任何套餐之上购买。"
@@ -7135,6 +7151,10 @@ msgstr "连接 OBS 后会显示来源。"
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
 msgstr "在 GitHub 上赞助"
+
+#: src/lib/belabox.ts
+msgid "SRT ingest"
+msgstr "SRT 输入"
 
 #: src/components/live/belabox-card.tsx
 msgid "SRT latency"

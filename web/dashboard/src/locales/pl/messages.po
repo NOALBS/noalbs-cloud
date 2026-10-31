@@ -6481,6 +6481,10 @@ msgstr "Rola użytkownika {name}"
 msgid "Roles"
 msgstr "Role"
 
+#: src/lib/belabox.ts
+msgid "RTMP ingest - {stream}"
+msgstr "Wejście RTMP - {stream}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "RTT (ms)"
 msgstr "RTT (ms)"
@@ -7098,6 +7102,18 @@ msgstr "Migawka"
 msgid "Snapshot <0>{0}</0>"
 msgstr "Migawka <0>{0}</0>"
 
+#: src/lib/belabox.ts
+msgid "SoC current"
+msgstr "Prąd SoC"
+
+#: src/lib/belabox.ts
+msgid "SoC temperature"
+msgstr "Temperatura SoC"
+
+#: src/lib/belabox.ts
+msgid "SoC voltage"
+msgstr "Napięcie SoC"
+
 #: src/components/admin/products.tsx
 msgid "Sold per unit on top of any plan."
 msgstr "Sprzedawane za jednostkę do dowolnego planu."
@@ -7135,6 +7151,10 @@ msgstr "Źródła pojawią się po połączeniu OBS."
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
 msgstr "Sponsoruj na GitHubie"
+
+#: src/lib/belabox.ts
+msgid "SRT ingest"
+msgstr "Wejście SRT"
 
 #: src/components/live/belabox-card.tsx
 msgid "SRT latency"
