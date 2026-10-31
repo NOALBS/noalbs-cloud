@@ -321,6 +321,11 @@ msgstr "{0, plural, one {# sesión cerrada} other {# sesiones cerradas}}"
 msgid "{0, plural, one {Unlinked from # switcher} other {Unlinked from # switchers}}"
 msgstr "{0, plural, one {Desvinculado de # switcher} other {Desvinculado de # switchers}}"
 
+#. placeholder {0}: channels.length
+#: src/components/app-shell.tsx
+msgid "{0, plural, other {Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.}}"
+msgstr "{0, plural, other {Hay canales en # switchers que requieren reconexión: el bot perdió su acceso y los comandos de sus chats dejaron de funcionar.}}"
+
 #. placeholder {0}: formatClock(from, true)
 #. placeholder {0}: formatClock(start)
 #. placeholder {1}: formatClock(to, true)
@@ -866,7 +871,7 @@ msgstr "{targetName} recibe el plan, la facturación y la última palabra sobre 
 msgid "{targetName} now owns {0}"
 msgstr "{targetName} ahora es propietario de {0}"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "Bot de {team}"
 
@@ -984,6 +989,11 @@ msgstr "7 días"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "Una fuente de navegador en OBS lo vincula a este switcher, sin abrir puertos."
+
+#. placeholder {0}: firstSwitcher.name
+#: src/components/app-shell.tsx
+msgid "A channel on {0} needs reconnecting: the bot lost its access, so commands from its chat stopped working."
+msgstr "Un canal en {0} requiere reconexión: el bot perdió su acceso y los comandos de su chat dejaron de funcionar."
 
 #: src/lib/org-audit.ts
 msgid "a client"
@@ -6126,8 +6136,10 @@ msgstr "Espacios de trabajo recientes"
 msgid "Recently active"
 msgstr "Activos recientemente"
 
+#: src/components/app-shell.tsx
 #: src/components/chat/chat-links.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/orgs/org-shell.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect"
@@ -6901,7 +6913,7 @@ msgstr "Bots compartidos"
 msgid "Shared by all your clients. A client can be given a share of it."
 msgstr "Compartido por todos tus clientes. A un cliente se le puede dar una parte."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 #: src/routes/_app/admin/status.tsx
 msgid "Shared NOALBS bot"
 msgstr "Bot compartido de NOALBS"
@@ -7174,7 +7186,7 @@ msgstr "Acción del personal"
 msgid "Staff can open every workspace, change plans and prices, and manage other staff."
 msgstr "El personal puede abrir todos los espacios de trabajo, cambiar planes y precios, y gestionar a otros miembros del personal."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Staff haven’t connected the shared bot yet"
 msgstr "El personal aún no ha conectado el bot compartido"
 
@@ -8146,7 +8158,7 @@ msgstr "El mismo número de switchers para cada uno. Ninguno puede bajar de los 
 msgid "The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
 msgstr "Las escenas entre las que cambia NOALBS. Se cargan desde OBS cuando se conecta."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "the shared bot"
 msgstr "el bot compartido"
 
@@ -9271,17 +9283,22 @@ msgid "Your bot"
 msgstr "Tu bot"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} is off: {managedBy} doesn’t allow your own bot"
 msgstr "Tu bot {0} está desactivado: {managedBy} no permite tu propio bot"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} lost its access; {fallback} answers until you reconnect it"
 msgstr "Tu bot {0} perdió su acceso; {fallback} responde hasta que lo reconectes"
 
+#. placeholder {0}: bot.display_name
+#: src/components/orgs/org-shell.tsx
+msgid "Your bot {0} lost its access; the shared bot answers for your clients until you reconnect it"
+msgstr "Tu bot {0} perdió su acceso; el bot compartido responde a tus clientes hasta que lo reconectes"
+
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} only answers on plans with your own bot"
 msgstr "Tu bot {0} solo responde en planes con bot propio"
 
@@ -9305,7 +9322,7 @@ msgstr "Tus límites"
 msgid "Your organization doesn't allow your own chat bot"
 msgstr "Tu organización no permite tu propio bot de chat"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your own bot"
 msgstr "Tu propio bot"
 

@@ -295,6 +295,51 @@ async fn own_bots_speak_only_on_plans_that_allow_them(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn switcher_lists_count_channels_to_connect_again(pool: PgPool) {
+    let Setup {
+        user,
+        workspace,
+        switcher: main,
+    } = setup(&pool, "kate").await;
+    let second = switchers::create(&pool, workspace, "Second", b"second")
+        .await
+        .unwrap()
+        .id;
+    let counts = async || -> Vec<i64> {
+        switchers::list_summaries(&pool, workspace)
+            .await
+            .unwrap()
+            .iter()
+            .map(|summary| summary.revoked_channel_count)
+            .collect()
+    };
+
+    let grant = Grant::default();
+    let channel = chat::link_channel(&pool, main, twitch("100", "kate"), grant, user)
+        .await
+        .unwrap();
+    chat::link_channel(&pool, second, twitch("100", "kate"), grant, user)
+        .await
+        .unwrap();
+    chat::link_channel(&pool, main, kick("200", "kate"), grant, user)
+        .await
+        .unwrap();
+    assert_eq!(counts().await, [0, 0]);
+
+    // A channel is one grant: every switcher using it needs it connected again.
+    chat::revoke(&pool, chat::TokenOwner::Channel(channel.id))
+        .await
+        .unwrap();
+    assert_eq!(counts().await, [1, 1]);
+
+    // Connecting it from one switcher mends it on all of them.
+    chat::link_channel(&pool, second, twitch("100", "kate"), grant, user)
+        .await
+        .unwrap();
+    assert_eq!(counts().await, [0, 0]);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn racing_instances_settle_on_one_conduit(pool: PgPool) {
     let key = "twitch_conduit_id";
     // Two instances find none and each made one: the first stored wins.

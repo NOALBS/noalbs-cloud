@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import type { ChatBot, ChatPlatform, WorkspaceChatBots } from "@/api/types";
+import type { ChatBot, ChatPlatform, SwitcherSummary, WorkspaceChatBots } from "@/api/types";
 
 /**
  * Chat grants are browser redirects through the API: it sends the user to
@@ -74,3 +74,36 @@ export function speakingBot(
   const shared = active(bots.shared);
   return shared ? { bot: shared, source: "shared" } : null;
 }
+
+/** What to say about a platform's bot. */
+export function botDetail(
+  own: ChatBot | undefined,
+  speaking: { source: BotSource } | null,
+  customAllowed: boolean,
+  managedBy: string | null,
+): string {
+  const team = managedBy ?? "";
+  const fallback = speaking?.source === "organization" ? t`${team}’s bot` : t`the shared bot`;
+  if (own && own.status === "revoked" && customAllowed) {
+    return t`Your bot ${own.display_name} lost its access; ${fallback} answers until you reconnect it`;
+  }
+  if (own && !customAllowed) {
+    return managedBy
+      ? t`Your bot ${own.display_name} is off: ${managedBy} doesn’t allow your own bot`
+      : t`Your bot ${own.display_name} only answers on plans with your own bot`;
+  }
+  if (!speaking) return t`Staff haven’t connected the shared bot yet`;
+  if (speaking.source === "own") return t`Your own bot`;
+  return speaking.source === "organization" ? t`${team}’s bot` : t`Shared NOALBS bot`;
+}
+
+/** The workspace's own bots to connect again; on a plan without them they don't speak anyway. */
+export const revokedOwnBots = (bots: WorkspaceChatBots): ChatBot[] =>
+  bots.custom_allowed ? bots.own.filter((bot) => bot.status === "revoked") : [];
+
+/** Switchers with a channel to connect again, leaving out the one whose Chat page is open. */
+export const switchersToReconnect = (
+  switchers: SwitcherSummary[],
+  openChat: string | undefined,
+): SwitcherSummary[] =>
+  switchers.filter((switcher) => switcher.revoked_channel_count > 0 && switcher.id !== openChat);

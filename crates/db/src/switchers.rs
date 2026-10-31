@@ -257,6 +257,8 @@ pub struct SwitcherSummary {
     pub name: String,
     pub last_seen_at: Option<DateTime<chrono::Utc>>,
     pub stream_server_count: i64,
+    /// Linked channels whose grant the platform refused: their chat isn't read.
+    pub revoked_channel_count: i64,
     pub created_at: DateTime<chrono::Utc>,
     /// Over the plan's switcher limit, or the workspace (or its organization) is
     /// suspended (see [`is_paused`]).
@@ -276,6 +278,11 @@ pub async fn list_summaries(pool: &PgPool, workspace_id: Uuid) -> Result<Vec<Swi
             switchers.last_seen_at,
             (SELECT count(*) FROM stream_servers WHERE stream_servers.switcher_id = switchers.id)
                 AS stream_server_count,
+            (SELECT count(*)
+                FROM switcher_chat_channels links
+                JOIN chat_channels ON chat_channels.id = links.chat_channel_id
+                WHERE links.switcher_id = switchers.id AND chat_channels.status = 'revoked')
+                AS revoked_channel_count,
             switchers.created_at,
             (workspaces.organization_id IS NULL
                 AND row_number() OVER (ORDER BY switchers.created_at, switchers.id)

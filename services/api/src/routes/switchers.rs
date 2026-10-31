@@ -53,6 +53,8 @@ pub struct SwitcherSummaryDto {
     /// When a browser source last connected; `null` if it never has.
     pub last_seen_at: Option<chrono::DateTime<chrono::Utc>>,
     pub stream_server_count: i64,
+    /// Linked channels the bot lost access to; someone has to connect them again.
+    pub revoked_channel_count: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
     /// Over the plan's switcher limit after a downgrade: it doesn't switch and
     /// can't be controlled until the workspace upgrades or deletes another switcher.
@@ -68,6 +70,7 @@ impl SwitcherSummaryDto {
             name: switcher.name,
             last_seen_at: switcher.last_seen_at,
             stream_server_count: switcher.stream_server_count,
+            revoked_channel_count: switcher.revoked_channel_count,
             created_at: switcher.created_at,
             paused: switcher.paused,
             status,

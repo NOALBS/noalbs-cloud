@@ -20451,6 +20451,7 @@
           "id",
           "name",
           "stream_server_count",
+          "revoked_channel_count",
           "created_at",
           "paused"
         ],
@@ -20477,6 +20478,11 @@
           "paused": {
             "type": "boolean",
             "description": "Over the plan's switcher limit after a downgrade: it doesn't switch and\ncan't be controlled until the workspace upgrades or deletes another switcher."
+          },
+          "revoked_channel_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Linked channels the bot lost access to; someone has to connect them again."
           },
           "status": {
             "oneOf": [

@@ -321,6 +321,11 @@ msgstr "{0, plural, other {已退出 # 个会话}}"
 msgid "{0, plural, one {Unlinked from # switcher} other {Unlinked from # switchers}}"
 msgstr "{0, plural, other {已与 # 个切换器解除关联}}"
 
+#. placeholder {0}: channels.length
+#: src/components/app-shell.tsx
+msgid "{0, plural, other {Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.}}"
+msgstr "{0, plural, other {# 个切换器上的频道需要重新连接：机器人失去了访问权限，来自这些聊天的命令已无法使用。}}"
+
 #. placeholder {0}: formatClock(from, true)
 #. placeholder {0}: formatClock(start)
 #. placeholder {1}: formatClock(to, true)
@@ -866,7 +871,7 @@ msgstr "{targetName} 将获得套餐、账单和对管理员的决定权，并�
 msgid "{targetName} now owns {0}"
 msgstr "{targetName} 现在拥有 {0}"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team} 的机器人"
 
@@ -984,6 +989,11 @@ msgstr "7 天"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "OBS 中的浏览器来源会将其与此切换器连接，无需开放任何端口。"
+
+#. placeholder {0}: firstSwitcher.name
+#: src/components/app-shell.tsx
+msgid "A channel on {0} needs reconnecting: the bot lost its access, so commands from its chat stopped working."
+msgstr "{0} 上的一个频道需要重新连接：机器人失去了访问权限，来自其聊天的命令已无法使用。"
 
 #: src/lib/org-audit.ts
 msgid "a client"
@@ -6126,8 +6136,10 @@ msgstr "最近的工作区"
 msgid "Recently active"
 msgstr "最近活跃"
 
+#: src/components/app-shell.tsx
 #: src/components/chat/chat-links.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/orgs/org-shell.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect"
@@ -6901,7 +6913,7 @@ msgstr "共享机器人"
 msgid "Shared by all your clients. A client can be given a share of it."
 msgstr "由你的所有客户共享。可以为客户分配其中一部分。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 #: src/routes/_app/admin/status.tsx
 msgid "Shared NOALBS bot"
 msgstr "共享的 NOALBS 机器人"
@@ -7174,7 +7186,7 @@ msgstr "工作人员操作"
 msgid "Staff can open every workspace, change plans and prices, and manage other staff."
 msgstr "工作人员可以打开所有工作区、更改套餐和价格，并管理其他工作人员。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Staff haven’t connected the shared bot yet"
 msgstr "工作人员尚未连接共享机器人"
 
@@ -8146,7 +8158,7 @@ msgstr "每个客户的切换器数量相同。不能低于其已有的切换器
 msgid "The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
 msgstr "NOALBS 在其间切换的场景。连接 OBS 后会从中加载。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "the shared bot"
 msgstr "共享机器人"
 
@@ -9271,17 +9283,22 @@ msgid "Your bot"
 msgstr "你的机器人"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} is off: {managedBy} doesn’t allow your own bot"
 msgstr "你的机器人 {0} 已关闭：{managedBy} 不允许使用自有机器人"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} lost its access; {fallback} answers until you reconnect it"
 msgstr "你的机器人 {0} 失去了访问权限；在你重新连接之前由 {fallback} 回复"
 
+#. placeholder {0}: bot.display_name
+#: src/components/orgs/org-shell.tsx
+msgid "Your bot {0} lost its access; the shared bot answers for your clients until you reconnect it"
+msgstr "你的机器人 {0} 失去了访问权限；在你重新连接之前，由共享机器人回复你的客户"
+
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} only answers on plans with your own bot"
 msgstr "你的机器人 {0} 仅在包含自有机器人的套餐上回复"
 
@@ -9305,7 +9322,7 @@ msgstr "你的限制"
 msgid "Your organization doesn't allow your own chat bot"
 msgstr "你的组织不允许使用自有聊天机器人"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your own bot"
 msgstr "你自己的机器人"
 

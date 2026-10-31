@@ -321,6 +321,11 @@ msgstr "{0, plural, other {已登出 # 個工作階段}}"
 msgid "{0, plural, one {Unlinked from # switcher} other {Unlinked from # switchers}}"
 msgstr "{0, plural, other {已與 # 個切換器解除連結}}"
 
+#. placeholder {0}: channels.length
+#: src/components/app-shell.tsx
+msgid "{0, plural, other {Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.}}"
+msgstr "{0, plural, other {# 個切換器上的頻道需要重新連接：機器人失去了存取權，來自這些聊天室的指令已無法使用。}}"
+
 #. placeholder {0}: formatClock(from, true)
 #. placeholder {0}: formatClock(start)
 #. placeholder {1}: formatClock(to, true)
@@ -866,7 +871,7 @@ msgstr "{targetName} 將接管方案、帳務和管理員的決定權，也能�
 msgid "{targetName} now owns {0}"
 msgstr "{targetName} 現在是 {0} 的擁有者"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team} 的機器人"
 
@@ -984,6 +989,11 @@ msgstr "7 天"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "透過 OBS 中的瀏覽器來源連結到這個切換器，不必開放任何連接埠。"
+
+#. placeholder {0}: firstSwitcher.name
+#: src/components/app-shell.tsx
+msgid "A channel on {0} needs reconnecting: the bot lost its access, so commands from its chat stopped working."
+msgstr "{0} 上的一個頻道需要重新連接：機器人失去了存取權，來自其聊天室的指令已無法使用。"
 
 #: src/lib/org-audit.ts
 msgid "a client"
@@ -6126,8 +6136,10 @@ msgstr "最近的工作區"
 msgid "Recently active"
 msgstr "最近活躍"
 
+#: src/components/app-shell.tsx
 #: src/components/chat/chat-links.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/orgs/org-shell.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect"
@@ -6901,7 +6913,7 @@ msgstr "共用機器人"
 msgid "Shared by all your clients. A client can be given a share of it."
 msgstr "由你所有客戶共用。可分配部分額度給客戶。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 #: src/routes/_app/admin/status.tsx
 msgid "Shared NOALBS bot"
 msgstr "共用的 NOALBS 機器人"
@@ -7174,7 +7186,7 @@ msgstr "工作人員操作"
 msgid "Staff can open every workspace, change plans and prices, and manage other staff."
 msgstr "工作人員可以開啟所有工作區、變更方案和價格，並管理其他工作人員。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Staff haven’t connected the shared bot yet"
 msgstr "工作人員尚未連接共用機器人"
 
@@ -8146,7 +8158,7 @@ msgstr "每個客戶的切換器數量相同。不得低於客戶已有的切換
 msgid "The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
 msgstr "NOALBS 會在這些場景之間切換。OBS 連接後就會載入。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "the shared bot"
 msgstr "共用機器人"
 
@@ -9271,17 +9283,22 @@ msgid "Your bot"
 msgstr "你的機器人"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} is off: {managedBy} doesn’t allow your own bot"
 msgstr "你的機器人 {0} 已關閉：{managedBy} 不允許使用自己的機器人"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} lost its access; {fallback} answers until you reconnect it"
 msgstr "你的機器人 {0} 失去了存取權；在你重新連接之前由 {fallback} 回覆"
 
+#. placeholder {0}: bot.display_name
+#: src/components/orgs/org-shell.tsx
+msgid "Your bot {0} lost its access; the shared bot answers for your clients until you reconnect it"
+msgstr "你的機器人 {0} 失去了存取權；在你重新連接之前，由共用機器人回覆你的客戶"
+
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} only answers on plans with your own bot"
 msgstr "你的機器人 {0} 只在支援自有機器人的方案上回覆"
 
@@ -9305,7 +9322,7 @@ msgstr "你的限制"
 msgid "Your organization doesn't allow your own chat bot"
 msgstr "你的組織不允許使用自己的聊天機器人"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your own bot"
 msgstr "你的專屬機器人"
 

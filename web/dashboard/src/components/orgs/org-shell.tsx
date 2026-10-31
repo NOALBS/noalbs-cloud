@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   Activity,
   Bot,
@@ -16,10 +16,12 @@ import {
   Warehouse,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { organizationsQuery, workspacesQuery } from "@/api/queries";
+import { organizationChatBotsQuery, organizationsQuery, workspacesQuery } from "@/api/queries";
 import type { Me, Organization } from "@/api/types";
 import {
+  ChatAccessBanner,
   NAV_LINK,
+  RECONNECT_LINK,
   SECTION_LABEL,
   standingLabel,
   TAB_CLASS,
@@ -134,6 +136,7 @@ export function OrgShell({
             </Trans>
           </div>
         )}
+        {isAdmin && <BotAccessBanners organization={organization} />}
         <main className="flex-1 pb-24 md:pb-0">{children}</main>
 
         <nav
@@ -265,4 +268,30 @@ function OrganizationSwitcher({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/** Tells admins the platform refused the organization's bot; its Chat bot page says so itself. */
+function BotAccessBanners({ organization }: { organization: Organization }) {
+  const bots = useQuery(organizationChatBotsQuery(organization.id));
+  const pathname = useLocation({ select: (location) => location.pathname });
+  if (pathname.endsWith("/chat")) return null;
+
+  return bots.data
+    ?.filter((bot) => bot.status === "revoked")
+    .map((bot) => (
+      <ChatAccessBanner
+        key={bot.platform}
+        link={
+          <Link
+            to="/orgs/$organization/chat"
+            params={{ organization: organization.url_slug }}
+            className={RECONNECT_LINK}
+          >
+            <Trans>Reconnect</Trans>
+          </Link>
+        }
+      >
+        {t`Your bot ${bot.display_name} lost its access; the shared bot answers for your clients until you reconnect it`}
+      </ChatAccessBanner>
+    ));
 }

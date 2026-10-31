@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { ChatBot, WorkspaceChatBots } from "@/api/types";
-import { channelConnectUrl, grantErrorMessage, speakingBot } from "./chat";
+import type { ChatBot, SwitcherSummary, WorkspaceChatBots } from "@/api/types";
+import {
+  channelConnectUrl,
+  grantErrorMessage,
+  revokedOwnBots,
+  speakingBot,
+  switchersToReconnect,
+} from "./chat";
 
 const bot = (login: string, patch: Partial<ChatBot> = {}): ChatBot => ({
   platform: "twitch",
@@ -49,6 +55,37 @@ describe("speakingBot", () => {
       organization: [bot("nomadbot", { status: "revoked" })],
     };
     expect(speakingBot(revoked, "twitch")?.source).toBe("shared");
+  });
+});
+
+describe("revokedOwnBots", () => {
+  const bots: WorkspaceChatBots = {
+    custom_allowed: true,
+    own: [bot("katebot", { status: "revoked" }), bot("katekick", { platform: "kick" })],
+    organization: [bot("nomadbot", { status: "revoked" })],
+    shared: [bot("noalbsbot", { status: "revoked" })],
+  };
+
+  it("lists only the workspace's own refused bots", () => {
+    expect(revokedOwnBots(bots)).toEqual([bots.own[0]]);
+  });
+
+  it("leaves them out on a plan without own bots, where they don't speak anyway", () => {
+    expect(revokedOwnBots({ ...bots, custom_allowed: false })).toEqual([]);
+  });
+});
+
+describe("switchersToReconnect", () => {
+  const switcher = (id: string, revoked: number) =>
+    ({ id, revoked_channel_count: revoked }) as SwitcherSummary;
+  const switchers = [switcher("a", 0), switcher("b", 1), switcher("c", 2)];
+
+  it("finds the switchers with a refused channel", () => {
+    expect(switchersToReconnect(switchers, undefined).map(({ id }) => id)).toEqual(["b", "c"]);
+  });
+
+  it("skips the one whose Chat page is open", () => {
+    expect(switchersToReconnect(switchers, "b").map(({ id }) => id)).toEqual(["c"]);
   });
 });
 

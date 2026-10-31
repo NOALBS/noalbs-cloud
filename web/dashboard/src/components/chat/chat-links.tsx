@@ -7,7 +7,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { ApiRequestError, api, unwrap } from "@/api/client";
 import { chatBotsQuery, providersQuery, queryKeys } from "@/api/queries";
-import type { Chat, ChatBot, ChatChannel, ChatPlatform, IgnoredChatter } from "@/api/types";
+import type { Chat, ChatChannel, ChatPlatform, IgnoredChatter } from "@/api/types";
 import { ConfirmButton } from "@/components/billing/confirm-button";
 import { Section } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSwitcher } from "@/hooks/use-switcher";
-import { type BotSource, channelConnectUrl, speakingBot, workspaceBotConnectUrl } from "@/lib/chat";
+import { botDetail, channelConnectUrl, speakingBot, workspaceBotConnectUrl } from "@/lib/chat";
 import { errorMessage } from "@/lib/errors";
 import { can } from "@/lib/permissions";
 import { PLATFORMS, platformLabel } from "@/lib/platforms";
@@ -312,28 +312,6 @@ function ChannelRow({
       )}
     </Row>
   );
-}
-
-/** What to say under a platform's bot. */
-function botDetail(
-  own: ChatBot | undefined,
-  speaking: { source: BotSource } | null,
-  customAllowed: boolean,
-  managedBy: string | null,
-): string {
-  const team = managedBy ?? "";
-  const fallback = speaking?.source === "organization" ? t`${team}’s bot` : t`the shared bot`;
-  if (own && own.status === "revoked" && customAllowed) {
-    return t`Your bot ${own.display_name} lost its access; ${fallback} answers until you reconnect it`;
-  }
-  if (own && !customAllowed) {
-    return managedBy
-      ? t`Your bot ${own.display_name} is off: ${managedBy} doesn’t allow your own bot`
-      : t`Your bot ${own.display_name} only answers on plans with your own bot`;
-  }
-  if (!speaking) return t`Staff haven’t connected the shared bot yet`;
-  if (speaking.source === "own") return t`Your own bot`;
-  return speaking.source === "organization" ? t`${team}’s bot` : t`Shared NOALBS bot`;
 }
 
 /** Who answers in chat for this workspace, and connecting its own bot. */

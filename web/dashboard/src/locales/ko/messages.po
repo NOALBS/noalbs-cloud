@@ -321,6 +321,11 @@ msgstr "{0, plural, other {세션 #개에서 로그아웃했어요}}"
 msgid "{0, plural, one {Unlinked from # switcher} other {Unlinked from # switchers}}"
 msgstr "{0, plural, other {스위처 #개에서 연결을 해제했어요}}"
 
+#. placeholder {0}: channels.length
+#: src/components/app-shell.tsx
+msgid "{0, plural, other {Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.}}"
+msgstr "{0, plural, other {스위처 #개의 채널을 다시 연결해야 해요. 봇이 액세스를 잃어서 해당 채팅의 명령어가 작동하지 않아요.}}"
+
 #. placeholder {0}: formatClock(from, true)
 #. placeholder {0}: formatClock(start)
 #. placeholder {1}: formatClock(to, true)
@@ -866,7 +871,7 @@ msgstr "{targetName}이(가) 플랜, 결제, 관리자에 대한 결정권을 �
 msgid "{targetName} now owns {0}"
 msgstr "{targetName}이(가) 이제 {0}의 소유자예요"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team}의 봇"
 
@@ -984,6 +989,11 @@ msgstr "7일"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "OBS의 브라우저 소스가 이 스위처와 연결해 주므로 포트를 열 필요가 없어요."
+
+#. placeholder {0}: firstSwitcher.name
+#: src/components/app-shell.tsx
+msgid "A channel on {0} needs reconnecting: the bot lost its access, so commands from its chat stopped working."
+msgstr "{0}의 채널을 다시 연결해야 해요. 봇이 액세스를 잃어서 해당 채팅의 명령어가 작동하지 않아요."
 
 #: src/lib/org-audit.ts
 msgid "a client"
@@ -6126,8 +6136,10 @@ msgstr "최근 워크스페이스"
 msgid "Recently active"
 msgstr "최근 활동순"
 
+#: src/components/app-shell.tsx
 #: src/components/chat/chat-links.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/orgs/org-shell.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect"
@@ -6901,7 +6913,7 @@ msgstr "공유 봇"
 msgid "Shared by all your clients. A client can be given a share of it."
 msgstr "모든 클라이언트가 함께 사용해요. 클라이언트별로 일부를 배정할 수 있어요."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 #: src/routes/_app/admin/status.tsx
 msgid "Shared NOALBS bot"
 msgstr "공유 NOALBS 봇"
@@ -7174,7 +7186,7 @@ msgstr "스태프 작업"
 msgid "Staff can open every workspace, change plans and prices, and manage other staff."
 msgstr "스태프는 모든 워크스페이스를 열고, 플랜과 가격을 변경하고, 다른 스태프를 관리할 수 있어요."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Staff haven’t connected the shared bot yet"
 msgstr "스태프가 아직 공유 봇을 연결하지 않았어요"
 
@@ -8146,7 +8158,7 @@ msgstr "각 클라이언트에 같은 수의 스위처를 배정해요. 보유�
 msgid "The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
 msgstr "NOALBS가 전환하는 장면이에요. OBS가 연결되면 불러와요."
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "the shared bot"
 msgstr "공유 봇"
 
@@ -9271,17 +9283,22 @@ msgid "Your bot"
 msgstr "내 봇"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} is off: {managedBy} doesn’t allow your own bot"
 msgstr "내 봇 {0}이(가) 꺼져 있어요: {managedBy}에서 자체 봇을 허용하지 않아요"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} lost its access; {fallback} answers until you reconnect it"
 msgstr "내 봇 {0}이(가) 액세스를 잃었어요. 다시 연결할 때까지 {fallback}이(가) 응답해요"
 
+#. placeholder {0}: bot.display_name
+#: src/components/orgs/org-shell.tsx
+msgid "Your bot {0} lost its access; the shared bot answers for your clients until you reconnect it"
+msgstr "내 봇 {0}이(가) 액세스를 잃었어요. 다시 연결할 때까지 클라이언트에게는 공유 봇이 응답해요"
+
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} only answers on plans with your own bot"
 msgstr "내 봇 {0}은(는) 자체 봇이 포함된 플랜에서만 응답해요"
 
@@ -9305,7 +9322,7 @@ msgstr "내 한도"
 msgid "Your organization doesn't allow your own chat bot"
 msgstr "조직에서 자체 채팅 봇을 허용하지 않아요"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your own bot"
 msgstr "자체 봇"
 

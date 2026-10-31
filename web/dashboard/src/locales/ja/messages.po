@@ -321,6 +321,11 @@ msgstr "{0, plural, other {# 件のセッションからサインアウトしま
 msgid "{0, plural, one {Unlinked from # switcher} other {Unlinked from # switchers}}"
 msgstr "{0, plural, other {スイッチャー # 台とのリンクを解除しました}}"
 
+#. placeholder {0}: channels.length
+#: src/components/app-shell.tsx
+msgid "{0, plural, other {Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.}}"
+msgstr "{0, plural, other {スイッチャー # 台のチャンネルで再接続が必要です。ボットがアクセスを失ったため、それらのチャットからのコマンドは動作しなくなりました。}}"
+
 #. placeholder {0}: formatClock(from, true)
 #. placeholder {0}: formatClock(start)
 #. placeholder {1}: formatClock(to, true)
@@ -866,7 +871,7 @@ msgstr "{targetName} さんがプラン、請求、管理者に関する決定�
 msgid "{targetName} now owns {0}"
 msgstr "{targetName} さんが{0}のオーナーになりました"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team}のボット"
 
@@ -984,6 +989,11 @@ msgstr "7 日間"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "OBSのブラウザソースでこのスイッチャーと接続します。ポートの開放は不要です。"
+
+#. placeholder {0}: firstSwitcher.name
+#: src/components/app-shell.tsx
+msgid "A channel on {0} needs reconnecting: the bot lost its access, so commands from its chat stopped working."
+msgstr "{0}のチャンネルで再接続が必要です。ボットがアクセスを失ったため、そのチャットからのコマンドは動作しなくなりました。"
 
 #: src/lib/org-audit.ts
 msgid "a client"
@@ -6126,8 +6136,10 @@ msgstr "最近のワークスペース"
 msgid "Recently active"
 msgstr "最近アクティブ"
 
+#: src/components/app-shell.tsx
 #: src/components/chat/chat-links.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/orgs/org-shell.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect"
@@ -6901,7 +6913,7 @@ msgstr "共有ボット"
 msgid "Shared by all your clients. A client can be given a share of it."
 msgstr "すべてのクライアントで共有します。クライアントにはその一部を割り当てられます。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 #: src/routes/_app/admin/status.tsx
 msgid "Shared NOALBS bot"
 msgstr "共有のNOALBSボット"
@@ -7174,7 +7186,7 @@ msgstr "スタッフの操作"
 msgid "Staff can open every workspace, change plans and prices, and manage other staff."
 msgstr "スタッフはすべてのワークスペースを開き、プランと価格を変更し、他のスタッフを管理できます。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Staff haven’t connected the shared bot yet"
 msgstr "スタッフが共有ボットをまだ接続していません"
 
@@ -8146,7 +8158,7 @@ msgstr "各クライアントに同じ数のスイッチャーを設定します
 msgid "The scenes NOALBS switches between. They’re loaded from OBS once it’s connected."
 msgstr "NOALBSが切り替えるシーンです。OBSに接続すると読み込まれます。"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "the shared bot"
 msgstr "共有ボット"
 
@@ -9271,17 +9283,22 @@ msgid "Your bot"
 msgstr "自分のボット"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} is off: {managedBy} doesn’t allow your own bot"
 msgstr "ボット{0}はオフです：{managedBy}が独自のボットを許可していません"
 
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} lost its access; {fallback} answers until you reconnect it"
 msgstr "ボット{0}はアクセスを失いました。再接続するまで{fallback}が応答します"
 
+#. placeholder {0}: bot.display_name
+#: src/components/orgs/org-shell.tsx
+msgid "Your bot {0} lost its access; the shared bot answers for your clients until you reconnect it"
+msgstr "ボット{0}はアクセスを失いました。再接続するまで、クライアントには共有ボットが応答します"
+
 #. placeholder {0}: own.display_name
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your bot {0} only answers on plans with your own bot"
 msgstr "ボット{0}は独自のボットを含むプランでのみ応答します"
 
@@ -9305,7 +9322,7 @@ msgstr "ご利用の上限"
 msgid "Your organization doesn't allow your own chat bot"
 msgstr "組織で独自のチャットボットが許可されていません"
 
-#: src/components/chat/chat-links.tsx
+#: src/lib/chat.ts
 msgid "Your own bot"
 msgstr "独自のボット"
 

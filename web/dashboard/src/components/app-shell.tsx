@@ -28,6 +28,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { api } from "@/api/client";
 import {
+  chatBotsQuery,
   organizationsQuery,
   supportAccessQuery,
   switcherQuery,
@@ -55,9 +56,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { missingCardReminder } from "@/lib/billing";
+import { botDetail, revokedOwnBots, speakingBot, switchersToReconnect } from "@/lib/chat";
 import { lastSwitcherId } from "@/lib/last-switcher";
 import { currentLocale } from "@/lib/locale";
-import { actorOf, can, isSupport, roleLabels } from "@/lib/permissions";
+import { type Actor, actorOf, can, isSupport, roleLabels } from "@/lib/permissions";
 import { menuWorkspaces, recentWorkspaceIds } from "@/lib/recent-workspaces";
 import { setupProgress } from "@/lib/setup";
 import { supportLevelLabels } from "@/lib/support";
@@ -280,6 +282,14 @@ export function AppShell({
               </span>
             )}
           </div>
+        )}
+        {!isSupport(actor) && (
+          <ChatAccessBanners
+            workspace={workspace}
+            actor={actor}
+            switchers={switchers.data ?? []}
+            openChat={inSwitcher && segment === "chat" ? routeSwitcher : undefined}
+          />
         )}
         {!pathname.endsWith("/settings/plan") && (
           <>
@@ -727,6 +737,97 @@ function SwitcherNav({ workspace, switcher }: { workspace: Workspace; switcher: 
         </Link>
       ))}
     </nav>
+  );
+}
+
+/** A warning about a chat grant, with the way to the page that connects it again. */
+export function ChatAccessBanner({ children, link }: { children: ReactNode; link: ReactNode }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-low/40 bg-low/10 px-4 py-2.5 text-sm md:px-8"
+    >
+      <AlertTriangle className="size-4 shrink-0 text-low" />
+      <span className="flex-1">{children}</span>
+      {link}
+    </div>
+  );
+}
+
+export const RECONNECT_LINK = "font-semibold text-primary hover:underline";
+
+/**
+ * Tells whoever can reconnect them which chat grants the platform refused. The
+ * Chat page says so itself, so the one on screen isn't repeated.
+ */
+function ChatAccessBanners({
+  workspace,
+  actor,
+  switchers,
+  openChat,
+}: {
+  workspace: Workspace;
+  actor: Actor;
+  switchers: SwitcherSummary[];
+  /** The switcher whose Chat page is open. */
+  openChat: string | undefined;
+}) {
+  const canConnectBots = can(actor, "account.manage");
+  const bots = useQuery({ ...chatBotsQuery(workspace.id), enabled: canConnectBots });
+  const params = { workspace: workspace.url_slug };
+
+  const channels = can(actor, "switcher.manage") ? switchersToReconnect(switchers, openChat) : [];
+  const firstSwitcher = channels[0];
+  // Any switcher's Chat page has the workspace's bots.
+  const botSwitcher = switchers[0];
+  const shownBots = canConnectBots && !openChat ? bots.data : undefined;
+
+  return (
+    <>
+      {firstSwitcher && (
+        <ChatAccessBanner
+          link={
+            <Link
+              to="/$workspace/s/$switcher/chat"
+              params={{ ...params, switcher: firstSwitcher.id }}
+              className={RECONNECT_LINK}
+            >
+              <Trans>Reconnect</Trans>
+            </Link>
+          }
+        >
+          {channels.length > 1
+            ? plural(channels.length, {
+                other:
+                  "Channels on # switchers need reconnecting: the bot lost its access, so commands from their chats stopped working.",
+              })
+            : t`A channel on ${firstSwitcher.name} needs reconnecting: the bot lost its access, so commands from its chat stopped working.`}
+        </ChatAccessBanner>
+      )}
+      {botSwitcher &&
+        shownBots &&
+        revokedOwnBots(shownBots).map((bot) => (
+          <ChatAccessBanner
+            key={bot.platform}
+            link={
+              <Link
+                to="/$workspace/s/$switcher/chat"
+                params={{ ...params, switcher: botSwitcher.id }}
+                className={RECONNECT_LINK}
+              >
+                <Trans>Reconnect</Trans>
+              </Link>
+            }
+          >
+            {botDetail(
+              bot,
+              speakingBot(shownBots, bot.platform),
+              true,
+              workspace.managed_by?.name ?? null,
+            )}
+          </ChatAccessBanner>
+        ))}
+    </>
   );
 }
 

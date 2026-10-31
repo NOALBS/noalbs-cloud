@@ -6373,6 +6373,11 @@ export interface components {
              *     can't be controlled until the workspace upgrades or deletes another switcher.
              */
             paused: boolean;
+            /**
+             * Format: int64
+             * @description Linked channels the bot lost access to; someone has to connect them again.
+             */
+            revoked_channel_count: number;
             status?: components["schemas"]["SwitcherStatus"] | null;
             /** Format: int64 */
             stream_server_count: number;
