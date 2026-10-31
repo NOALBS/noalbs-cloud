@@ -8,7 +8,8 @@ use crate::error::Result;
 
 /// Languages the chat bot can reply in (the switcher's `language`).
 pub const LANGUAGES: &[&str] = &[
-    "en", "de", "es", "fr", "it", "ja", "ko", "nl", "pl", "pt-br", "sv", "tr", "zh-cn", "zh-tw",
+    "en", "da", "de", "es", "fr", "it", "ja", "ko", "nb", "nl", "pl", "pt-br", "ru", "sv", "tr",
+    "uk", "zh-cn", "zh-tw",
 ];
 
 /// Who may use a chat command.

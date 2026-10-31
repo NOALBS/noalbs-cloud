@@ -44,17 +44,21 @@ const roleLabels = (): Record<ChatRole, string> => ({
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English",
+  da: "Dansk",
   de: "Deutsch",
   es: "Español",
   fr: "Français",
   it: "Italiano",
   ja: "日本語",
   ko: "한국어",
+  nb: "Norsk bokmål",
   nl: "Nederlands",
   pl: "Polski",
   "pt-br": "Português (Brasil)",
+  ru: "Русский",
   sv: "Svenska",
   tr: "Türkçe",
+  uk: "Українська",
   "zh-cn": "简体中文",
   "zh-tw": "繁體中文",
 };

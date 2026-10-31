@@ -206,8 +206,8 @@ pub enum Usage {
 /// How a language writes numbers: what groups thousands, and the decimal mark.
 fn number_format(lang: &str) -> (char, char) {
     match lang {
-        "de" | "es" | "it" | "nl" | "pt-br" | "tr" => ('.', ','),
-        "fr" | "pl" | "sv" => (' ', ','),
+        "da" | "de" | "es" | "it" | "nl" | "pt-br" | "tr" => ('.', ','),
+        "fr" | "nb" | "pl" | "ru" | "sv" | "uk" => (' ', ','),
         _ => (',', '.'),
     }
 }
@@ -1224,6 +1224,14 @@ mod tests {
         assert_eq!(
             text("fr", &bitrate),
             "Débit max BELABOX réglé à 12 000 kbps"
+        );
+        assert_eq!(
+            text("da", &bitrate),
+            "BELABOX maks. bitrate sat til 12.000 kbps"
+        );
+        assert_eq!(
+            text("ru", &bitrate),
+            "Макс. битрейт BELABOX установлен на 12 000 kbps"
         );
     }
 

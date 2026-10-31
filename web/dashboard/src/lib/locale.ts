@@ -4,17 +4,21 @@ import { useSyncExternalStore } from "react";
 /** The languages the dashboard is translated into. Keep in step with `locales` in lingui.config.ts. */
 export const LOCALES = [
   { code: "en", name: "English" },
+  { code: "da", name: "Dansk" },
   { code: "de", name: "Deutsch" },
   { code: "es", name: "Español" },
   { code: "fr", name: "Français" },
   { code: "it", name: "Italiano" },
   { code: "ja", name: "日本語" },
   { code: "ko", name: "한국어" },
+  { code: "nb", name: "Norsk bokmål" },
   { code: "nl", name: "Nederlands" },
   { code: "pl", name: "Polski" },
   { code: "pt-br", name: "Português (Brasil)" },
+  { code: "ru", name: "Русский" },
   { code: "sv", name: "Svenska" },
   { code: "tr", name: "Türkçe" },
+  { code: "uk", name: "Українська" },
   { code: "zh-cn", name: "简体中文" },
   { code: "zh-tw", name: "繁體中文" },
 ] as const;
@@ -38,12 +42,14 @@ export function parsePreference(saved: string | null): LocalePreference {
  * The first of the browser's languages we have: the exact tag ("pt-BR"), else on
  * the language alone ("nl-BE" gets "nl", "pt-PT" gets "pt-br"), else the source language.
  * Chinese goes by script: traditional for Hant, Hong Kong and Macau, else simplified.
+ * Norwegian goes by any of its tags: browsers send "no" and "nn" as well as "nb".
  */
 export function pickLocale(requested: readonly string[]): Locale {
   for (const tag of requested) {
     const code = tag.toLowerCase();
     if (isLocale(code)) return code;
     if (/^zh-(hant|hk|mo)\b/.test(code)) return "zh-tw";
+    if (/^(no|nn)\b/.test(code)) return "nb";
     const language = code.split("-")[0];
     const match = LOCALES.find((locale) => locale.code.split("-")[0] === language);
     if (match) return match.code;

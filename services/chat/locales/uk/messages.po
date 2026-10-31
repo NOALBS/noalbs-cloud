@@ -1,0 +1,504 @@
+# Ukrainian for the NOALBS Cloud chat bot.
+# Builds on the NOALBS translations by spaysold.
+# Reworded and completed for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: uk\n"
+
+msgid "scene: {scene}"
+msgstr "сцена: {scene}"
+
+msgid "scene: unknown"
+msgstr "сцена: невідома"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "бітрейт: {bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "бітрейт: невідомий"
+
+msgid "not streaming"
+msgstr "не в ефірі"
+
+msgid "fps: {fps}"
+msgstr "fps: {fps}"
+
+msgid "network: {dropped}"
+msgstr "мережу: {dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "затримку рендерингу: {dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "затримку кодування: {dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "пропуски через: {causes}"
+
+msgid "CPU: {percent}%"
+msgstr "ЦП: {percent}%"
+
+msgid "memory: {memory} MB"
+msgstr "пам’ять: {memory} МБ"
+
+msgid "free disk space: {disk} GB"
+msgstr "вільне місце на диску: {disk} ГБ"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "Сцену LIVE ще не вибрано. Вибери її на сторінці «Сцени»."
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "Сцену «Приватність» ще не вибрано. Вибери її на сторінці «Сцени»."
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "Сцену «Початок» ще не вибрано. Вибери її на сторінці «Сцени»."
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "Сцену «Кінець» ще не вибрано. Вибери її на сторінці «Сцени»."
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "Сцену «Оновлення» ще не вибрано. Вибери її на сторінці «Сцени»."
+
+msgid "Switched to the LIVE scene"
+msgstr "Перемкнуто на сцену LIVE"
+
+msgid "Switched to the Privacy scene"
+msgstr "Перемкнуто на сцену «Приватність»"
+
+msgid "Switched to the Starting scene"
+msgstr "Перемкнуто на сцену «Початок»"
+
+msgid "Switched to the Ending scene"
+msgstr "Перемкнуто на сцену «Кінець»"
+
+msgid "Switched to the Refresh scene"
+msgstr "Перемкнуто на сцену «Оновлення»"
+
+msgid "Chat notifications on"
+msgstr "Сповіщення в чаті увімкнено"
+
+msgid "Chat notifications off"
+msgstr "Сповіщення в чаті вимкнено"
+
+msgid "Auto stop on raid on"
+msgstr "Автозупинку під час рейду увімкнено"
+
+msgid "Auto stop on raid off"
+msgstr "Автозупинку під час рейду вимкнено"
+
+msgid "Public commands on"
+msgstr "Публічні команди увімкнено"
+
+msgid "Public commands off"
+msgstr "Публічні команди вимкнено"
+
+msgid "Mod commands on"
+msgstr "Команди модератора увімкнено"
+
+msgid "Mod commands off"
+msgstr "Команди модератора вимкнено"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "Тригер LOW: {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "Тригер LOW вимкнено"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "Офлайн-тригер: {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "Офлайн-тригер вимкнено"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "Тригер RTT: {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "Тригер RTT вимкнено"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "Офлайн-тригер RTT: {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "Офлайн-тригер RTT вимкнено"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "Тригер LOW встановлено на {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "Тригер LOW вимкнено"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "Офлайн-тригер встановлено на {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "Офлайн-тригер вимкнено"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "Тригер RTT встановлено на {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "Тригер RTT вимкнено"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "Офлайн-тригер RTT встановлено на {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "Офлайн-тригер RTT вимкнено"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "Тригери бітрейту мають бути від 1 до 100 000 kbps"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "Тригери RTT мають бути від 1 до 60 000 ms"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "Офлайн-бітрейт має бути нижчим за бітрейт LOW"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "Офлайн-RTT має бути вищим за RTT LOW"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "Використання: {prefix}switch <назва сцени>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "Використання: {prefix}source <назва джерела>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "Використання: {prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "Використання: {prefix}bbt <інтерфейс, напр. usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "Використання: {prefix}mbitrate <kbps пресету>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "Використання: {prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "Використання: {prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "Використання: {prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "Використання: {prefix}alias <псевдонім> <команда> | {prefix}alias rem <псевдонім>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "Використання: {prefix}noalbs version | prefix <новий> | lang <код>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "Ще підключаюся до BELABOX Cloud. Спробуй ще раз за мить."
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud відхилив секретний URL. Перевір його в налаштуваннях світчера."
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX офлайн."
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "У BELABOX ще немає налаштувань стріму. Запусти його один раз із його власної сторінки."
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX уже в ефірі."
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX не в ефірі."
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "Бітрейт має бути від 300 до 12 000 kbps."
+
+msgid "The BELABOX has no such network interface."
+msgstr "У BELABOX немає такого мережевого інтерфейсу."
+
+msgid "The last network interface can't be turned off."
+msgstr "Останній мережевий інтерфейс не можна вимкнути."
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX цього не вміє."
+
+msgid "{name}: off"
+msgstr "{name}: вимкнено"
+
+msgid "no network interfaces"
+msgstr "немає мережевих інтерфейсів"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "в ефірі, макс. {bitrate} kbps"
+
+msgid "streaming"
+msgstr "в ефірі"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX ({state}): {interfaces} | Усього: {total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS зараз не підключено."
+
+msgid "OBS said no: {reason}"
+msgstr "OBS відмовив: {reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS відмовив: код {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS не відповів. Спробуй ще раз за мить."
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "Щось пішло не так. Спробуй ще раз за мить."
+
+msgid "No scene matches \"{query}\"."
+msgstr "Немає сцени, що відповідає «{query}»."
+
+msgid "Switched to {scene}"
+msgstr "Перемкнуто на {scene}"
+
+msgid "Starting the stream"
+msgstr "Запускаю стрім"
+
+msgid "Stopping the stream"
+msgstr "Зупиняю стрім"
+
+msgid "Already streaming"
+msgstr "Уже в ефірі"
+
+msgid "Not streaming"
+msgstr "Не в ефірі"
+
+msgid "Recording started"
+msgstr "Запис розпочато"
+
+msgid "Recording stopped"
+msgstr "Запис зупинено"
+
+msgid "Refreshing the feed"
+msgstr "Оновлюю сигнал"
+
+msgid "Already refreshing"
+msgstr "Оновлення вже триває"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "Виправляю сигнал: перепідключаю {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "Нічого виправляти: на сцені {scene} не відтворюється жодне джерело стріму"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "Сцену «Оновлення» не вибрано, тому виправляю сигнал. {result}"
+
+msgid "{name} is now shown"
+msgstr "{name} тепер показано"
+
+msgid "{name} is now hidden"
+msgstr "{name} тепер приховано"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "На цій сцені немає джерела, що відповідає «{query}»."
+
+msgid "Marker added at {time}"
+msgstr "Маркер додано на {time}"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "Ця версія OBS застаріла для цього. Онови OBS."
+
+msgid "{reading} (low)"
+msgstr "{reading} (низький)"
+
+msgid "offline"
+msgstr "офлайн"
+
+msgid "Current bitrate: {reading}"
+msgstr "Поточний бітрейт: {reading}"
+
+msgid "No stream stats right now."
+msgstr "Зараз немає статистики стріму."
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "Префікс має містити від 1 до 3 символів без пробілів"
+
+msgid "Languages: {languages}"
+msgstr "Мови: {languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} тепер запускає {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "Псевдонім {alias} видалено"
+
+msgid "{alias} is already taken"
+msgstr "{alias} вже використовується"
+
+msgid "There's no alias {alias}"
+msgstr "Псевдонім {alias} не існує"
+
+msgid "There's no command {command}"
+msgstr "Команда {command} не існує"
+
+msgid "Commands now start with {prefix}"
+msgstr "Тепер команди починаються з {prefix}"
+
+msgid "Language set to {language}"
+msgstr "Мову встановлено: {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "Команда {command} ще недоступна в NOALBS Cloud."
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "Перемкнуто на {scene} · {server}: {reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "Перемкнуто на {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "Стрім зупинено та здійснено рейд на {to}, будь ласка, перейдіть за посиланням {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "Досягнуто граничного часу офлайн, зупинка стріму"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "Досягнуто граничного часу сцени «Кінець», зупинка стріму"
+
+msgid "Ignoring {name} from now on"
+msgstr "Відтепер {name} ігнорується"
+
+msgid "No longer ignoring {name}"
+msgstr "{name} більше не ігнорується"
+
+msgid "{name} isn't ignored"
+msgstr "{name} не ігнорується"
+
+msgid "There's no user called {name}"
+msgstr "Немає користувача з іменем {name}"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX зараз не підключено: чи відкрито OBS із джерелом «Браузер»?"
+
+msgid "Starting the BELABOX stream"
+msgstr "Запускаю стрім BELABOX"
+
+msgid "Stopping the BELABOX stream"
+msgstr "Зупиняю стрім BELABOX"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "Максимальний бітрейт BELABOX: {bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX ще не повідомив свій максимальний бітрейт."
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "Максимальний бітрейт BELABOX встановлено на {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "Вмикаю {name}"
+
+msgid "Turning {name} off"
+msgstr "Вимикаю {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "У BELABOX немає мережевого інтерфейсу, схожого на {query}"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX ще не надіслав жодних показань датчиків."
+
+msgid "Starting the Moblin stream"
+msgstr "Запускаю стрім Moblin"
+
+msgid "Stopping the Moblin stream"
+msgstr "Зупиняю стрім Moblin"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Бітрейт Moblin: {bitrate} kbps · пресети: {presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Пресети бітрейту Moblin: {presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Бітрейт Moblin встановлено на {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "У Moblin немає пресету {bitrate} kbps. Пресети: {presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Сцена Moblin: {scene} · сцени: {scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Сцени Moblin: {scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Перемикаю Moblin на {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "У Moblin немає сцени, схожої на {query}"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "Цей світчер призупинено: у робочому просторі більше світчерів, ніж передбачає його тариф."
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin зараз не підключено."
+
+msgid "none"
+msgstr "немає"
+
+msgid "Moblin is already live."
+msgstr "Moblin уже в ефірі."
+
+msgid "Moblin isn't live."
+msgstr "Moblin не в ефірі."
+
+msgid "Moblin has no such scene."
+msgstr "У Moblin немає такої сцени."
+
+msgid "Moblin has no such bitrate preset."
+msgstr "У Moblin немає такого пресету бітрейту."
+
+msgid "Moblin has no such zoom preset."
+msgstr "У Moblin немає такого пресету зуму."
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "Зум має бути від 0,5x до 100x."
+
+msgid "Moblin has no such connection."
+msgstr "У Moblin немає такого з’єднання."
+
+msgid "The last connection in use can't be turned off."
+msgstr "Останнє з’єднання, що використовується, не можна вимкнути."
+
+msgid "The priority must be between 1 and 10."
+msgstr "Пріоритет має бути від 1 до 10."
+
+msgid "Moblin refused."
+msgstr "Moblin відмовив."
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin не відповів. Спробуй ще раз за мить."
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin (в ефірі, {uptime})"
+
+msgid "Moblin (live)"
+msgstr "Moblin (в ефірі)"
+
+msgid "Moblin (not live)"
+msgstr "Moblin (не в ефірі)"
+
+msgid "Bonding: {bonding}"
+msgstr "Бондинг: {bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "Батарея {level}%, заряджається"
+
+msgid "Battery {level}%"
+msgstr "Батарея {level}%"
+
+msgid "Getting hot"
+msgstr "Нагрівається"
+
+msgid "Too hot!"
+msgstr "Занадто гаряче!"
+
+msgid "Muted"
+msgstr "Звук вимкнено"

@@ -16,17 +16,21 @@ use polib::po_file;
 
 /// English has none: it's what the messages are written in.
 const CATALOGS: &[(&str, &str)] = &[
+    ("da", include_str!("../locales/da/messages.po")),
     ("de", include_str!("../locales/de/messages.po")),
     ("es", include_str!("../locales/es/messages.po")),
     ("fr", include_str!("../locales/fr/messages.po")),
     ("it", include_str!("../locales/it/messages.po")),
     ("ja", include_str!("../locales/ja/messages.po")),
     ("ko", include_str!("../locales/ko/messages.po")),
+    ("nb", include_str!("../locales/nb/messages.po")),
     ("nl", include_str!("../locales/nl/messages.po")),
     ("pl", include_str!("../locales/pl/messages.po")),
     ("pt-br", include_str!("../locales/pt-br/messages.po")),
+    ("ru", include_str!("../locales/ru/messages.po")),
     ("sv", include_str!("../locales/sv/messages.po")),
     ("tr", include_str!("../locales/tr/messages.po")),
+    ("uk", include_str!("../locales/uk/messages.po")),
     ("zh-cn", include_str!("../locales/zh-cn/messages.po")),
     ("zh-tw", include_str!("../locales/zh-tw/messages.po")),
 ];

@@ -36,6 +36,12 @@ describe("pickLocale", () => {
     expect(pickLocale(["zh-Hant-TW"])).toBe("zh-tw");
   });
 
+  it("takes every Norwegian tag as Bokmål", () => {
+    expect(pickLocale(["nb-NO"])).toBe("nb");
+    expect(pickLocale(["no"])).toBe("nb");
+    expect(pickLocale(["nn-NO"])).toBe("nb");
+  });
+
   it("skips languages we don't have and falls back to English", () => {
     expect(pickLocale(["tlh", "en-US"])).toBe("en");
     expect(pickLocale(["tlh"])).toBe("en");
