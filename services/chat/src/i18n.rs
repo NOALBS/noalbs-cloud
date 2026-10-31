@@ -20,11 +20,14 @@ const CATALOGS: &[(&str, &str)] = &[
     ("es", include_str!("../locales/es/messages.po")),
     ("fr", include_str!("../locales/fr/messages.po")),
     ("it", include_str!("../locales/it/messages.po")),
+    ("ja", include_str!("../locales/ja/messages.po")),
+    ("ko", include_str!("../locales/ko/messages.po")),
     ("nl", include_str!("../locales/nl/messages.po")),
     ("pl", include_str!("../locales/pl/messages.po")),
     ("pt-br", include_str!("../locales/pt-br/messages.po")),
     ("sv", include_str!("../locales/sv/messages.po")),
     ("tr", include_str!("../locales/tr/messages.po")),
+    ("zh-cn", include_str!("../locales/zh-cn/messages.po")),
     ("zh-tw", include_str!("../locales/zh-tw/messages.po")),
 ];
 

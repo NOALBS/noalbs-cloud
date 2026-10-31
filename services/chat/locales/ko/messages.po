@@ -1,0 +1,503 @@
+# Korean for the NOALBS Cloud chat bot.
+# Translated for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko\n"
+
+msgid "scene: {scene}"
+msgstr "장면: {scene}"
+
+msgid "scene: unknown"
+msgstr "장면: 알 수 없음"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "비트레이트: {bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "비트레이트: 알 수 없음"
+
+msgid "not streaming"
+msgstr "방송 중이 아니에요"
+
+msgid "fps: {fps}"
+msgstr "FPS: {fps}"
+
+msgid "network: {dropped}"
+msgstr "네트워크: {dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "렌더링 지연: {dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "인코딩 지연: {dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "드롭 원인: {causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU: {percent}%"
+
+msgid "memory: {memory} MB"
+msgstr "메모리: {memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "디스크 여유 공간: {disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "LIVE 장면을 아직 선택하지 않았어요. 장면 페이지에서 선택하세요."
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "프라이버시 장면을 아직 선택하지 않았어요. 장면 페이지에서 선택하세요."
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "시작 장면을 아직 선택하지 않았어요. 장면 페이지에서 선택하세요."
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "종료 장면을 아직 선택하지 않았어요. 장면 페이지에서 선택하세요."
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "새로고침 장면을 아직 선택하지 않았어요. 장면 페이지에서 선택하세요."
+
+msgid "Switched to the LIVE scene"
+msgstr "LIVE 장면으로 전환했어요"
+
+msgid "Switched to the Privacy scene"
+msgstr "프라이버시 장면으로 전환했어요"
+
+msgid "Switched to the Starting scene"
+msgstr "시작 장면으로 전환했어요"
+
+msgid "Switched to the Ending scene"
+msgstr "종료 장면으로 전환했어요"
+
+msgid "Switched to the Refresh scene"
+msgstr "새로고침 장면으로 전환했어요"
+
+msgid "Chat notifications on"
+msgstr "채팅 알림 켜짐"
+
+msgid "Chat notifications off"
+msgstr "채팅 알림 꺼짐"
+
+msgid "Auto stop on raid on"
+msgstr "레이드 시 자동 중지 켜짐"
+
+msgid "Auto stop on raid off"
+msgstr "레이드 시 자동 중지 꺼짐"
+
+msgid "Public commands on"
+msgstr "공개 명령어 켜짐"
+
+msgid "Public commands off"
+msgstr "공개 명령어 꺼짐"
+
+msgid "Mod commands on"
+msgstr "모더레이터 명령어 켜짐"
+
+msgid "Mod commands off"
+msgstr "모더레이터 명령어 꺼짐"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOW 트리거: {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "LOW 트리거 꺼짐"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "오프라인 트리거: {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "오프라인 트리거 꺼짐"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTT 트리거: {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "RTT 트리거 꺼짐"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "오프라인 RTT 트리거: {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "오프라인 RTT 트리거 꺼짐"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOW 트리거를 {value} kbps로 설정했어요"
+
+msgid "The LOW trigger turned off"
+msgstr "LOW 트리거를 껐어요"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "오프라인 트리거를 {value} kbps로 설정했어요"
+
+msgid "The offline trigger turned off"
+msgstr "오프라인 트리거를 껐어요"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTT 트리거를 {value} ms로 설정했어요"
+
+msgid "The RTT trigger turned off"
+msgstr "RTT 트리거를 껐어요"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "오프라인 RTT 트리거를 {value} ms로 설정했어요"
+
+msgid "The offline RTT trigger turned off"
+msgstr "오프라인 RTT 트리거를 껐어요"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "비트레이트 트리거는 1~100,000 kbps 사이여야 해요"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTT 트리거는 1~60,000 ms 사이여야 해요"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "오프라인 비트레이트는 LOW 비트레이트보다 낮아야 해요"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "오프라인 RTT는 LOW RTT보다 높아야 해요"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "사용법: {prefix}switch <장면 이름>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "사용법: {prefix}source <소스 이름>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "사용법: {prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "사용법: {prefix}bbt <인터페이스, 예: usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "사용법: {prefix}mbitrate <프리셋의 kbps>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "사용법: {prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "사용법: {prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "사용법: {prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "사용법: {prefix}alias <별칭> <명령어> | {prefix}alias rem <별칭>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "사용법: {prefix}noalbs version | prefix <새 접두사> | lang <언어 코드>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "아직 BELABOX Cloud에 연결 중이에요. 잠시 후 다시 시도하세요."
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud가 비밀 URL을 거부했어요. 스위처 설정에서 확인하세요."
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX가 오프라인이에요."
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOX에 아직 방송 설정이 없어요. 전용 페이지에서 한 번 시작하세요."
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX가 이미 방송 중이에요."
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX가 방송 중이 아니에요."
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "비트레이트는 300~12000 kbps 사이여야 해요."
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOX에 그런 네트워크 인터페이스가 없어요."
+
+msgid "The last network interface can't be turned off."
+msgstr "마지막 네트워크 인터페이스는 끌 수 없어요."
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX에서 할 수 없는 작업이에요."
+
+msgid "{name}: off"
+msgstr "{name}: 꺼짐"
+
+msgid "no network interfaces"
+msgstr "네트워크 인터페이스 없음"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "방송 중, 최대 {bitrate} kbps"
+
+msgid "streaming"
+msgstr "방송 중"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX ({state}): {interfaces} | 합계: {total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "지금은 OBS가 연결되어 있지 않아요."
+
+msgid "OBS said no: {reason}"
+msgstr "OBS가 거부했어요: {reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS가 거부했어요: 코드 {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS가 응답하지 않았어요. 잠시 후 다시 시도하세요."
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "문제가 발생했어요. 잠시 후 다시 시도하세요."
+
+msgid "No scene matches \"{query}\"."
+msgstr "\"{query}\"와(과) 일치하는 장면이 없어요."
+
+msgid "Switched to {scene}"
+msgstr "전환한 장면: {scene}"
+
+msgid "Starting the stream"
+msgstr "방송을 시작하는 중"
+
+msgid "Stopping the stream"
+msgstr "방송을 중지하는 중"
+
+msgid "Already streaming"
+msgstr "이미 방송 중이에요"
+
+msgid "Not streaming"
+msgstr "방송 중이 아니에요"
+
+msgid "Recording started"
+msgstr "녹화를 시작했어요"
+
+msgid "Recording stopped"
+msgstr "녹화를 중지했어요"
+
+msgid "Refreshing the feed"
+msgstr "피드를 새로고침하는 중"
+
+msgid "Already refreshing"
+msgstr "이미 새로고침하고 있어요"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "피드를 복구하는 중, 다시 연결: {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "복구할 항목 없음. 재생 중인 스트림 소스가 없는 장면: {scene}"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "새로고침 장면을 선택하지 않아서 대신 복구해요. {result}"
+
+msgid "{name} is now shown"
+msgstr "표시함: {name}"
+
+msgid "{name} is now hidden"
+msgstr "숨김: {name}"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "이 장면에는 \"{query}\"와(과) 일치하는 소스가 없어요."
+
+msgid "Marker added at {time}"
+msgstr "마커 추가: {time}"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "이 OBS 버전에서는 사용할 수 없어요. OBS를 업데이트하세요."
+
+msgid "{reading} (low)"
+msgstr "{reading} (낮음)"
+
+msgid "offline"
+msgstr "오프라인"
+
+msgid "Current bitrate: {reading}"
+msgstr "현재 비트레이트: {reading}"
+
+msgid "No stream stats right now."
+msgstr "지금은 방송 통계가 없어요."
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "접두사는 공백 없이 1~3자여야 해요"
+
+msgid "Languages: {languages}"
+msgstr "언어: {languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "이제 {prefix}{alias} → {prefix}{command} 실행"
+
+msgid "Removed the alias {alias}"
+msgstr "별칭 삭제: {alias}"
+
+msgid "{alias} is already taken"
+msgstr "이미 사용 중이에요: {alias}"
+
+msgid "There's no alias {alias}"
+msgstr "없는 별칭이에요: {alias}"
+
+msgid "There's no command {command}"
+msgstr "없는 명령어예요: {command}"
+
+msgid "Commands now start with {prefix}"
+msgstr "명령어 접두사가 변경됨: {prefix}"
+
+msgid "Language set to {language}"
+msgstr "언어 설정: {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "NOALBS Cloud에서 아직 사용할 수 없어요: {command}"
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "전환한 장면: {scene} · {server}, {reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "전환한 장면: {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "방송이 끝나고 {to} 채널로 레이드했어요. 이 링크로 와 주세요: {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "오프라인 제한 시간에 도달해 방송을 중지해요"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "종료 장면 제한 시간에 도달해 방송을 중지해요"
+
+msgid "Ignoring {name} from now on"
+msgstr "이제부터 무시함: {name}"
+
+msgid "No longer ignoring {name}"
+msgstr "더 이상 무시하지 않음: {name}"
+
+msgid "{name} isn't ignored"
+msgstr "무시 중이 아니에요: {name}"
+
+msgid "There's no user called {name}"
+msgstr "없는 사용자예요: {name}"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "지금은 BELABOX가 연결되어 있지 않아요. OBS가 브라우저 소스와 함께 열려 있나요?"
+
+msgid "Starting the BELABOX stream"
+msgstr "BELABOX 방송을 시작하는 중"
+
+msgid "Stopping the BELABOX stream"
+msgstr "BELABOX 방송을 중지하는 중"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "BELABOX 최대 비트레이트: {bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX가 아직 최대 비트레이트를 알려 주지 않았어요."
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "BELABOX 최대 비트레이트를 {bitrate} kbps로 설정했어요"
+
+msgid "Turning {name} on"
+msgstr "켜는 중: {name}"
+
+msgid "Turning {name} off"
+msgstr "끄는 중: {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX에 비슷한 네트워크 인터페이스가 없어요: {query}"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX가 아직 센서 값을 보내지 않았어요."
+
+msgid "Starting the Moblin stream"
+msgstr "Moblin 방송을 시작하는 중"
+
+msgid "Stopping the Moblin stream"
+msgstr "Moblin 방송을 중지하는 중"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblin 비트레이트: {bitrate} kbps · 프리셋: {presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblin 비트레이트 프리셋: {presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblin 비트레이트를 {bitrate} kbps로 설정했어요"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin에 {bitrate} kbps 프리셋이 없어요. 프리셋: {presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblin 장면: {scene} · 장면 목록: {scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblin 장면 목록: {scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Moblin 장면 전환 중: {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin에 비슷한 장면이 없어요: {query}"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "이 스위처는 일시 중지되었어요. 워크스페이스의 스위처 수가 플랜에 포함된 수를 넘었어요."
+
+msgid "Moblin isn't connected right now."
+msgstr "지금은 Moblin이 연결되어 있지 않아요."
+
+msgid "none"
+msgstr "없음"
+
+msgid "Moblin is already live."
+msgstr "Moblin이 이미 방송 중이에요."
+
+msgid "Moblin isn't live."
+msgstr "Moblin이 방송 중이 아니에요."
+
+msgid "Moblin has no such scene."
+msgstr "Moblin에 그런 장면이 없어요."
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin에 그런 비트레이트 프리셋이 없어요."
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin에 그런 줌 프리셋이 없어요."
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "줌은 0.5x~100x 사이여야 해요."
+
+msgid "Moblin has no such connection."
+msgstr "Moblin에 그런 연결이 없어요."
+
+msgid "The last connection in use can't be turned off."
+msgstr "사용 중인 마지막 연결은 끌 수 없어요."
+
+msgid "The priority must be between 1 and 10."
+msgstr "우선순위는 1~10 사이여야 해요."
+
+msgid "Moblin refused."
+msgstr "Moblin이 거부했어요."
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin이 응답하지 않았어요. 잠시 후 다시 시도하세요."
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin (방송 중, {uptime})"
+
+msgid "Moblin (live)"
+msgstr "Moblin (방송 중)"
+
+msgid "Moblin (not live)"
+msgstr "Moblin (방송 안 함)"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding: {bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "배터리 {level}%, 충전 중"
+
+msgid "Battery {level}%"
+msgstr "배터리 {level}%"
+
+msgid "Getting hot"
+msgstr "뜨거워지는 중"
+
+msgid "Too hot!"
+msgstr "너무 뜨거워요!"
+
+msgid "Muted"
+msgstr "음소거됨"

@@ -1,0 +1,503 @@
+# Japanese for the NOALBS Cloud chat bot.
+# Translated for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+
+msgid "scene: {scene}"
+msgstr "シーン：{scene}"
+
+msgid "scene: unknown"
+msgstr "シーン：不明"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "ビットレート：{bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "ビットレート：不明"
+
+msgid "not streaming"
+msgstr "配信していません"
+
+msgid "fps: {fps}"
+msgstr "FPS：{fps}"
+
+msgid "network: {dropped}"
+msgstr "ネットワーク：{dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "レンダリング遅延：{dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "エンコード遅延：{dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "ドロップの原因：{causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU：{percent}%"
+
+msgid "memory: {memory} MB"
+msgstr "メモリ：{memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "ディスク空き容量：{disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "LIVEシーンがまだ選ばれていません。シーンページで選んでください。"
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "プライバシーシーンがまだ選ばれていません。シーンページで選んでください。"
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "開始シーンがまだ選ばれていません。シーンページで選んでください。"
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "終了シーンがまだ選ばれていません。シーンページで選んでください。"
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "更新シーンがまだ選ばれていません。シーンページで選んでください。"
+
+msgid "Switched to the LIVE scene"
+msgstr "LIVEシーンに切り替えました"
+
+msgid "Switched to the Privacy scene"
+msgstr "プライバシーシーンに切り替えました"
+
+msgid "Switched to the Starting scene"
+msgstr "開始シーンに切り替えました"
+
+msgid "Switched to the Ending scene"
+msgstr "終了シーンに切り替えました"
+
+msgid "Switched to the Refresh scene"
+msgstr "更新シーンに切り替えました"
+
+msgid "Chat notifications on"
+msgstr "チャット通知：オン"
+
+msgid "Chat notifications off"
+msgstr "チャット通知：オフ"
+
+msgid "Auto stop on raid on"
+msgstr "レイド時の自動停止：オン"
+
+msgid "Auto stop on raid off"
+msgstr "レイド時の自動停止：オフ"
+
+msgid "Public commands on"
+msgstr "公開コマンド：オン"
+
+msgid "Public commands off"
+msgstr "公開コマンド：オフ"
+
+msgid "Mod commands on"
+msgstr "モデレーターコマンド：オン"
+
+msgid "Mod commands off"
+msgstr "モデレーターコマンド：オフ"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOWトリガーは{value} kbpsです"
+
+msgid "The LOW trigger is off"
+msgstr "LOWトリガーはオフです"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "オフライントリガーは{value} kbpsです"
+
+msgid "The offline trigger is off"
+msgstr "オフライントリガーはオフです"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTTトリガーは{value} msです"
+
+msgid "The RTT trigger is off"
+msgstr "RTTトリガーはオフです"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "オフラインRTTトリガーは{value} msです"
+
+msgid "The offline RTT trigger is off"
+msgstr "オフラインRTTトリガーはオフです"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOWトリガーを{value} kbpsに設定しました"
+
+msgid "The LOW trigger turned off"
+msgstr "LOWトリガーをオフにしました"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "オフライントリガーを{value} kbpsに設定しました"
+
+msgid "The offline trigger turned off"
+msgstr "オフライントリガーをオフにしました"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTTトリガーを{value} msに設定しました"
+
+msgid "The RTT trigger turned off"
+msgstr "RTTトリガーをオフにしました"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "オフラインRTTトリガーを{value} msに設定しました"
+
+msgid "The offline RTT trigger turned off"
+msgstr "オフラインRTTトリガーをオフにしました"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "ビットレートトリガーは1～100,000 kbpsで指定してください"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTTトリガーは1～60,000 msで指定してください"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "オフラインのビットレートはLOWのビットレートより低くしてください"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "オフラインのRTTはLOWのRTTより高くしてください"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "使い方：{prefix}switch <シーン名>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "使い方：{prefix}source <ソース名>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "使い方：{prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "使い方：{prefix}bbt <インターフェース、例：usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "使い方：{prefix}mbitrate <プリセットのkbps>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "使い方：{prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "使い方：{prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "使い方：{prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "使い方：{prefix}alias <エイリアス> <コマンド> | {prefix}alias rem <エイリアス>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "使い方：{prefix}noalbs version | prefix <新しいプレフィックス> | lang <言語コード>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "BELABOX Cloudに接続中です。少ししてからもう一度お試しください。"
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX CloudがシークレットURLを拒否しました。スイッチャーの設定で確認してください。"
+
+msgid "The BELABOX is offline."
+msgstr "BELABOXはオフラインです。"
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOXに配信設定がまだありません。専用ページから一度開始してください。"
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOXはすでに配信中です。"
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOXは配信していません。"
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "ビットレートは300～12000 kbpsで指定してください。"
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOXにそのネットワークインターフェースはありません。"
+
+msgid "The last network interface can't be turned off."
+msgstr "最後のネットワークインターフェースはオフにできません。"
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOXではその操作はできません。"
+
+msgid "{name}: off"
+msgstr "{name}：オフ"
+
+msgid "no network interfaces"
+msgstr "ネットワークインターフェースなし"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "配信中、最大 {bitrate} kbps"
+
+msgid "streaming"
+msgstr "配信中"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX（{state}）：{interfaces} | 合計：{total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBSは現在接続されていません。"
+
+msgid "OBS said no: {reason}"
+msgstr "OBSに拒否されました：{reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBSに拒否されました：コード {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBSから応答がありません。少ししてからもう一度お試しください。"
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "問題が発生しました。少ししてからもう一度お試しください。"
+
+msgid "No scene matches \"{query}\"."
+msgstr "「{query}」に一致するシーンはありません。"
+
+msgid "Switched to {scene}"
+msgstr "{scene} に切り替えました"
+
+msgid "Starting the stream"
+msgstr "配信を開始します"
+
+msgid "Stopping the stream"
+msgstr "配信を停止します"
+
+msgid "Already streaming"
+msgstr "すでに配信中です"
+
+msgid "Not streaming"
+msgstr "配信していません"
+
+msgid "Recording started"
+msgstr "録画を開始しました"
+
+msgid "Recording stopped"
+msgstr "録画を停止しました"
+
+msgid "Refreshing the feed"
+msgstr "フィードを更新しています"
+
+msgid "Already refreshing"
+msgstr "すでに更新中です"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "フィードを修復しています：{sources} を再接続中"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "修復するものはありません：{scene} で再生中の配信ソースがありません"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "更新シーンが選ばれていないため、修復を行います。{result}"
+
+msgid "{name} is now shown"
+msgstr "{name} を表示しました"
+
+msgid "{name} is now hidden"
+msgstr "{name} を非表示にしました"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "このシーンに「{query}」に一致するソースはありません。"
+
+msgid "Marker added at {time}"
+msgstr "{time} にマーカーを追加しました"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "このバージョンのOBSでは利用できません。OBSを更新してください。"
+
+msgid "{reading} (low)"
+msgstr "{reading}（低）"
+
+msgid "offline"
+msgstr "オフライン"
+
+msgid "Current bitrate: {reading}"
+msgstr "現在のビットレート：{reading}"
+
+msgid "No stream stats right now."
+msgstr "現在、配信の統計情報はありません。"
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "プレフィックスはスペースなしの1～3文字にしてください"
+
+msgid "Languages: {languages}"
+msgstr "言語：{languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} で {prefix}{command} を実行するようになりました"
+
+msgid "Removed the alias {alias}"
+msgstr "エイリアス {alias} を削除しました"
+
+msgid "{alias} is already taken"
+msgstr "{alias} はすでに使われています"
+
+msgid "There's no alias {alias}"
+msgstr "エイリアス {alias} はありません"
+
+msgid "There's no command {command}"
+msgstr "コマンド {command} はありません"
+
+msgid "Commands now start with {prefix}"
+msgstr "コマンドの先頭は {prefix} になりました"
+
+msgid "Language set to {language}"
+msgstr "言語を {language} に設定しました"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "{command} はNOALBS Cloudではまだ利用できません。"
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "{scene} に切り替えました · {server}、{reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "{scene} に切り替えました · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "配信が終了し、{to} にレイドしました。こちらのリンクからどうぞ：{url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "オフラインのタイムアウトに達したため、配信を停止します"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "終了シーンのタイムアウトに達したため、配信を停止します"
+
+msgid "Ignoring {name} from now on"
+msgstr "これから {name} を無視します"
+
+msgid "No longer ignoring {name}"
+msgstr "{name} の無視を解除しました"
+
+msgid "{name} isn't ignored"
+msgstr "{name} は無視されていません"
+
+msgid "There's no user called {name}"
+msgstr "{name} というユーザーはいません"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOXは現在接続されていません。OBSはブラウザソース付きで開いていますか？"
+
+msgid "Starting the BELABOX stream"
+msgstr "BELABOXの配信を開始します"
+
+msgid "Stopping the BELABOX stream"
+msgstr "BELABOXの配信を停止します"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "BELABOXの最大ビットレート：{bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOXからまだ最大ビットレートが届いていません。"
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "BELABOXの最大ビットレートを{bitrate} kbpsに設定しました"
+
+msgid "Turning {name} on"
+msgstr "{name} をオンにします"
+
+msgid "Turning {name} off"
+msgstr "{name} をオフにします"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOXに {query} のようなネットワークインターフェースはありません"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOXからまだセンサーの値が届いていません。"
+
+msgid "Starting the Moblin stream"
+msgstr "Moblinの配信を開始します"
+
+msgid "Stopping the Moblin stream"
+msgstr "Moblinの配信を停止します"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblinのビットレート：{bitrate} kbps · プリセット：{presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblinのビットレートプリセット：{presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblinのビットレートを{bitrate} kbpsに設定しました"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblinに{bitrate} kbpsのプリセットはありません。プリセット：{presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblinのシーン：{scene} · シーン一覧：{scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblinのシーン一覧：{scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "Moblinを {scene} に切り替えます"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblinに {query} のようなシーンはありません"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "このスイッチャーは一時停止中です：ワークスペースのスイッチャー数がプランの上限を超えています。"
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblinは現在接続されていません。"
+
+msgid "none"
+msgstr "なし"
+
+msgid "Moblin is already live."
+msgstr "Moblinはすでに配信中です。"
+
+msgid "Moblin isn't live."
+msgstr "Moblinは配信していません。"
+
+msgid "Moblin has no such scene."
+msgstr "Moblinにそのシーンはありません。"
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblinにそのビットレートプリセットはありません。"
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblinにそのズームプリセットはありません。"
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "ズームは0.5x～100xで指定してください。"
+
+msgid "Moblin has no such connection."
+msgstr "Moblinにその接続はありません。"
+
+msgid "The last connection in use can't be turned off."
+msgstr "使用中の最後の接続はオフにできません。"
+
+msgid "The priority must be between 1 and 10."
+msgstr "優先度は1～10で指定してください。"
+
+msgid "Moblin refused."
+msgstr "Moblinに拒否されました。"
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblinから応答がありません。少ししてからもう一度お試しください。"
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin（配信中、{uptime}）"
+
+msgid "Moblin (live)"
+msgstr "Moblin（配信中）"
+
+msgid "Moblin (not live)"
+msgstr "Moblin（配信なし）"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding：{bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "バッテリー {level}%、充電中"
+
+msgid "Battery {level}%"
+msgstr "バッテリー {level}%"
+
+msgid "Getting hot"
+msgstr "熱くなっています"
+
+msgid "Too hot!"
+msgstr "高温です！"
+
+msgid "Muted"
+msgstr "ミュート中"

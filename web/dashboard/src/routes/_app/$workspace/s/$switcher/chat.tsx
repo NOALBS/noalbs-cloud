@@ -48,12 +48,15 @@ const LANGUAGE_NAMES: Record<string, string> = {
   es: "Español",
   fr: "Français",
   it: "Italiano",
+  ja: "日本語",
+  ko: "한국어",
   nl: "Nederlands",
   pl: "Polski",
   "pt-br": "Português (Brasil)",
   sv: "Svenska",
   tr: "Türkçe",
-  "zh-tw": "中文（台灣）",
+  "zh-cn": "简体中文",
+  "zh-tw": "繁體中文",
 };
 
 type Filter = "all" | ChatRole;

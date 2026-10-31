@@ -1,0 +1,503 @@
+# Simplified Chinese for the NOALBS Cloud chat bot.
+# Translated for NOALBS Cloud with AI help, not yet checked by a native speaker.
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh-cn\n"
+
+msgid "scene: {scene}"
+msgstr "场景：{scene}"
+
+msgid "scene: unknown"
+msgstr "场景：未知"
+
+msgid "bitrate: {bitrate} kbps"
+msgstr "码率：{bitrate} kbps"
+
+msgid "bitrate: unknown"
+msgstr "码率：未知"
+
+msgid "not streaming"
+msgstr "未在直播"
+
+msgid "fps: {fps}"
+msgstr "FPS：{fps}"
+
+msgid "network: {dropped}"
+msgstr "网络：{dropped}"
+
+msgid "rendering lag: {dropped}"
+msgstr "渲染延迟：{dropped}"
+
+msgid "encoding lag: {dropped}"
+msgstr "编码延迟：{dropped}"
+
+msgid "dropped due to: {causes}"
+msgstr "丢帧原因：{causes}"
+
+msgid "CPU: {percent}%"
+msgstr "CPU：{percent}%"
+
+msgid "memory: {memory} MB"
+msgstr "内存：{memory} MB"
+
+msgid "free disk space: {disk} GB"
+msgstr "磁盘可用空间：{disk} GB"
+
+msgid "No LIVE scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未选择 LIVE 场景。请到场景页面选择。"
+
+msgid "No Privacy scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未选择隐私场景。请到场景页面选择。"
+
+msgid "No Starting scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未选择开场场景。请到场景页面选择。"
+
+msgid "No Ending scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未选择结尾场景。请到场景页面选择。"
+
+msgid "No Refresh scene is picked yet. Choose one on the Scenes page."
+msgstr "尚未选择刷新场景。请到场景页面选择。"
+
+msgid "Switched to the LIVE scene"
+msgstr "已切换到 LIVE 场景"
+
+msgid "Switched to the Privacy scene"
+msgstr "已切换到隐私场景"
+
+msgid "Switched to the Starting scene"
+msgstr "已切换到开场场景"
+
+msgid "Switched to the Ending scene"
+msgstr "已切换到结尾场景"
+
+msgid "Switched to the Refresh scene"
+msgstr "已切换到刷新场景"
+
+msgid "Chat notifications on"
+msgstr "聊天通知已开启"
+
+msgid "Chat notifications off"
+msgstr "聊天通知已关闭"
+
+msgid "Auto stop on raid on"
+msgstr "突袭时自动停止已开启"
+
+msgid "Auto stop on raid off"
+msgstr "突袭时自动停止已关闭"
+
+msgid "Public commands on"
+msgstr "公开命令已开启"
+
+msgid "Public commands off"
+msgstr "公开命令已关闭"
+
+msgid "Mod commands on"
+msgstr "房管命令已开启"
+
+msgid "Mod commands off"
+msgstr "房管命令已关闭"
+
+msgid "The LOW trigger is {value} kbps"
+msgstr "LOW 触发值为 {value} kbps"
+
+msgid "The LOW trigger is off"
+msgstr "LOW 触发已关闭"
+
+msgid "The offline trigger is {value} kbps"
+msgstr "离线触发值为 {value} kbps"
+
+msgid "The offline trigger is off"
+msgstr "离线触发已关闭"
+
+msgid "The RTT trigger is {value} ms"
+msgstr "RTT 触发值为 {value} ms"
+
+msgid "The RTT trigger is off"
+msgstr "RTT 触发已关闭"
+
+msgid "The offline RTT trigger is {value} ms"
+msgstr "离线 RTT 触发值为 {value} ms"
+
+msgid "The offline RTT trigger is off"
+msgstr "离线 RTT 触发已关闭"
+
+msgid "The LOW trigger set to {value} kbps"
+msgstr "LOW 触发值已设为 {value} kbps"
+
+msgid "The LOW trigger turned off"
+msgstr "LOW 触发已停用"
+
+msgid "The offline trigger set to {value} kbps"
+msgstr "离线触发值已设为 {value} kbps"
+
+msgid "The offline trigger turned off"
+msgstr "离线触发已停用"
+
+msgid "The RTT trigger set to {value} ms"
+msgstr "RTT 触发值已设为 {value} ms"
+
+msgid "The RTT trigger turned off"
+msgstr "RTT 触发已停用"
+
+msgid "The offline RTT trigger set to {value} ms"
+msgstr "离线 RTT 触发值已设为 {value} ms"
+
+msgid "The offline RTT trigger turned off"
+msgstr "离线 RTT 触发已停用"
+
+msgid "Bitrate triggers must be between 1 and 100,000 kbps"
+msgstr "码率触发值必须在 1 到 100,000 kbps 之间"
+
+msgid "RTT triggers must be between 1 and 60,000 ms"
+msgstr "RTT 触发值必须在 1 到 60,000 ms 之间"
+
+msgid "The offline bitrate must be lower than the LOW bitrate"
+msgstr "离线码率必须低于 LOW 码率"
+
+msgid "The offline RTT must be higher than the LOW RTT"
+msgstr "离线 RTT 必须高于 LOW RTT"
+
+msgid "Usage: {prefix}switch <scene name>"
+msgstr "用法：{prefix}switch <场景名称>"
+
+msgid "Usage: {prefix}source <source name>"
+msgstr "用法：{prefix}source <来源名称>"
+
+msgid "Usage: {prefix}bbb <{min}-{max} kbps>"
+msgstr "用法：{prefix}bbb <{min}-{max} kbps>"
+
+msgid "Usage: {prefix}bbt <interface, e.g. usb0>"
+msgstr "用法：{prefix}bbt <网络接口，例如 usb0>"
+
+msgid "Usage: {prefix}mbitrate <kbps of a preset>"
+msgstr "用法：{prefix}mbitrate <预设的 kbps>"
+
+msgid "Usage: {prefix}{command} [on|off]"
+msgstr "用法：{prefix}{command} [on|off]"
+
+msgid "Usage: {prefix}{command} <kbps|off>"
+msgstr "用法：{prefix}{command} <kbps|off>"
+
+msgid "Usage: {prefix}{command} <ms|off>"
+msgstr "用法：{prefix}{command} <ms|off>"
+
+msgid "Usage: {prefix}alias <alias> <command> | {prefix}alias rem <alias>"
+msgstr "用法：{prefix}alias <别名> <命令> | {prefix}alias rem <别名>"
+
+msgid "Usage: {prefix}noalbs version | prefix <new> | lang <code>"
+msgstr "用法：{prefix}noalbs version | prefix <新前缀> | lang <语言代码>"
+
+msgid "Still connecting to BELABOX Cloud. Try again in a moment."
+msgstr "仍在连接 BELABOX Cloud。请稍后再试。"
+
+msgid "BELABOX Cloud refused the secret URL. Check it in the switcher's settings."
+msgstr "BELABOX Cloud 拒绝了密钥 URL。请到切换器设置中检查。"
+
+msgid "The BELABOX is offline."
+msgstr "BELABOX 已离线。"
+
+msgid "The BELABOX has no stream settings yet. Start it once from its own page."
+msgstr "BELABOX 还没有直播设置。请先从它自己的页面启动一次。"
+
+msgid "The BELABOX is already streaming."
+msgstr "BELABOX 已在直播中。"
+
+msgid "The BELABOX isn't streaming."
+msgstr "BELABOX 未在直播。"
+
+msgid "The bitrate must be between 300 and 12000 kbps."
+msgstr "码率必须在 300 到 12000 kbps 之间。"
+
+msgid "The BELABOX has no such network interface."
+msgstr "BELABOX 没有这个网络接口。"
+
+msgid "The last network interface can't be turned off."
+msgstr "无法关闭最后一个网络接口。"
+
+msgid "The BELABOX can't do that."
+msgstr "BELABOX 无法执行此操作。"
+
+msgid "{name}: off"
+msgstr "{name}：已关闭"
+
+msgid "no network interfaces"
+msgstr "没有网络接口"
+
+msgid "streaming, max {bitrate} kbps"
+msgstr "直播中，最高 {bitrate} kbps"
+
+msgid "streaming"
+msgstr "直播中"
+
+msgid "BELABOX ({state}): {interfaces} | Total: {total} kbps"
+msgstr "BELABOX（{state}）：{interfaces} | 总计：{total} kbps"
+
+msgid "OBS isn't connected right now."
+msgstr "OBS 当前未连接。"
+
+msgid "OBS said no: {reason}"
+msgstr "OBS 拒绝了：{reason}"
+
+msgid "OBS said no: code {code}"
+msgstr "OBS 拒绝了：代码 {code}"
+
+msgid "OBS didn't answer. Try again in a moment."
+msgstr "OBS 没有响应。请稍后再试。"
+
+msgid "Something went wrong. Try again in a moment."
+msgstr "出错了。请稍后再试。"
+
+msgid "No scene matches \"{query}\"."
+msgstr "没有与“{query}”匹配的场景。"
+
+msgid "Switched to {scene}"
+msgstr "已切换到 {scene}"
+
+msgid "Starting the stream"
+msgstr "正在开始直播"
+
+msgid "Stopping the stream"
+msgstr "正在停止直播"
+
+msgid "Already streaming"
+msgstr "已在直播中"
+
+msgid "Not streaming"
+msgstr "未在直播"
+
+msgid "Recording started"
+msgstr "已开始录制"
+
+msgid "Recording stopped"
+msgstr "已停止录制"
+
+msgid "Refreshing the feed"
+msgstr "正在刷新信号"
+
+msgid "Already refreshing"
+msgstr "已在刷新"
+
+msgid "Fixing the feed: reconnecting {sources}"
+msgstr "正在修复信号：重新连接 {sources}"
+
+msgid "Nothing to fix: no stream source is playing on {scene}"
+msgstr "无需修复：{scene} 上没有正在播放的推流来源"
+
+msgid "No Refresh scene is picked, so fixing instead. {result}"
+msgstr "尚未选择刷新场景，改用修复功能。{result}"
+
+msgid "{name} is now shown"
+msgstr "{name} 现已显示"
+
+msgid "{name} is now hidden"
+msgstr "{name} 现已隐藏"
+
+msgid "No source on this scene matches \"{query}\"."
+msgstr "此场景没有与“{query}”匹配的来源。"
+
+msgid "Marker added at {time}"
+msgstr "已在 {time} 添加标记"
+
+msgid "This OBS version is too old for that. Update OBS."
+msgstr "此 OBS 版本过旧，无法执行此操作。请更新 OBS。"
+
+msgid "{reading} (low)"
+msgstr "{reading}（偏低）"
+
+msgid "offline"
+msgstr "离线"
+
+msgid "Current bitrate: {reading}"
+msgstr "当前码率：{reading}"
+
+msgid "No stream stats right now."
+msgstr "当前没有直播统计数据。"
+
+msgid "The prefix must be 1 to 3 characters without spaces"
+msgstr "前缀必须为 1 到 3 个字符，且不含空格"
+
+msgid "Languages: {languages}"
+msgstr "语言：{languages}"
+
+msgid "{prefix}{alias} now runs {prefix}{command}"
+msgstr "{prefix}{alias} 现在会执行 {prefix}{command}"
+
+msgid "Removed the alias {alias}"
+msgstr "已移除别名 {alias}"
+
+msgid "{alias} is already taken"
+msgstr "{alias} 已被占用"
+
+msgid "There's no alias {alias}"
+msgstr "别名 {alias} 不存在"
+
+msgid "There's no command {command}"
+msgstr "命令 {command} 不存在"
+
+msgid "Commands now start with {prefix}"
+msgstr "命令现在以 {prefix} 开头"
+
+msgid "Language set to {language}"
+msgstr "语言已设为 {language}"
+
+msgid "{command} isn't available in NOALBS Cloud yet."
+msgstr "NOALBS Cloud 暂未提供 {command}。"
+
+msgid "Switched to {scene} · {server} at {reading}"
+msgstr "已切换到 {scene} · {server}，{reading}"
+
+msgid "Switched to {scene} · {server}"
+msgstr "已切换到 {scene} · {server}"
+
+msgid "The stream has stopped and raided {to} please follow this link {url}"
+msgstr "直播已结束并突袭 {to}，请大家点击这个链接关注 {url}"
+
+msgid "Offline timeout reached, stopping the stream"
+msgstr "已达到离线超时，正在停止直播"
+
+msgid "Ending scene timeout reached, stopping the stream"
+msgstr "已达到结尾场景超时，正在停止直播"
+
+msgid "Ignoring {name} from now on"
+msgstr "从现在起忽略 {name}"
+
+msgid "No longer ignoring {name}"
+msgstr "不再忽略 {name}"
+
+msgid "{name} isn't ignored"
+msgstr "{name} 未被忽略"
+
+msgid "There's no user called {name}"
+msgstr "找不到名为 {name} 的用户"
+
+msgid "BELABOX isn't connected right now: is OBS open with the browser source?"
+msgstr "BELABOX 当前未连接：OBS 是否已打开并加载浏览器来源？"
+
+msgid "Starting the BELABOX stream"
+msgstr "正在开始 BELABOX 直播"
+
+msgid "Stopping the BELABOX stream"
+msgstr "正在停止 BELABOX 直播"
+
+msgid "BELABOX max bitrate: {bitrate} kbps"
+msgstr "BELABOX 最高码率：{bitrate} kbps"
+
+msgid "BELABOX hasn't said its max bitrate yet."
+msgstr "BELABOX 尚未上报最高码率。"
+
+msgid "BELABOX max bitrate set to {bitrate} kbps"
+msgstr "BELABOX 最高码率已设为 {bitrate} kbps"
+
+msgid "Turning {name} on"
+msgstr "正在开启 {name}"
+
+msgid "Turning {name} off"
+msgstr "正在关闭 {name}"
+
+msgid "BELABOX has no network interface like {query}"
+msgstr "BELABOX 没有类似 {query} 的网络接口"
+
+msgid "BELABOX hasn't sent any sensor readings yet."
+msgstr "BELABOX 尚未发送任何传感器读数。"
+
+msgid "Starting the Moblin stream"
+msgstr "正在开始 Moblin 直播"
+
+msgid "Stopping the Moblin stream"
+msgstr "正在停止 Moblin 直播"
+
+msgid "Moblin bitrate: {bitrate} kbps · presets: {presets}"
+msgstr "Moblin 码率：{bitrate} kbps · 预设：{presets}"
+
+msgid "Moblin bitrate presets: {presets}"
+msgstr "Moblin 码率预设：{presets}"
+
+msgid "Moblin bitrate set to {bitrate} kbps"
+msgstr "Moblin 码率已设为 {bitrate} kbps"
+
+msgid "Moblin has no {bitrate} kbps preset. Presets: {presets}"
+msgstr "Moblin 没有 {bitrate} kbps 的预设。预设：{presets}"
+
+msgid "Moblin scene: {scene} · scenes: {scenes}"
+msgstr "Moblin 场景：{scene} · 场景列表：{scenes}"
+
+msgid "Moblin scenes: {scenes}"
+msgstr "Moblin 场景列表：{scenes}"
+
+msgid "Switching Moblin to {scene}"
+msgstr "正在将 Moblin 切换到 {scene}"
+
+msgid "Moblin has no scene like {query}"
+msgstr "Moblin 没有类似 {query} 的场景"
+
+msgid "This switcher is paused: the workspace has more switchers than its plan includes."
+msgstr "此切换器已暂停：工作区的切换器数量超过了套餐包含的数量。"
+
+msgid "Moblin isn't connected right now."
+msgstr "Moblin 当前未连接。"
+
+msgid "none"
+msgstr "无"
+
+msgid "Moblin is already live."
+msgstr "Moblin 已在直播中。"
+
+msgid "Moblin isn't live."
+msgstr "Moblin 未在直播。"
+
+msgid "Moblin has no such scene."
+msgstr "Moblin 没有这个场景。"
+
+msgid "Moblin has no such bitrate preset."
+msgstr "Moblin 没有这个码率预设。"
+
+msgid "Moblin has no such zoom preset."
+msgstr "Moblin 没有这个缩放预设。"
+
+msgid "The zoom must be between 0.5x and 100x."
+msgstr "缩放倍率必须在 0.5x 到 100x 之间。"
+
+msgid "Moblin has no such connection."
+msgstr "Moblin 没有这个连接。"
+
+msgid "The last connection in use can't be turned off."
+msgstr "无法关闭最后一个正在使用的连接。"
+
+msgid "The priority must be between 1 and 10."
+msgstr "优先级必须在 1 到 10 之间。"
+
+msgid "Moblin refused."
+msgstr "Moblin 拒绝了。"
+
+msgid "Moblin didn't answer. Try again in a moment."
+msgstr "Moblin 没有响应。请稍后再试。"
+
+msgid "Moblin (live, {uptime})"
+msgstr "Moblin（直播中，{uptime}）"
+
+msgid "Moblin (live)"
+msgstr "Moblin（直播中）"
+
+msgid "Moblin (not live)"
+msgstr "Moblin（未直播）"
+
+msgid "Bonding: {bonding}"
+msgstr "Bonding：{bonding}"
+
+msgid "Battery {level}%, charging"
+msgstr "电量 {level}%，充电中"
+
+msgid "Battery {level}%"
+msgstr "电量 {level}%"
+
+msgid "Getting hot"
+msgstr "温度升高"
+
+msgid "Too hot!"
+msgstr "过热！"
+
+msgid "Muted"
+msgstr "已静音"
