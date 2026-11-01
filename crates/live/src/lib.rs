@@ -164,6 +164,18 @@ pub fn obs_request_subject(switcher_id: Uuid) -> String {
     format!("obslink.{switcher_id}.request")
 }
 
+/// Options for a service's NATS connection, with its user and password when it
+/// has one (production NATS gives each service its own, allowed only its subjects).
+pub fn connect_options(user: Option<&str>, password: Option<&str>) -> async_nats::ConnectOptions {
+    let options = async_nats::ConnectOptions::new();
+    match user {
+        Some(user) => {
+            options.user_and_password(user.to_owned(), password.unwrap_or_default().to_owned())
+        }
+        None => options,
+    }
+}
+
 /// Creates the status bucket if it doesn't exist yet.
 pub async fn status_bucket(js: &jetstream::Context) -> Result<kv::Store, async_nats::Error> {
     if let Ok(store) = js.get_key_value(STATUS_BUCKET).await {

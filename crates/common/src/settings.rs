@@ -44,6 +44,23 @@ pub fn require_real_key(setting: &str, value: &str) -> Result<(), ConfigError> {
     Ok(())
 }
 
+/// Fails when only one of two settings that go together (a user and its
+/// password) is set.
+pub fn require_both(
+    (first, first_value): (&str, Option<&str>),
+    (second, second_value): (&str, Option<&str>),
+) -> Result<(), ConfigError> {
+    match (first_value, second_value) {
+        (Some(_), None) => Err(ConfigError::Message(format!(
+            "`{first}` needs `{second}` too."
+        ))),
+        (None, Some(_)) => Err(ConfigError::Message(format!(
+            "`{second}` needs `{first}` too."
+        ))),
+        _ => Ok(()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use config::Map;
@@ -94,5 +111,14 @@ mod tests {
             (twitch.client_id.as_str(), twitch.client_secret.as_str()),
             ("abc", "shh")
         );
+    }
+
+    #[test]
+    fn a_user_needs_its_password() {
+        let both = super::require_both(("user", Some("api")), ("password", Some("shh")));
+        assert!(both.is_ok());
+        assert!(super::require_both(("user", None), ("password", None)).is_ok());
+        assert!(super::require_both(("user", Some("api")), ("password", None)).is_err());
+        assert!(super::require_both(("user", None), ("password", Some("shh"))).is_err());
     }
 }

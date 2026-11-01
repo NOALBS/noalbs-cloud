@@ -199,6 +199,20 @@ format and has a link builder for providers. The data sits after the `#`, which 
 stats URLs and keys stay out of the proxy and API logs. Nothing to configure; it needs no extra proxy route
 (the SPA fallback serves both pages).
 
+### NATS users
+
+Compose's NATS is only on Compose's own network and takes no password. If other software can
+reach your NATS, give each service its own user (`API_NATS_USER`/`API_NATS_PASSWORD`,
+`OBS_LINK_NATS_…`, `CHAT_NATS_…`) and allow each only its subjects (`*` is a switcher ID or the
+chat environment), so nobody else can send OBS requests or chat commands:
+
+| User | Publish | Subscribe |
+|---|---|---|
+| all three | `$JS.API.>`, `$JS.ACK.>`, `$JS.FC.>` | `_INBOX.>` |
+| api | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `switcher.*.reconnect`, `switcher.*.audio.demand`, `switcher.*.preview.watching`, `chat.*.reconcile` | `switcher.*.event`, `switcher.*.audio`, `switcher.*.preview.watching` |
+| obs-link (plus `allow_responses: true`) | `$KV.switcher-status.>`, `$KV.belabox-status.>`, `$KV.moblin-status.>`, `switcher.*.stats`, `switcher.*.event`, `switcher.*.audio`, `switcher.*.takeover`, `moblin.*.request`, `moblin.*.takeover` | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `moblin.*.takeover`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.takeover`, `switcher.*.reconnect`, `switcher.*.audio.demand` |
+| chat | `$KV.<bucket>.>` for each `chat-*` bucket in `crates/live`, `obslink.*.request`, `belabox.*.request`, `moblin.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `chat.>` | `switcher.*.event`, `chat.>` |
+
 ### Updating
 
 ```sh
@@ -320,6 +334,7 @@ are in each service's `src/config.rs`.
 |---|---|---|
 | `POSTGRES_URL` | `postgresql://postgres:postgres@localhost/localdb` | |
 | `NATS_URL` | `nats://localhost:4222` | |
+| `NATS_USER`, `NATS_PASSWORD` | unset | The service's NATS user, if the NATS server requires one (see [NATS users](#nats-users)). |
 | `BASE_URL` | `http://localhost:12000` | The public address of the API, `https://<domain>/api`. OAuth callbacks are built from it. |
 | `BROWSER_SOURCE_URL` | `http://localhost:5173/source/` | Where the dashboard serves the browser source, `https://<domain>/source/`. It connects to obs-link at `/link` on the same host. |
 | `COOKIE_SECRET` | example key | 64 hex characters. Required in release builds. |
@@ -345,6 +360,7 @@ are in each service's `src/config.rs`.
 |---|---|---|
 | `POSTGRES_URL` | `postgres://postgres:postgres@localhost/localdb` | |
 | `NATS_URL` | `nats://localhost:4222` | |
+| `NATS_USER`, `NATS_PASSWORD` | unset | The service's NATS user, if the NATS server requires one (see [NATS users](#nats-users)). |
 | `DATA_ENCRYPTION_KEY` | example key | Same as the API's. Required in release builds. |
 | `HOST`, `PORT` | `0.0.0.0`, `11000` | |
 | `POSTGRES_MAX_CONNECTIONS` | `10` | |
@@ -357,6 +373,7 @@ are in each service's `src/config.rs`.
 |---|---|---|
 | `POSTGRES_URL` | `postgres://postgres:postgres@localhost/localdb` | |
 | `NATS_URL` | `nats://localhost:4222` | |
+| `NATS_USER`, `NATS_PASSWORD` | unset | The service's NATS user, if the NATS server requires one (see [NATS users](#nats-users)). |
 | `DATA_ENCRYPTION_KEY` | example key | Same as the API's. Required in release builds. |
 | `TWITCH__CLIENT_ID`, `__CLIENT_SECRET` | unset | The API's Twitch app. Twitch chat is off without it. |
 | `TWITCH__SHARDS` | `4` | EventSub conduit shards (WebSockets), spread over the instances. |
