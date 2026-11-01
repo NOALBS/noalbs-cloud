@@ -675,10 +675,12 @@ pub async fn get_client(
     Ok(client)
 }
 
-/// Creates a client workspace: no owner (the organization is), no plan.
-#[tracing::instrument(skip(pool))]
-pub async fn create_client(
-    pool: &PgPool,
+/// Creates a client workspace: no owner (the organization is), no plan. It
+/// doesn't check the organization's client limit; see
+/// [`create_clients_within_limit`].
+#[tracing::instrument(skip(executor))]
+pub async fn create_client<'a>(
+    executor: impl sqlx::PgExecutor<'a>,
     organization_id: Uuid,
     created_by: Uuid,
     name: &str,
@@ -697,10 +699,79 @@ pub async fn create_client(
     .bind(url_slug)
     .bind(organization_id)
     .bind(switcher_allocation)
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await?;
 
     Ok(workspace)
+}
+
+/// A client workspace to create: its name and the URLs to try, in order.
+#[derive(Debug, Clone)]
+pub struct NewClient {
+    pub name: String,
+    pub url_slugs: Vec<String>,
+}
+
+/// Creates client workspaces if the organization stays within `max_clients`
+/// clients, returning `None` (and creating none) when they don't all fit. Each
+/// gets the first of its URLs that is free, or `None` when all are taken. The
+/// organization row is locked so concurrent creates can't pass the limit.
+#[tracing::instrument(skip(pool, clients))]
+pub async fn create_clients_within_limit(
+    pool: &PgPool,
+    organization_id: Uuid,
+    created_by: Uuid,
+    clients: &[NewClient],
+    switcher_allocation: Option<i32>,
+    max_clients: i64,
+) -> Result<Option<Vec<Option<Workspace>>>> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("SELECT 1 FROM organizations WHERE id = $1 FOR UPDATE")
+        .bind(organization_id)
+        .execute(&mut *tx)
+        .await?;
+    let count =
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM workspaces WHERE organization_id = $1")
+            .bind(organization_id)
+            .fetch_one(&mut *tx)
+            .await?;
+    if count + clients.len() as i64 > max_clients {
+        return Ok(None);
+    }
+
+    let mut created = Vec::with_capacity(clients.len());
+    for client in clients {
+        let mut workspace = None;
+        for url_slug in &client.url_slugs {
+            // A savepoint, so a taken URL doesn't abort the whole transaction.
+            let mut savepoint = sqlx::Connection::begin(&mut *tx).await?;
+            match create_client(
+                &mut *savepoint,
+                organization_id,
+                created_by,
+                &client.name,
+                url_slug,
+                switcher_allocation,
+            )
+            .await
+            {
+                Ok(inserted) => {
+                    savepoint.commit().await?;
+                    workspace = Some(inserted);
+                    break;
+                }
+                Err(error) if error.constraint() == Some("workspaces_url_slug_key") => {
+                    savepoint.rollback().await?;
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        created.push(workspace);
+    }
+    tx.commit().await?;
+
+    Ok(Some(created))
 }
 
 /// Changes a client's name and allocation, unless the allocation would be

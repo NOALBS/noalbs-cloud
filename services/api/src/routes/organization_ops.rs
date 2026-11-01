@@ -22,7 +22,7 @@ use crate::{
         ApiError, ApiResult, ErrorBody,
         organization_audit::record_team,
         organizations::{
-            ClientDto, DEFAULT_EXPIRY_DAYS, MAX_EXPIRY_DAYS, allocation, ensure_client_room,
+            ClientDto, DEFAULT_EXPIRY_DAYS, MAX_CLIENTS, MAX_EXPIRY_DAYS, allocation, client_limit,
             ensure_not_suspended, limit_below_usage, live_statuses,
         },
     },
@@ -438,18 +438,40 @@ async fn bulk_create_clients(
     too_many(request.names.len())?;
     let switcher_allocation = allocation(request.switcher_allocation)?;
     ensure_not_suspended(&state, access.organization_id).await?;
-    ensure_client_room(&state, access.organization_id, request.names.len()).await?;
+
+    // Invalid names fail on their own; the rest are created together, so the
+    // client limit is checked and kept in one transaction.
+    let checked: Vec<Result<db::organizations::NewClient, BulkError>> =
+        request.names.iter().map(|raw| new_client(raw)).collect();
+    let valid: Vec<db::organizations::NewClient> = checked
+        .iter()
+        .filter_map(|client| client.as_ref().ok().cloned())
+        .collect();
+    let mut created = db::organizations::create_clients_within_limit(
+        &state.db,
+        access.organization_id,
+        access.user.id(),
+        &valid,
+        switcher_allocation,
+        MAX_CLIENTS,
+    )
+    .await?
+    .ok_or_else(client_limit)?
+    .into_iter();
 
     let mut items = Vec::with_capacity(request.names.len());
-    for raw in request.names {
-        let outcome = create_one(
-            &state,
-            access.organization_id,
-            access.user.id(),
-            &raw,
-            switcher_allocation,
-        )
-        .await;
+    for (raw, client) in request.names.iter().zip(checked) {
+        let outcome = match client {
+            Ok(_) => match created.next().flatten() {
+                Some(workspace) => client_of(&state, access.organization_id, workspace.id).await,
+                None => Err(ApiError::conflict(
+                    "slug_taken",
+                    "No free URL was found for this name",
+                )
+                .into()),
+            },
+            Err(error) => Err(error),
+        };
         items.push(match outcome {
             Ok(client) => BulkCreateItem {
                 name: client.name.clone(),
@@ -477,42 +499,29 @@ async fn bulk_create_clients(
     Ok(Json(BulkCreateResult { items }))
 }
 
-async fn create_one(
-    state: &ApiState,
-    organization_id: Uuid,
-    created_by: Uuid,
-    raw_name: &str,
-    switcher_allocation: Option<i32>,
-) -> Result<ClientDto, BulkError> {
+/// A client from an imported name, with the URLs to try for it.
+fn new_client(raw_name: &str) -> Result<db::organizations::NewClient, BulkError> {
     let name = validate::name(raw_name)?;
     let base = slug_base(name);
-    for attempt in 0..SLUG_TRIES {
-        let slug = slug_candidate(&base, attempt);
-        if validate::url_slug(&slug).is_err() {
-            continue; // a reserved name
-        }
-        match db::organizations::create_client(
-            &state.db,
-            organization_id,
-            created_by,
-            name,
-            &slug,
-            switcher_allocation,
-        )
-        .await
-        {
-            Ok(workspace) => {
-                let client =
-                    db::organizations::get_client(&state.db, organization_id, workspace.id)
-                        .await?
-                        .ok_or_else(|| ApiError::not_found("Client not found"))?;
-                return Ok(ClientDto::new(client, false, false));
-            }
-            Err(error) if error.constraint() == Some("workspaces_url_slug_key") => {}
-            Err(error) => return Err(error.into()),
-        }
-    }
-    Err(ApiError::conflict("slug_taken", "No free URL was found for this name").into())
+    let url_slugs = (0..SLUG_TRIES)
+        .map(|attempt| slug_candidate(&base, attempt))
+        .filter(|slug| validate::url_slug(slug).is_ok()) // not a reserved name
+        .collect();
+    Ok(db::organizations::NewClient {
+        name: name.to_owned(),
+        url_slugs,
+    })
+}
+
+async fn client_of(
+    state: &ApiState,
+    organization_id: Uuid,
+    workspace_id: Uuid,
+) -> Result<ClientDto, BulkError> {
+    let client = db::organizations::get_client(&state.db, organization_id, workspace_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("Client not found"))?;
+    Ok(ClientDto::new(client, false, false))
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
