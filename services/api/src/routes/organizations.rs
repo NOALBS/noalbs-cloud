@@ -551,23 +551,24 @@ async fn create_client(
     validate::url_slug(&request.url_slug)?;
     let switcher_allocation = allocation(request.switcher_allocation)?;
     ensure_not_suspended(&state, access.organization_id).await?;
-    ensure_client_room(&state, access.organization_id, 1).await?;
 
-    let workspace = db::organizations::create_client(
+    let new_client = db::organizations::NewClient {
+        name: name.to_owned(),
+        url_slugs: vec![request.url_slug.clone()],
+    };
+    let workspace = db::organizations::create_clients_within_limit(
         &state.db,
         access.organization_id,
         access.user.id(),
-        name,
-        &request.url_slug,
+        std::slice::from_ref(&new_client),
         switcher_allocation,
+        MAX_CLIENTS,
     )
-    .await
-    .map_err(|error| match error.constraint() {
-        Some("workspaces_url_slug_key") => {
-            ApiError::conflict("slug_taken", "This URL is already taken")
-        }
-        _ => error.into(),
-    })?;
+    .await?
+    .ok_or_else(client_limit)?
+    .pop()
+    .flatten()
+    .ok_or_else(|| ApiError::conflict("slug_taken", "This URL is already taken"))?;
     record_team(
         &state,
         &access,
@@ -586,20 +587,12 @@ async fn create_client(
     ))
 }
 
-/// Fails with 403 `client_limit` when `adding` more clients would pass [`MAX_CLIENTS`].
-pub(crate) async fn ensure_client_room(
-    state: &ApiState,
-    organization_id: Uuid,
-    adding: usize,
-) -> ApiResult<()> {
-    let count = db::organizations::client_count(&state.db, organization_id).await?;
-    if count + adding as i64 > MAX_CLIENTS {
-        return Err(ApiError::forbidden(
-            "client_limit",
-            format!("An organization can have at most {MAX_CLIENTS} clients"),
-        ));
-    }
-    Ok(())
+/// 403 `client_limit`: more clients would pass [`MAX_CLIENTS`].
+pub(crate) fn client_limit() -> ApiError {
+    ApiError::forbidden(
+        "client_limit",
+        format!("An organization can have at most {MAX_CLIENTS} clients"),
+    )
 }
 
 pub(crate) async fn ensure_not_suspended(state: &ApiState, organization_id: Uuid) -> ApiResult<()> {

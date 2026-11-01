@@ -1082,3 +1082,95 @@ async fn the_audit_log_has_the_teams_changes_and_what_staff_did(pool: PgPool) {
     // Nothing is old enough to go yet.
     assert_eq!(organization_audit::delete_expired(&pool).await.unwrap(), 0);
 }
+
+fn new_clients(names: &[&str]) -> Vec<organizations::NewClient> {
+    names
+        .iter()
+        .map(|name| organizations::NewClient {
+            name: (*name).to_owned(),
+            url_slugs: vec![(*name).to_owned(), format!("{name}-2")],
+        })
+        .collect()
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn clients_are_created_within_the_limit_with_a_free_url(pool: PgPool) {
+    let setup = organization(&pool).await;
+    client(&pool, &setup, "taken", None).await;
+
+    let created = organizations::create_clients_within_limit(
+        &pool,
+        setup.organization,
+        setup.admin,
+        &new_clients(&["taken", "fresh"]),
+        Some(1),
+        3,
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    let slugs: Vec<_> = created
+        .iter()
+        .map(|workspace| workspace.as_ref().unwrap().url_slug.as_str())
+        .collect();
+    assert_eq!(slugs, ["taken-2", "fresh"]);
+
+    // A batch that doesn't fit creates nothing.
+    let over = organizations::create_clients_within_limit(
+        &pool,
+        setup.organization,
+        setup.admin,
+        &new_clients(&["one-more"]),
+        None,
+        3,
+    )
+    .await
+    .unwrap();
+    assert!(over.is_none());
+    assert_eq!(
+        organizations::client_count(&pool, setup.organization)
+            .await
+            .unwrap(),
+        3
+    );
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn concurrent_creates_cannot_pass_the_client_limit(pool: PgPool) {
+    const MAX: i64 = 10;
+    let setup = organization(&pool).await;
+    client(&pool, &setup, "existing", None).await;
+
+    // Each batch fits on its own, but no two of them fit together.
+    let batches: Vec<Vec<organizations::NewClient>> = (0..8)
+        .map(|batch| {
+            let names: Vec<String> = (0..5).map(|i| format!("batch-{batch}-{i}")).collect();
+            let names: Vec<&str> = names.iter().map(String::as_str).collect();
+            new_clients(&names)
+        })
+        .collect();
+    let results = futures_util::future::join_all(batches.iter().map(|batch| {
+        organizations::create_clients_within_limit(
+            &pool,
+            setup.organization,
+            setup.admin,
+            batch,
+            None,
+            MAX,
+        )
+    }))
+    .await;
+
+    let created = results
+        .into_iter()
+        .map(Result::unwrap)
+        .filter(Option::is_some)
+        .count();
+    assert_eq!(created, 1);
+    assert_eq!(
+        organizations::client_count(&pool, setup.organization)
+            .await
+            .unwrap(),
+        6
+    );
+}
