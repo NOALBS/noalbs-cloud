@@ -17,6 +17,10 @@ pub struct Config {
     /// failed.
     pub nats_request_timeout: u64,
 
+    /// The service's NATS user and password, when the server requires them.
+    pub nats_user: Option<String>,
+    pub nats_password: Option<String>,
+
     /// PostgreSQL connection URL for connecting to the database.
     pub postgres_url: String,
 
@@ -85,6 +89,8 @@ impl Default for Config {
             port: 12000,
             nats_url: "nats://localhost:4222".into(),
             nats_request_timeout: 5000,
+            nats_user: None,
+            nats_password: None,
             postgres_url: "postgresql://postgres:postgres@localhost/localdb".into(),
             postgres_max_connections: 10,
             base_url: "http://localhost:12000".into(),
@@ -145,6 +151,10 @@ pub fn load_config() -> Result<Config> {
     let config: Config = common::settings::load("API")?;
     common::settings::require_real_key("cookie_secret", &config.cookie_secret)?;
     common::settings::require_real_key("data_encryption_key", &config.data_encryption_key)?;
+    common::settings::require_both(
+        ("nats_user", config.nats_user.as_deref()),
+        ("nats_password", config.nats_password.as_deref()),
+    )?;
 
     Ok(config)
 }

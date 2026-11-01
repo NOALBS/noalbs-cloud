@@ -69,7 +69,9 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     tracing::info!(host = %config.host, port = config.port, "Running obs-link");
 
     let listener = net::TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
-    let nats = async_nats::connect(&config.nats_url).await?;
+    let nats = live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
+        .connect(&config.nats_url)
+        .await?;
     let js = jetstream::new(nats.clone());
     let stores = live::Stores::open(&js)
         .await

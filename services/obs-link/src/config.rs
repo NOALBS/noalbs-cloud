@@ -8,6 +8,9 @@ pub struct Config {
 
     pub nats_url: String,
     pub nats_request_timeout: u64,
+    /// The service's NATS user and password, when the server requires them.
+    pub nats_user: Option<String>,
+    pub nats_password: Option<String>,
 
     pub postgres_url: String,
     pub postgres_max_connections: u32,
@@ -32,6 +35,8 @@ impl Default for Config {
             port: 11000,
             nats_url: "nats://localhost:4222".into(),
             nats_request_timeout: 5000,
+            nats_user: None,
+            nats_password: None,
             postgres_url: "postgres://postgres:postgres@localhost/localdb".into(),
             postgres_max_connections: 10,
             data_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -46,6 +51,10 @@ impl Default for Config {
 pub fn load_config() -> Result<Config> {
     let config: Config = common::settings::load("OBS_LINK")?;
     common::settings::require_real_key("data_encryption_key", &config.data_encryption_key)?;
+    common::settings::require_both(
+        ("nats_user", config.nats_user.as_deref()),
+        ("nats_password", config.nats_password.as_deref()),
+    )?;
 
     Ok(config)
 }

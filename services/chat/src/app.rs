@@ -78,7 +78,7 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
         max_connections: config.postgres_max_connections,
     })
     .await?;
-    let nats = async_nats::ConnectOptions::new()
+    let nats = live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
         .request_timeout(Some(Duration::from_millis(config.nats_request_timeout)))
         .connect(&config.nats_url)
         .await
