@@ -43,14 +43,43 @@ fn is_public_v4(ip: Ipv4Addr) -> bool {
 }
 
 fn is_public_v6(ip: Ipv6Addr) -> bool {
-    let first = ip.segments()[0];
+    if let Some(v4) = embedded_v4(ip) {
+        return is_public_v4(v4);
+    }
+    let [first, second, ..] = ip.segments();
     !(ip.is_loopback()
         || ip.is_unspecified()
         || ip.is_multicast()
+        // Rest of 64:ff9b::/32, e.g. local-use NAT64 64:ff9b:1::/48.
+        || (first == 0x64 && second == 0xff9b)
+        // Discard only, 100::/64.
+        || ip.segments()[..4] == [0x100, 0, 0, 0]
+        // Teredo, 2001::/32.
+        || (first == 0x2001 && second == 0)
+        // Documentation, 2001:db8::/32.
+        || (first == 0x2001 && second == 0xdb8)
         // Unique local, fc00::/7.
         || (first & 0xfe00) == 0xfc00
         // Link local, fe80::/10.
-        || (first & 0xffc0) == 0xfe80)
+        || (first & 0xffc0) == 0xfe80
+        // Site local (deprecated), fec0::/10.
+        || (first & 0xffc0) == 0xfec0)
+}
+
+/// The IPv4 address that `ip` carries and that a gateway may translate it to.
+fn embedded_v4(ip: Ipv6Addr) -> Option<Ipv4Addr> {
+    let segments = ip.segments();
+    let octets = ip.octets();
+    let last = Ipv4Addr::new(octets[12], octets[13], octets[14], octets[15]);
+    match segments {
+        // IPv4-compatible, ::/96, and IPv4-translated, ::ffff:0:0:0/96.
+        [0, 0, 0, 0, 0, 0, ..] | [0, 0, 0, 0, 0xffff, 0, ..] => Some(last),
+        // NAT64, 64:ff9b::/96.
+        [0x64, 0xff9b, 0, 0, 0, 0, ..] => Some(last),
+        // 6to4, 2002::/16.
+        [0x2002, ..] => Some(Ipv4Addr::new(octets[2], octets[3], octets[4], octets[5])),
+        _ => None,
+    }
 }
 
 /// Looks `host` up, refusing it when any of its addresses isn't public (unless
@@ -102,10 +131,30 @@ mod tests {
             "fd00::1",
             "fe80::1",
             "::ffff:127.0.0.1",
+            "::7f00:1",
+            "::a9fe:a9fe",
+            "::ffff:0:a00:1",
+            "64:ff9b::a9fe:a9fe",
+            "64:ff9b::a00:1",
+            "64:ff9b:1::101:101",
+            "2002:a9fe:a9fe::1",
+            "2002:7f00:1::1",
+            "2001::1",
+            "2001:0:4136:e378:8000:63bf:3fff:fdd2",
+            "2001:db8::1",
+            "100::1",
+            "fec0::1",
         ] {
             assert!(!is_public(ip.parse::<IpAddr>().unwrap()), "{ip}");
         }
-        for ip in ["1.1.1.1", "8.8.8.8", "2606:4700::1111"] {
+        for ip in [
+            "1.1.1.1",
+            "8.8.8.8",
+            "2606:4700::1111",
+            "64:ff9b::808:808",
+            "2002:808:808::1",
+            "2001:4860:4860::8888",
+        ] {
             assert!(is_public(ip.parse::<IpAddr>().unwrap()), "{ip}");
         }
     }
