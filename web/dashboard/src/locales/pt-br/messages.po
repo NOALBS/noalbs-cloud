@@ -6963,6 +6963,10 @@ msgstr "Mostrar todos os workspaces"
 msgid "Show older"
 msgstr "Mostrar mais antigos"
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Show the BRB scene as the stream stops for a raid."
+msgstr "Mostra a cena BRB quando o stream para por causa de um raid."
+
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "Mostrar a prévia do OBS"
@@ -7627,6 +7631,10 @@ msgstr "Trocar para {0}"
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
 msgstr "Troque para outro workspace, crie um ou entre em um."
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Switch to BRB after a raid"
+msgstr "Trocar para BRB após um raid"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Switch to BRB at or above"

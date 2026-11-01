@@ -6963,6 +6963,10 @@ msgstr "显示所有工作区"
 msgid "Show older"
 msgstr "显示更早的记录"
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Show the BRB scene as the stream stops for a raid."
+msgstr "因突袭停止直播时显示 BRB 场景。"
+
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "显示 OBS 预览"
@@ -7627,6 +7631,10 @@ msgstr "切换到 {0}"
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
 msgstr "切换到其他工作区，或创建、加入工作区。"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Switch to BRB after a raid"
+msgstr "突袭后切换到 BRB"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Switch to BRB at or above"

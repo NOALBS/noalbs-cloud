@@ -6963,6 +6963,10 @@ msgstr "Elke workspace tonen"
 msgid "Show older"
 msgstr "Ouder tonen"
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Show the BRB scene as the stream stops for a raid."
+msgstr "Toon de BRB-scène wanneer de stream stopt voor een raid."
+
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "OBS-preview tonen"
@@ -7627,6 +7631,10 @@ msgstr "Overschakelen naar {0}"
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
 msgstr "Schakel over naar een andere workspace, maak er een aan of neem ergens aan deel."
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Switch to BRB after a raid"
+msgstr "Na een raid naar BRB"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Switch to BRB at or above"

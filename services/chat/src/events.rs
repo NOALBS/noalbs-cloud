@@ -116,7 +116,7 @@ async fn handle(state: &State, event: &ChatEvent) -> Result<()> {
 }
 
 /// `channel_id` raided out: its switchers that stop after a raid stop the stream,
-/// and say so in chat if they announce raids.
+/// on the BRB scene if they want that, and say so in chat if they announce raids.
 async fn raiding(
     state: &State,
     platform: ChatPlatform,
@@ -133,15 +133,14 @@ async fn raiding(
         if !switcher.auto_stop_on_raid {
             continue;
         }
-        let streaming = state
-            .control
-            .status(switcher.id)
-            .await
-            .is_some_and(|status| status.obs_connected && status.streaming);
-        if !streaming {
+        let status = state.control.status(switcher.id).await;
+        let Some(status) = status.filter(|status| status.obs_connected && status.streaming) else {
             continue;
-        }
+        };
         let by = format!("the raid to {to_name}");
+        if switcher.switch_to_offline_on_raid {
+            switch_to_offline(state, &switcher, status.active_server_id, &by).await;
+        }
         if let Err(error) = state.control.stream(switcher.id, false, &by).await {
             tracing::warn!(%error, switcher = %switcher.id, "Couldn't stop the stream after a raid");
             continue;
@@ -167,6 +166,31 @@ async fn raiding(
         send(state, platform, channel_id, bot_id, bot_user_id, &text).await;
     }
     Ok(())
+}
+
+/// Shows the BRB scene of the server in use, else the switcher's, if one is set.
+/// The stream stops either way, so a failure here is only logged.
+async fn switch_to_offline(
+    state: &State,
+    switcher: &db::switchers::Switcher,
+    server: Option<Uuid>,
+    by: &str,
+) {
+    let own = match server {
+        Some(server) => db::stream_servers::get_in_switcher(&state.db, switcher.id, server)
+            .await
+            .inspect_err(|error| tracing::warn!(%error, "Couldn't read the server in use"))
+            .ok()
+            .flatten()
+            .and_then(|server| server.override_scene_offline),
+        None => None,
+    };
+    let Some(scene) = own.or(switcher.scene_offline) else {
+        return;
+    };
+    if let Err(error) = state.control.switch_scene(switcher.id, scene, by).await {
+        tracing::warn!(%error, switcher = %switcher.id, "Couldn't show the BRB scene after a raid");
+    }
 }
 
 /// A channel's page, from its login (Twitch), slug (Kick) or handle (YouTube).

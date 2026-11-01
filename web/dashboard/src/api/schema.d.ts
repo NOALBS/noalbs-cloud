@@ -3614,6 +3614,8 @@ export interface components {
              */
             retry_attempts: number;
             switch_to_live: boolean;
+            /** @description Show the BRB scene just before the stream stops after a raid. */
+            switch_to_offline_on_raid: boolean;
             switch_to_starting: boolean;
         };
         /**

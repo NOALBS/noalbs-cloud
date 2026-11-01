@@ -130,6 +130,7 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
         .await
         .unwrap();
     assert!(switcher.recording_scene_ids.is_empty());
+    assert!(!switcher.switch_to_offline_on_raid);
 
     let scenes = vec![Uuid::new_v4(), Uuid::new_v4()];
     let updated = switchers::set_behaviour(
@@ -143,6 +144,7 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
             retry_attempts: switcher.retry_attempts,
             auto_stop_on_raid: switcher.auto_stop_on_raid,
             announce_raid: switcher.announce_raid,
+            switch_to_offline_on_raid: true,
             record_while_streaming: switcher.record_while_streaming,
             recording_scene_ids: scenes.clone(),
             switch_to_starting: switcher.switch_to_starting,
@@ -154,6 +156,7 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!(updated.recording_scene_ids, scenes);
+    assert!(updated.switch_to_offline_on_raid);
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

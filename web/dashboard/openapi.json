@@ -12406,6 +12406,7 @@
           "retry_attempts",
           "auto_stop_on_raid",
           "announce_raid",
+          "switch_to_offline_on_raid",
           "record_while_streaming",
           "recording_scene_ids",
           "switch_to_starting",
@@ -12468,6 +12469,10 @@
           },
           "switch_to_live": {
             "type": "boolean"
+          },
+          "switch_to_offline_on_raid": {
+            "type": "boolean",
+            "description": "Show the BRB scene just before the stream stops after a raid."
           },
           "switch_to_starting": {
             "type": "boolean"

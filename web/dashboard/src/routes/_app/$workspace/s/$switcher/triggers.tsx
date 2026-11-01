@@ -99,6 +99,13 @@ const startEnd = (): ReturnType<typeof switching> => [
     note: t`Needs chat bot`,
   },
   {
+    key: "switch_to_offline_on_raid",
+    title: t`Switch to BRB after a raid`,
+    description: t`Show the BRB scene as the stream stops for a raid.`,
+    note: t`Needs chat bot`,
+    requires: "auto_stop_on_raid",
+  },
+  {
     key: "announce_raid",
     title: t`Announce raids`,
     description: t`Say in chat when the stream stops for a raid (Twitch and Kick).`,

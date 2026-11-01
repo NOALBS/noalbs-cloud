@@ -116,6 +116,8 @@ pub struct BehaviourDto {
     pub retry_attempts: i32,
     pub auto_stop_on_raid: bool,
     pub announce_raid: bool,
+    /// Show the BRB scene just before the stream stops after a raid.
+    pub switch_to_offline_on_raid: bool,
     pub record_while_streaming: bool,
     /// Keep recording on these OBS scenes; pause it on every other scene.
     /// An empty list disables scene-based recording control.
@@ -140,6 +142,7 @@ impl From<BehaviourDto> for Behaviour {
             retry_attempts: b.retry_attempts,
             auto_stop_on_raid: b.auto_stop_on_raid,
             announce_raid: b.announce_raid,
+            switch_to_offline_on_raid: b.switch_to_offline_on_raid,
             record_while_streaming: b.record_while_streaming,
             recording_scene_ids: b.recording_scene_ids,
             switch_to_starting: b.switch_to_starting,
@@ -258,6 +261,7 @@ impl From<Switcher> for SwitcherDto {
                 retry_attempts: s.retry_attempts,
                 auto_stop_on_raid: s.auto_stop_on_raid,
                 announce_raid: s.announce_raid,
+                switch_to_offline_on_raid: s.switch_to_offline_on_raid,
                 record_while_streaming: s.record_while_streaming,
                 recording_scene_ids: s.recording_scene_ids,
                 switch_to_starting: s.switch_to_starting,
