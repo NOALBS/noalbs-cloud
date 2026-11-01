@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::{
     app::ApiState,
     permissions::{
-        AccountManage, AccountView, Actor, WorkspaceAuthorized, WorkspaceTransfer,
+        AccountManage, AccountView, Actor, WorkspaceAccess, WorkspaceAuthorized, WorkspaceTransfer,
         user_display_name,
     },
     routes::{
@@ -117,6 +117,21 @@ pub fn check_removal(
     ))
 }
 
+/// Checks that `access` may remove `user_id`, a member with `target` role.
+/// Support grants never cover members: NOALBS support may only leave.
+fn authorize_removal(
+    access: &WorkspaceAccess,
+    actor: Actor,
+    user_id: Uuid,
+    target: WorkspaceRoleEnum,
+) -> ApiResult<()> {
+    let removing_self = user_id == access.user.id();
+    if !removing_self {
+        access.members_only()?;
+    }
+    check_removal(actor, removing_self, target)
+}
+
 /// List the members of a workspace.
 #[utoipa::path(get, path = "/workspaces/{workspace_id}/members", tag = "members",
     params(("workspace_id" = Uuid, Path)),
@@ -196,7 +211,7 @@ async fn remove_member(
     let access = authorized.into_access();
     let actor = access.actor(&state).await?;
     let target = target_role(&state, access.workspace_id, user_id).await?;
-    check_removal(actor, user_id == access.user.id(), target)?;
+    authorize_removal(&access, actor, user_id, target)?;
 
     let name = user_display_name(&state, user_id).await?;
     db::workspaces::remove_member(&state.db, access.workspace_id, user_id).await?;
@@ -318,9 +333,12 @@ async fn transfer_ownership(
 }
 #[cfg(test)]
 mod tests {
-    use super::{check_removal, check_role_change, check_transfer};
-    use crate::permissions::Actor;
+    use super::{authorize_removal, check_removal, check_role_change, check_transfer};
+    use crate::permissions::{Actor, CurrentUser, Via, WorkspaceAccess};
+    use axum::{http::StatusCode, response::IntoResponse};
+    use db::support::SupportLevel;
     use db::workspaces::WorkspaceRoleEnum::{Admin, Operator, Owner};
+    use uuid::Uuid;
 
     const OWNER: Actor = Actor::Member(Owner);
     const ADMIN: Actor = Actor::Member(Admin);
@@ -390,5 +408,51 @@ mod tests {
         assert!(check_role_change(ADMIN, Operator, Admin).is_err());
         assert!(check_removal(ADMIN, false, Admin).is_err());
         assert!(check_removal(ADMIN, true, Admin).is_ok());
+    }
+
+    fn staff_access(via: Via) -> WorkspaceAccess {
+        WorkspaceAccess {
+            workspace_id: Uuid::new_v4(),
+            user: CurrentUser(db::users::User {
+                id: Uuid::new_v4(),
+                whitelisted: true,
+                staff: true,
+                last_workspace_id: None,
+                disabled_at: None,
+                disabled_reason: None,
+                created_at: None,
+                updated_at: None,
+            }),
+            via,
+            organization_name: None,
+        }
+    }
+
+    fn support(level: SupportLevel) -> Via {
+        Via::Support {
+            grant_id: Uuid::new_v4(),
+            level,
+            break_glass: false,
+        }
+    }
+
+    #[test]
+    fn support_cannot_remove_members() {
+        for level in [SupportLevel::View, SupportLevel::Control] {
+            let access = staff_access(support(level));
+            for target in [Admin, Operator] {
+                let error =
+                    authorize_removal(&access, Actor::Staff, Uuid::new_v4(), target).unwrap_err();
+                assert_eq!(error.into_response().status(), StatusCode::FORBIDDEN);
+            }
+        }
+    }
+
+    #[test]
+    fn staff_who_are_members_still_remove_by_rank() {
+        let access = staff_access(Via::Member);
+        assert!(authorize_removal(&access, Actor::Staff, Uuid::new_v4(), Admin).is_ok());
+        let me = access.user.id();
+        assert!(authorize_removal(&access, Actor::Staff, me, Operator).is_ok());
     }
 }
