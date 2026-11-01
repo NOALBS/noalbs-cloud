@@ -616,6 +616,12 @@ mod tests {
         assert_eq!(sanitize_redirect_target("https://attacker.example"), None);
         assert_eq!(sanitize_redirect_target("//attacker.example"), None);
         assert_eq!(sanitize_redirect_target("/\\attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/\t/attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/\t\\attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/\n/attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/\r/attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/ /attacker.example"), None);
+        assert_eq!(sanitize_redirect_target("/a\\..\\\\attacker.example"), None);
     }
 
     #[test]

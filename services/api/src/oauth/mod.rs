@@ -280,8 +280,17 @@ const NOT_THE_APP: &[&str] = &[
 ];
 
 /// A dashboard path on this site to return to after an OAuth flow, or `None`.
+///
+/// Browsers drop tabs and newlines from URLs and read `\` as `/`, so
+/// `/\t/evil.example` would become `//evil.example`: whitespace, control
+/// characters and backslashes are rejected anywhere in the target.
 pub fn sanitize_redirect_target(target: &str) -> Option<String> {
-    if !target.starts_with('/') || target.starts_with("//") || target.starts_with("/\\") {
+    if !target.starts_with('/')
+        || target.starts_with("//")
+        || target
+            .chars()
+            .any(|c| c.is_control() || c.is_whitespace() || c == '\\')
+    {
         return None;
     }
     let first = target[1..]
