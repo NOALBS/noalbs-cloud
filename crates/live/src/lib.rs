@@ -17,6 +17,7 @@
 //! | [`MoblinStatus`] | KV bucket [`MOBLIN_BUCKET`], key = switcher ID | obs-link, while a Moblin is connected, on change + every 10 s |
 //! | [`MoblinCommand`] → [`MoblinReply`] | request subject [`moblin_request_subject`] | API, chat service, and obs-link (with the OBS stream) |
 //! | [`Takeover`] | core subject [`moblin_takeover_subject`] | obs-link, when a Moblin identifies |
+//! | password attempts | KV bucket [`MOBLIN_ATTEMPTS_BUCKET`], key = switcher ID | obs-link, when a Moblin identifies |
 //! | [`AudioUpdate`] | core subject [`audio_subject`] | obs-link: levels while demanded, mute/fader changes always |
 //! | levels wanted | core subject [`audio_demand_subject`] | API, every 5 s while a mixer is open |
 //! | [`PreviewWatching`] | core subject [`preview_watching_subject`] | API, every 3 s per viewer of the OBS preview; every API replica keeps the list |
@@ -191,6 +192,7 @@ pub struct Stores {
     pub status: kv::Store,
     pub belabox: kv::Store,
     pub moblin: kv::Store,
+    pub moblin_attempts: kv::Store,
     pub stats: stream::Stream,
 }
 
@@ -200,6 +202,7 @@ impl Stores {
             status: status_bucket(js).await?,
             belabox: belabox_bucket(js).await?,
             moblin: moblin_bucket(js).await?,
+            moblin_attempts: moblin_attempts_bucket(js).await?,
             stats: stats_stream(js).await?,
         })
     }

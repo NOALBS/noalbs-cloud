@@ -171,6 +171,7 @@ async fn handle_connection(
             db: shared.db.clone(),
             nats: shared.nats.clone(),
             kv: shared.stores.moblin.clone(),
+            attempts: shared.stores.moblin_attempts.clone(),
             data_key: shared.data_key.clone(),
         };
         moblin::serve(websocket, switcher_id, deps, shutdown_handle).await;
