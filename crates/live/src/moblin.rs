@@ -21,6 +21,13 @@ pub const MOBLIN_BUCKET: &str = "moblin-status";
 pub const MOBLIN_TTL: Duration = Duration::from_secs(30);
 pub const MOBLIN_HEARTBEAT: Duration = Duration::from_secs(10);
 
+/// KV bucket with how many Moblin password attempts each switcher has had
+/// since its last good one (key = switcher ID), so a guesser is locked out on
+/// every obs-link replica at once.
+pub const MOBLIN_ATTEMPTS_BUCKET: &str = "moblin-attempts";
+/// The count is forgotten this long after the last attempt.
+pub const MOBLIN_LOCKOUT: Duration = Duration::from_secs(15 * 60);
+
 /// Where the API, the chat service and the switcher send [`MoblinCommand`]s;
 /// the reply is a JSON [`MoblinReply`].
 pub fn moblin_request_subject(switcher_id: Uuid) -> String {
@@ -47,6 +54,26 @@ pub async fn moblin_bucket(js: &jetstream::Context) -> Result<kv::Store, async_n
             max_age: MOBLIN_TTL,
             storage: jetstream::stream::StorageType::Memory,
             limit_markers: Some(MOBLIN_TTL),
+            ..Default::default()
+        })
+        .await?)
+}
+
+/// Creates the Moblin password attempts bucket if it doesn't exist yet.
+pub async fn moblin_attempts_bucket(
+    js: &jetstream::Context,
+) -> Result<kv::Store, async_nats::Error> {
+    if let Ok(store) = js.get_key_value(MOBLIN_ATTEMPTS_BUCKET).await {
+        return Ok(store);
+    }
+
+    Ok(js
+        .create_key_value(kv::Config {
+            bucket: MOBLIN_ATTEMPTS_BUCKET.to_owned(),
+            description: "Moblin password attempts per switcher, written by obs-link".to_owned(),
+            history: 1,
+            max_age: MOBLIN_LOCKOUT,
+            storage: jetstream::stream::StorageType::Memory,
             ..Default::default()
         })
         .await?)

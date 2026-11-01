@@ -39,6 +39,12 @@ use crate::status;
 const IDENTIFY_TIMEOUT: Duration = Duration::from_secs(10);
 /// Wait before refusing a wrong password, to slow down guessing.
 const REFUSE_DELAY: Duration = Duration::from_secs(1);
+/// Password attempts a switcher gets, across connections and replicas, before
+/// it's refused (even the right password) until [`live::MOBLIN_LOCKOUT`] after
+/// the last one counted. A good password starts the count again.
+const MAX_PASSWORD_ATTEMPTS: u64 = 10;
+/// Tries at counting an attempt while other connections count theirs.
+const ATTEMPT_COUNT_TRIES: usize = 5;
 /// Log a wrong password at most this often per switcher.
 const WRONG_PASSWORD_LOG_INTERVAL: Duration = Duration::from_secs(600);
 const STATUS_POLL: Duration = Duration::from_secs(2);
@@ -62,6 +68,8 @@ pub struct Deps {
     pub db: db::DbPool,
     pub nats: async_nats::Client,
     pub kv: kv::Store,
+    /// Password attempts per switcher ([`live::MOBLIN_ATTEMPTS_BUCKET`]).
+    pub attempts: kv::Store,
     pub data_key: DataKey,
 }
 
@@ -151,8 +159,16 @@ async fn identify(
         Some((String::from_utf8(password).ok()?, encrypted))
     });
 
+    let allowed = match switcher.as_ref().filter(|s| s.moblin_password.is_some()) {
+        Some(switcher) => take_attempt(&deps.attempts, switcher.id).await,
+        None => true,
+    };
+    if !allowed {
+        tracing::info!(?switcher_id, "Moblin refused: too many password attempts");
+    }
+
     let Some((_, encrypted)) = known.filter(|(password, _)| {
-        protocol::hash_password(&challenge, &salt, password) == authentication
+        allowed && protocol::hash_password(&challenge, &salt, password) == authentication
     }) else {
         tracing::info!(
             ?switcher_id,
@@ -168,6 +184,9 @@ async fn identify(
         return None;
     };
     let switcher_id = switcher.map(|s| s.id)?;
+    if let Err(error) = deps.attempts.delete(switcher_id.to_string()).await {
+        tracing::warn!(%error, "Couldn't reset a Moblin's password attempts");
+    }
 
     let paused = match db::switchers::is_paused(&deps.db, switcher_id).await {
         Ok(paused) => paused,
@@ -186,6 +205,49 @@ async fn identify(
         password: encrypted,
         paused,
     })
+}
+
+/// Counts a password attempt for the switcher, on every replica; `false` if it
+/// already had [`MAX_PASSWORD_ATTEMPTS`] (or the count couldn't be kept).
+/// Attempts while locked out aren't counted, so the lockout ends on time.
+async fn take_attempt(store: &kv::Store, switcher_id: Uuid) -> bool {
+    let key = switcher_id.to_string();
+    for _ in 0..ATTEMPT_COUNT_TRIES {
+        let entry = match store.entry(&key).await {
+            Ok(entry) => entry,
+            Err(error) => {
+                tracing::warn!(%error, "Couldn't read a Moblin's password attempts");
+                return false;
+            }
+        };
+        let attempts = entry.as_ref().map_or(0, attempts_in);
+        if attempts >= MAX_PASSWORD_ATTEMPTS {
+            return false;
+        }
+        let value = (attempts + 1).to_string().into();
+        // Compare-and-set, so parallel connections can't share an attempt.
+        let written = match &entry {
+            Some(entry) => store.update(&key, value, entry.revision).await.is_ok(),
+            None => store.create(&key, value).await.is_ok(),
+        };
+        if written {
+            return true;
+        }
+    }
+    tracing::warn!(%switcher_id, "Couldn't count a Moblin password attempt");
+    false
+}
+
+/// The attempts an entry of [`live::MOBLIN_ATTEMPTS_BUCKET`] holds; one we
+/// can't read counts as too many.
+fn attempts_in(entry: &kv::Entry) -> u64 {
+    match entry.operation {
+        kv::Operation::Put => std::str::from_utf8(&entry.value)
+            .ok()
+            .and_then(|count| count.parse().ok())
+            .unwrap_or(MAX_PASSWORD_ATTEMPTS),
+        kv::Operation::Delete | kv::Operation::Purge => 0,
+    }
 }
 
 async fn log_wrong_password(deps: &Deps, switcher_id: Uuid) {
@@ -711,8 +773,58 @@ async fn listen_for_control(
 
 #[cfg(test)]
 mod tests {
-    use super::switcher_in_path;
+    use super::{MAX_PASSWORD_ATTEMPTS, switcher_in_path, take_attempt};
+    use async_nats::jetstream::{self, kv};
     use uuid::Uuid;
+
+    #[tokio::test]
+    #[ignore = "needs NATS with JetStream: NATS_URL=nats://localhost:4222 cargo test -p obs-link -- --ignored"]
+    async fn password_attempts_are_limited_across_connections() {
+        let url = std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".into());
+        let js = jetstream::new(async_nats::connect(url).await.unwrap());
+        let bucket = format!("test-moblin-attempts-{}", Uuid::new_v4());
+        let store = js
+            .create_key_value(kv::Config {
+                bucket: bucket.clone(),
+                storage: jetstream::stream::StorageType::Memory,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        let switcher_id = Uuid::new_v4();
+
+        // Many connections at once (as from several replicas) get only the limit.
+        let tries = (0..50).map(|_| {
+            let store = store.clone();
+            tokio::spawn(async move { take_attempt(&store, switcher_id).await })
+        });
+        let mut allowed = 0;
+        for attempt in tries {
+            allowed += u64::from(attempt.await.unwrap());
+        }
+        let mut more = 0;
+        while allowed + more < MAX_PASSWORD_ATTEMPTS {
+            // Some lost every compare-and-set; the attempts left are still there.
+            assert!(take_attempt(&store, switcher_id).await);
+            more += 1;
+        }
+        assert!(allowed >= 1);
+        assert!(!take_attempt(&store, switcher_id).await, "locked out");
+        // Attempts while locked out aren't counted.
+        assert!(!take_attempt(&store, switcher_id).await);
+        assert_eq!(
+            store.get(switcher_id.to_string()).await.unwrap().as_deref(),
+            Some(MAX_PASSWORD_ATTEMPTS.to_string().as_bytes())
+        );
+        // Another switcher isn't affected.
+        assert!(take_attempt(&store, Uuid::new_v4()).await);
+
+        // A good password starts the count again.
+        store.delete(switcher_id.to_string()).await.unwrap();
+        assert!(take_attempt(&store, switcher_id).await);
+
+        js.delete_key_value(bucket).await.unwrap();
+    }
 
     #[test]
     fn reads_the_switcher_from_the_path() {
