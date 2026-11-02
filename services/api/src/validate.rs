@@ -34,6 +34,7 @@ const RESERVED_SLUGS: &[&str] = &[
     "support",
     "terms",
     "welcome",
+    "whats-new",
     "workspaces",
 ];
 
@@ -136,6 +137,7 @@ mod tests {
         assert!(url_slug("privacy").is_err());
         assert!(url_slug("terms").is_err());
         assert!(url_slug("licenses").is_err());
+        assert!(url_slug("whats-new").is_err());
     }
 
     #[test]

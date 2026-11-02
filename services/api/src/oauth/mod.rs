@@ -276,7 +276,14 @@ pub const OAUTH_STATE_COOKIE_NAME: &str = "oauth_state";
 /// that would loop: never sent back to (`/api/auth/twitch` would start another
 /// sign-in). Mirrors the dashboard's `lib/redirect.ts`.
 const NOT_THE_APP: &[&str] = &[
-    "api", "link", "source", "chat", "assets", "privacy", "login",
+    "api",
+    "link",
+    "source",
+    "chat",
+    "assets",
+    "privacy",
+    "login",
+    "whats-new",
 ];
 
 /// A dashboard path on this site to return to after an OAuth flow, or `None`.

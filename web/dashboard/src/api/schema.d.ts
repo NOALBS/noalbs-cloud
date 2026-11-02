@@ -898,6 +898,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/whats-new-seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Remember the newest "What's new" post the user has seen, so the dashboard
+         *     only shows newer ones. An older post than the one saved changes nothing.
+         */
+        put: operations["set_whats_new_seen"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/workspaces": {
         parameters: {
             query?: never;
@@ -3094,6 +3114,8 @@ export interface components {
             staff: boolean;
             /** Format: date-time */
             updated_at: string;
+            /** @description The newest "What's new" post seen in the dashboard. */
+            whats_new_seen?: string | null;
             whitelisted: boolean;
         };
         AccountExport: {
@@ -4942,11 +4964,18 @@ export interface components {
              *     profile to show for this user.
              */
             connections: components["schemas"]["ConnectionDto"][];
+            /**
+             * Format: date-time
+             * @description When the account was made: posts from before it aren't news.
+             */
+            created_at?: string | null;
             /** Format: uuid */
             id: string;
             /** @description The workspace to open by default, if the user is still a member of it. */
             last_workspace_slug?: string | null;
             staff: boolean;
+            /** @description The newest "What's new" post the user has seen; newer ones are new to them. */
+            whats_new_seen?: string | null;
         };
         /** @description A workspace member and the profile of their most recently used login. */
         MemberDto: {
@@ -6504,6 +6533,10 @@ export interface components {
         };
         UpdateWorkspace: {
             name: string;
+        };
+        WhatsNewSeen: {
+            /** @description The newest post shown, by its ID (`2026-11-02-scene-picker`). */
+            post_id: string;
         };
         Workspace: {
             billing?: components["schemas"]["Billing"] | null;
@@ -8625,6 +8658,37 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    set_whats_new_seen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WhatsNewSeen"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_post` */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

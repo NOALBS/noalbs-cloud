@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "关闭"
 
@@ -4625,6 +4626,10 @@ msgstr "从未连接"
 msgid "Never connected"
 msgstr "从未连接"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "新"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "新建附加项"
@@ -6103,6 +6108,10 @@ msgstr "原始统计数据"
 msgid "Reachable"
 msgstr "可访问"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "阅读全文"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "按工作区或切换器搜索"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "已加密"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "查看所有更新"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "我们保留哪些数据及其原因，请参阅<0>隐私政策</0>；�
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "你的团队、终端客户和 NOALBS 在组织中所做的更改。保留一年。"
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "最新动态"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."

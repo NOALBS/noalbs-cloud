@@ -1,6 +1,6 @@
 # Legal pages
 
-Three static pages in `web/dashboard/`, built as extra Vite entries (styles through `src/legal/main.ts`,
+Static pages in `web/dashboard/`, built as extra Vite entries (styles through `src/legal/main.ts`,
 long-form styles under `.legal` in `src/styles.css`) and served by Caddy:
 
 | URL         | File                                             |
@@ -8,6 +8,7 @@ long-form styles under `.legal` in `src/styles.css`) and served by Caddy:
 | `/privacy`  | `privacy.html`                                   |
 | `/terms`    | `terms.html`                                     |
 | `/licenses` | `licenses.html` (see [licenses.md](licenses.md)) |
+| `/whats-new` | `whats-new.html`, filled in from `whats-new/*.md` (see `whats-new/README.md`) |
 
 A new static page needs: the file, an `input` entry and a short URL in `vite.config.ts`, a `handle` in
 `Caddyfile`, an entry in `RESERVED_SLUGS` (`services/api/src/validate.rs`) and in `NOT_THE_APP`

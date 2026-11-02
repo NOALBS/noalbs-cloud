@@ -2788,6 +2788,40 @@
         }
       }
     },
+    "/me/whats-new-seen": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Remember the newest \"What's new\" post the user has seen, so the dashboard\nonly shows newer ones. An older post than the one saved changes nothing.",
+        "operationId": "set_whats_new_seen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatsNewSeen"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "400": {
+            "description": "`invalid_post`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/workspaces": {
       "get": {
         "tags": [
@@ -10817,6 +10851,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "whats_new_seen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The newest \"What's new\" post seen in the dashboard."
+          },
           "whitelisted": {
             "type": "boolean"
           }
@@ -16793,6 +16834,14 @@
             },
             "description": "Linked login accounts, most recently used first. The first one is the\nprofile to show for this user."
           },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the account was made: posts from before it aren't news."
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -16806,6 +16855,13 @@
           },
           "staff": {
             "type": "boolean"
+          },
+          "whats_new_seen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The newest \"What's new\" post the user has seen; newer ones are new to them."
           }
         }
       },
@@ -20853,6 +20909,18 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "WhatsNewSeen": {
+        "type": "object",
+        "required": [
+          "post_id"
+        ],
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "The newest post shown, by its ID (`2026-11-02-scene-picker`)."
           }
         }
       },

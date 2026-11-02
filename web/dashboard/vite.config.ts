@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import { whatsNew } from "./src/whats-new/plugin";
 
 // The API runs on :12000. In development it is proxied under /api so the
 // session cookie and OAuth callbacks stay on the dashboard's origin, the same
@@ -17,7 +18,8 @@ const obsLinkTarget = process.env.NOALBS_OBS_LINK_URL ?? "http://localhost:11000
 
 /**
  * The same short URLs as Caddy: the browser source at /source and /source/, and
- * the privacy policy, the terms and the licenses at /privacy, /terms and /licenses.
+ * the privacy policy, the terms, the licenses and What's new at /privacy, /terms, /licenses
+ * and /whats-new.
  */
 function shortUrls(): Plugin {
   return {
@@ -32,6 +34,8 @@ function shortUrls(): Plugin {
           req.url = req.url.replace(/^\/terms\/?/, "/terms.html");
         } else if (req.url && /^\/licenses\/?(\?|$)/.test(req.url)) {
           req.url = req.url.replace(/^\/licenses\/?/, "/licenses.html");
+        } else if (req.url && /^\/whats-new\/?(\?|$)/.test(req.url)) {
+          req.url = req.url.replace(/^\/whats-new\/?/, "/whats-new.html");
         }
         next();
       });
@@ -42,6 +46,7 @@ function shortUrls(): Plugin {
 export default defineConfig({
   plugins: [
     shortUrls(),
+    whatsNew(),
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     // Compiles the `t`/`<Trans>` macros; `lingui()` loads .po catalogs on import.
@@ -53,7 +58,8 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   // The dashboard, the static landing page Caddy serves at `/` to visitors
-  // without a session, the privacy policy (`/privacy`), the terms (`/terms`) and the licenses (`/licenses`).
+  // without a session, the privacy policy (`/privacy`), the terms (`/terms`), the licenses (`/licenses`)
+  // and What's new (`/whats-new`, built from `whats-new/*.md`).
   build: {
     rollupOptions: {
       input: {
@@ -62,6 +68,7 @@ export default defineConfig({
         privacy: fileURLToPath(new URL("./privacy.html", import.meta.url)),
         terms: fileURLToPath(new URL("./terms.html", import.meta.url)),
         licenses: fileURLToPath(new URL("./licenses.html", import.meta.url)),
+        "whats-new": fileURLToPath(new URL("./whats-new.html", import.meta.url)),
       },
     },
   },

@@ -24,6 +24,7 @@ use crate::{
 pub fn router() -> OpenApiRouter<ApiState> {
     OpenApiRouter::new()
         .routes(routes!(set_last_workspace))
+        .routes(routes!(set_whats_new_seen))
         .routes(routes!(list_sessions))
         .routes(routes!(sign_out_session))
         .routes(routes!(sign_out_other_sessions))
@@ -54,6 +55,57 @@ async fn set_last_workspace(
             "You are not a member of this workspace",
         ))
     }
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct WhatsNewSeen {
+    /// The newest post shown, by its ID (`2026-11-02-scene-picker`).
+    pub post_id: String,
+}
+
+/// Remember the newest "What's new" post the user has seen, so the dashboard
+/// only shows newer ones. An older post than the one saved changes nothing.
+#[utoipa::path(put, path = "/me/whats-new-seen", tag = "auth",
+    request_body = WhatsNewSeen,
+    responses(
+        (status = NO_CONTENT, description = "Saved"),
+        (status = BAD_REQUEST, description = "`invalid_post`", body = ErrorBody),
+    ))]
+async fn set_whats_new_seen(
+    State(state): State<ApiState>,
+    current_user: CurrentUser,
+    Json(request): Json<WhatsNewSeen>,
+) -> ApiResult<StatusCode> {
+    if !is_post_id(&request.post_id) {
+        return Err(ApiError::bad_request(
+            "invalid_post",
+            "Not a What's new post",
+        ));
+    }
+    db::users::see_whats_new(&state.db, current_user.id(), &request.post_id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// A post's ID: its file name in `web/dashboard/whats-new/` without `.md`,
+/// `YYYY-MM-DD-` and a slug of lowercase letters, digits and single dashes.
+fn is_post_id(id: &str) -> bool {
+    if id.len() > 100 || !id.is_ascii() || id.len() < 12 {
+        return false;
+    }
+    let (date, slug) = id.split_at(10);
+    let Some(slug) = slug.strip_prefix('-') else {
+        return false;
+    };
+    chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_ok()
+        && date.as_bytes()[4] == b'-'
+        && date.as_bytes()[7] == b'-'
+        && !slug.is_empty()
+        && slug.split('-').all(|part| {
+            !part.is_empty()
+                && part
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+        })
 }
 
 /// A browser signed in to this account.
@@ -343,4 +395,24 @@ async fn delete_account(
         StatusCode::NO_CONTENT,
         cookies.remove(expired_cookie(SESSION_COOKIE_NAME)),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_post_id;
+
+    #[test]
+    fn post_ids_are_a_date_and_a_slug() {
+        assert!(is_post_id("2026-11-02-scene-picker"));
+        assert!(is_post_id("2026-11-02-v2"));
+        assert!(!is_post_id("2026-11-02"));
+        assert!(!is_post_id("2026-11-02-"));
+        assert!(!is_post_id("2026-13-02-scene"));
+        assert!(!is_post_id("2026-1-022-scene"));
+        assert!(!is_post_id("2026-11-02-Scene"));
+        assert!(!is_post_id("2026-11-02-scene--picker"));
+        assert!(!is_post_id("2026-11-02-scene-"));
+        assert!(!is_post_id("2026-11-02-scène"));
+        assert!(!is_post_id(&format!("2026-11-02-{}", "a".repeat(90))));
+    }
 }

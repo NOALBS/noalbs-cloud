@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "닫기"
 
@@ -4625,6 +4626,10 @@ msgstr "연결된 적 없음"
 msgid "Never connected"
 msgstr "연결된 적 없음"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "새 글"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "새 애드온"
@@ -6103,6 +6108,10 @@ msgstr "원시 통계"
 msgid "Reachable"
 msgstr "연결 가능"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "자세히 보기"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "워크스페이스 또는 스위처로 검색"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "보안됨"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "모든 업데이트 보기"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "보관하는 정보와 이유는 <0>개인정보 처리방침</0>에, NO
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "팀, 고객, NOALBS가 조직에서 변경한 내용이에요. 1년간 보관돼요."
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "새 소식"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."

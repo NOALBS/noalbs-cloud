@@ -18,6 +18,7 @@ import {
   LogOut,
   Monitor,
   Moon,
+  Newspaper,
   Plus,
   Settings,
   ShieldCheck,
@@ -55,6 +56,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { hasUnseenPosts, WhatsNewCard } from "@/components/whats-new-card";
 import { missingCardReminder } from "@/lib/billing";
 import { botDetail, revokedOwnBots, speakingBot, switchersToReconnect } from "@/lib/chat";
 import { lastSwitcherId } from "@/lib/last-switcher";
@@ -65,6 +67,7 @@ import { setupProgress } from "@/lib/setup";
 import { supportLevelLabels } from "@/lib/support";
 import { type ThemePreference, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { WHATS_NEW_PATH } from "@/lib/whats-new";
 import { CreateSwitcherDialog } from "./create-switcher-dialog";
 import { LanguageMenu } from "./language-menu";
 import { ObsStatsPopover } from "./live/obs-stats-popover";
@@ -244,6 +247,7 @@ export function AppShell({
         </header>
 
         <NoticeBanners />
+        {!isSupport(actor) && <WhatsNewCard me={me} />}
         {isSupport(actor) && <SupportBanner workspace={workspace} />}
         {!isSupport(actor) && can(actor, "workspace.support_access") && (
           <EmergencyAccessBanner workspace={workspace} />
@@ -668,6 +672,19 @@ export function UserMenu({
             </Link>
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+          <a href={WHATS_NEW_PATH} target="_blank" rel="noopener">
+            <Newspaper />
+            <Trans>What's new</Trans>
+            {hasUnseenPosts(me) && (
+              <span className="ml-auto size-2 rounded-full bg-primary">
+                <span className="sr-only">
+                  <Trans>New</Trans>
+                </span>
+              </span>
+            )}
+          </a>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
           <Trans>Theme</Trans>

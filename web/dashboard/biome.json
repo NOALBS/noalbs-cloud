@@ -13,7 +13,8 @@
       "!src/api/schema.d.ts",
       "!openapi.json",
       "!pnpm-lock.yaml",
-      "!public/source"
+      "!public/source",
+      "!whats-new/*.md"
     ]
   },
   "formatter": {

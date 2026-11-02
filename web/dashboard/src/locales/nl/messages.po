@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "Sluiten"
 
@@ -4625,6 +4626,10 @@ msgstr "nooit verbonden"
 msgid "Never connected"
 msgstr "Nooit verbonden"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "Nieuw"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "Nieuwe add-on"
@@ -6103,6 +6108,10 @@ msgstr "Ruwe statistieken"
 msgid "Reachable"
 msgstr "Bereikbaar"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "Lees meer"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "Zoek op workspace of switcher"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "Beveiligd"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "Alle updates bekijken"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "Wat we bewaren en waarom staat in het <0>privacybeleid</0>; de regels vo
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "Wat je team, je eindklanten en NOALBS in de organisatie hebben gewijzigd. Een jaar bewaard."
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "Wat is er nieuw"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."
