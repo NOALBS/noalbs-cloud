@@ -7502,6 +7502,7 @@ msgid "Stream stopped"
 msgstr "Stream stopped"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "STREAMING"
 

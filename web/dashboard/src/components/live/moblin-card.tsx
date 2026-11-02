@@ -227,7 +227,7 @@ export function MoblinCard({
 
   const chip = connected
     ? connected.streaming
-      ? { label: "LIVE", tone: "text-live", fill: "bg-live" }
+      ? { label: t`STREAMING`, tone: "text-live", fill: "bg-live" }
       : {
           label: view.kind === "paused" ? t`PAUSED` : t`READY`,
           tone: "text-muted-foreground",

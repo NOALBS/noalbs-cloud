@@ -7500,6 +7500,7 @@ msgid "Stream stopped"
 msgstr "實況已停止"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "實況中"
 

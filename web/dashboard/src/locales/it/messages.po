@@ -7500,6 +7500,7 @@ msgid "Stream stopped"
 msgstr "Diretta fermata"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "IN DIRETTA"
 
