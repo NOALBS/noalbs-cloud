@@ -69,7 +69,6 @@ export function whatsNew(): Plugin {
     },
     load(id) {
       if (id !== RESOLVED) return undefined;
-      this.addWatchFile(dir);
       return dashboardModule(loadPosts(dir));
     },
     transformIndexHtml: {
