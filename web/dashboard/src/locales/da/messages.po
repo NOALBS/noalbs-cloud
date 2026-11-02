@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "Luk"
 
@@ -4625,6 +4626,10 @@ msgstr "aldrig forbundet"
 msgid "Never connected"
 msgstr "Aldrig forbundet"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "Ny"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "Ny tilføjelse"
@@ -6103,6 +6108,10 @@ msgstr "Rå statistik"
 msgid "Reachable"
 msgstr "Kan nås"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "Læs mere"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "Søg efter arbejdsområde eller switcher"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "Sikret"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "Se alle opdateringer"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "Hvad vi gemmer og hvorfor, står i <0>privatlivspolitikken</0>; reglerne
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "Hvad dit team, dine slutkunder og NOALBS ændrede i organisationen. Gemmes i et år."
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "Nyheder"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."

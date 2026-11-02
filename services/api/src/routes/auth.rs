@@ -50,6 +50,10 @@ pub struct MeDto {
     pub staff: bool,
     /// The workspace to open by default, if the user is still a member of it.
     pub last_workspace_slug: Option<String>,
+    /// The newest "What's new" post the user has seen; newer ones are new to them.
+    pub whats_new_seen: Option<String>,
+    /// When the account was made: posts from before it aren't news.
+    pub created_at: Option<chrono::DateTime<Utc>>,
     /// Linked login accounts, most recently used first. The first one is the
     /// profile to show for this user.
     pub connections: Vec<ConnectionDto>,
@@ -68,6 +72,8 @@ pub struct ConnectionDto {
 
 async fn me_dto(state: &ApiState, user: &db::users::User) -> ApiResult<MeDto> {
     let last_workspace_slug = db::users::last_workspace_slug(&state.db, user.id).await?;
+    // Read here, not from the session's user: that one is cached for a few seconds.
+    let whats_new_seen = db::users::whats_new_seen(&state.db, user.id).await?;
     let connections = db::oauth2_connections::list_profiles_for_user(&state.db, user.id)
         .await?
         .into_iter()
@@ -84,6 +90,8 @@ async fn me_dto(state: &ApiState, user: &db::users::User) -> ApiResult<MeDto> {
         id: user.id,
         staff: user.staff,
         last_workspace_slug,
+        whats_new_seen,
+        created_at: user.created_at,
         connections,
     })
 }
@@ -635,6 +643,7 @@ mod tests {
         assert_eq!(sanitize_redirect_target("/login?redirect=/x"), None);
         assert_eq!(sanitize_redirect_target("/source/#token"), None);
         assert_eq!(sanitize_redirect_target("/landing.html"), None);
+        assert_eq!(sanitize_redirect_target("/whats-new#2026-11-02-x"), None);
         assert_eq!(
             sanitize_redirect_target("/nomad-live/s/abc/chat?chat_connected=twitch"),
             Some("/nomad-live/s/abc/chat?chat_connected=twitch".into())

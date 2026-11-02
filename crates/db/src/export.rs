@@ -89,6 +89,8 @@ pub struct Account {
     pub disabled_reason: Option<String>,
     /// The workspace the dashboard opens.
     pub last_workspace_id: Option<Uuid>,
+    /// The newest "What's new" post seen in the dashboard.
+    pub whats_new_seen: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -422,7 +424,7 @@ pub struct OrganizationCreated {
 pub async fn account(pool: &PgPool, user_id: Uuid) -> Result<Option<AccountExport>> {
     let Some(account) = sqlx::query_as::<_, Account>(
         "SELECT id, staff, whitelisted, disabled_at, disabled_reason, last_workspace_id,
-                created_at, updated_at
+                whats_new_seen, created_at, updated_at
          FROM users WHERE id = $1",
     )
     .bind(user_id)

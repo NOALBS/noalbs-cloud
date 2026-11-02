@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "Masquer"
 
@@ -4625,6 +4626,10 @@ msgstr "jamais connecté"
 msgid "Never connected"
 msgstr "Jamais connecté"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "Nouveau"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "Nouveau module"
@@ -6103,6 +6108,10 @@ msgstr "Stats brutes"
 msgid "Reachable"
 msgstr "Joignable"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "Lire la suite"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "Rechercher par espace de travail ou switcher"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "Sécurisé"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "Voir toutes les nouveautés"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "Ce que nous conservons et pourquoi figure dans la <0>politique de confid
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "Ce que votre équipe, vos clients finaux et NOALBS ont modifié dans l’organisation. Conservé un an."
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "Nouveautés"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."

@@ -79,6 +79,36 @@ pub async fn set_last_workspace(pool: &PgPool, user_id: Uuid, workspace_id: Uuid
     Ok(result.rows_affected() > 0)
 }
 
+/// The newest "What's new" post the user has seen. Never goes back to an
+/// older one (IDs sort by date), so a stale tab can't bring posts back.
+#[tracing::instrument(skip(pool))]
+pub async fn see_whats_new(pool: &PgPool, user_id: Uuid, post_id: &str) -> Result<()> {
+    sqlx::query(
+        r#"
+        UPDATE users SET whats_new_seen = GREATEST(whats_new_seen COLLATE "C", $2)
+        WHERE id = $1
+        "#,
+    )
+    .bind(user_id)
+    .bind(post_id)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// The newest "What's new" post the user has seen (see [`see_whats_new`]).
+#[tracing::instrument(skip(pool))]
+pub async fn whats_new_seen(pool: &PgPool, user_id: Uuid) -> Result<Option<String>> {
+    let seen =
+        sqlx::query_scalar::<_, Option<String>>("SELECT whats_new_seen FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await?;
+
+    Ok(seen.flatten())
+}
+
 /// The slug of the user's last workspace, if they are still a member of it.
 #[tracing::instrument(skip(pool))]
 pub async fn last_workspace_slug(pool: &PgPool, user_id: Uuid) -> Result<Option<String>> {

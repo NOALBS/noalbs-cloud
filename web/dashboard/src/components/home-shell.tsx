@@ -8,6 +8,7 @@ import { organizationsQuery, workspacesQuery } from "@/api/queries";
 import type { Me } from "@/api/types";
 import { NAV_LINK, SECTION_LABEL, TAB_CLASS, UserMenu } from "@/components/app-shell";
 import { NoticeBanners } from "@/components/notice-banner";
+import { WhatsNewCard } from "@/components/whats-new-card";
 import { Wordmark } from "@/components/wordmark";
 
 /**
@@ -95,6 +96,7 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
         </header>
 
         <NoticeBanners />
+        <WhatsNewCard me={me} />
         <main className="flex-1 pb-24 md:pb-0">{children}</main>
 
         <nav

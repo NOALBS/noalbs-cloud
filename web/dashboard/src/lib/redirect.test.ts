@@ -16,6 +16,7 @@ describe("safeRedirect", () => {
     expect(safeRedirect("/privacy")).toBe("/");
     expect(safeRedirect("/terms")).toBe("/");
     expect(safeRedirect("/licenses")).toBe("/");
+    expect(safeRedirect("/whats-new#2026-11-02-x")).toBe("/");
     expect(safeRedirect("/landing.html")).toBe("/");
   });
 

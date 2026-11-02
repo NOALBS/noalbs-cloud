@@ -125,3 +125,36 @@ async fn unlinking_keeps_the_current_session_and_never_the_last_connection(pool:
         UnlinkOutcome::NotFound
     );
 }
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn the_seen_whats_new_post_only_moves_forward(pool: PgPool) {
+    let alice = users::create(&pool).await.unwrap().id;
+    let bob = users::create(&pool).await.unwrap().id;
+    assert_eq!(users::whats_new_seen(&pool, alice).await.unwrap(), None);
+
+    users::see_whats_new(&pool, alice, "2026-11-05-scene-picker")
+        .await
+        .unwrap();
+    // An older tab reporting an older post doesn't bring newer ones back.
+    users::see_whats_new(&pool, alice, "2026-11-02-moblin")
+        .await
+        .unwrap();
+    assert_eq!(
+        users::whats_new_seen(&pool, alice)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("2026-11-05-scene-picker")
+    );
+    users::see_whats_new(&pool, alice, "2026-12-01-raids")
+        .await
+        .unwrap();
+    assert_eq!(
+        users::whats_new_seen(&pool, alice)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("2026-12-01-raids")
+    );
+    assert_eq!(users::whats_new_seen(&pool, bob).await.unwrap(), None);
+}

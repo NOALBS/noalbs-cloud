@@ -209,6 +209,32 @@
   .legal pre {
     @apply overflow-x-auto rounded-xl border border-divider bg-surface-2 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground;
   }
+  .legal h3 {
+    @apply text-lg font-semibold tracking-tight;
+  }
+  .legal ol {
+    @apply flex list-decimal flex-col gap-2 pl-5 text-muted-foreground;
+  }
+  .legal img,
+  .legal video {
+    @apply h-auto max-w-full rounded-xl border border-divider;
+  }
+  /* What's new: one post. */
+  .legal .post {
+    @apply flex scroll-mt-6 flex-col gap-4 border-t border-divider pt-8 leading-relaxed;
+  }
+  .legal .post header {
+    @apply flex flex-col gap-1;
+  }
+  .legal .post time {
+    @apply font-mono text-xs text-muted-foreground;
+  }
+  .legal .post h2 a {
+    @apply no-underline hover:text-primary;
+  }
+  .legal .post-image {
+    @apply w-full;
+  }
   /* A detail still to fill in before launch. */
   .legal .todo {
     @apply rounded bg-low/20 px-1 text-foreground;

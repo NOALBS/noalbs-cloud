@@ -13,6 +13,7 @@ const NOT_THE_APP = [
   "privacy",
   "terms",
   "licenses",
+  "whats-new",
   "login",
 ];
 

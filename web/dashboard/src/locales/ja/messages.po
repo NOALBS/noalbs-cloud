@@ -2864,6 +2864,7 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/components/notice-banner.tsx
+#: src/components/whats-new-card.tsx
 msgid "Dismiss"
 msgstr "閉じる"
 
@@ -4625,6 +4626,10 @@ msgstr "接続履歴なし"
 msgid "Never connected"
 msgstr "接続履歴なし"
 
+#: src/components/app-shell.tsx
+msgid "New"
+msgstr "新着"
+
 #: src/components/admin/products.tsx
 msgid "New add-on"
 msgstr "新しいアドオン"
@@ -6103,6 +6108,10 @@ msgstr "生の統計"
 msgid "Reachable"
 msgstr "接続可能"
 
+#: src/components/whats-new-card.tsx
+msgid "Read more"
+msgstr "続きを読む"
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "READY"
@@ -6698,6 +6707,10 @@ msgstr "ワークスペースまたはスイッチャーで検索"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
 msgstr "保護あり"
+
+#: src/components/whats-new-card.tsx
+msgid "See all updates"
+msgstr "すべての新着情報を見る"
 
 #: src/routes/_app/org-invite.$token.tsx
 msgid "See and run every client workspace of the organization"
@@ -8949,6 +8962,11 @@ msgstr "保存する情報とその理由は<0>プライバシーポリシー</0
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "What your team, your customers and NOALBS changed in the organization. Kept for a year."
 msgstr "チーム、顧客、NOALBSが組織内で変更した内容です。保存期間は 1 年です。"
+
+#: src/components/app-shell.tsx
+#: src/components/whats-new-card.tsx
+msgid "What's new"
+msgstr "新着情報"
 
 #: src/routes/_app/admin/status.tsx
 msgid "What’s running right now. Refreshes every 15 seconds."

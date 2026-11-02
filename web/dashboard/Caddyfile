@@ -46,7 +46,7 @@
 		}
 	}
 
-	# The privacy policy, the terms and the licenses, static pages for everyone
+	# The privacy policy, the terms, the licenses and What's new, static pages for everyone
 	# (the license text files they link to are served as plain files below).
 	handle /licenses {
 		root * /srv
@@ -66,6 +66,13 @@
 		root * /srv
 		encode zstd gzip
 		rewrite * /terms.html
+		file_server
+		header Cache-Control "no-cache"
+	}
+	handle /whats-new {
+		root * /srv
+		encode zstd gzip
+		rewrite * /whats-new.html
 		file_server
 		header Cache-Control "no-cache"
 	}
