@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { BelaboxStatus, StatsSample, SwitcherEvent, SwitcherStatus } from "@/api/types";
+import type {
+  BelaboxStatus,
+  MoblinStatus,
+  StatsSample,
+  SwitcherEvent,
+  SwitcherStatus,
+} from "@/api/types";
 import { chartEnd, initialLiveState, isStale, latest, liveReducer } from "./reducer";
 
 const sample = (seconds: number, bitrate: number): StatsSample => ({
@@ -66,6 +72,34 @@ describe("liveReducer", () => {
     state = liveReducer(state, { type: "belabox", status: null });
     expect(state.belabox).toBeNull();
     expect(state.belaboxHistory).toEqual({});
+  });
+
+  it("keeps Moblin throughput per bonding connection while live", () => {
+    const moblin = (seconds: number, kbps: number[], streaming = true) => ({
+      type: "moblin" as const,
+      // Only what the history reads.
+      status: {
+        updated_at: new Date(Date.UTC(2026, 10, 2, 12, 0, seconds)).toISOString(),
+        streaming,
+        bonding_connections: kbps.map((value, i) => ({
+          name: i === 0 ? "Cellular" : "Ethernet",
+          kbps: value,
+          rtt_ms: 40,
+        })),
+      } as MoblinStatus,
+    });
+    let state = liveReducer(initialLiveState, moblin(1, [3000, 1000, 500]));
+    state = liveReducer(state, moblin(2, [3200, 900, 400]));
+    // A heartbeat with the same time adds nothing.
+    state = liveReducer(state, moblin(2, [3200, 900, 400]));
+    expect(state.moblinHistory.Cellular?.map((point) => point.bitrate)).toEqual([3000, 3200]);
+    expect(state.moblinHistory["Ethernet#2"]?.map((point) => point.bitrate)).toEqual([500, 400]);
+
+    // A connection that's gone is forgotten; so is everything when Moblin stops.
+    state = liveReducer(state, moblin(3, [3100]));
+    expect(Object.keys(state.moblinHistory)).toEqual(["Cellular"]);
+    state = liveReducer(state, moblin(4, [], false));
+    expect(state.moblinHistory).toEqual({});
   });
 
   it("tracks status and connection", () => {

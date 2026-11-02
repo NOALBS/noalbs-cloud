@@ -6,6 +6,7 @@ import type {
   SwitcherEvent,
   SwitcherStatus,
 } from "@/api/types";
+import { bondingKeys } from "@/lib/moblin";
 
 /** How many seconds of stats the charts show (matches the API's replay). */
 export const HISTORY_SECONDS = 120;
@@ -39,6 +40,8 @@ export interface LiveState {
   belaboxHistory: Record<string, Point[]>;
   /** The connected Moblin's status: `null` while none is connected; `undefined` before the first message. */
   moblin: MoblinStatus | null | undefined;
+  /** Recent throughput per Moblin bonding connection (`bitrate` in kbps, keyed by `bondingKeys`), oldest first. */
+  moblinHistory: Record<string, Point[]>;
 }
 
 export type LiveAction =
@@ -57,6 +60,7 @@ export const initialLiveState: LiveState = {
   belabox: undefined,
   belaboxHistory: {},
   moblin: undefined,
+  moblinHistory: {},
 };
 
 const MAX_EVENTS = 100;
@@ -94,7 +98,11 @@ export function liveReducer(state: LiveState, action: LiveAction): LiveState {
         belaboxHistory: belaboxHistory(state.belaboxHistory, action.status),
       };
     case "moblin":
-      return { ...state, moblin: action.status };
+      return {
+        ...state,
+        moblin: action.status,
+        moblinHistory: moblinHistory(state.moblinHistory, action.status),
+      };
   }
 }
 
@@ -119,6 +127,34 @@ function belaboxHistory(
             { at, bitrate: netif.kbps, rtt: null, state: netif.enabled ? "live" : "idle" },
           ];
   }
+  return next;
+}
+
+/**
+ * Adds each bonding connection's throughput from a Moblin status; forgets connections
+ * that are gone, and all of them when Moblin stops or doesn't say (older versions).
+ */
+function moblinHistory(
+  history: Record<string, Point[]>,
+  status: MoblinStatus | null,
+): Record<string, Point[]> {
+  if (!status?.streaming) return {};
+  const at = Date.parse(status.updated_at);
+  const cutoff = at - (HISTORY_SECONDS + HISTORY_MARGIN_SECONDS) * 1000;
+  const keys = bondingKeys(status.bonding_connections);
+  const next: Record<string, Point[]> = {};
+  status.bonding_connections.forEach((connection, i) => {
+    const key = keys[i] ?? connection.name;
+    const points = history[key] ?? [];
+    const last = points[points.length - 1];
+    next[key] =
+      last && last.at >= at
+        ? points
+        : [
+            ...points.filter((point) => point.at > cutoff),
+            { at, bitrate: connection.kbps, rtt: connection.rtt_ms ?? null, state: "live" },
+          ];
+  });
   return next;
 }
 

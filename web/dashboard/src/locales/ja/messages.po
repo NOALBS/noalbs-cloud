@@ -3701,6 +3701,7 @@ msgid "kbps"
 msgstr "kbps"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "kbps sent"
 msgstr "kbps（送信）"
 
@@ -6489,6 +6490,10 @@ msgstr "{name} さんのロール"
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Roles"
 msgstr "ロール"
+
+#: src/components/live/moblin-card.tsx
+msgid "Round-trip time"
+msgstr "往復時間 (RTT)"
 
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"

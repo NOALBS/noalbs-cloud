@@ -107,10 +107,17 @@ pub struct MoblinStatus {
     pub thermal: Option<MoblinThermal>,
     /// What Moblin sends, as it formats it ("5.2 Mbps, 1.3 GB"), while live.
     pub bitrate: Option<String>,
-    /// SRTLA bonding per connection, as Moblin formats it.
+    /// What Moblin sends, kbps, while live (Moblin since late October 2026).
+    pub bitrate_kbps: Option<u32>,
+    /// Each connection's share of what's sent ("62% Cellular, 38% WiFi"), as
+    /// Moblin formats it, while bonding.
     pub bonding: Option<String>,
     /// SRTLA round-trip times per connection, as Moblin formats it.
     pub bonding_rtts: Option<String>,
+    /// What each bonding connection sends, in Moblin's order, while bonding.
+    /// Empty from Moblin versions before late October 2026, which only send
+    /// `bonding` and `bonding_rtts`.
+    pub bonding_connections: Vec<MoblinBondingConnection>,
     /// How long it has been live ("1:02:03").
     pub uptime: Option<String>,
     /// The scene on air (one of `scenes`).
@@ -173,6 +180,19 @@ pub struct MoblinConnection {
     pub priority: u8,
     /// Off = not used (while priorities are on).
     pub enabled: bool,
+}
+
+/// What one of Moblin's bonding connections sends. The name is Moblin's
+/// ("Cellular", "WiFi", a Moblink relay's or an interface's name), which may
+/// differ from the name in [`MoblinConnection`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct MoblinBondingConnection {
+    pub name: String,
+    /// What it sent in Moblin's last second, kbps (retransmissions included).
+    pub kbps: u32,
+    /// Round-trip time, ms, once Moblin has measured one.
+    pub rtt_ms: Option<u32>,
 }
 
 /// Moblin's connection priorities range.

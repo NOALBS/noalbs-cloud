@@ -315,6 +315,7 @@ function LivePage() {
           {switcher.moblin.has_password && (
             <MoblinCard
               status={live.moblin}
+              history={live.moblinHistory}
               now={now}
               path={path}
               canControl={canControl && !paused}

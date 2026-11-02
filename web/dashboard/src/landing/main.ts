@@ -198,7 +198,7 @@ function drawHistory(svg: SVGSVGElement) {
   });
 }
 
-/** The BELABOX mock's per-interface sparklines (`data-spark` = the interface's kbps). */
+/** The BELABOX and Moblin mocks' per-connection sparklines (`data-spark` = its kbps). */
 function drawSparks() {
   const random = seeded(3);
   for (const svg of document.querySelectorAll<SVGSVGElement>("[data-spark]")) {

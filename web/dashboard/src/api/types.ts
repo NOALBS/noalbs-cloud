@@ -82,6 +82,7 @@ export type BelaboxInterface = Schemas["BelaboxInterface"];
 export type BelaboxLink = Schemas["BelaboxLink"];
 export type MoblinSettings = Schemas["MoblinDto"];
 export type MoblinSetup = Schemas["MoblinSetup"];
+export type MoblinBondingConnection = Schemas["MoblinBondingConnection"];
 export type MoblinConnection = Schemas["MoblinConnection"];
 export type MoblinZoomPreset = Schemas["MoblinZoomPreset"];
 export type MoblinStatusText = Schemas["MoblinStatusText"];
