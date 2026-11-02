@@ -4401,6 +4401,10 @@ msgstr "Moblin recording stopped"
 msgid "Moblin scene {0}"
 msgstr "Moblin scene {0}"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin settings"
+msgstr "Moblin settings"
+
 #: src/lib/live-format.ts
 msgid "Moblin stealth mode off"
 msgstr "Moblin stealth mode off"
@@ -9016,6 +9020,10 @@ msgstr "Where your encoder sends video. NOALBS reads its stats to pick a scene."
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Where your encoder sends video. NOALBS uses the first one in the list that is receiving."
 msgstr "Where your encoder sends video. NOALBS uses the first one in the list that is receiving."
+
+#: src/components/live/moblin-card.tsx
+msgid "Which of Moblin’s bonding connections it uses, and which it prefers."
+msgstr "Which of Moblin’s bonding connections it uses, and which it prefers."
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
