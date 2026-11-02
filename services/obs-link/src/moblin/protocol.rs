@@ -9,14 +9,15 @@
 //! strings, which we keep as they come and send back as they were.
 //!
 //! Moblin pushes `state` events when something changes, often with only the
-//! field that changed, and answers `getStatus` (battery, heat, bitrate text) and
-//! `getSettings` (scenes, bitrate presets), which we ask for regularly.
+//! field that changed, and answers `getStatus` (battery, heat, bitrate and
+//! what each bonding connection sends) and `getSettings` (scenes, bitrate
+//! presets), which we ask for regularly.
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use live::{
     MOBLIN_MAX_PRIORITY, MOBLIN_MAX_ZOOM, MOBLIN_MIN_PRIORITY, MOBLIN_MIN_ZOOM, MoblinAction,
-    MoblinBitratePreset, MoblinConnection, MoblinRefusal, MoblinScene, MoblinStatus,
-    MoblinStatusText, MoblinThermal, MoblinZoomPreset,
+    MoblinBitratePreset, MoblinBondingConnection, MoblinConnection, MoblinRefusal, MoblinScene,
+    MoblinStatus, MoblinStatusText, MoblinThermal, MoblinZoomPreset,
 };
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
@@ -207,8 +208,10 @@ pub struct State {
     battery_charging: Option<bool>,
     thermal: Option<MoblinThermal>,
     bitrate: Option<String>,
+    bitrate_kbps: Option<u32>,
     bonding: Option<String>,
     bonding_rtts: Option<String>,
+    bonding_connections: Vec<MoblinBondingConnection>,
     uptime: Option<String>,
     scenes: Vec<MoblinScene>,
     bitrate_presets: Vec<MoblinBitratePreset>,
@@ -269,6 +272,8 @@ fn yes() -> bool {
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 struct StatusTopRight {
+    bitrate_info: Option<BitrateInfo>,
+    bonding_info: Option<Vec<BondingInfo>>,
     bitrate: Option<StatusItem>,
     uptime: Option<StatusItem>,
     srtla: Option<StatusItem>,
@@ -276,6 +281,30 @@ struct StatusTopRight {
     system_monitor: Option<StatusItem>,
     moblink: Option<StatusItem>,
     dji_devices: Option<StatusItem>,
+}
+
+/// `RemoteControlStatusTopRightBitrateInfo`, sent while live.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BitrateInfo {
+    bits_per_second: i64,
+}
+
+/// `RemoteControlStatusTopRightBondingConnection`: what a connection sent in
+/// Moblin's last second (it samples them every second).
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BondingInfo {
+    name: String,
+    /// Bytes for SRTLA; Moblin passes RIST's bandwidth, in bits, as it is.
+    bytes_per_second: u64,
+    /// ms; `None` (or -1) before Moblin has measured one.
+    rtt: Option<i64>,
+}
+
+/// bits per second → kbps.
+fn kbps(bits_per_second: u64) -> u32 {
+    u32::try_from(bits_per_second / 1000).unwrap_or(u32::MAX)
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -435,9 +464,22 @@ impl State {
                 })
             };
             self.bitrate = message(top_right.bitrate);
+            self.bitrate_kbps = top_right
+                .bitrate_info
+                .map(|info| kbps(u64::try_from(info.bits_per_second).unwrap_or(0)));
             self.uptime = message(top_right.uptime);
             self.bonding = message(top_right.srtla);
             self.bonding_rtts = message(top_right.srtla_rtts);
+            self.bonding_connections = top_right
+                .bonding_info
+                .unwrap_or_default()
+                .into_iter()
+                .map(|connection| MoblinBondingConnection {
+                    name: connection.name,
+                    kbps: kbps(connection.bytes_per_second.saturating_mul(8)),
+                    rtt_ms: connection.rtt.and_then(|rtt| u32::try_from(rtt).ok()),
+                })
+                .collect();
             self.system_monitor = message(top_right.system_monitor);
             self.moblink = text(top_right.moblink);
             self.dji_devices = text(top_right.dji_devices);
@@ -560,8 +602,10 @@ impl State {
             battery_charging: self.battery_charging,
             thermal: self.thermal,
             bitrate: self.bitrate.clone(),
+            bitrate_kbps: self.bitrate_kbps,
             bonding: self.bonding.clone(),
             bonding_rtts: self.bonding_rtts.clone(),
+            bonding_connections: self.bonding_connections.clone(),
             uptime: self.uptime.clone(),
             scene_id: self.scene_id.clone(),
             scenes: self.scenes.clone(),
@@ -860,6 +904,60 @@ mod tests {
             state.apply_event(&json!({ "log": { "entry": "x" } })),
             Vec::new()
         );
+    }
+
+    #[test]
+    fn reads_bitrate_and_bonding_numbers() {
+        let mut state = State::default();
+        // As Moblin sends it since late October 2026, next to the text lines.
+        let status = json!({ "getStatus": {
+            "general": { "isLive": true },
+            "topLeft": {},
+            "topRight": {
+                "bitrate": { "message": "5.1 Mbps (1.2 GB)", "ok": true },
+                "bitrateInfo": { "bitsPerSecond": 5_123_456, "totalBytes": 1_200_000_000 },
+                "srtla": { "message": "62% Cellular, 38% WiFi", "ok": true },
+                "bondingInfo": [
+                    { "name": "Cellular", "bytesPerSecond": 400_000, "rtt": 48 },
+                    { "name": "WiFi", "bytesPerSecond": 245_000 },
+                    { "name": "IP15", "bytesPerSecond": 0, "rtt": -1 },
+                ],
+            },
+        } });
+        state.apply_status(&status);
+        let view = state.status();
+        assert_eq!(view.bitrate_kbps, Some(5123));
+        assert_eq!(view.bonding.as_deref(), Some("62% Cellular, 38% WiFi"));
+        assert_eq!(
+            view.bonding_connections,
+            vec![
+                MoblinBondingConnection {
+                    name: "Cellular".into(),
+                    kbps: 3200,
+                    rtt_ms: Some(48),
+                },
+                MoblinBondingConnection {
+                    name: "WiFi".into(),
+                    kbps: 1960,
+                    rtt_ms: None,
+                },
+                MoblinBondingConnection {
+                    name: "IP15".into(),
+                    kbps: 0,
+                    rtt_ms: None,
+                },
+            ]
+        );
+
+        // An older Moblin: only the text lines.
+        let older = json!({ "getStatus": { "topRight": {
+            "srtla": { "message": "100% WiFi", "ok": true },
+        } } });
+        state.apply_status(&older);
+        let view = state.status();
+        assert_eq!(view.bitrate_kbps, None);
+        assert_eq!(view.bonding.as_deref(), Some("100% WiFi"));
+        assert!(view.bonding_connections.is_empty());
     }
 
     #[test]

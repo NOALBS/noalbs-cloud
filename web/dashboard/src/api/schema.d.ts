@@ -4994,6 +4994,24 @@ export interface components {
             /** Format: int32 */
             kbps: number;
         };
+        /**
+         * @description What one of Moblin's bonding connections sends. The name is Moblin's
+         *     ("Cellular", "WiFi", a Moblink relay's or an interface's name), which may
+         *     differ from the name in [`MoblinConnection`].
+         */
+        MoblinBondingConnection: {
+            /**
+             * Format: int32
+             * @description What it sent in Moblin's last second, kbps (retransmissions included).
+             */
+            kbps: number;
+            name: string;
+            /**
+             * Format: int32
+             * @description Round-trip time, ms, once Moblin has measured one.
+             */
+            rtt_ms?: number | null;
+        };
         /** @description One of Moblin's SRTLA bonding connections. */
         MoblinConnection: {
             /** @description Off = not used (while priorities are on). */
@@ -5046,6 +5064,12 @@ export interface components {
              */
             bitrate: string | null;
             /**
+             * Format: int32
+             * @description What Moblin sends, kbps, while live (Moblin since late October 2026).
+             * @default null
+             */
+            bitrate_kbps: number | null;
+            /**
              * @description The bitrate preset in use (one of `bitrate_presets`), if the bitrate
              *     matches one.
              * @default null
@@ -5054,10 +5078,18 @@ export interface components {
             /** @default [] */
             bitrate_presets: components["schemas"]["MoblinBitratePreset"][];
             /**
-             * @description SRTLA bonding per connection, as Moblin formats it.
+             * @description Each connection's share of what's sent ("62% Cellular, 38% WiFi"), as
+             *     Moblin formats it, while bonding.
              * @default null
              */
             bonding: string | null;
+            /**
+             * @description What each bonding connection sends, in Moblin's order, while bonding.
+             *     Empty from Moblin versions before late October 2026, which only send
+             *     `bonding` and `bonding_rtts`.
+             * @default []
+             */
+            bonding_connections: components["schemas"]["MoblinBondingConnection"][];
             /**
              * @description SRTLA round-trip times per connection, as Moblin formats it.
              * @default null

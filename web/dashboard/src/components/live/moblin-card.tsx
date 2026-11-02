@@ -12,12 +12,19 @@ import {
   Minus,
   Play,
   Plus,
+  SlidersHorizontal,
   Square,
 } from "lucide-react";
 import { useId } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
-import type { MoblinConnection, MoblinStatus, MoblinStatusText, MoblinThermal } from "@/api/types";
+import type {
+  MoblinBondingConnection,
+  MoblinConnection,
+  MoblinStatus,
+  MoblinStatusText,
+  MoblinThermal,
+} from "@/api/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +37,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -43,6 +58,7 @@ import { errorMessage } from "@/lib/errors";
 import { formatKbps } from "@/lib/live-format";
 import {
   batteryLabel,
+  bondingKeys,
   bondingRows,
   canTurnOffConnection,
   MOBLIN_MAX_PRIORITY,
@@ -56,6 +72,8 @@ import {
   zoomLabel,
 } from "@/lib/moblin";
 import { cn } from "@/lib/utils";
+import type { Point } from "@/live/reducer";
+import { BitrateChart } from "./bitrate-chart";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -199,11 +217,14 @@ type Controls = ReturnType<typeof useMoblinControls>;
  */
 export function MoblinCard({
   status,
+  history,
   now,
   path,
   canControl,
 }: {
   status: MoblinStatus | null | undefined;
+  /** Recent throughput per bonding connection, keyed by `bondingKeys`. */
+  history: Record<string, Point[]>;
   now: number;
   path: Path;
   canControl: boolean;
@@ -215,7 +236,7 @@ export function MoblinCard({
 
   const chip = connected
     ? connected.streaming
-      ? { label: "LIVE", tone: "text-live", fill: "bg-live" }
+      ? { label: t`STREAMING`, tone: "text-live", fill: "bg-live" }
       : {
           label: view.kind === "paused" ? t`PAUSED` : t`READY`,
           tone: "text-muted-foreground",
@@ -242,8 +263,17 @@ export function MoblinCard({
             {chip.label}
           </span>
         </span>
-        {connected && controllable && (
-          <StreamToggle controls={controls} streaming={connected.streaming} />
+        {connected && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            {connected.connections.length > 0 && (
+              <MoblinSettingsDialog
+                status={connected}
+                controls={controls}
+                canControl={controllable}
+              />
+            )}
+            {controllable && <StreamToggle controls={controls} streaming={connected.streaming} />}
+          </div>
         )}
       </div>
 
@@ -255,17 +285,29 @@ export function MoblinCard({
         </p>
       )}
 
-      {connected && <Details status={connected} controls={controls} canControl={controllable} />}
+      {connected && (
+        <Details
+          status={connected}
+          history={history}
+          now={now}
+          controls={controls}
+          canControl={controllable}
+        />
+      )}
     </section>
   );
 }
 
 function Details({
   status,
+  history,
+  now,
   controls,
   canControl,
 }: {
   status: MoblinStatus;
+  history: Record<string, Point[]>;
+  now: number;
   controls: Controls;
   canControl: boolean;
 }) {
@@ -283,7 +325,20 @@ function Details({
     <>
       <div className="flex flex-col">
         <span className="font-mono text-xl font-semibold tabular">
-          {status.streaming ? (status.bitrate ?? "—") : t`Not live`}
+          {!status.streaming ? (
+            t`Not live`
+          ) : status.bitrate_kbps != null ? (
+            <>
+              {formatKbps(status.bitrate_kbps)}
+              <span className="text-xs font-normal text-muted-foreground">
+                {" "}
+                <Trans>kbps sent</Trans>
+              </span>
+            </>
+          ) : (
+            // Older Moblin versions only send their own text ("5.1 Mbps, 1.2 GB").
+            (status.bitrate ?? "—")
+          )}
         </span>
         {status.streaming && status.uptime && (
           <span className="text-xs text-muted-foreground">
@@ -318,7 +373,7 @@ function Details({
           ))}
         </dl>
       )}
-      <Bonding status={status} />
+      <Bonding status={status} history={history} now={now} />
       {status.moblink && <Moblink line={status.moblink} />}
 
       {canControl && (
@@ -389,16 +444,42 @@ function Details({
           disabled={!canControl || controls.preset.isPending}
         />
       </div>
-
-      {status.connections.length > 0 && (
-        <Connections status={status} controls={controls} canControl={canControl} />
-      )}
     </>
   );
 }
 
-/** SRTLA bonding: each connection's share of what's sent and its RTT. */
-function Bonding({ status }: { status: MoblinStatus }) {
+/**
+ * Bonding: what each connection sends over the last two minutes, and its RTT. Older
+ * Moblin versions only say each one's share, shown as bars.
+ */
+function Bonding({
+  status,
+  history,
+  now,
+}: {
+  status: MoblinStatus;
+  history: Record<string, Point[]>;
+  now: number;
+}) {
+  if (status.bonding_connections.length > 0) {
+    const keys = bondingKeys(status.bonding_connections);
+    return (
+      <div className="flex flex-col gap-1 text-xs">
+        <span className="text-muted-foreground">
+          <Trans>Bonding</Trans>
+        </span>
+        <ul className="flex flex-col divide-y divide-divider border-y border-divider">
+          {status.bonding_connections.map((connection, i) => {
+            const key = keys[i] ?? connection.name;
+            return (
+              <BondingRow key={key} connection={connection} points={history[key] ?? []} now={now} />
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   if (!status.bonding && !status.bonding_rtts) return null;
   const rows = bondingRows(status.bonding, status.bonding_rtts);
 
@@ -442,6 +523,42 @@ function Bonding({ status }: { status: MoblinStatus }) {
         </>
       )}
     </div>
+  );
+}
+
+/** One bonding connection, laid out like a BELABOX interface. */
+function BondingRow({
+  connection,
+  points,
+  now,
+}: {
+  connection: MoblinBondingConnection;
+  points: Point[];
+  now: number;
+}) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <span className="w-20 shrink-0 text-sm font-semibold break-words">{connection.name}</span>
+      <BitrateChart
+        points={points}
+        now={now}
+        low={null}
+        offline={null}
+        thresholds={false}
+        tone="text-live"
+        height={28}
+        className="min-w-0 flex-1"
+      />
+      <span className="w-14 shrink-0 text-right font-mono text-sm tabular">
+        {formatKbps(connection.kbps)}
+      </span>
+      <span
+        className="w-12 shrink-0 text-right font-mono text-muted-foreground tabular"
+        title={t`Round-trip time`}
+      >
+        {connection.rtt_ms != null ? `${connection.rtt_ms} ms` : "—"}
+      </span>
+    </li>
   );
 }
 
@@ -562,6 +679,43 @@ function Zoom({
 }
 
 /**
+ * What doesn't fit on the card: for now Moblin's connection priorities. Everyone who sees
+ * the card may look; only controllers change them.
+ */
+function MoblinSettingsDialog({
+  status,
+  controls,
+  canControl,
+}: {
+  status: MoblinStatus;
+  controls: Controls;
+  canControl: boolean;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="outline" className="size-8" aria-label={t`Moblin settings`}>
+          <SlidersHorizontal className="size-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex max-h-[88dvh] flex-col gap-4 sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            <Trans>Moblin settings</Trans>
+          </DialogTitle>
+          <DialogDescription>
+            <Trans>Which of Moblin’s bonding connections it uses, and which it prefers.</Trans>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex min-h-0 flex-col">
+          <Connections status={status} controls={controls} canControl={canControl} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
  * Moblin's SRTLA bonding connections. Their on/off and priorities only apply while
  * connection priorities are on; off, Moblin uses every connection alike.
  */
@@ -578,12 +732,9 @@ function Connections({
   const id = useId();
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
-      <div className="flex items-center justify-between gap-2">
-        <Label
-          htmlFor={id}
-          className="text-xs font-normal tracking-wider text-muted-foreground uppercase"
-        >
+    <div className="flex min-h-0 flex-col gap-1.5">
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-sm font-semibold">
           <Trans>Connection priorities</Trans>
         </Label>
         <Switch
@@ -594,14 +745,14 @@ function Connections({
         />
       </div>
       {!enabled && (
-        <p className="text-xs text-muted-foreground">
+        <p className="shrink-0 text-xs text-muted-foreground">
           <Trans>
             Off: Moblin uses every connection alike. Turn on to switch connections off or prefer
             one. Only SRTLA streams use these.
           </Trans>
         </p>
       )}
-      <ul className="flex flex-col divide-y divide-divider">
+      <ul className="flex min-h-0 flex-col divide-y divide-divider overflow-y-auto border-y border-divider">
         {status.connections.map((connection) => (
           <ConnectionRow
             key={connection.id}

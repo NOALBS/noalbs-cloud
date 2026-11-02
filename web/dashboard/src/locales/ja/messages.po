@@ -3701,6 +3701,7 @@ msgid "kbps"
 msgstr "kbps"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "kbps sent"
 msgstr "kbps（送信）"
 
@@ -4399,6 +4400,10 @@ msgstr "Moblinの録画が停止しました"
 #: src/lib/live-format.ts
 msgid "Moblin scene {0}"
 msgstr "Moblinのシーン {0}"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin settings"
+msgstr "Moblin設定"
 
 #: src/lib/live-format.ts
 msgid "Moblin stealth mode off"
@@ -6490,6 +6495,10 @@ msgstr "{name} さんのロール"
 msgid "Roles"
 msgstr "ロール"
 
+#: src/components/live/moblin-card.tsx
+msgid "Round-trip time"
+msgstr "往復時間 (RTT)"
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP入力 - {stream}"
@@ -7495,6 +7504,7 @@ msgid "Stream stopped"
 msgstr "配信を停止しました"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "配信中"
 
@@ -9008,6 +9018,10 @@ msgstr "エンコーダーの映像の送信先です。NOALBSはその統計を
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Where your encoder sends video. NOALBS uses the first one in the list that is receiving."
 msgstr "エンコーダーの映像の送信先です。NOALBSはリストの中で受信している最初のサーバーを使用します。"
+
+#: src/components/live/moblin-card.tsx
+msgid "Which of Moblin’s bonding connections it uses, and which it prefers."
+msgstr "Moblinがどのボンディング接続を使い、どれを優先するか。"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."

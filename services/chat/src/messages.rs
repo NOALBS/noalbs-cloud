@@ -937,7 +937,18 @@ fn moblin_stats(lang: &str, status: &MoblinStatus) -> String {
     if let Some(bitrate) = &status.bitrate {
         parts.push(bitrate.clone());
     }
-    if let Some(bonding) = &status.bonding {
+    // What each connection sends, from Moblin versions that say; otherwise their shares.
+    let bonding = if status.bonding_connections.is_empty() {
+        status.bonding.clone()
+    } else {
+        let connections: Vec<String> = status
+            .bonding_connections
+            .iter()
+            .map(|connection| format!("{} {} kbps", connection.name, kbps(lang, connection.kbps)))
+            .collect();
+        Some(connections.join(", "))
+    };
+    if let Some(bonding) = bonding {
         parts.push(tr!(lang, "Bonding: {bonding}", bonding = bonding));
     }
     if let Some(level) = status.battery_level {
@@ -1095,6 +1106,27 @@ mod tests {
         assert_eq!(
             text("en", &Msg::MoblinStats(Box::new(status))),
             "Moblin (live, 0:12:03) | 5.1 Mbps, 1.2 GB | Bonding: 62% Cellular, 38% WiFi | Battery 87% | Getting hot"
+        );
+        let with_numbers = live::MoblinStatus {
+            streaming: true,
+            bonding: Some("62% Cellular, 38% WiFi".into()),
+            bonding_connections: vec![
+                live::MoblinBondingConnection {
+                    name: "Cellular".into(),
+                    kbps: 3200,
+                    rtt_ms: Some(48),
+                },
+                live::MoblinBondingConnection {
+                    name: "WiFi".into(),
+                    kbps: 1960,
+                    rtt_ms: None,
+                },
+            ],
+            ..Default::default()
+        };
+        assert_eq!(
+            text("en", &Msg::MoblinStats(Box::new(with_numbers))),
+            "Moblin (live) | Bonding: Cellular 3,200 kbps, WiFi 1,960 kbps"
         );
         assert_eq!(
             text("en", &Msg::MoblinStats(Box::default())),

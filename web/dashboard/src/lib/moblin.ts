@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import type { MoblinStatus, MoblinThermal } from "@/api/types";
+import type { MoblinBondingConnection, MoblinStatus, MoblinThermal } from "@/api/types";
 
 /** Shorter passwords are refused (the API checks it too). */
 export const MOBLIN_MIN_PASSWORD = 8;
@@ -94,6 +94,19 @@ export function canTurnOffConnection(
   return connections.some((connection) => connection.id !== id && connection.enabled);
 }
 
+/**
+ * A key per bonding connection, to keep its graph: its name, with "#2", "#3", …
+ * when names repeat (Moblin names connections by type, e.g. two "Ethernet").
+ */
+export function bondingKeys(connections: MoblinBondingConnection[]): string[] {
+  const seen = new Map<string, number>();
+  return connections.map(({ name }) => {
+    const count = (seen.get(name) ?? 0) + 1;
+    seen.set(name, count);
+    return count === 1 ? name : `${name}#${count}`;
+  });
+}
+
 export interface BondingRow {
   name: string;
   /** Share of what's sent, %. */
@@ -103,7 +116,7 @@ export interface BondingRow {
 }
 
 /**
- * Moblin's bonding lines ("94% WiFi, 6% IP15" and "35 ms WiFi, 101 ms IP15") as one
+ * Older Moblin's bonding lines ("94% WiFi, 6% IP15" and "35 ms WiFi, 101 ms IP15") as one
  * row per connection, in Moblin's order; `null` if they don't look like that.
  */
 export function bondingRows(bonding: string | null, rtts: string | null): BondingRow[] | null {

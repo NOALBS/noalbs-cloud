@@ -16923,6 +16923,34 @@
           }
         }
       },
+      "MoblinBondingConnection": {
+        "type": "object",
+        "description": "What one of Moblin's bonding connections sends. The name is Moblin's\n(\"Cellular\", \"WiFi\", a Moblink relay's or an interface's name), which may\ndiffer from the name in [`MoblinConnection`].",
+        "required": [
+          "name",
+          "kbps"
+        ],
+        "properties": {
+          "kbps": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What it sent in Moblin's last second, kbps (retransmissions included).",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "rtt_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Round-trip time, ms, once Moblin has measured one.",
+            "minimum": 0
+          }
+        }
+      },
       "MoblinConnection": {
         "type": "object",
         "description": "One of Moblin's SRTLA bonding connections.",
@@ -17039,6 +17067,16 @@
             "description": "What Moblin sends, as it formats it (\"5.2 Mbps, 1.3 GB\"), while live.",
             "default": null
           },
+          "bitrate_kbps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "What Moblin sends, kbps, while live (Moblin since late October 2026).",
+            "default": null,
+            "minimum": 0
+          },
           "bitrate_preset_id": {
             "type": [
               "string",
@@ -17059,8 +17097,16 @@
               "string",
               "null"
             ],
-            "description": "SRTLA bonding per connection, as Moblin formats it.",
+            "description": "Each connection's share of what's sent (\"62% Cellular, 38% WiFi\"), as\nMoblin formats it, while bonding.",
             "default": null
+          },
+          "bonding_connections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoblinBondingConnection"
+            },
+            "description": "What each bonding connection sends, in Moblin's order, while bonding.\nEmpty from Moblin versions before late October 2026, which only send\n`bonding` and `bonding_rtts`.",
+            "default": []
           },
           "bonding_rtts": {
             "type": [

@@ -8,9 +8,10 @@
 //! to the whole Assistant URL instead, e.g. through the dashboard's proxy),
 //! answers the challenge like Moblin (`remoteControlHashPassword`), sends its
 //! state (with three zoom presets), answers `getStatus` (with a system monitor,
-//! Moblink and DJI line), `getSettings` (two scenes, three bitrate presets, three
-//! bonding connections) and the `set…` requests, pings every 30 s and reconnects
-//! every 5 s like Moblin.
+//! Moblink and DJI line, and the bitrate split over the bonding connections in
+//! use), `getSettings` (two scenes, three bitrate presets, three bonding
+//! connections, or as many as `CONNECTIONS` says) and the `set…` requests,
+//! pings every 30 s and reconnects every 5 s like Moblin.
 //!
 //! Type into its terminal: `live` / `stop` (as if tapped on the phone), `mute` /
 //! `unmute`, `scene` (next scene), `torch`, `drop` (closes the connection; it
@@ -48,8 +49,8 @@ const ZOOM_PRESETS: [(&str, &str, f64); 3] = [
 const NO_ZOOM_PRESET: &str = "99999999-0000-4000-8000-000000000000";
 
 struct Connection {
-    id: &'static str,
-    name: &'static str,
+    id: String,
+    name: String,
     priority: i64,
     enabled: bool,
 }
@@ -141,12 +142,65 @@ impl Phone {
                 json!({ "message": format!("{}:{:02}:{:02}", secs / 3600, secs / 60 % 60, secs % 60), "ok": true }),
             );
             top_right.insert(
+                "bitrateInfo".into(),
+                json!({ "bitsPerSecond": (kbps + wobble) * 1000, "totalBytes": self.seconds_live * kbps * 125 }),
+            );
+            // The bitrate split over the connections in use, by priority, each
+            // wobbling on its own.
+            let in_use: Vec<(usize, &Connection)> = self
+                .connections
+                .iter()
+                .enumerate()
+                .filter(|(_, connection)| !self.priorities_enabled || connection.enabled)
+                .collect();
+            let weight = |i: usize, connection: &Connection| {
+                let priority = if self.priorities_enabled {
+                    connection.priority as u64
+                } else {
+                    1
+                };
+                priority * (100 + (self.seconds_live * (13 + 17 * i as u64)) % 60)
+            };
+            let total_weight: u64 = in_use
+                .iter()
+                .map(|(i, c)| weight(*i, c))
+                .sum::<u64>()
+                .max(1);
+            let bonding: Vec<(&str, u64, i64)> = in_use
+                .iter()
+                .map(|(i, connection)| {
+                    let bytes = (kbps + wobble) * 125 * weight(*i, connection) / total_weight;
+                    let rtt = 40 + (*i as i64) * 35 + (self.seconds_live as i64 * 7) % 20;
+                    (connection.name.as_str(), bytes, rtt)
+                })
+                .collect();
+            let total_bytes = bonding
+                .iter()
+                .map(|(_, bytes, _)| bytes)
+                .sum::<u64>()
+                .max(1);
+            let shares: Vec<String> = bonding
+                .iter()
+                .map(|(name, bytes, _)| format!("{}% {name}", 100 * bytes / total_bytes))
+                .collect();
+            let rtts: Vec<String> = bonding
+                .iter()
+                .map(|(name, _, rtt)| format!("{rtt} ms {name}"))
+                .collect();
+            top_right.insert(
                 "srtla".into(),
-                json!({ "message": "62% Cellular, 38% WiFi", "ok": true }),
+                json!({ "message": shares.join(", "), "ok": true }),
+            );
+            top_right.insert(
+                "bondingInfo".into(),
+                bonding
+                    .iter()
+                    .map(|(name, bytes, rtt)| json!({ "name": name, "bytesPerSecond": bytes, "rtt": rtt }))
+                    .collect(),
             );
             top_right.insert(
                 "srtlaRtts".into(),
-                json!({ "message": "Cellular 84 ms, WiFi 41 ms", "ok": true }),
+                json!({ "message": rtts.join(", "), "ok": true }),
             );
         }
         json!({ "getStatus": {
@@ -166,6 +220,26 @@ impl Phone {
             "topRight": top_right,
         } })
     }
+}
+
+/// Cellular, WiFi and a Moblink relay, then USB modems up to `CONNECTIONS` (default 3),
+/// for trying a long list.
+fn connections() -> Vec<Connection> {
+    let count = std::env::var("CONNECTIONS")
+        .ok()
+        .and_then(|count| count.parse().ok())
+        .unwrap_or(3usize);
+    let names = ["Cellular", "WiFi", "Moblink: iPhone 12"];
+    (0..count.max(1))
+        .map(|i| Connection {
+            id: format!("C0000000-0000-4000-8000-{:012}", i + 1),
+            name: names
+                .get(i)
+                .map_or_else(|| format!("USB modem {}", i - 2), |name| (*name).to_owned()),
+            priority: 1,
+            enabled: true,
+        })
+        .collect()
 }
 
 fn hash_password(challenge: &str, salt: &str, password: &str) -> String {
@@ -200,26 +274,7 @@ async fn main() {
         stealth_mode: false,
         zoom: 1.0,
         priorities_enabled: false,
-        connections: vec![
-            Connection {
-                id: "C0000000-0000-4000-8000-000000000001",
-                name: "Cellular",
-                priority: 1,
-                enabled: true,
-            },
-            Connection {
-                id: "C0000000-0000-4000-8000-000000000002",
-                name: "WiFi",
-                priority: 1,
-                enabled: true,
-            },
-            Connection {
-                id: "C0000000-0000-4000-8000-000000000003",
-                name: "Moblink: iPhone 12",
-                priority: 1,
-                enabled: true,
-            },
-        ],
+        connections: connections(),
     }));
     // Partial states from the terminal, or `None` to drop the connection.
     let (events, mut events_rx) = mpsc::unbounded_channel::<Option<Value>>();
@@ -416,7 +471,7 @@ async fn run(
                                     (None, None)
                                 }
                                 "setSrtConnectionPriority" => {
-                                    if let Some(connection) = phone.connections.iter_mut().find(|c| Some(c.id) == args["id"].as_str()) {
+                                    if let Some(connection) = phone.connections.iter_mut().find(|c| Some(c.id.as_str()) == args["id"].as_str()) {
                                         connection.priority = args["priority"].as_i64().unwrap_or(1).clamp(1, 10);
                                         connection.enabled = args["enabled"].as_bool().unwrap_or(true);
                                         println!("{}: priority {}, {}", connection.name, connection.priority, if connection.enabled { "on" } else { "off" });

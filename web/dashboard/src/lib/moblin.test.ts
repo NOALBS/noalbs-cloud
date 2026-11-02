@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MoblinStatus } from "@/api/types";
 import {
   batteryLabel,
+  bondingKeys,
   bondingRows,
   canTurnOffConnection,
   moblinkRelays,
@@ -25,8 +26,10 @@ const status = (change: Partial<MoblinStatus> = {}): MoblinStatus => ({
   battery_charging: null,
   thermal: null,
   bitrate: null,
+  bitrate_kbps: null,
   bonding: null,
   bonding_rtts: null,
+  bonding_connections: [],
   uptime: null,
   scene_id: null,
   scenes: [],
@@ -112,6 +115,13 @@ describe("system monitor, zoom and connections", () => {
 });
 
 describe("bonding and Moblink lines", () => {
+  it("keys bonding connections by name, numbering repeats", () => {
+    const connection = (name: string) => ({ name, kbps: 0, rtt_ms: null });
+    expect(
+      bondingKeys([connection("WiFi"), connection("Ethernet"), connection("Ethernet")]),
+    ).toEqual(["WiFi", "Ethernet", "Ethernet#2"]);
+  });
+
   it("merges share and RTT per connection", () => {
     expect(
       bondingRows("94% WiFi, 3% IP15, 3% IP15-50", "35 ms WiFi, 101 ms IP15, -1 ms IP15-50"),

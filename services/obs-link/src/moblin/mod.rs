@@ -47,7 +47,9 @@ const MAX_PASSWORD_ATTEMPTS: u64 = 10;
 const ATTEMPT_COUNT_TRIES: usize = 5;
 /// Log a wrong password at most this often per switcher.
 const WRONG_PASSWORD_LOG_INTERVAL: Duration = Duration::from_secs(600);
-const STATUS_POLL: Duration = Duration::from_secs(2);
+/// Moblin measures its bitrate and bonding connections every second, so the
+/// dashboard's graphs get every reading (like BELABOX's).
+const STATUS_POLL: Duration = Duration::from_secs(1);
 /// Moblin doesn't tell us when its scenes or presets change.
 const SETTINGS_POLL: Duration = Duration::from_secs(30);
 const PING_INTERVAL: Duration = Duration::from_secs(30);
