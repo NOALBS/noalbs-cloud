@@ -16,6 +16,8 @@ as well as English.
   change. They're whole sentences, and numbers are written the way your language writes them. They build on the
   translations from the original NOALBS, whose translators are credited on the [licenses page](/licenses).
 
+![The Bot language setting on the Chat & commands page](images/2026-10-31-bot-language.webp)
+
 ## Translated with AI
 
 The translations were made with AI help and most haven't been checked by a native speaker yet, so some of them may
