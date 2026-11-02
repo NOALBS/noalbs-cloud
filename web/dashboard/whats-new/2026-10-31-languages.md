@@ -1,6 +1,6 @@
 ---
 title: NOALBS Cloud now speaks 18 languages
-summary: Pick your language from the account menu, and set the chat bot's language on the Chat & commands page.
+summary: Pick your language from the account menu, and have the chat bot reply to commands in it too.
 image: images/2026-10-31-languages.webp
 image_alt: The dashboard in German
 ---
@@ -11,8 +11,10 @@ as well as English.
 
 - **Dashboard:** open the account menu at the bottom left and pick one under **Language**. **Auto** follows your
   browser's language.
-- **Chat bot:** open a switcher, go to **Chat & commands** and pick a **Bot language**. The bot answers in chat in
-  that language.
+- **Chat bot commands:** the bot now replies to commands in your language too. Open a switcher, go to
+  **Chat & commands** and pick a **Bot language**. The commands you type stay the same; only the bot's replies
+  change. They're whole sentences, and numbers are written the way your language writes them. They build on the
+  translations from the original NOALBS, whose translators are credited on the [licenses page](/licenses).
 
 ## Translated with AI
 
