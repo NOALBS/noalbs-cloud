@@ -34,6 +34,7 @@ use std::time::Duration;
 
 use async_nats::jetstream::{self, kv, stream};
 use chrono::{DateTime, Utc};
+use db::connect::{ConnectAccess, Watchdog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -283,6 +284,37 @@ pub struct SwitcherStatus {
     /// NOALBS. `null` while not streaming, and while paused (no switcher runs).
     #[serde(default)]
     pub stream_frames: Option<ObsFrames>,
+    /// Status reported by a NOALBS Cloud Connect desktop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pc: Option<PcStatus>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct PcStatus {
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+    #[serde(default)]
+    pub device_name: Option<String>,
+    pub obs: PcObsState,
+    #[serde(default)]
+    pub obs_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum PcObsState {
+    #[default]
+    Unknown,
+    NotRunning,
+    Starting,
+    Connected,
+    NotResponding,
+    WaitingForInput,
+    SafeMode,
+    Crashed,
+    WebsocketDisabled,
 }
 
 /// OBS's frame counters (`GetStats`), which run since OBS started.
@@ -330,6 +362,7 @@ impl SwitcherStatus {
             active_server_id: None,
             paused: false,
             stream_frames: None,
+            pc: None,
         }
     }
 }
@@ -587,6 +620,23 @@ pub enum EventDetail {
     MoblinError {
         message: String,
     },
+    ConnectDevicePaired {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectDeviceRevoked {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectPermissionsChanged {
+        obs_control: ConnectAccess,
+        logs: ConnectAccess,
+        by: Option<String>,
+    },
+    ConnectWatchdogChanged {
+        mode: Watchdog,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
@@ -648,7 +698,10 @@ pub struct Takeover {
 mod tests {
     use uuid::Uuid;
 
-    use super::{BelaboxChange, EventDetail, ObsFrames, SwitchReason};
+    use super::{
+        BelaboxChange, ConnectAccess, EventDetail, ObsFrames, PcObsState, SwitchReason,
+        SwitcherStatus, Watchdog,
+    };
 
     #[test]
     fn frames_count_from_the_stream_start() {
@@ -804,6 +857,23 @@ mod tests {
                 priority: 3,
                 by: Some("kate".into()),
             },
+            EventDetail::ConnectDevicePaired {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectDeviceRevoked {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectPermissionsChanged {
+                obs_control: ConnectAccess::Admins,
+                logs: ConnectAccess::Owners,
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectWatchdogChanged {
+                mode: Watchdog::RestartResume,
+                by: Some("kate".into()),
+            },
         ];
 
         for event in events {
@@ -817,6 +887,20 @@ mod tests {
         let (kind, data) = EventDetail::ObsConnected.into_parts();
         assert_eq!(kind, "obs_connected");
         assert_eq!(data, serde_json::json!({}));
+    }
+
+    #[test]
+    fn connect_pc_status_is_optional_and_has_snake_case_states() {
+        let status = SwitcherStatus::connected(false);
+        let value = serde_json::to_value(&status).unwrap();
+        assert!(value.get("pc").is_none());
+
+        let parsed: SwitcherStatus = serde_json::from_value(value).unwrap();
+        assert_eq!(parsed.pc, None);
+        assert_eq!(
+            serde_json::to_string(&PcObsState::NotResponding).unwrap(),
+            "\"not_responding\""
+        );
     }
 }
 

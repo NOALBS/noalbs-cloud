@@ -99,6 +99,9 @@ export const queryKeys = {
     ["workspaces", workspaceId, "switchers", switcherId, "moblin-connection"] as const,
   /** A just-issued browser-source URL; only known right after it is created. */
   connectLink: (switcherId: string) => ["connect-link", switcherId] as const,
+  connectPairing: (code: string) => ["connect-pairing", code] as const,
+  connectDevices: (workspaceId: string, switcherId: string) =>
+    ["workspaces", workspaceId, "switchers", switcherId, "connect", "devices"] as const,
 };
 
 export const meQuery = queryOptions({
@@ -239,6 +242,29 @@ export const switcherQuery = (workspaceId: string, switcherId: string) =>
     queryFn: () =>
       unwrap(
         api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}", {
+          params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
+        }),
+      ),
+  });
+
+export const connectPairingQuery = (userCode: string) =>
+  queryOptions({
+    queryKey: queryKeys.connectPairing(userCode),
+    queryFn: () =>
+      unwrap(
+        api.GET("/connect/pair/{user_code}", {
+          params: { path: { user_code: userCode } },
+        }),
+      ),
+    retry: false,
+  });
+
+export const connectDevicesQuery = (workspaceId: string, switcherId: string) =>
+  queryOptions({
+    queryKey: queryKeys.connectDevices(workspaceId, switcherId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/devices", {
           params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
         }),
       ),

@@ -14,7 +14,7 @@ use std::{
 use async_nats::jetstream;
 use common::{crypto::DataKey, shutdown};
 use futures_util::{SinkExt, StreamExt};
-use live::{EventDetail, SwitcherStatus, Takeover};
+use live::{EventDetail, PcObsState, PcStatus, SwitcherStatus, Takeover};
 use obs_actions::types::{Event, ObsMessage, ObsRequest, Reidentify};
 use opentelemetry::KeyValue;
 use serde::{Deserialize, Serialize};
@@ -239,10 +239,19 @@ enum Flow {
     Close,
 }
 
+fn reset_obs_status(status: &mut SwitcherStatus) {
+    let (auto_switch, paused, pc) = (status.auto_switch, status.paused, status.pc.clone());
+    *status = SwitcherStatus::connected(auto_switch);
+    status.paused = paused;
+    status.pc = pc;
+}
+
 /// A browser source that identified as a switcher.
 struct Session {
     switcher_id: Uuid,
     token_hash: [u8; 32],
+    device_id: Option<Uuid>,
+    device_token_hash: Option<String>,
     /// The OBS settings last sent, to notice changes.
     obs_settings: (i32, Option<Vec<u8>>),
     status: StatusHandle,
@@ -426,8 +435,17 @@ impl Connection {
         let response = serde_json::from_str::<Response>(message)?;
 
         match response.response {
-            ResponseKind::Identify(identify) => return self.identify(&identify.token).await,
+            ResponseKind::Identify(identify) => return self.identify(&identify).await,
             ResponseKind::ObsWsConnected(connected) => self.obs_connection_changed(connected).await,
+            ResponseKind::PcState { obs } => {
+                if let Some(session) = self.session.as_ref() {
+                    session.status.update(|status| {
+                        if let Some(pc) = &mut status.pc {
+                            pc.obs = obs;
+                        }
+                    });
+                }
+            }
             ResponseKind::ObsRawResponse(obs_response) => {
                 if let Some(token) = response.token
                     && let Some(pending) = self.requests.remove(&token)
@@ -476,16 +494,32 @@ impl Connection {
         Ok(Flow::Continue)
     }
 
-    async fn identify(&mut self, token: &str) -> Result<Flow> {
+    async fn identify(&mut self, identify: &Identify) -> Result<Flow> {
         if self.session.is_some() {
             tracing::warn!("Browser source identified twice; ignoring");
             return Ok(Flow::Continue);
         }
 
-        let token_hash = common::tokens::hash(token);
-        let Some(switcher) =
+        let token_hash = common::tokens::hash(&identify.token);
+        let device_token_hash = common::tokens::hash_text(&identify.token);
+        let (switcher, device, device_hash) = if let Some(switcher) =
             db::switchers::by_connect_token_hash(&self.shared.db, &token_hash).await?
-        else {
+        {
+            (switcher, None, None)
+        } else if let Some((device, switcher)) =
+            db::connect::by_token_hash(&self.shared.db, &device_token_hash).await?
+        {
+            let os = identify
+                .os
+                .as_deref()
+                .filter(|os| matches!(*os, "windows" | "linux" | "macos"))
+                .unwrap_or(&device.os);
+            if !db::connect::touch(&self.shared.db, device.id, os, &identify.version).await? {
+                tracing::info!("Connect device was revoked during authentication");
+                return self.refuse(RequestErrorKind::AuthenticationFailed).await;
+            }
+            (switcher, Some(device), Some(device_token_hash))
+        } else {
             tracing::info!("Browser source used an unknown connect token");
             return self.refuse(RequestErrorKind::AuthenticationFailed).await;
         };
@@ -505,6 +539,14 @@ impl Connection {
 
         let mut initial = SwitcherStatus::connected(switcher.bitrate_switcher_enabled);
         initial.paused = paused;
+        if identify.client.as_deref() == Some("connect") {
+            initial.pc = Some(PcStatus {
+                device_id: device.as_ref().map(|device| device.id),
+                device_name: device.as_ref().map(|device| device.name.clone()),
+                obs: PcObsState::Unknown,
+                obs_version: identify.obs_version.clone(),
+            });
+        }
         let status = StatusHandle::new(initial);
         let attribution = SharedAttribution::default();
         let tasks = vec![
@@ -551,6 +593,8 @@ impl Connection {
         self.session = Some(Session {
             switcher_id,
             token_hash,
+            device_id: device.as_ref().map(|device| device.id),
+            device_token_hash: device_hash,
             obs_settings: (switcher.port, switcher.password.clone()),
             status,
             attribution,
@@ -607,9 +651,7 @@ impl Connection {
             self.stop_switcher();
             if let Some(session) = self.session.as_ref() {
                 session.status.update(|status| {
-                    let (auto_switch, paused) = (status.auto_switch, status.paused);
-                    *status = SwitcherStatus::connected(auto_switch);
-                    status.paused = paused;
+                    reset_obs_status(status);
                 });
             }
         }
@@ -717,10 +759,21 @@ impl Connection {
             return Ok(Flow::Continue);
         };
         let switcher_id = session.switcher_id;
-        let switcher = db::switchers::get(&self.shared.db, switcher_id).await?;
+        let switcher = if let Some(token_hash) = session.device_token_hash.as_deref() {
+            db::connect::by_token_hash(&self.shared.db, token_hash)
+                .await?
+                .filter(|(device, switcher)| {
+                    Some(device.id) == session.device_id && switcher.id == switcher_id
+                })
+                .map(|(_, switcher)| switcher)
+        } else {
+            db::switchers::get(&self.shared.db, switcher_id)
+                .await?
+                .filter(|switcher| switcher.connect_token_hash == session.token_hash)
+        };
 
-        // Deleted, or its connect token was replaced: this link no longer works.
-        let Some(switcher) = switcher.filter(|s| s.connect_token_hash == session.token_hash) else {
+        // Deleted or revoked, or its link was replaced: this session no longer works.
+        let Some(switcher) = switcher else {
             tracing::info!(%switcher_id, "Switcher deleted or its link replaced; disconnecting");
             return self.refuse(RequestErrorKind::AuthenticationFailed).await;
         };
@@ -993,13 +1046,99 @@ struct Response {
 enum ResponseKind {
     Identify(Identify),
     ObsWsConnected(bool),
+    PcState { obs: PcObsState },
     ObsRawResponse(serde_json::Value),
     ObsRawEvent(serde_json::Value),
     Error(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Identify {
     pub token: String,
     pub version: String,
+    #[serde(default)]
+    pub client: Option<String>,
+    #[serde(default)]
+    pub capabilities: Vec<String>,
+    #[serde(default)]
+    pub os: Option<String>,
+    #[serde(default)]
+    pub obs_version: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use live::{PcObsState, PcStatus, SwitcherStatus};
+    use serde_json::json;
+    use uuid::Uuid;
+
+    use super::{Identify, Response, ResponseKind, reset_obs_status};
+
+    #[test]
+    fn old_browser_source_identify_messages_still_parse() {
+        let response: Response = serde_json::from_value(json!({
+            "identify": { "token": "browser-token", "version": "1.0" }
+        }))
+        .unwrap();
+        let ResponseKind::Identify(identify) = response.response else {
+            panic!("identify message expected");
+        };
+        assert_eq!(identify.token, "browser-token");
+        assert_eq!(identify.version, "1.0");
+        assert_eq!(identify.client, None);
+        assert!(identify.capabilities.is_empty());
+        assert_eq!(identify.os, None);
+        assert_eq!(identify.obs_version, None);
+    }
+
+    #[test]
+    fn connect_identify_fields_are_camel_case_and_pc_state_parses() {
+        let identify: Identify = serde_json::from_value(json!({
+            "token": "device-token",
+            "version": "2.0",
+            "client": "connect",
+            "capabilities": ["obs"],
+            "os": "linux",
+            "obsVersion": "31.0"
+        }))
+        .unwrap();
+        assert_eq!(identify.obs_version.as_deref(), Some("31.0"));
+        let response: Response = serde_json::from_value(json!({
+            "pcState": { "obs": "crashed" }
+        }))
+        .unwrap();
+        assert!(matches!(
+            response.response,
+            ResponseKind::PcState {
+                obs: PcObsState::Crashed
+            }
+        ));
+    }
+
+    #[test]
+    fn resetting_obs_status_preserves_connect_pc_status() {
+        let mut status = SwitcherStatus::connected(true);
+        status.paused = true;
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Studio PC".into()),
+            obs: PcObsState::NotResponding,
+            obs_version: Some("31.0".into()),
+        });
+
+        reset_obs_status(&mut status);
+
+        assert!(status.auto_switch);
+        assert!(status.paused);
+        assert_eq!(
+            status.pc,
+            Some(PcStatus {
+                device_id: Some(Uuid::nil()),
+                device_name: Some("Studio PC".into()),
+                obs: PcObsState::NotResponding,
+                obs_version: Some("31.0".into()),
+            })
+        );
+    }
 }

@@ -17,7 +17,6 @@ use axum::{
         sse::{Event, KeepAlive, Sse},
     },
 };
-use db::workspaces::WorkspaceRoleEnum;
 use futures_util::{Stream, StreamExt, stream};
 use live::{BelaboxRefusal, EventDetail, MoblinRefusal, SwitcherEvent};
 use obs_actions::{
@@ -36,7 +35,7 @@ use crate::{
         SwitcherAuthorized, SwitcherControl, SwitcherManage, SwitcherView, Via, user_display_name,
     },
     routes::{ApiError, ApiResult, ErrorBody},
-    screenshots::{self, Announce, Viewer},
+    screenshots::{self, Announce},
 };
 
 pub fn router() -> OpenApiRouter<ApiState> {
@@ -1602,21 +1601,7 @@ async fn obs_screenshot(
     let switcher_id = access.switcher.id;
     let status = state.status_of(switcher_id).await;
     if !status.as_ref().is_some_and(|status| status.streaming) {
-        let viewer = match access.workspace.via {
-            Via::Support { .. } => Viewer::Support,
-            Via::Organization => Viewer::Owner,
-            Via::Member => match db::workspaces::member_role(
-                &state.db,
-                access.workspace.workspace_id,
-                access.workspace.user.id(),
-            )
-            .await?
-            {
-                Some(WorkspaceRoleEnum::Owner) => Viewer::Owner,
-                Some(WorkspaceRoleEnum::Admin) => Viewer::Admin,
-                _ => Viewer::Operator,
-            },
-        };
+        let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
         if !screenshots::allowed_off_air(access.switcher.preview_off_air, viewer) {
             return Err(ApiError::forbidden(
                 "preview_off_air",

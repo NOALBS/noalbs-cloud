@@ -78,6 +78,26 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         }[event.data.off_air],
         detail: by(event.data.by, t`from the dashboard`),
       };
+    case "connect_device_paired":
+      return {
+        title: t`Connected ${event.data.name}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "connect_device_revoked":
+      return {
+        title: t`Disconnected ${event.data.name}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "connect_permissions_changed":
+      return {
+        title: t`Connect permissions changed`,
+        detail: t`OBS control: ${event.data.obs_control} · Logs: ${event.data.logs} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "connect_watchdog_changed":
+      return {
+        title: t`Connect watchdog changed`,
+        detail: t`Mode: ${event.data.mode} ${by(event.data.by, t`from the dashboard`)}`,
+      };
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

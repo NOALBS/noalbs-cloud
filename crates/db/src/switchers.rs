@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::error::Result;
+use crate::{
+    connect::{ConnectAccess, Watchdog},
+    error::Result,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Switcher {
@@ -78,6 +81,9 @@ pub struct Switcher {
 
     /// Who may watch the OBS preview while the switcher isn't streaming.
     pub preview_off_air: PreviewOffAir,
+    pub connect_obs_control: ConnectAccess,
+    pub connect_logs: ConnectAccess,
+    pub connect_watchdog: Watchdog,
 
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
@@ -682,6 +688,45 @@ pub async fn set_preview_off_air(
     .fetch_one(pool)
     .await?;
 
+    Ok(switcher)
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn set_connect_permissions(
+    pool: &PgPool,
+    switcher_id: Uuid,
+    obs_control: ConnectAccess,
+    logs: ConnectAccess,
+) -> Result<Switcher> {
+    let switcher = sqlx::query_as::<_, Switcher>(
+        "
+        UPDATE switchers
+        SET connect_obs_control = $2, connect_logs = $3
+        WHERE id = $1
+        RETURNING *
+        ",
+    )
+    .bind(switcher_id)
+    .bind(obs_control)
+    .bind(logs)
+    .fetch_one(pool)
+    .await?;
+    Ok(switcher)
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn set_connect_watchdog(
+    pool: &PgPool,
+    switcher_id: Uuid,
+    watchdog: Watchdog,
+) -> Result<Switcher> {
+    let switcher = sqlx::query_as::<_, Switcher>(
+        "UPDATE switchers SET connect_watchdog = $2 WHERE id = $1 RETURNING *",
+    )
+    .bind(switcher_id)
+    .bind(watchdog)
+    .fetch_one(pool)
+    .await?;
     Ok(switcher)
 }
 
