@@ -16,7 +16,8 @@ use connect_core::{
     },
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
-        read_obs_websocket_config, same_obs_identity,
+        read_obs_websocket_config, same_obs_binary, same_obs_identity_for_platform,
+        setup_is_portable_for_platform,
     },
     url_security::{validate_dashboard_url, validate_verification_url},
     watchdog::{Watchdog, WatchdogAction},
@@ -180,10 +181,29 @@ fn validate_setup_identity(
     setups: &[connect_core::config::Setup],
     candidate: &connect_core::config::Setup,
 ) -> Result<(), String> {
-    validate_obs_config_for_platform(&candidate.obs, HostPlatform::current())
-        .map_err(str::to_owned)?;
+    validate_setup_identity_for_platform(setups, candidate, HostPlatform::current())
+}
+
+fn validate_setup_identity_for_platform(
+    setups: &[connect_core::config::Setup],
+    candidate: &connect_core::config::Setup,
+    platform: HostPlatform,
+) -> Result<(), String> {
+    validate_obs_config_for_platform(&candidate.obs, platform).map_err(str::to_owned)?;
     for other in setups.iter().filter(|setup| setup.id != candidate.id) {
-        if !same_obs_identity(candidate, other) {
+        if platform == HostPlatform::Windows && same_obs_binary(candidate, other) {
+            let candidate_portable = setup_is_portable_for_platform(candidate, platform);
+            let other_portable = setup_is_portable_for_platform(other, platform);
+            if candidate_portable != other_portable {
+                let error = if other_portable {
+                    "This OBS is already used by another setup in portable mode; use a separate normal OBS install"
+                } else {
+                    "This OBS is already used by another setup in normal mode; use a separate portable copy of OBS"
+                };
+                return Err(error.into());
+            }
+        }
+        if !same_obs_identity_for_platform(candidate, other, platform) {
             continue;
         }
         let can_share = candidate.obs.shared_config
@@ -1218,6 +1238,46 @@ mod tests {
         assert!(relay_error_requires_pairing_cleanup(
             &connect_core::relay::RelayError::InvalidToken
         ));
+    }
+
+    #[test]
+    fn mixed_normal_and_portable_setups_are_rejected_in_either_order() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        let binary = test_dir.join("obs/bin/64bit/obs64.exe");
+        std::fs::create_dir_all(binary.parent().unwrap()).unwrap();
+        std::fs::write(&binary, []).unwrap();
+
+        let mut normal = Setup::new("Normal OBS".into());
+        normal.obs.binary_path = Some(binary.clone());
+        let mut portable = Setup::new("Portable OBS".into());
+        portable.obs.binary_path = Some(binary);
+        portable.obs.portable = true;
+
+        assert_eq!(
+            validate_setup_identity_for_platform(
+                std::slice::from_ref(&normal),
+                &portable,
+                HostPlatform::Windows
+            ),
+            Err(
+                "This OBS is already used by another setup in normal mode; use a separate portable copy of OBS"
+                    .into()
+            )
+        );
+        assert_eq!(
+            validate_setup_identity_for_platform(
+                std::slice::from_ref(&portable),
+                &normal,
+                HostPlatform::Windows
+            ),
+            Err(
+                "This OBS is already used by another setup in portable mode; use a separate normal OBS install"
+                    .into()
+            )
+        );
+
+        std::fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]
