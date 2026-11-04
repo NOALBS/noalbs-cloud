@@ -1058,21 +1058,29 @@ mod tests {
     async fn connect_watchdog_settings_reach_the_supervisor_channel() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
+        let (first_setting_tx, first_setting_rx) = tokio::sync::oneshot::channel();
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
             let _identify = socket.next().await.unwrap().unwrap();
             let _state = socket.next().await.unwrap().unwrap();
-            for mode in ["restart_resume", "off"] {
-                socket
-                    .send(Message::Text(
-                        json!({"identifyAck":true,"settings":{"connect":{"watchdog":mode}}})
-                            .to_string()
-                            .into(),
-                    ))
-                    .await
-                    .unwrap();
-            }
+            socket
+                .send(Message::Text(
+                    json!({"identifyAck":true,"settings":{"connect":{"watchdog":"restart_resume"}}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
+            first_setting_rx.await.unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"settings":{"connect":{"watchdog":"off"}}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
             let _ = socket.next().await;
         });
         let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
@@ -1096,13 +1104,20 @@ mod tests {
             state_rx,
             watchdog_tx,
         ));
-        for expected in [super::WatchdogMode::RestartResume, super::WatchdogMode::Off] {
-            tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
-                .await
-                .unwrap()
-                .unwrap();
-            assert_eq!(*watchdog_rx.borrow_and_update(), expected);
-        }
+        tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            *watchdog_rx.borrow_and_update(),
+            super::WatchdogMode::RestartResume
+        );
+        first_setting_tx.send(()).unwrap();
+        tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(*watchdog_rx.borrow_and_update(), super::WatchdogMode::Off);
         link.abort();
         server.await.unwrap();
     }
