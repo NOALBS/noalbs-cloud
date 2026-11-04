@@ -326,8 +326,9 @@ impl ConfigStore {
 mod tests {
     use super::{
         AppConfig, ConfigStore, HostPlatform, ObsLaunchConfig, PRODUCTION_API_URL, Setup,
-        validate_obs_config_for_platform,
+        validate_obs_config_for_platform, windows_obs_install_root,
     };
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn config_round_trips_setups_and_defaults() {

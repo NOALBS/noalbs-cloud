@@ -1363,6 +1363,7 @@ mod tests {
         assert_eq!(supervisor.state(&setup), PcObsState::Starting);
         assert!(supervisor.owns_running_process(&setup));
         supervisor.stop(&setup).unwrap();
+        drop(supervisor);
         assert_eq!(build_ui_state(&state).setups[0].obs_state, "not_running");
         std::fs::remove_dir_all(test_dir).unwrap();
     }
