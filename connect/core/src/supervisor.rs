@@ -986,12 +986,33 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
 }
 
 fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
-    process.exe().is_some_and(|exe| same_path(exe, expected))
-        || (cfg!(target_os = "linux")
-            && process.cmd().first().is_some_and(|argv0| {
-                // Nix/makeWrapper may exec a different binary while preserving argv[0].
-                same_path(&resolve_executable(Path::new(argv0)), expected)
-            }))
+    if process.exe().is_some_and(|exe| same_path(exe, expected)) {
+        return true;
+    }
+    if !cfg!(target_os = "linux") {
+        return false;
+    }
+    let Some(exe) = process.exe() else {
+        return false;
+    };
+    is_nix_wrapped_binary(exe, expected)
+        && process.cmd().first().is_some_and(|argv0| {
+            // Nix/makeWrapper may exec a different binary while preserving argv[0].
+            same_path(&resolve_executable(Path::new(argv0)), expected)
+        })
+}
+
+fn is_nix_wrapped_binary(exe: &Path, expected: &Path) -> bool {
+    // Nix makeWrapper/wrapProgram names the underlying binary .<name>-wrapped.
+    let Some(expected_name) = expected.file_name().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    let Some(exe_name) = exe.file_name().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    exe_name
+        .strip_prefix(&format!(".{expected_name}-wrapped"))
+        .is_some_and(|suffix| suffix.chars().all(|character| character == '_'))
 }
 
 fn command_has_option(arguments: &[std::ffi::OsString], option: &str, value: &str) -> bool {
@@ -2339,6 +2360,82 @@ int main(int argc, char **argv) {
         assert_eq!(
             supervisor.state(&setup),
             crate::relay::PcObsState::WaitingForInput
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn nix_wrapped_binary_match_uses_make_wrapper_file_name() {
+        let expected = Path::new("/usr/bin/obs");
+        for name in [".obs-wrapped", ".obs-wrapped_", ".obs-wrapped__"] {
+            assert!(
+                super::is_nix_wrapped_binary(Path::new(name), expected),
+                "{name} should match"
+            );
+        }
+        for name in ["sleep", "obs-wrapped", ".obs-wrappedx", ".other-wrapped"] {
+            assert!(
+                !super::is_nix_wrapped_binary(Path::new(name), expected),
+                "{name} should not match"
+            );
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn argv0_wrapper_with_non_nix_executable_is_not_matched() {
+        struct ChildGuard(std::process::Child);
+
+        impl Drop for ChildGuard {
+            fn drop(&mut self) {
+                let _ = self.0.kill();
+                let _ = self.0.wait();
+            }
+        }
+
+        let directory = tempdir().unwrap();
+        let other_binary = directory.path().join("other-program");
+        let bash_binary = resolve_executable(Path::new("bash"));
+        assert!(bash_binary.is_file());
+        fs::copy(bash_binary, &other_binary).unwrap();
+
+        let wrapper = directory.path().join("obs");
+        fs::write(
+            &wrapper,
+            format!(
+                "#!/usr/bin/env bash\nexec -a \"$0\" \"{}\" -c 'sleep \"$1\"; :' -- \"$@\"\n",
+                other_binary.display()
+            ),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&wrapper).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&wrapper, permissions).unwrap();
+
+        let child = ChildGuard(Command::new(&wrapper).arg("30").spawn().unwrap());
+        let child_pid = child.0.id();
+        let mut executable = None;
+        for _ in 0..100 {
+            executable = fs::read_link(format!("/proc/{child_pid}/exe")).ok();
+            if executable.as_deref() == Some(other_binary.as_path()) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(executable.as_deref(), Some(other_binary.as_path()));
+
+        let mut setup = Setup::new("Wrapped OBS".into());
+        setup.obs.install_kind = InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(wrapper);
+        assert!(
+            !matching_obs_pids(&setup)
+                .iter()
+                .any(|pid| pid.as_u32() == child_pid)
+        );
+        assert!(
+            !super::executable_obs_pids(&setup)
+                .iter()
+                .any(|pid| pid.as_u32() == child_pid)
         );
     }
 
