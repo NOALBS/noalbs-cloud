@@ -2097,20 +2097,10 @@ int main(int argc, char **argv) {
         let mut setup = Setup::new("Windows setup".into());
         setup.obs.shared_config = true;
         setup.obs.websocket_port = Some(4456);
-        let args = [
-            "obs64.exe",
-            "--multi",
-            "--websocket_port",
-            "4456",
-        ]
-        .map(std::ffi::OsString::from);
-        let other_port = [
-            "obs64.exe",
-            "--multi",
-            "--websocket_port",
-            "4457",
-        ]
-        .map(std::ffi::OsString::from);
+        let args =
+            ["obs64.exe", "--multi", "--websocket_port", "4456"].map(std::ffi::OsString::from);
+        let other_port =
+            ["obs64.exe", "--multi", "--websocket_port", "4457"].map(std::ffi::OsString::from);
 
         assert!(super::process_matches_obs_config(
             &setup,
