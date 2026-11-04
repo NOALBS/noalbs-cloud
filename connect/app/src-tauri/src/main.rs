@@ -30,6 +30,7 @@ struct LinkSession {
 
 struct AppState {
     config: Mutex<AppConfig>,
+    startup_error: Option<String>,
     store: ConfigStore,
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
@@ -52,6 +53,7 @@ struct SetupSummary {
 struct UiState {
     start_at_login: bool,
     api_url: String,
+    startup_error: Option<String>,
     first_run: bool,
     setups: Vec<SetupSummary>,
 }
@@ -64,6 +66,7 @@ fn get_state(state: State<'_, AppState>) -> UiState {
     UiState {
         start_at_login: config.settings.start_at_login,
         api_url: config.settings.api_url.clone(),
+        startup_error: state.startup_error.clone(),
         first_run: config.setups.is_empty(),
         setups: config
             .setups
@@ -729,7 +732,7 @@ fn refresh_tray_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
 
 fn main() {
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
-    let config = store.load().unwrap_or_default();
+    let (config, startup_error) = store.load_or_backup();
     let tokens = TokenStore::default_store().expect("token store path");
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -746,6 +749,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
             config: Mutex::new(config),
+            startup_error,
             store,
             tokens,
             supervisor: Mutex::new(Supervisor::default()),

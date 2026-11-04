@@ -2,6 +2,7 @@ use std::{
     fs::{self, File},
     io::{Read, Write},
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use directories::BaseDirs;
@@ -158,6 +159,37 @@ impl ConfigStore {
         }
     }
 
+    pub fn load_or_backup(&self) -> (AppConfig, Option<String>) {
+        match self.load() {
+            Ok(config) => (config, None),
+            Err(error) => {
+                let timestamp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis();
+                let backup = self
+                    .path
+                    .with_file_name(format!("config.json.broken-{timestamp}"));
+                match fs::rename(&self.path, &backup) {
+                    Ok(()) => (
+                        AppConfig::default(),
+                        Some(format!(
+                            "Your Connect settings couldn't be read and were saved as {} ({error})",
+                            backup.display()
+                        )),
+                    ),
+                    Err(backup_error) => (
+                        AppConfig::default(),
+                        Some(format!(
+                            "Your Connect settings couldn't be read and could not be saved as {}: {backup_error}",
+                            backup.display()
+                        )),
+                    ),
+                }
+            }
+        }
+    }
+
     pub fn save(&self, config: &AppConfig) -> Result<(), ConfigError> {
         let parent = self.path.parent().ok_or(ConfigError::NoConfigDir)?;
         fs::create_dir_all(parent)?;
@@ -190,5 +222,31 @@ mod tests {
         assert!(loaded.settings.start_at_login);
         assert_eq!(loaded.setups[0].name, "Studio");
         assert!(!loaded.setups[0].obs.start_obs_with_connect);
+    }
+
+    #[test]
+    fn corrupt_config_is_preserved_under_a_broken_backup_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        std::fs::write(&path, b"{not valid json").unwrap();
+        let store = ConfigStore::new(path.clone());
+
+        let (config, error) = store.load_or_backup();
+
+        assert!(config.setups.is_empty());
+        assert!(error.unwrap().contains("were saved as"));
+        assert!(!path.exists());
+        let backup = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(Result::unwrap)
+            .find(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("config.json.broken-")
+            })
+            .unwrap()
+            .path();
+        assert_eq!(std::fs::read(backup).unwrap(), b"{not valid json");
     }
 }

@@ -34,6 +34,7 @@ type Setup = {
 type State = {
 	start_at_login: boolean;
 	api_url: string;
+	startup_error: string | null;
 	first_run: boolean;
 	setups: Setup[];
 };
@@ -60,6 +61,7 @@ function App() {
 			.then((value) => {
 				setState(value);
 				setApiUrl(value.api_url);
+				if (value.startup_error) setError(value.startup_error);
 			})
 			.catch((e) => setError(String(e)));
 		let unlistenCreated: (() => void) | undefined;
