@@ -593,18 +593,15 @@ fn enable_websocket(
 #[tauri::command]
 fn unpair_setup(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    if let Some(session) = clear_pairing_state(&state, id)? {
-        session.task.abort();
-        session.monitor.abort();
-        session.command_consumer.abort();
-    }
+    clear_pairing_state(&state, id, true)?;
     Ok(get_state(state))
 }
 
 fn clear_pairing_state(
     state: &AppState,
     setup_id: uuid::Uuid,
-) -> Result<Option<LinkSession>, String> {
+    abort_link_task: bool,
+) -> Result<(), String> {
     state
         .tokens
         .delete(setup_id)
@@ -618,18 +615,25 @@ fn clear_pairing_state(
         .save(&config)
         .map_err(|error| error.to_string())?;
     drop(config);
-    Ok(state
+    let session = state
         .link_sessions
         .lock()
         .map_err(|_| "link session lock poisoned")?
-        .remove(&setup_id))
+        .remove(&setup_id);
+    if let Some(session) = session {
+        if abort_link_task {
+            session.task.abort();
+        }
+        session.monitor.abort();
+        session.command_consumer.abort();
+    }
+    Ok(())
 }
 
 fn forget_rejected_pairing(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
     let state = app.state::<AppState>();
-    match clear_pairing_state(&state, setup_id) {
-        Ok(Some(session)) => session.monitor.abort(),
-        Ok(None) => {}
+    match clear_pairing_state(&state, setup_id, false) {
+        Ok(()) => {}
         Err(error) => {
             let _ = app.emit("connect-error", error);
             return;
@@ -1284,21 +1288,24 @@ mod tests {
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
+        let link_task = tokio::spawn(std::future::pending::<()>());
+        let link_task_abort = link_task.abort_handle();
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
                 state: state_tx,
                 effective_obs,
-                task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                task: tauri::async_runtime::JoinHandle::Tokio(link_task),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
-                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
             },
         );
 
-        let removed = clear_pairing_state(&state, setup_id).unwrap();
+        clear_pairing_state(&state, setup_id, false).unwrap();
         let config = store.load().unwrap();
         let ui_state = build_ui_state(&state);
 
@@ -1307,10 +1314,8 @@ mod tests {
         assert_eq!(tokens.get(setup_id).unwrap(), None);
         assert!(!ui_state.setups[0].paired);
         assert_eq!(ui_state.setups[0].obs_state, "not_running");
-        if let Some(session) = removed {
-            session.task.abort();
-            session.monitor.abort();
-        }
+        assert!(!link_task_abort.is_finished());
+        link_task_abort.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
