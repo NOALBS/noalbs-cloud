@@ -34,12 +34,43 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             start_at_login: true,
-            api_url: std::env::var("NOALBS_CONNECT_API_URL")
-                .unwrap_or_else(|_| PRODUCTION_API_URL.to_owned()),
-            dashboard_url: std::env::var("NOALBS_CONNECT_DASHBOARD_URL")
-                .ok()
-                .filter(|url| !url.trim().is_empty()),
+            api_url: PRODUCTION_API_URL.to_owned(),
+            dashboard_url: None,
         }
+    }
+}
+
+impl AppSettings {
+    pub fn effective(&self) -> Self {
+        let (api_url, dashboard_url) = Self::environment_overrides();
+        self.with_environment_overrides(api_url.as_deref(), dashboard_url.as_deref())
+    }
+
+    pub fn environment_overrides() -> (Option<String>, Option<String>) {
+        let api_url = std::env::var("NOALBS_CONNECT_API_URL")
+            .ok()
+            .map(|url| url.trim().to_owned())
+            .filter(|url| !url.is_empty());
+        let dashboard_url = std::env::var("NOALBS_CONNECT_DASHBOARD_URL")
+            .ok()
+            .map(|url| url.trim().to_owned())
+            .filter(|url| !url.is_empty());
+        (api_url, dashboard_url)
+    }
+
+    pub fn with_environment_overrides(
+        &self,
+        api_url: Option<&str>,
+        dashboard_url: Option<&str>,
+    ) -> Self {
+        let mut settings = self.clone();
+        if let Some(api_url) = api_url.map(str::trim).filter(|url| !url.is_empty()) {
+            settings.api_url = api_url.to_owned();
+        }
+        if let Some(dashboard_url) = dashboard_url.map(str::trim).filter(|url| !url.is_empty()) {
+            settings.dashboard_url = Some(dashboard_url.to_owned());
+        }
+        settings
     }
 }
 
@@ -213,7 +244,7 @@ impl ConfigStore {
 
 #[cfg(test)]
 mod tests {
-    use super::{AppConfig, ConfigStore, Setup};
+    use super::{AppConfig, ConfigStore, PRODUCTION_API_URL, Setup};
 
     #[test]
     fn config_round_trips_setups_and_defaults() {
@@ -252,5 +283,42 @@ mod tests {
             .unwrap()
             .path();
         assert_eq!(std::fs::read(backup).unwrap(), b"{not valid json");
+    }
+
+    #[test]
+    fn environment_overrides_apply_after_loading_existing_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        std::fs::write(
+            &path,
+            r#"{"settings":{"start_at_login":false},"setups":[]}"#,
+        )
+        .unwrap();
+        let store = ConfigStore::new(path);
+        let loaded = store.load().unwrap();
+
+        let effective = loaded.settings.with_environment_overrides(
+            Some("https://api.example/api"),
+            Some("https://dashboard.example"),
+        );
+
+        assert_eq!(loaded.settings.api_url, PRODUCTION_API_URL);
+        assert_eq!(loaded.settings.dashboard_url, None);
+        assert_eq!(effective.api_url, "https://api.example/api");
+        assert_eq!(
+            effective.dashboard_url.as_deref(),
+            Some("https://dashboard.example")
+        );
+        assert_eq!(
+            loaded
+                .settings
+                .with_environment_overrides(Some("  "), None)
+                .api_url,
+            PRODUCTION_API_URL
+        );
+        store.save(&loaded).unwrap();
+        let persisted = store.load().unwrap();
+        assert_eq!(persisted.settings.api_url, PRODUCTION_API_URL);
+        assert_eq!(persisted.settings.dashboard_url, None);
     }
 }

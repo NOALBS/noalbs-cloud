@@ -67,10 +67,11 @@ fn get_state(state: State<'_, AppState>) -> UiState {
     let config = state.config.lock().expect("app config lock");
     let mut supervisor = state.supervisor.lock().expect("supervisor lock");
     let sessions = state.link_sessions.lock().expect("link session lock");
+    let settings = config.settings.effective();
     UiState {
         start_at_login: config.settings.start_at_login,
-        api_url: config.settings.api_url.clone(),
-        dashboard_url: config.settings.dashboard_url.clone(),
+        api_url: settings.api_url,
+        dashboard_url: settings.dashboard_url,
         startup_error: state.startup_error.clone(),
         first_run: config.setups.is_empty(),
         setups: config
@@ -193,13 +194,22 @@ fn save_settings(
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let dashboard_url = dashboard_url.filter(|url| !url.trim().is_empty());
-    if let Some(url) = dashboard_url.as_deref() {
+    let (api_url_override, dashboard_url_override) =
+        connect_core::config::AppSettings::environment_overrides();
+    let effective_dashboard_url = dashboard_url_override
+        .as_deref()
+        .or(dashboard_url.as_deref());
+    if let Some(url) = effective_dashboard_url {
         validate_dashboard_url(url)?;
     }
     let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
     config.settings.start_at_login = start_at_login;
-    config.settings.api_url = api_url;
-    config.settings.dashboard_url = dashboard_url;
+    if api_url_override.is_none() {
+        config.settings.api_url = api_url;
+    }
+    if dashboard_url_override.is_none() {
+        config.settings.dashboard_url = dashboard_url;
+    }
     state
         .store
         .save(&config)
@@ -239,11 +249,8 @@ async fn create_pairing(
             .iter()
             .find(|setup| setup.id.to_string() == setup_id)
             .ok_or("setup not found")?;
-        (
-            config.settings.api_url.clone(),
-            config.settings.dashboard_url.clone(),
-            setup.name.clone(),
-        )
+        let settings = config.settings.effective();
+        (settings.api_url, settings.dashboard_url, setup.name.clone())
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
@@ -278,11 +285,8 @@ async fn pair_setup(
             .iter()
             .find(|setup| setup.id.to_string() == setup_id)
             .ok_or("setup not found")?;
-        (
-            config.settings.api_url.clone(),
-            config.settings.dashboard_url.clone(),
-            setup.name.clone(),
-        )
+        let settings = config.settings.effective();
+        (settings.api_url, settings.dashboard_url, setup.name.clone())
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
@@ -373,9 +377,10 @@ fn open_verification_url(
         .cloned()
         .ok_or("No active verification URL for this setup")?;
     let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    let settings = config.settings.effective();
     validate_verification_url(
-        &config.settings.api_url,
-        config.settings.dashboard_url.as_deref(),
+        &settings.api_url,
+        settings.dashboard_url.as_deref(),
         &verification_url,
     )?;
     drop(config);

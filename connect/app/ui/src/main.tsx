@@ -120,7 +120,10 @@ function App() {
 					apiUrl,
 					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 				});
-			setState(await invoke<State>("add_setup", { name }));
+			const updated = await invoke<State>("add_setup", { name });
+			setState(updated);
+			setApiUrl(updated.api_url);
+			setDashboardUrl(updated.dashboard_url ?? "");
 			setName("");
 		} catch (e) {
 			setError(String(e));
@@ -171,13 +174,14 @@ function App() {
 	}
 	async function saveSettings(startAtLogin = state?.start_at_login ?? true) {
 		try {
-			setState(
-				await invoke<State>("save_settings", {
-					startAtLogin,
-					apiUrl,
-					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
-				}),
-			);
+			const updated = await invoke<State>("save_settings", {
+				startAtLogin,
+				apiUrl,
+				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
+			});
+			setState(updated);
+			setApiUrl(updated.api_url);
+			setDashboardUrl(updated.dashboard_url ?? "");
 		} catch (e) {
 			setError(String(e));
 		}
