@@ -1034,7 +1034,7 @@ fn any_obs_running() -> bool {
 fn is_obs_process_name(name: &str, platform: HostPlatform) -> bool {
     match platform {
         HostPlatform::Windows => name.eq_ignore_ascii_case("obs64.exe"),
-        HostPlatform::MacOS => name == "OBS",
+        HostPlatform::MacOS => name.eq_ignore_ascii_case("obs"),
         HostPlatform::Linux => name == "obs",
     }
 }
@@ -1442,7 +1442,7 @@ mod tests {
     #[test]
     fn obs_process_name_matches_host_platform() {
         assert!(is_obs_process_name("OBS", HostPlatform::MacOS));
-        assert!(!is_obs_process_name("obs", HostPlatform::MacOS));
+        assert!(is_obs_process_name("obs", HostPlatform::MacOS));
         assert!(is_obs_process_name("obs", HostPlatform::Linux));
         assert!(is_obs_process_name("obs64.exe", HostPlatform::Windows));
     }
