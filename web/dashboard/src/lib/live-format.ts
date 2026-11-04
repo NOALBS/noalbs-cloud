@@ -91,7 +91,7 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
     case "connect_permissions_changed":
       return {
         title: t`Connect permissions changed`,
-        detail: t`OBS control: ${event.data.obs_control} · Logs: ${event.data.logs} ${by(event.data.by, t`from the dashboard`)}`,
+        detail: t`OBS control: ${event.data.obs_control} · Logs: ${event.data.logs} · Programs: ${event.data.programs} ${by(event.data.by, t`from the dashboard`)}`,
       };
     case "connect_watchdog_changed":
       return {
@@ -117,6 +117,19 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         title: event.data.kind === "obs_log" ? t`OBS log uploaded` : t`Crash report uploaded`,
         detail: by(event.data.by, t`by Connect`),
       };
+    case "connect_program_command": {
+      const title = {
+        added: t`Program added`,
+        edited: t`Program edited`,
+        removed: t`Program removed`,
+        started: t`Program started`,
+        stopped: t`Program stopped`,
+      }[event.data.action];
+      return {
+        title: `${title}: ${event.data.program.name}`,
+        detail: t`${event.data.program.path} · Args: ${JSON.stringify(event.data.program.args)} · ${by(event.data.by, t`from Connect`)}`,
+      };
+    }
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

@@ -2443,6 +2443,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_connect_programs"];
+        put?: never;
+        post: operations["add_connect_program"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["edit_connect_program"];
+        post?: never;
+        delete: operations["delete_connect_program"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["control_connect_program"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/watchdog": {
         parameters: {
             query?: never;
@@ -4745,7 +4793,10 @@ export interface components {
         ConnectPermissions: {
             logs: components["schemas"]["ConnectAccess"];
             obs_control: components["schemas"]["ConnectAccess"];
+            programs: components["schemas"]["ConnectAccess"];
         };
+        /** @enum {string} */
+        ConnectProgramAction: "added" | "edited" | "removed" | "started" | "stopped";
         ConnectedBot: {
             /** @description The workspace or organization it answers for; `None` for NOALBS's shared bot. */
             answers_for?: string | null;
@@ -5417,6 +5468,7 @@ export interface components {
                 by?: string | null;
                 logs: components["schemas"]["ConnectAccess"];
                 obs_control: components["schemas"]["ConnectAccess"];
+                programs: components["schemas"]["ConnectAccess"];
             };
             /** @enum {string} */
             kind: "connect_permissions_changed";
@@ -5443,6 +5495,14 @@ export interface components {
             };
             /** @enum {string} */
             kind: "connect_log_uploaded";
+        } | {
+            data: {
+                action: components["schemas"]["ConnectProgramAction"];
+                by?: string | null;
+                program: components["schemas"]["Program"];
+            };
+            /** @enum {string} */
+            kind: "connect_program_command";
         };
         ExistingSourceDto: {
             /** @description The input's kind (e.g. `ffmpeg_source`); `null` for scenes. */
@@ -6456,6 +6516,7 @@ export interface components {
             device_name?: string | null;
             obs: components["schemas"]["PcObsState"];
             obs_version?: string | null;
+            programs?: components["schemas"]["ProgramStatus"][];
         };
         PlaceSource: {
             /** Format: int64 */
@@ -6572,6 +6633,20 @@ export interface components {
             name: string;
             /** @description The one asking. */
             you: boolean;
+        };
+        Program: {
+            added_from_dashboard_by?: string | null;
+            args: string[];
+            /** Format: uuid */
+            id: string;
+            name: string;
+            path: string;
+            start_with_obs: boolean;
+            stop_with_obs: boolean;
+        };
+        ProgramStatus: {
+            program: components["schemas"]["Program"];
+            running: boolean;
         };
         /** @description Which ways to sign in are available. */
         ProvidersDto: {
@@ -7289,6 +7364,7 @@ export interface components {
             chat: components["schemas"]["ChatSettingsDto"];
             connect_logs: components["schemas"]["ConnectAccess"];
             connect_obs_control: components["schemas"]["ConnectAccess"];
+            connect_programs: components["schemas"]["ConnectAccess"];
             connect_watchdog: components["schemas"]["Watchdog"];
             /** Format: date-time */
             created_at: string;
@@ -13364,6 +13440,224 @@ export interface operations {
             };
             /** @description `owner_only` */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_connect_programs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramStatus"][];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    add_connect_program: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Program"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    edit_connect_program: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Program"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_connect_program: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    control_connect_program: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                program_id: string;
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

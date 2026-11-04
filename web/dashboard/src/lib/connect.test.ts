@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PcObsState } from "@/api/types";
 import {
   canControlConnect,
+  canManageConnectPrograms,
   canViewConnectLogs,
   connectAccessOptions,
   connectObsActionAvailability,
@@ -75,6 +76,16 @@ describe("Connect settings", () => {
     expect(canViewConnectLogs("owners", owner)).toBe(true);
     expect(canViewConnectLogs("owners", member)).toBe(false);
     expect(canViewConnectLogs("everyone", member)).toBe(true);
+  });
+
+  it("shows program management only to roles allowed by its setting", () => {
+    const owner = { role: "owner", staff: false } as const;
+    const member = { role: "operator", staff: false } as const;
+    const support = { role: null, staff: true, support: "control" } as const;
+    expect(canManageConnectPrograms("owners", owner)).toBe(true);
+    expect(canManageConnectPrograms("owners", member)).toBe(false);
+    expect(canManageConnectPrograms("everyone", member)).toBe(true);
+    expect(canManageConnectPrograms("everyone", support)).toBe(false);
   });
 
   it("enables OBS actions only for the states that support them", () => {

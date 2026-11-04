@@ -350,6 +350,13 @@ msgstr "{0} · {1} · 登入時間：{2}"
 msgid "{0} · {1}, {2} until {3}"
 msgstr "{0} · {1}，{2}，至 {3} 為止"
 
+#. placeholder {0}: event.data.program.path
+#. placeholder {1}: JSON.stringify(event.data.program.args)
+#. placeholder {2}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "{0} · Args: {1} · {2}"
+msgstr ""
+
 #. placeholder {0}: device.interface
 #: src/components/belabox/wifi-panel.tsx
 msgid "{0} · the list refreshes by itself; scan to look again."
@@ -1268,6 +1275,10 @@ msgstr "新增標記"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "新增一個來連接你的 OBS。設定只要幾分鐘。"
 
+#: src/components/connect-settings.tsx
+msgid "Add program"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
 msgstr "新增場景"
@@ -1342,6 +1353,11 @@ msgstr "新增了一台串流伺服器"
 #: src/lib/support.ts
 msgid "Added a switcher"
 msgstr "新增了一個切換器"
+
+#. placeholder {0}: program.added_from_dashboard_by
+#: src/components/connect-settings.tsx
+msgid "Added from the dashboard by {0}"
+msgstr ""
 
 #. placeholder {0}: created.name
 #. placeholder {0}: event.data.scene
@@ -1609,6 +1625,10 @@ msgstr "套用"
 #: src/components/belabox/modem-panel.tsx
 msgid "Applying…"
 msgstr "套用中…"
+
+#: src/components/connect-settings.tsx
+msgid "Arguments (one per line)"
+msgstr ""
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
@@ -2491,6 +2511,10 @@ msgstr "平台要求時，請以機器人帳號（不是你自己的帳號）登
 msgid "Connect computer"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Connect is offline. Programs are shown when the computer is online."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "連接 Moblin"
@@ -3253,6 +3277,7 @@ msgstr "每位終端客戶使用 Twitch、Kick 或 YouTube 登入後，會以管
 msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink."
 msgstr "每台伺服器都可覆寫 LIVE、LOW 和 BRB 場景，例如為備援上行連線使用不同的疊加層。"
 
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3275,6 +3300,10 @@ msgstr "編輯 {name}"
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "編輯公告"
+
+#: src/components/connect-settings.tsx
+msgid "Edit program"
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -3656,8 +3685,16 @@ msgid "From {0} switcher(s). Each affected workspace sees it in its support log.
 msgstr "來自 {0} 個切換器。每個受影響的工作區都會在支援紀錄中看到。"
 
 #: src/lib/live-format.ts
+msgid "from Connect"
+msgstr ""
+
+#: src/lib/live-format.ts
 msgid "from the dashboard"
 msgstr "從儀表板"
+
+#: src/components/connect-settings.tsx
+msgid "Full program path"
+msgstr ""
 
 #: src/components/moblin-settings.tsx
 msgid "Generate"
@@ -4538,6 +4575,10 @@ msgstr ""
 msgid "Loading logs…"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Loading programs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -5127,6 +5168,7 @@ msgstr "靜音或取消靜音音訊"
 
 #: src/components/admin/products.tsx
 #: src/components/belabox/wifi-panel.tsx
+#: src/components/connect-settings.tsx
 #: src/components/create-switcher-dialog.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-editor.tsx
@@ -5499,6 +5541,10 @@ msgstr "尚未設定價格，因此方案頁面會顯示為即將推出"
 #: src/components/admin/products.tsx
 msgid "No price: it’s the free plan."
 msgstr "無價格：這是免費方案。"
+
+#: src/components/connect-settings.tsx
+msgid "No programs have been added yet."
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -6003,9 +6049,10 @@ msgstr "OBS 透過瀏覽器來源連線"
 
 #. placeholder {0}: event.data.obs_control
 #. placeholder {1}: event.data.logs
-#. placeholder {2}: by(event.data.by, t`from the dashboard`)
+#. placeholder {2}: event.data.programs
+#. placeholder {3}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
-msgid "OBS control: {0} · Logs: {1} {2}"
+msgid "OBS control: {0} · Logs: {1} · Programs: {2} {3}"
 msgstr ""
 
 #: src/lib/connect.ts
@@ -6927,6 +6974,39 @@ msgstr "問題"
 msgid "Products"
 msgstr "產品"
 
+#: src/lib/live-format.ts
+msgid "Program added"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program edited"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Program editing is controlled by the Connect setting on this PC. Turn on “Allow the dashboard to add and edit programs” in Connect and try again."
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "Program removed"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program started"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program stopped"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs managed by the paired Connect computer."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Public commands"
 msgstr "公開指令"
@@ -7117,6 +7197,7 @@ msgstr "其場景開始播出時重新載入"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/server-details-fields.tsx
@@ -7143,7 +7224,9 @@ msgid "Remove {0} from {1}?"
 msgstr "要從 {1} 移除 {0} 嗎？"
 
 #. placeholder {0}: channel.display_name
+#. placeholder {0}: program.name
 #: src/components/chat/chat-links.tsx
+#: src/components/connect-settings.tsx
 msgid "Remove {0}?"
 msgstr "要移除 {0} 嗎？"
 
@@ -7506,6 +7589,10 @@ msgstr "RTT 刻度：LOW 在 {0}，BRB 在 {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT 觸發值必須介於 1 到 60,000 ms 之間。"
 
+#: src/components/connect-settings.tsx
+msgid "Running"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Running a stream server? Put a link on your site that opens NOALBS Cloud with your stats URL filled in. The streamer signs in, picks a workspace and a switcher, and confirms."
 msgstr "在經營串流伺服器嗎？在你的網站放上連結，即可開啟 NOALBS Cloud 並自動填入你的統計資料 URL。實況主登入後，選擇工作區和切換器，再確認即可。"
@@ -7525,6 +7612,7 @@ msgstr "操作實況：切換場景、開始和停止、查看統計資料。"
 #: src/components/admin/notice-dialog.tsx
 #: src/components/admin/products.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
@@ -7588,6 +7676,10 @@ msgstr "已儲存 {0}"
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
 msgstr "已儲存在這裡，但尚未寫入 BELABOX：從儀表板、聊天室或 OBS 實況啟動時會保留這些設定。從它自己的螢幕啟動則會捨棄。"
+
+#: src/components/connect-settings.tsx
+msgid "Saved program"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved. The BELABOX uses these from its next start."
@@ -8268,6 +8360,7 @@ msgstr "僅限工作人員"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "工作人員：<0>管理員專區中的這個工作區</0>（設定方案、查看帳務）。"
 
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "開始"
@@ -8305,6 +8398,10 @@ msgstr "在 {0} 上啟動熱點"
 #: src/components/live/quick-actions.tsx
 msgid "Start the stream?"
 msgstr "要開始實況嗎？"
+
+#: src/components/connect-settings.tsx
+msgid "Start with OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Start, end & raids"
@@ -8388,6 +8485,7 @@ msgid "Stealth on"
 msgstr "隱身已開啟"
 
 #: src/components/admin/products.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8483,12 +8581,20 @@ msgstr "停止使用"
 msgid "Stop when offline"
 msgstr "離線時停止"
 
+#: src/components/connect-settings.tsx
+msgid "Stop with OBS"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
 msgstr "停止，顯示時重新開始"
 
 #: src/lib/live-format.ts
 msgid "stopped"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Stopped"
 msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
@@ -10252,6 +10358,10 @@ msgstr "開台時，工作區中的所有人都能在實況頁面看到預覽，
 #: src/routes/_app/orgs/$organization/chat.tsx
 msgid "Who answers in the chat of your clients’ channels."
 msgstr "誰在你的客戶頻道的聊天室回覆。"
+
+#: src/components/connect-settings.tsx
+msgid "Who can add, start and stop programs"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Who can see and run this workspace."

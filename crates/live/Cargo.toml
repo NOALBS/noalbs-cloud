@@ -9,11 +9,12 @@ publish.workspace = true
 [features]
 # Derive `utoipa::ToSchema` so the API can include these types in its OpenAPI
 # document (the dashboard's TypeScript types are generated from it).
-openapi = ["dep:utoipa", "db/openapi"]
+openapi = ["dep:utoipa", "db/openapi", "common/openapi"]
 
 [dependencies]
 async-nats = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
+common = { workspace = true }
 db = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

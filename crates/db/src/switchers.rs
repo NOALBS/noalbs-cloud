@@ -83,6 +83,7 @@ pub struct Switcher {
     pub preview_off_air: PreviewOffAir,
     pub connect_obs_control: ConnectAccess,
     pub connect_logs: ConnectAccess,
+    pub connect_programs: ConnectAccess,
     pub connect_watchdog: Watchdog,
 
     pub created_at: DateTime<chrono::Utc>,
@@ -697,11 +698,12 @@ pub async fn set_connect_permissions(
     switcher_id: Uuid,
     obs_control: ConnectAccess,
     logs: ConnectAccess,
+    programs: ConnectAccess,
 ) -> Result<Switcher> {
     let switcher = sqlx::query_as::<_, Switcher>(
         "
         UPDATE switchers
-        SET connect_obs_control = $2, connect_logs = $3
+        SET connect_obs_control = $2, connect_logs = $3, connect_programs = $4
         WHERE id = $1
         RETURNING *
         ",
@@ -709,6 +711,7 @@ pub async fn set_connect_permissions(
     .bind(switcher_id)
     .bind(obs_control)
     .bind(logs)
+    .bind(programs)
     .fetch_one(pool)
     .await?;
     Ok(switcher)

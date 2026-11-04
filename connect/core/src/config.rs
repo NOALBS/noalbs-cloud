@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
+use common::programs::Program;
+
 pub const PRODUCTION_API_URL: &str = "https://app.noalbs.com/api";
 
 #[derive(Debug, Error)]
@@ -217,6 +219,14 @@ pub struct Setup {
     pub name: String,
     pub obs: ObsLaunchConfig,
     pub pairing: Option<Pairing>,
+    #[serde(default)]
+    pub programs: Vec<Program>,
+    #[serde(default = "default_allow_dashboard_program_edits")]
+    pub allow_dashboard_program_edits: bool,
+}
+
+fn default_allow_dashboard_program_edits() -> bool {
+    true
 }
 
 impl Default for Setup {
@@ -232,6 +242,8 @@ impl Setup {
             name,
             obs: ObsLaunchConfig::default(),
             pairing: None,
+            programs: Vec::new(),
+            allow_dashboard_program_edits: true,
         }
     }
 }

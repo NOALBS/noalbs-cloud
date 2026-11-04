@@ -2,6 +2,7 @@ use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 
 use crate::logs::ConnectLogUpload;
 use base64::{Engine, engine::general_purpose::STANDARD};
+use common::programs::ProgramStatus;
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -44,14 +45,7 @@ pub struct ObsTelemetry {
     pub obs_version: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ObsAction {
-    Start,
-    Stop,
-    Restart,
-    UploadLog,
-}
+pub use common::programs::ConnectCommandAction as ObsAction;
 
 #[derive(Debug)]
 pub struct ObsCommandRequest {
@@ -96,15 +90,27 @@ pub enum RelayError {
 type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 pub async fn run_link(
+    config: LinkConfig,
+    obs_state: watch::Receiver<PcObsState>,
+    watchdog: watch::Sender<WatchdogMode>,
+) -> Result<(), RelayError> {
+    let (programs_tx, programs) = watch::channel(Vec::new());
+    let result = run_link_with_programs(config, obs_state, programs, watchdog).await;
+    drop(programs_tx);
+    result
+}
+
+pub async fn run_link_with_programs(
     mut config: LinkConfig,
     mut obs_state: watch::Receiver<PcObsState>,
+    mut programs: watch::Receiver<Vec<ProgramStatus>>,
     watchdog: watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
     crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
         if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) =
-            connect_once(&mut config, &mut obs_state, &watchdog).await
+            connect_once(&mut config, &mut obs_state, &mut programs, &watchdog).await
         {
             return Err(error);
         }
@@ -116,6 +122,7 @@ pub async fn run_link(
 async fn connect_once(
     config: &mut LinkConfig,
     obs_state: &mut watch::Receiver<PcObsState>,
+    programs: &mut watch::Receiver<Vec<ProgramStatus>>,
     watchdog: &watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
     let mut obs_port = if config.use_dashboard_obs_settings {
@@ -176,6 +183,8 @@ async fn connect_once(
         .await?;
     let current_state = *obs_state.borrow();
     send_pc_state(&mut upstream, current_state).await?;
+    let current_programs = programs.borrow().clone();
+    send_programs(&mut upstream, current_programs).await?;
     if obs.is_some() {
         upstream
             .send(Message::Text(
@@ -308,6 +317,12 @@ async fn connect_once(
                     send_pc_state(&mut upstream, current_state).await?;
                 }
             }
+            changed = programs.changed() => {
+                if changed.is_ok() {
+                    let current_programs = programs.borrow().clone();
+                    send_programs(&mut upstream, current_programs).await?;
+                }
+            }
             upload = config.unsolicited_uploads.recv(),
                 if !config.unsolicited_uploads.is_closed() =>
             {
@@ -371,10 +386,7 @@ async fn connect_once(
                 }
                 if let Some(command) = value.get("connectCommand") {
                     let token = value.get("token").and_then(Value::as_str).map(str::to_owned);
-                    let action = command
-                        .get("action")
-                        .and_then(Value::as_str)
-                        .and_then(|action| serde_json::from_value::<ObsAction>(json!(action)).ok());
+                    let action = serde_json::from_value::<ObsAction>(command.clone()).ok();
                     match (token, action) {
                         (Some(token), Some(action)) => {
                             let (reply, receiver) = oneshot::channel();
@@ -526,6 +538,18 @@ async fn send_pc_state(socket: &mut Socket, state: PcObsState) -> Result<(), Rel
     socket
         .send(Message::Text(
             json!({"pcState": {"obs": state}}).to_string().into(),
+        ))
+        .await?;
+    Ok(())
+}
+
+async fn send_programs(
+    socket: &mut Socket,
+    programs: Vec<ProgramStatus>,
+) -> Result<(), RelayError> {
+    socket
+        .send(Message::Text(
+            json!({"programsState": programs}).to_string().into(),
         ))
         .await?;
     Ok(())
@@ -806,7 +830,7 @@ fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
             "token": config.device_token,
             "version": config.version,
             "client": "connect",
-            "capabilities": ["obs_process", "obs_control", "obs_logs"],
+            "capabilities": ["obs_process", "obs_control", "obs_logs", "programs"],
             "os": config.os,
             "obsVersion": obs_version
         }
@@ -911,7 +935,7 @@ mod tests {
                     "token":"device-token",
                     "version":"0.1.0",
                     "client":"connect",
-                    "capabilities":["obs_process","obs_control","obs_logs"],
+                    "capabilities":["obs_process","obs_control","obs_logs","programs"],
                     "os":"linux",
                     "obsVersion":"31.0.0"
                 }
@@ -939,7 +963,16 @@ mod tests {
                 ))
                 .await
                 .unwrap();
-            let _state = socket.next().await.unwrap().unwrap();
+            loop {
+                let Message::Text(text) = socket.next().await.unwrap().unwrap() else {
+                    continue;
+                };
+                let frame = serde_json::from_str::<serde_json::Value>(&text).unwrap();
+                if frame.get("programsState").is_some() {
+                    assert_eq!(frame, json!({"programsState":[]}));
+                    break;
+                }
+            }
             socket
                 .send(Message::Text(
                     json!({
@@ -959,13 +992,20 @@ mod tests {
                 ))
                 .await
                 .unwrap();
-            let Message::Text(text) = socket.next().await.unwrap().unwrap() else {
-                panic!("expected command result frame");
-            };
-            let _ = frame_tx.send(serde_json::from_str::<serde_json::Value>(&text).unwrap());
+            loop {
+                let Message::Text(text) = socket.next().await.unwrap().unwrap() else {
+                    continue;
+                };
+                let frame = serde_json::from_str::<serde_json::Value>(&text).unwrap();
+                if frame.get("connectCommandResult").is_some() {
+                    let _ = frame_tx.send(frame);
+                    break;
+                }
+            }
         });
 
         let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, mut watchdog_rx) =
             tokio::sync::watch::channel(super::WatchdogMode::Restart);
@@ -987,7 +1027,7 @@ mod tests {
         let relay = tokio::spawn(async move {
             let mut state_rx = state_rx;
             let mut config = config;
-            super::connect_once(&mut config, &mut state_rx, &watchdog_tx).await
+            super::connect_once(&mut config, &mut state_rx, &mut programs_rx, &watchdog_tx).await
         });
 
         let command = tokio::time::timeout(Duration::from_secs(5), commands_rx.recv())

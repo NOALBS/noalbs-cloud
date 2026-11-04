@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, Download } from "lucide-react";
+import { Check, Copy, Download, Pencil, Play, Plus, Square, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, apiWithTimeout, unwrap } from "@/api/client";
@@ -42,6 +42,7 @@ import { type ConnectObsAction, useConnectObsCommand } from "@/hooks/use-connect
 import { useSwitcher } from "@/hooks/use-switcher";
 import {
   canControlConnect,
+  canManageConnectPrograms,
   canViewConnectLogs,
   connectAccessOptions,
   connectObsActionAvailability,
@@ -51,6 +52,17 @@ import {
 import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
 import { formatRelative } from "@/lib/time";
+
+type ConnectProgramDto = {
+  id: string;
+  name: string;
+  path: string;
+  args: string[];
+  start_with_obs: boolean;
+  stop_with_obs: boolean;
+  added_from_dashboard_by: string | null;
+};
+type ConnectProgramStatusDto = { program: ConnectProgramDto; running: boolean };
 
 export function ConnectSettings() {
   const { workspace, switcher, actor, canManage, path } = useSwitcher();
@@ -65,6 +77,7 @@ export function ConnectSettings() {
   const accessOptions = connectAccessOptions(workspace.managed_by?.name ?? null);
   const watchdogAllowed = canControlConnect(switcher.connect_obs_control, actor);
   const logsAllowed = canViewConnectLogs(switcher.connect_logs, actor);
+  const programsAllowed = canManageConnectPrograms(switcher.connect_programs, actor);
   const obsControlAllowed = watchdogAllowed;
   const watchdogChoices = watchdogOptions();
   const watchdogDescription = watchdogChoices.find(
@@ -84,13 +97,20 @@ export function ConnectSettings() {
   const [viewingLog, setViewingLog] = useState<ConnectLogDto | null>(null);
 
   const savePermissions = useMutation({
-    mutationFn: (change: Partial<{ obs_control: ConnectAccess; logs: ConnectAccess }>) =>
+    mutationFn: (
+      change: Partial<{
+        obs_control: ConnectAccess;
+        logs: ConnectAccess;
+        programs: ConnectAccess;
+      }>,
+    ) =>
       unwrap(
         api.PUT("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/permissions", {
           params: { path },
           body: {
             obs_control: change.obs_control ?? switcher.connect_obs_control,
             logs: change.logs ?? switcher.connect_logs,
+            programs: change.programs ?? switcher.connect_programs,
           },
         }),
       ),
@@ -185,6 +205,14 @@ export function ConnectSettings() {
             disabled={!owner || savePermissions.isPending}
             onChange={(value) => savePermissions.mutate({ logs: value })}
           />
+          <AccessSelect
+            id="connect-programs"
+            title={t`Who can add, start and stop programs`}
+            value={switcher.connect_programs}
+            options={accessOptions}
+            disabled={!owner || savePermissions.isPending}
+            onChange={(value) => savePermissions.mutate({ programs: value })}
+          />
         </div>
         {!owner && (
           <p className="text-sm text-muted-foreground">
@@ -272,6 +300,7 @@ export function ConnectSettings() {
             ))}
           </section>
         )}
+        {programsAllowed && <ConnectProgramsCard path={path} online={Boolean(onlineDevice)} />}
         <ConnectLogViewer
           log={viewingLog}
           path={path}
@@ -319,6 +348,327 @@ function AccessSelect({
         </SelectContent>
       </Select>
       <p className="text-sm text-muted-foreground">{current?.description}</p>
+    </div>
+  );
+}
+
+function ConnectProgramsCard({
+  path,
+  online,
+}: {
+  path: { workspace_id: string; switcher_id: string };
+  online: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState<ConnectProgramDto | null>(null);
+  const [editingExisting, setEditingExisting] = useState(false);
+  const [editingRefused, setEditingRefused] = useState(false);
+  const queryKey = [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "programs"];
+  const programs = useQuery({
+    queryKey,
+    queryFn: async () =>
+      (await unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs", {
+          params: { path },
+        }),
+      )) as ConnectProgramStatusDto[],
+    refetchInterval: 2_000,
+  });
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.switchers(path.workspace_id),
+      }),
+    ]);
+  };
+  const mutationError = (error: unknown) => {
+    const message = errorMessage(error);
+    if (message.includes("turned off on this PC")) setEditingRefused(true);
+    toast.error(message);
+  };
+  const save = useMutation({
+    mutationFn: async (program: ConnectProgramDto) => {
+      if (editingExisting) {
+        return unwrap(
+          apiWithTimeout(40_000).PUT(
+            "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}",
+            { params: { path: { ...path, program_id: program.id } }, body: program },
+          ),
+        );
+      }
+      return unwrap(
+        apiWithTimeout(40_000).POST(
+          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs",
+          { params: { path }, body: program },
+        ),
+      );
+    },
+    onSuccess: async () => {
+      setDraft(null);
+      setEditingRefused(false);
+      await refresh();
+      toast.success(t`Saved program`);
+    },
+    onError: mutationError,
+  });
+  const remove = useMutation({
+    mutationFn: (programId: string) =>
+      unwrap(
+        apiWithTimeout(40_000).DELETE(
+          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}",
+          { params: { path: { ...path, program_id: programId } } },
+        ),
+      ),
+    onSuccess: async () => {
+      await refresh();
+      toast.success(t`Program removed`);
+    },
+    onError: mutationError,
+  });
+  const control = useMutation({
+    mutationFn: ({ programId, action }: { programId: string; action: "start" | "stop" }) =>
+      unwrap(
+        apiWithTimeout(40_000).POST(
+          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}",
+          { params: { path: { ...path, program_id: programId, action } } },
+        ),
+      ),
+    onSuccess: refresh,
+    onError: mutationError,
+  });
+
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border border-divider p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">
+            <Trans>Programs</Trans>
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            <Trans>Programs managed by the paired Connect computer.</Trans>
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!online || save.isPending}
+          onClick={() => {
+            setEditingExisting(false);
+            setEditingRefused(false);
+            setDraft({
+              id: crypto.randomUUID(),
+              name: "",
+              path: "",
+              args: [],
+              start_with_obs: false,
+              stop_with_obs: false,
+              added_from_dashboard_by: null,
+            });
+          }}
+        >
+          <Plus />
+          <Trans>Add program</Trans>
+        </Button>
+      </div>
+      {!online && (
+        <p className="text-sm text-muted-foreground">
+          <Trans>Connect is offline. Programs are shown when the computer is online.</Trans>
+        </p>
+      )}
+      {programs.error && <p className="text-sm text-destructive">{errorMessage(programs.error)}</p>}
+      {programs.isLoading && (
+        <p className="text-sm text-muted-foreground">
+          <Trans>Loading programs…</Trans>
+        </p>
+      )}
+      {programs.data?.length === 0 && online && (
+        <p className="text-sm text-muted-foreground">
+          <Trans>No programs have been added yet.</Trans>
+        </p>
+      )}
+      {programs.data?.map(({ program, running }) => (
+        <div key={program.id} className="flex flex-col gap-3 rounded-md border border-divider p-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">{program.name}</span>
+              <span className={running ? "text-xs text-live" : "text-xs text-muted-foreground"}>
+                {running ? t`Running` : t`Stopped`}
+              </span>
+            </div>
+            <p className="break-all font-mono text-xs text-muted-foreground">{program.path}</p>
+            {program.args.length > 0 && (
+              <p className="break-all font-mono text-xs text-muted-foreground">
+                {JSON.stringify(program.args)}
+              </p>
+            )}
+            {program.added_from_dashboard_by && (
+              <p className="text-xs text-muted-foreground">
+                <Trans>Added from the dashboard by {program.added_from_dashboard_by}</Trans>
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!online || control.isPending || running}
+              onClick={() => control.mutate({ programId: program.id, action: "start" })}
+            >
+              <Play />
+              <Trans>Start</Trans>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!online || control.isPending || !running}
+              onClick={() => control.mutate({ programId: program.id, action: "stop" })}
+            >
+              <Square />
+              <Trans>Stop</Trans>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!online || save.isPending}
+              onClick={() => {
+                setEditingExisting(true);
+                setEditingRefused(false);
+                setDraft(program);
+              }}
+            >
+              <Pencil />
+              <Trans>Edit</Trans>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!online || remove.isPending}
+              onClick={() => {
+                if (window.confirm(t`Remove ${program.name}?`)) remove.mutate(program.id);
+              }}
+            >
+              <Trash2 />
+              <Trans>Remove</Trans>
+            </Button>
+          </div>
+        </div>
+      ))}
+      {editingRefused && (
+        <p className="text-sm text-muted-foreground" role="status">
+          <Trans>
+            Program editing is controlled by the Connect setting on this PC. Turn on “Allow the
+            dashboard to add and edit programs” in Connect and try again.
+          </Trans>
+        </p>
+      )}
+      <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingExisting ? t`Edit program` : t`Add program`}</DialogTitle>
+          </DialogHeader>
+          {draft && (
+            <ConnectProgramForm
+              key={draft.id}
+              program={draft}
+              saving={save.isPending}
+              onCancel={() => setDraft(null)}
+              onSave={(program) => save.mutate(program)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+function ConnectProgramForm({
+  program,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  program: ConnectProgramDto;
+  saving: boolean;
+  onCancel: () => void;
+  onSave: (program: ConnectProgramDto) => void;
+}) {
+  const [name, setName] = useState(program.name);
+  const [programPath, setProgramPath] = useState(program.path);
+  const [args, setArgs] = useState(program.args.join("\n"));
+  const [startWithObs, setStartWithObs] = useState(program.start_with_obs);
+  const [stopWithObs, setStopWithObs] = useState(program.stop_with_obs);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="connect-program-name">
+          <Trans>Name</Trans>
+        </Label>
+        <Input
+          id="connect-program-name"
+          value={name}
+          maxLength={64}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="connect-program-path">
+          <Trans>Full program path</Trans>
+        </Label>
+        <Input
+          id="connect-program-path"
+          value={programPath}
+          onChange={(event) => setProgramPath(event.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="connect-program-args">
+          <Trans>Arguments (one per line)</Trans>
+        </Label>
+        <textarea
+          id="connect-program-args"
+          rows={4}
+          value={args}
+          onChange={(event) => setArgs(event.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={startWithObs}
+          onChange={(event) => setStartWithObs(event.target.checked)}
+        />
+        <Trans>Start with OBS</Trans>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={stopWithObs}
+          onChange={(event) => setStopWithObs(event.target.checked)}
+        />
+        <Trans>Stop with OBS</Trans>
+      </label>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          disabled={saving || name.trim().length === 0 || programPath.trim().length === 0}
+          onClick={() =>
+            onSave({
+              ...program,
+              name: name.trim(),
+              path: programPath.trim(),
+              args: args.split(/\r?\n/).filter((argument) => argument.length > 0),
+              start_with_obs: startWithObs,
+              stop_with_obs: stopWithObs,
+            })
+          }
+        >
+          <Trans>Save</Trans>
+        </Button>
+      </div>
     </div>
   );
 }

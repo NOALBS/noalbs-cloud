@@ -31,7 +31,19 @@ type Setup = {
 	obs: ObsConfig;
 	detected_binary: string;
 	config_dir: string;
+	programs: ProgramStatus[];
+	allow_dashboard_program_edits: boolean;
 };
+type Program = {
+	id: string;
+	name: string;
+	path: string;
+	args: string[];
+	start_with_obs: boolean;
+	stop_with_obs: boolean;
+	added_from_dashboard_by: string | null;
+};
+type ProgramStatus = { program: Program; running: boolean };
 type State = {
 	platform: string;
 	start_at_login: boolean;
@@ -509,6 +521,9 @@ function App() {
 							onObsChange={updateObs}
 							onSave={saveSetup}
 							onCancel={() => setEditing(null)}
+							onProgramCommand={async (command, args) => {
+								applyState(await invoke<State>(command, args));
+							}}
 						/>
 					) : (
 						<div className="empty">
@@ -540,6 +555,7 @@ function SetupDetail({
 	onObsChange,
 	onSave,
 	onCancel,
+	onProgramCommand,
 }: {
 	setup: Setup;
 	platform: string;
@@ -564,9 +580,30 @@ function SetupDetail({
 	onObsChange: <K extends keyof ObsConfig>(key: K, value: ObsConfig[K]) => void;
 	onSave: () => void;
 	onCancel: () => void;
+	onProgramCommand: (
+		command: string,
+		args: Record<string, unknown>,
+	) => Promise<void>;
 }) {
 	const [obsLabel, obsTone] = obsStatus(setup.obs_state);
 	const running = setup.obs_process_running;
+	const [editingProgram, setEditingProgram] = React.useState<Program | null>(
+		null,
+	);
+	const [programError, setProgramError] = React.useState("");
+	async function programCommand(
+		command: string,
+		args: Record<string, unknown>,
+	): Promise<boolean> {
+		setProgramError("");
+		try {
+			await onProgramCommand(command, args);
+			return true;
+		} catch (error) {
+			setProgramError(String(error));
+			return false;
+		}
+	}
 	return (
 		<>
 			<h1>{setup.name}</h1>
@@ -668,6 +705,120 @@ function SetupDetail({
 				)}
 			</section>
 
+			<h2>Programs</h2>
+			<section className="group">
+				<div className="group-body">
+					<Check
+						checked={setup.allow_dashboard_program_edits}
+						onChange={(allow) =>
+							void programCommand("set_allow_dashboard_program_edits", {
+								setupId: setup.id,
+								allow,
+							})
+						}
+					>
+						Allow the dashboard to add and edit programs
+					</Check>
+					{programError && (
+						<p className="error" role="alert">
+							{programError}
+						</p>
+					)}
+					{setup.programs.map(({ program, running: programRunning }) => (
+						<div className="program-row" key={program.id}>
+							<div className="program-info">
+								<strong>{program.name}</strong>
+								<span className="mono">{program.path}</span>
+								{program.args.length > 0 && (
+									<span className="mono">{program.args.join(" ")}</span>
+								)}
+								<span className="hint">
+									{programRunning ? "Running" : "Stopped"}
+									{program.added_from_dashboard_by
+										? ` · Added from the dashboard by ${program.added_from_dashboard_by}`
+										: ""}
+								</span>
+							</div>
+							<div className="buttons">
+								<button
+									type="button"
+									disabled={programRunning}
+									onClick={() =>
+										void programCommand("start_program", {
+											setupId: setup.id,
+											programId: program.id,
+										})
+									}
+								>
+									Start
+								</button>
+								<button
+									type="button"
+									disabled={!programRunning}
+									onClick={() =>
+										void programCommand("stop_program", {
+											setupId: setup.id,
+											programId: program.id,
+										})
+									}
+								>
+									Stop
+								</button>
+								<button
+									type="button"
+									onClick={() => setEditingProgram(program)}
+								>
+									Edit
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										if (window.confirm(`Remove ${program.name}?`)) {
+											void programCommand("remove_program", {
+												setupId: setup.id,
+												programId: program.id,
+											});
+										}
+									}}
+								>
+									Remove
+								</button>
+							</div>
+						</div>
+					))}
+					<div className="group-footer buttons">
+						<button
+							type="button"
+							onClick={() =>
+								setEditingProgram({
+									id: crypto.randomUUID(),
+									name: "",
+									path: "",
+									args: [],
+									start_with_obs: false,
+									stop_with_obs: false,
+									added_from_dashboard_by: null,
+								})
+							}
+						>
+							Add program…
+						</button>
+					</div>
+					{editingProgram && (
+						<ProgramForm
+							program={editingProgram}
+							onCancel={() => setEditingProgram(null)}
+							onSave={(program) =>
+								void programCommand("upsert_program", {
+									setupId: setup.id,
+									program,
+								}).then((saved) => saved && setEditingProgram(null))
+							}
+						/>
+					)}
+				</div>
+			</section>
+
 			<h2>Setup</h2>
 			<section className="group">
 				{editing ? (
@@ -717,6 +868,73 @@ function SetupDetail({
 				)}
 			</section>
 		</>
+	);
+}
+
+function ProgramForm({
+	program,
+	onCancel,
+	onSave,
+}: {
+	program: Program;
+	onCancel: () => void;
+	onSave: (program: Program) => void;
+}) {
+	const [value, setValue] = React.useState(program);
+	return (
+		<div className="program-form">
+			<Field label="Name">
+				<input
+					maxLength={64}
+					value={value.name}
+					onChange={(event) => setValue({ ...value, name: event.target.value })}
+				/>
+			</Field>
+			<Field label="Full program path">
+				<input
+					value={value.path}
+					onChange={(event) => setValue({ ...value, path: event.target.value })}
+				/>
+			</Field>
+			<Field label="Arguments (one per line)">
+				<textarea
+					rows={4}
+					value={value.args.join("\n")}
+					onChange={(event) =>
+						setValue({
+							...value,
+							args: event.target.value
+								.split("\n")
+								.filter((argument) => argument.length > 0),
+						})
+					}
+				/>
+			</Field>
+			<div className="checks">
+				<Check
+					checked={value.start_with_obs}
+					onChange={(checked) =>
+						setValue({ ...value, start_with_obs: checked })
+					}
+				>
+					Start with OBS
+				</Check>
+				<Check
+					checked={value.stop_with_obs}
+					onChange={(checked) => setValue({ ...value, stop_with_obs: checked })}
+				>
+					Stop with OBS
+				</Check>
+			</div>
+			<div className="buttons end">
+				<button type="button" onClick={onCancel}>
+					Cancel
+				</button>
+				<button type="button" className="primary" onClick={() => onSave(value)}>
+					Save program
+				</button>
+			</div>
+		</div>
 	);
 }
 

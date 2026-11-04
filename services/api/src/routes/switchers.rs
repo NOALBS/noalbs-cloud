@@ -206,6 +206,7 @@ pub struct SwitcherDto {
     pub preview_off_air: PreviewOffAir,
     pub connect_obs_control: ConnectAccess,
     pub connect_logs: ConnectAccess,
+    pub connect_programs: ConnectAccess,
     pub connect_watchdog: Watchdog,
 }
 
@@ -307,6 +308,7 @@ impl From<Switcher> for SwitcherDto {
             preview_off_air: s.preview_off_air,
             connect_obs_control: s.connect_obs_control,
             connect_logs: s.connect_logs,
+            connect_programs: s.connect_programs,
             connect_watchdog: s.connect_watchdog,
         }
     }

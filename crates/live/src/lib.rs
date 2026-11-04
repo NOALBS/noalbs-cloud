@@ -34,6 +34,7 @@ use std::time::Duration;
 
 use async_nats::jetstream::{self, kv, stream};
 use chrono::{DateTime, Utc};
+use common::programs::ConnectCommandAction;
 use db::connect::{ConnectAccess, Watchdog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -178,9 +179,21 @@ pub enum ConnectObsCommandCode {
     Timeout,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConnectObsCommandRequest {
-    pub action: db::connect::ConnectObsAction,
+    #[serde(flatten)]
+    pub action: ConnectCommandAction,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectProgramAction {
+    Added,
+    Edited,
+    Removed,
+    Started,
+    Stopped,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -339,6 +352,8 @@ pub struct PcStatus {
     pub obs: PcObsState,
     #[serde(default)]
     pub obs_version: Option<String>,
+    #[serde(default)]
+    pub programs: Vec<common::programs::ProgramStatus>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -671,6 +686,7 @@ pub enum EventDetail {
     ConnectPermissionsChanged {
         obs_control: ConnectAccess,
         logs: ConnectAccess,
+        programs: ConnectAccess,
         by: Option<String>,
     },
     ConnectWatchdogChanged {
@@ -684,6 +700,11 @@ pub enum EventDetail {
     ConnectLogUploaded {
         kind: db::connect_logs::ConnectLogKind,
         log_id: Uuid,
+        by: Option<String>,
+    },
+    ConnectProgramCommand {
+        action: ConnectProgramAction,
+        program: common::programs::Program,
         by: Option<String>,
     },
 }
@@ -933,6 +954,7 @@ mod tests {
             EventDetail::ConnectPermissionsChanged {
                 obs_control: ConnectAccess::Admins,
                 logs: ConnectAccess::Owners,
+                programs: ConnectAccess::Owners,
                 by: Some("kate".into()),
             },
             EventDetail::ConnectWatchdogChanged {
@@ -980,7 +1002,7 @@ mod tests {
     #[test]
     fn connect_obs_command_payloads_use_the_wire_shape() {
         let request = ConnectObsCommandRequest {
-            action: db::connect::ConnectObsAction::Restart,
+            action: common::programs::ConnectCommandAction::Restart,
         };
         assert_eq!(
             serde_json::to_value(request).unwrap(),
