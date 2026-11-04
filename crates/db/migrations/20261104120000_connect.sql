@@ -26,7 +26,7 @@ CREATE TABLE connect_pairings (
     expires_at timestamptz NOT NULL,
     switcher_id uuid REFERENCES switchers ON DELETE CASCADE,
     confirmed_by uuid REFERENCES users ON DELETE SET NULL,
-    confirmed_by_name text CHECK (char_length(confirmed_by_name) <= 200)
+    confirmed_by_name text
 );
 
 ALTER TABLE switchers

@@ -112,6 +112,29 @@ async fn confirmed_pairing_survives_confirmer_deletion(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn long_confirmer_name_is_returned_when_pairing_is_claimed(pool: PgPool) {
+    let (user_id, _, switcher_id) = fixture(&pool).await;
+    let confirmer_name = "x".repeat(300);
+    create_pairing(&pool, "UVWX2345", Utc::now() + Duration::minutes(10)).await;
+
+    assert!(
+        connect::confirm_pairing(&pool, "UVWX-2345", switcher_id, user_id, &confirmer_name)
+            .await
+            .unwrap()
+    );
+
+    let Claim::Claimed {
+        confirmed_by_name, ..
+    } = connect::claim_pairing(&pool, "device-UVWX2345", "long-name-token")
+        .await
+        .unwrap()
+    else {
+        panic!("confirmed pairing should be claimable");
+    };
+    assert_eq!(confirmed_by_name.as_deref(), Some(confirmer_name.as_str()));
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn claim_of_expired_or_unknown_pairing_is_expired(pool: PgPool) {
     create_pairing(&pool, "EFGH5678", Utc::now() - Duration::seconds(1)).await;
     for code in ["device-EFGH5678", "unknown"] {
