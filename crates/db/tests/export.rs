@@ -1,18 +1,22 @@
 //! "Download my data" (GDPR): what the export holds, and guards that fail when
 //! the schema grows without deciding whether the new data is exported.
 
-use db::{export, switcher_events, switchers, users, workspaces, workspaces::WorkspaceRoleEnum};
+use db::{
+    connect_logs, export, switcher_events, switchers, users, workspaces,
+    workspaces::WorkspaceRoleEnum,
+};
 use futures_util::TryStreamExt;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Tables `db::export` covers (`account`, or `history` for stream history).
+/// Tables `db::export` covers (`account` or streamed `history`).
 const EXPORTED: &[&str] = &[
     "chat_bots",
     "chat_channels",
     "chat_ignored_chatters",
     "connect_devices",
+    "connect_logs",
     "connect_pairings",
     "noalbs_chat_command_aliases",
     "noalbs_chat_command_overrides",
@@ -534,6 +538,30 @@ async fn the_export_holds_what_is_kept_about_the_user(pool: PgPool) {
 #[sqlx::test(migrator = "db::MIGRATOR")]
 async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     let fixture = fixture(&pool).await;
+    connect_logs::insert(
+        &pool,
+        fixture.backpack,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "latest.txt",
+        None,
+        false,
+        b"Kate's OBS log",
+    )
+    .await
+    .unwrap();
+    connect_logs::insert(
+        &pool,
+        fixture.sams,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "latest.txt",
+        None,
+        false,
+        b"Sam's OBS log",
+    )
+    .await
+    .unwrap();
     let lines: Vec<String> = export::history(&pool, fixture.kate)
         .try_collect()
         .await
@@ -547,7 +575,7 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
         .iter()
         .map(|line| line["type"].as_str().unwrap())
         .collect();
-    assert_eq!(types, ["stream", "stats", "event"]);
+    assert_eq!(types, ["stream", "stats", "event", "connect_log"]);
     assert_eq!(lines[0]["switcher_id"], json!(fixture.backpack));
     assert_eq!(lines[0]["switcher"], "Backpack");
     assert_eq!(lines[0]["sources"][0]["name"], "Home");
@@ -555,9 +583,12 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     assert_eq!(lines[1]["raw"]["publisher"], "live/kate");
     assert_eq!(lines[1]["stream_id"], lines[0]["id"]);
     assert_eq!(lines[2]["switcher_id"], json!(fixture.backpack));
+    assert_eq!(lines[3]["switcher_id"], json!(fixture.backpack));
+    assert_eq!(lines[3]["content"], "Kate's OBS log");
     // Nothing from Sam's switcher.
     for line in &lines {
         assert!(!line.to_string().contains(&fixture.sams.to_string()));
+        assert!(!line.to_string().contains("Sam's OBS log"));
     }
 
     // Sam gets his, and nothing of Kate's.
@@ -565,13 +596,16 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
         .try_collect()
         .await
         .unwrap();
-    assert_eq!(sams.len(), 3);
+    assert_eq!(sams.len(), 4);
     let stream: Value = serde_json::from_str(&sams[0]).unwrap();
     assert_eq!(stream["switcher_id"], json!(fixture.sams));
+    let log: Value = serde_json::from_str(&sams[3]).unwrap();
+    assert_eq!(log["content"], "Sam's OBS log");
     assert!(
         sams.iter()
             .all(|line| !line.contains(&fixture.backpack.to_string()))
     );
+    assert!(sams.iter().all(|line| !line.contains("Kate's OBS log")));
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
