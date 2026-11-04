@@ -38,7 +38,19 @@ describe("describeEvent", () => {
         kind: "connect_log_uploaded",
         data: { kind: "obs_log", log_id: "log-1", by: "kate" },
       }),
-    ).toEqual({ title: "OBS log uploaded", detail: "by kate" });
+    ).toEqual({ title: "Connect log upload", detail: "kate uploaded an OBS log through Connect" });
+  });
+
+  it("describes Connect OBS commands as complete translated sentences", () => {
+    for (const action of ["start", "stop", "restart"] as const) {
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: "kate" } })
+          .detail,
+      ).toContain("kate");
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: null } }).detail,
+      ).toMatch(/^(Started|Stopped|Restarted) OBS through Connect$/);
+    }
   });
 
   it("describes Connect program changes with the full command", () => {

@@ -51,6 +51,7 @@ import {
 } from "@/lib/connect";
 import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
+import { redactLog } from "@/lib/redact-log";
 import { formatRelative } from "@/lib/time";
 
 type ConnectProgramDto = {
@@ -138,7 +139,7 @@ export function ConnectSettings() {
   const uploadLatestLog = useMutation({
     mutationFn: () =>
       unwrap(
-        apiWithTimeout(40_000).POST(
+        apiWithTimeout(70_000).POST(
           "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs",
           { params: { path } },
         ),
@@ -361,6 +362,7 @@ function ConnectProgramsCard({
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<ConnectProgramDto | null>(null);
+  const [removeProgramId, setRemoveProgramId] = useState<string | null>(null);
   const [editingExisting, setEditingExisting] = useState(false);
   const [editingRefused, setEditingRefused] = useState(false);
   const queryKey = [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "programs"];
@@ -391,14 +393,14 @@ function ConnectProgramsCard({
     mutationFn: async (program: ConnectProgramDto) => {
       if (editingExisting) {
         return unwrap(
-          apiWithTimeout(40_000).PUT(
+          apiWithTimeout(70_000).PUT(
             "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}",
             { params: { path: { ...path, program_id: program.id } }, body: program },
           ),
         );
       }
       return unwrap(
-        apiWithTimeout(40_000).POST(
+        apiWithTimeout(70_000).POST(
           "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs",
           { params: { path }, body: program },
         ),
@@ -415,13 +417,14 @@ function ConnectProgramsCard({
   const remove = useMutation({
     mutationFn: (programId: string) =>
       unwrap(
-        apiWithTimeout(40_000).DELETE(
+        apiWithTimeout(70_000).DELETE(
           "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}",
           { params: { path: { ...path, program_id: programId } } },
         ),
       ),
     onSuccess: async () => {
       await refresh();
+      setRemoveProgramId(null);
       toast.success(t`Program removed`);
     },
     onError: mutationError,
@@ -429,7 +432,7 @@ function ConnectProgramsCard({
   const control = useMutation({
     mutationFn: ({ programId, action }: { programId: string; action: "start" | "stop" }) =>
       unwrap(
-        apiWithTimeout(40_000).POST(
+        apiWithTimeout(70_000).POST(
           "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}",
           { params: { path: { ...path, program_id: programId, action } } },
         ),
@@ -544,9 +547,7 @@ function ConnectProgramsCard({
               size="sm"
               variant="outline"
               disabled={!online || remove.isPending}
-              onClick={() => {
-                if (window.confirm(t`Remove ${program.name}?`)) remove.mutate(program.id);
-              }}
+              onClick={() => setRemoveProgramId(program.id)}
             >
               <Trash2 />
               <Trans>Remove</Trans>
@@ -578,6 +579,35 @@ function ConnectProgramsCard({
           )}
         </DialogContent>
       </Dialog>
+      <AlertDialog
+        open={removeProgramId !== null}
+        onOpenChange={(open) => !open && !remove.isPending && setRemoveProgramId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Remove program?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>This program will be removed from the paired Connect computer.</Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={remove.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (removeProgramId) remove.mutate(removeProgramId);
+              }}
+            >
+              <Trans>Remove</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
@@ -857,7 +887,8 @@ function ConnectDeviceRow({
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={obsCommand.isPending}
-              onClick={() => {
+              onClick={(event) => {
+                event.preventDefault();
                 if (confirmAction) {
                   obsCommand.mutate(confirmAction satisfies ConnectObsAction, {
                     onSuccess: () => setConfirmAction(null),
@@ -969,6 +1000,7 @@ function ConnectLogViewer({
 }) {
   const [filter, setFilter] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showSensitiveValues, setShowSensitiveValues] = useState(false);
   const detail = useQuery({
     queryKey: [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "log", log?.id],
     queryFn: () =>
@@ -980,20 +1012,27 @@ function ConnectLogViewer({
     enabled: open && log !== null,
   });
   const content = (detail.data as ConnectLogDetailDto | undefined)?.content ?? "";
+  const displayedContent = showSensitiveValues ? content : redactLog(content);
   const lines = useMemo(() => {
     const normalized = filter.trim().toLocaleLowerCase();
-    return content
+    return displayedContent
       .split("\n")
       .map((text, index) => ({ text, index }))
       .filter(({ text }) => !normalized || text.toLocaleLowerCase().includes(normalized));
-  }, [content, filter]);
+  }, [displayedContent, filter]);
   const copy = async () => {
-    await navigator.clipboard.writeText(content);
+    await navigator.clipboard.writeText(displayedContent);
     setCopied(true);
     toast.success(t`Copied`);
   };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) setShowSensitiveValues(false);
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="flex h-[min(52rem,90dvh)] flex-col gap-3 sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>{log?.file_name ?? t`OBS log`}</DialogTitle>
@@ -1005,7 +1044,14 @@ function ConnectLogViewer({
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           />
-          <Button variant="outline" onClick={() => void copy()} disabled={!content}>
+          <Button
+            variant="outline"
+            aria-pressed={showSensitiveValues}
+            onClick={() => setShowSensitiveValues((value) => !value)}
+          >
+            <Trans>Show sensitive values</Trans>
+          </Button>
+          <Button variant="outline" onClick={() => void copy()} disabled={!displayedContent}>
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             {copied ? t`Copied` : t`Copy`}
           </Button>

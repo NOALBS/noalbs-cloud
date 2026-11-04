@@ -99,24 +99,38 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         detail: t`Mode: ${event.data.mode} ${by(event.data.by, t`from the dashboard`)}`,
       };
     case "connect_obs_command": {
-      const verb = {
-        start: t`started`,
-        stop: t`stopped`,
-        restart: t`restarted`,
-        upload_log: t`requested an OBS log`,
-      }[event.data.action];
+      const detail = event.data.by
+        ? {
+            start: t`${event.data.by} started OBS through Connect`,
+            stop: t`${event.data.by} stopped OBS through Connect`,
+            restart: t`${event.data.by} restarted OBS through Connect`,
+            upload_log: t`${event.data.by} requested an OBS log through Connect`,
+          }[event.data.action]
+        : {
+            start: t`Started OBS through Connect`,
+            stop: t`Stopped OBS through Connect`,
+            restart: t`Restarted OBS through Connect`,
+            upload_log: t`Requested an OBS log through Connect`,
+          }[event.data.action];
       return {
         title: t`OBS command`,
-        detail: event.data.by
-          ? t`${event.data.by} ${verb} OBS through Connect`
-          : t`${verb} OBS through Connect`,
+        detail,
       };
     }
-    case "connect_log_uploaded":
+    case "connect_log_uploaded": {
+      const detail =
+        event.data.kind === "obs_log"
+          ? event.data.by
+            ? t`${event.data.by} uploaded an OBS log through Connect`
+            : t`Connect uploaded an OBS log`
+          : event.data.by
+            ? t`${event.data.by} uploaded a crash report through Connect`
+            : t`Connect uploaded a crash report`;
       return {
-        title: event.data.kind === "obs_log" ? t`OBS log uploaded` : t`Crash report uploaded`,
-        detail: by(event.data.by, t`by Connect`),
+        title: t`Connect log upload`,
+        detail,
       };
+    }
     case "connect_program_command": {
       const title = {
         added: t`Program added`,
@@ -127,7 +141,9 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
       }[event.data.action];
       return {
         title: `${title}: ${event.data.program.name}`,
-        detail: t`${event.data.program.path} · Args: ${JSON.stringify(event.data.program.args)} · ${by(event.data.by, t`from Connect`)}`,
+        detail: event.data.program.path
+          ? t`${event.data.program.path} · Args: ${JSON.stringify(event.data.program.args)} · ${by(event.data.by, t`from Connect`)}`
+          : t`Program details hidden · ${by(event.data.by, t`from Connect`)}`,
       };
     }
     case "feed_fixed":

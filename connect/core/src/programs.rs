@@ -98,6 +98,9 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
+    if let Some(parent) = program.path.parent() {
+        command.current_dir(parent);
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -131,6 +134,33 @@ pub fn stop(program: &Program, supervisor: &Supervisor) -> Result<(), ProgramErr
 
 pub fn find(programs: &[Program], id: Uuid) -> Option<&Program> {
     programs.iter().find(|program| program.id == id)
+}
+
+pub fn add(programs: &mut Vec<Program>, program: Program) -> Result<(), &'static str> {
+    if find(programs, program.id).is_some() {
+        return Err("Program already exists");
+    }
+    programs.push(program);
+    Ok(())
+}
+
+pub fn replace(programs: &mut [Program], program: Program) -> Result<Program, &'static str> {
+    let Some(existing) = programs.iter_mut().find(|item| item.id == program.id) else {
+        return Err("Program not found");
+    };
+    Ok(std::mem::replace(existing, program))
+}
+
+pub fn require_stopped_for_path_change(
+    existing: &Program,
+    replacement: &Program,
+    running: bool,
+) -> Result<(), &'static str> {
+    if running && existing.path != replacement.path {
+        Err("Stop the program before changing its executable")
+    } else {
+        Ok(())
+    }
 }
 
 pub fn for_obs_action(programs: &[Program], action: ObsLifecycleAction) -> Vec<&Program> {
@@ -235,6 +265,38 @@ mod tests {
             require_dashboard_edits_allowed(false),
             Err(DASHBOARD_PROGRAM_EDITING_DISABLED)
         );
+    }
+
+    #[test]
+    fn add_and_edit_distinguish_duplicate_and_missing_programs() {
+        let existing = program(PathBuf::from("/tmp/existing"));
+        let id = existing.id;
+        let mut programs = vec![existing];
+        let duplicate = programs[0].clone();
+        assert_eq!(add(&mut programs, duplicate), Err("Program already exists"));
+        assert_eq!(
+            replace(&mut programs, program(PathBuf::from("/tmp/missing"))),
+            Err("Program not found")
+        );
+
+        let mut edited = programs[0].clone();
+        edited.name = "renamed".into();
+        let previous = programs[0].clone();
+        assert_eq!(replace(&mut programs, edited.clone()), Ok(previous));
+        assert_eq!(find(&programs, id).unwrap().name, "renamed");
+    }
+
+    #[test]
+    fn a_running_program_must_be_stopped_before_its_path_changes() {
+        let existing = program(PathBuf::from("/tmp/original"));
+        let mut replacement = existing.clone();
+        replacement.path = PathBuf::from("/tmp/new");
+        assert_eq!(
+            require_stopped_for_path_change(&existing, &replacement, true),
+            Err("Stop the program before changing its executable")
+        );
+        assert!(require_stopped_for_path_change(&existing, &replacement, false).is_ok());
+        assert!(require_stopped_for_path_change(&existing, &existing, true).is_ok());
     }
 
     #[cfg(unix)]

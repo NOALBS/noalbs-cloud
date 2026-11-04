@@ -367,11 +367,6 @@ msgstr "{0} · the list refreshes by itself; scan to look again."
 msgid "{0} (customer)"
 msgstr "{0} (customer)"
 
-#. placeholder {0}: event.data.by
-#: src/lib/live-format.ts
-msgid "{0} {verb} OBS through Connect"
-msgstr "{0} {verb} OBS through Connect"
-
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -558,6 +553,16 @@ msgstr "{0} plan"
 msgid "{0} removed"
 msgstr "{0} removed"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr "{0} requested an OBS log through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} restarted OBS through Connect"
+msgstr "{0} restarted OBS through Connect"
+
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
@@ -582,11 +587,21 @@ msgstr "{0} selected"
 msgid "{0} servers · {1}"
 msgstr "{0} servers · {1}"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} started OBS through Connect"
+msgstr "{0} started OBS through Connect"
+
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
 msgstr "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} stopped OBS through Connect"
+msgstr "{0} stopped OBS through Connect"
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -624,6 +639,16 @@ msgstr "{0} until {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} updated"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr "{0} uploaded a crash report through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr "{0} uploaded an OBS log through Connect"
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -916,10 +941,6 @@ msgstr "{team}’s bot"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
-
-#: src/lib/live-format.ts
-msgid "{verb} OBS through Connect"
-msgstr "{verb} OBS through Connect"
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -2084,10 +2105,6 @@ msgstr "Buy on top of any plan, including Free. Adding is charged now for the re
 msgid "by {who}"
 msgstr "by {who}"
 
-#: src/lib/live-format.ts
-msgid "by Connect"
-msgstr "by Connect"
-
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
@@ -2515,6 +2532,10 @@ msgstr "Connect computer"
 msgid "Connect is offline. Programs are shown when the computer is online."
 msgstr "Connect is offline. Programs are shown when the computer is online."
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr "Connect log upload"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Connect Moblin"
@@ -2551,6 +2572,14 @@ msgstr "Connect this computer"
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
 msgstr "Connect to this switcher"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr "Connect uploaded a crash report"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
+msgstr "Connect uploaded an OBS log"
 
 #: src/lib/live-format.ts
 msgid "Connect watchdog changed"
@@ -2795,10 +2824,6 @@ msgstr "Covers the box, keeping its shape; the edges are cut off."
 #: src/components/connect-settings.tsx
 msgid "Crash report"
 msgstr "Crash report"
-
-#: src/lib/live-format.ts
-msgid "Crash report uploaded"
-msgstr "Crash report uploaded"
 
 #: src/components/connect-settings.tsx
 msgid "Crash reports and OBS logs uploaded by Connect."
@@ -6140,7 +6165,6 @@ msgid "OBS log"
 msgstr "OBS log"
 
 #: src/components/connect-settings.tsx
-#: src/lib/live-format.ts
 msgid "OBS log uploaded"
 msgstr "OBS log uploaded"
 
@@ -6980,6 +7004,11 @@ msgstr "Products"
 msgid "Program added"
 msgstr "Program added"
 
+#. placeholder {0}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "Program details hidden · {0}"
+msgstr "Program details hidden · {0}"
+
 #: src/lib/live-format.ts
 msgid "Program edited"
 msgstr "Program edited"
@@ -7226,9 +7255,7 @@ msgid "Remove {0} from {1}?"
 msgstr "Remove {0} from {1}?"
 
 #. placeholder {0}: channel.display_name
-#. placeholder {0}: program.name
 #: src/components/chat/chat-links.tsx
-#: src/components/connect-settings.tsx
 msgid "Remove {0}?"
 msgstr "Remove {0}?"
 
@@ -7259,6 +7286,10 @@ msgstr "Remove missing"
 #: src/components/obs-connection-form.tsx
 msgid "Remove password"
 msgstr "Remove password"
+
+#: src/components/connect-settings.tsx
+msgid "Remove program?"
+msgstr "Remove program?"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7426,8 +7457,8 @@ msgid "Request failed ({0})"
 msgstr "Request failed ({0})"
 
 #: src/lib/live-format.ts
-msgid "requested an OBS log"
-msgstr "requested an OBS log"
+msgid "Requested an OBS log through Connect"
+msgstr "Requested an OBS log through Connect"
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -7452,8 +7483,8 @@ msgid "Restart playback when the source becomes active"
 msgstr "Restart playback when the source becomes active"
 
 #: src/lib/live-format.ts
-msgid "restarted"
-msgstr "restarted"
+msgid "Restarted OBS through Connect"
+msgstr "Restarted OBS through Connect"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -8090,6 +8121,10 @@ msgstr "Show nothing when playback ends"
 msgid "Show older"
 msgstr "Show older"
 
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr "Show sensitive values"
+
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
 msgstr "Show the BRB scene as the stream stops for a raid."
@@ -8409,13 +8444,13 @@ msgstr "Start with OBS"
 msgid "Start, end & raids"
 msgstr "Start, end & raids"
 
-#: src/lib/live-format.ts
-msgid "started"
-msgstr "started"
-
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "Started a checkout"
+
+#: src/lib/live-format.ts
+msgid "Started OBS through Connect"
+msgstr "Started OBS through Connect"
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8591,13 +8626,13 @@ msgstr "Stop with OBS"
 msgid "Stop, and restart when shown"
 msgstr "Stop, and restart when shown"
 
-#: src/lib/live-format.ts
-msgid "stopped"
-msgstr "stopped"
-
 #: src/components/connect-settings.tsx
 msgid "Stopped"
 msgstr "Stopped"
+
+#: src/lib/live-format.ts
+msgid "Stopped OBS through Connect"
+msgstr "Stopped OBS through Connect"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -9715,6 +9750,10 @@ msgstr "This pairing code has expired"
 #: src/components/belabox/stream-panel.tsx
 msgid "This pipeline has no audio settings."
 msgstr "This pipeline has no audio settings."
+
+#: src/components/connect-settings.tsx
+msgid "This program will be removed from the paired Connect computer."
+msgstr "This program will be removed from the paired Connect computer."
 
 #: src/components/live/source-list.tsx
 msgid "This scene has no sources."

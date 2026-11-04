@@ -13,7 +13,8 @@ pub enum ConnectCommandAction {
     UploadLog,
     ProgramStart { id: Uuid },
     ProgramStop { id: Uuid },
-    ProgramUpsert { program: Program },
+    ProgramAdd { program: Program },
+    ProgramEdit { program: Program },
     ProgramRemove { id: Uuid },
 }
 
@@ -31,7 +32,8 @@ impl ConnectCommandAction {
             self,
             Self::ProgramStart { .. }
                 | Self::ProgramStop { .. }
-                | Self::ProgramUpsert { .. }
+                | Self::ProgramAdd { .. }
+                | Self::ProgramEdit { .. }
                 | Self::ProgramRemove { .. }
         )
     }
@@ -55,4 +57,36 @@ pub struct Program {
 pub struct ProgramStatus {
     pub program: Program,
     pub running: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ConnectCommandAction, Program};
+    use std::path::PathBuf;
+    use uuid::Uuid;
+
+    #[test]
+    fn add_and_edit_have_distinct_wire_actions() {
+        let program = Program {
+            id: Uuid::nil(),
+            name: "Streamer.bot".into(),
+            path: PathBuf::from("/opt/Streamer.bot"),
+            args: Vec::new(),
+            start_with_obs: false,
+            stop_with_obs: false,
+            added_from_dashboard_by: None,
+        };
+        let add = ConnectCommandAction::ProgramAdd {
+            program: program.clone(),
+        };
+        let edit = ConnectCommandAction::ProgramEdit { program };
+
+        assert!(add.is_program());
+        assert!(edit.is_program());
+        assert_eq!(serde_json::to_value(add).unwrap()["action"], "program_add");
+        assert_eq!(
+            serde_json::to_value(edit).unwrap()["action"],
+            "program_edit"
+        );
+    }
 }

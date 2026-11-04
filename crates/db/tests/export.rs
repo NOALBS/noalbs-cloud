@@ -170,6 +170,8 @@ struct Fixture {
     backpack: Uuid,
     /// In Sam's workspace, where Kate is an admin.
     sams: Uuid,
+    /// In an organization-managed workspace, where Kate is an admin.
+    client: Uuid,
 }
 
 /// Kate: a workspace of her own with a switcher, stream server, chat channel,
@@ -383,7 +385,13 @@ async fn fixture(pool: &PgPool) -> Fixture {
     workspaces::add_member(pool, client, kate, WorkspaceRoleEnum::Admin)
         .await
         .unwrap();
-    switchers::create(pool, client, "Van", b"van")
+    let client_switcher = switchers::create(pool, client, "Van", b"van")
+        .await
+        .unwrap()
+        .id;
+    sqlx::query("UPDATE switchers SET connect_logs = 'owners' WHERE id = $1")
+        .bind(client_switcher)
+        .execute(pool)
         .await
         .unwrap();
 
@@ -401,6 +409,7 @@ async fn fixture(pool: &PgPool) -> Fixture {
         sam,
         backpack,
         sams,
+        client: client_switcher,
     }
 }
 
@@ -552,6 +561,18 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     .unwrap();
     connect_logs::insert(
         &pool,
+        fixture.client,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "client.txt",
+        None,
+        false,
+        b"Organization client's OBS log",
+    )
+    .await
+    .unwrap();
+    connect_logs::insert(
+        &pool,
         fixture.sams,
         None,
         connect_logs::ConnectLogKind::ObsLog,
@@ -589,6 +610,7 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     for line in &lines {
         assert!(!line.to_string().contains(&fixture.sams.to_string()));
         assert!(!line.to_string().contains("Sam's OBS log"));
+        assert!(!line.to_string().contains("Organization client's OBS log"));
     }
 
     // Sam gets his, and nothing of Kate's.
@@ -606,6 +628,66 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
             .all(|line| !line.contains(&fixture.backpack.to_string()))
     );
     assert!(sams.iter().all(|line| !line.contains("Kate's OBS log")));
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
+    let fixture = fixture(&pool).await;
+    let data = json!({
+        "action": "added",
+        "program": {
+            "id": Uuid::new_v4(),
+            "name": "Streamer.bot",
+            "path": "/home/kate/Streamer.bot.exe",
+            "args": ["--secret"],
+            "start_with_obs": false,
+            "stop_with_obs": false,
+            "added_from_dashboard_by": "Kate"
+        },
+        "by": "Kate"
+    });
+    switcher_events::insert(
+        &pool,
+        fixture.backpack,
+        "connect_program_command",
+        data.clone(),
+    )
+    .await
+    .unwrap();
+    switcher_events::insert(&pool, fixture.client, "connect_program_command", data)
+        .await
+        .unwrap();
+
+    let lines: Vec<String> = export::history(&pool, fixture.kate)
+        .try_collect()
+        .await
+        .unwrap();
+    let events: Vec<Value> = lines
+        .iter()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .filter(|event: &Value| event["kind"] == "connect_program_command")
+        .collect();
+    let owner_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.backpack))
+        .unwrap();
+    assert_eq!(
+        owner_event["data"]["program"]["path"],
+        "/home/kate/Streamer.bot.exe"
+    );
+    assert_eq!(owner_event["data"]["program"]["args"], json!(["--secret"]));
+
+    let admin_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.client))
+        .unwrap();
+    assert!(admin_event["data"]["program"].get("path").is_none());
+    assert_eq!(admin_event["data"]["program"]["args"], json!([]));
+    assert!(
+        admin_event["data"]["program"]
+            .get("added_from_dashboard_by")
+            .is_none()
+    );
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

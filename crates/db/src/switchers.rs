@@ -271,6 +271,7 @@ pub struct SwitcherSummary {
     /// Over the plan's switcher limit, or the workspace (or its organization) is
     /// suspended (see [`is_paused`]).
     pub paused: bool,
+    pub connect_programs: ConnectAccess,
 }
 
 #[tracing::instrument(skip(pool))]
@@ -292,6 +293,7 @@ pub async fn list_summaries(pool: &PgPool, workspace_id: Uuid) -> Result<Vec<Swi
                 WHERE links.switcher_id = switchers.id AND chat_channels.status = 'revoked')
                 AS revoked_channel_count,
             switchers.created_at,
+            switchers.connect_programs,
             (workspaces.organization_id IS NULL
                 AND row_number() OVER (ORDER BY switchers.created_at, switchers.id)
                     > plans.max_switchers)

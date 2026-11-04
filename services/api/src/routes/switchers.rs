@@ -65,7 +65,16 @@ pub struct SwitcherSummaryDto {
 }
 
 impl SwitcherSummaryDto {
-    fn new(switcher: db::switchers::SwitcherSummary, status: Option<live::SwitcherStatus>) -> Self {
+    fn new(
+        switcher: db::switchers::SwitcherSummary,
+        mut status: Option<live::SwitcherStatus>,
+        can_view_programs: bool,
+    ) -> Self {
+        if !can_view_programs
+            && let Some(pc) = status.as_mut().and_then(|status| status.pc.as_mut())
+        {
+            pc.programs.clear();
+        }
         Self {
             id: switcher.id,
             name: switcher.name,
@@ -431,12 +440,15 @@ async fn list_switchers(
     authorized: WorkspaceAuthorized<SwitcherView>,
 ) -> ApiResult<Json<Vec<SwitcherSummaryDto>>> {
     let access = authorized.into_access();
+    let viewer = crate::screenshots::viewer_for(&state, &access).await?;
     let switchers = db::switchers::list_summaries(&state.db, access.workspace_id).await?;
 
     let mut list = Vec::with_capacity(switchers.len());
     for switcher in switchers {
         let status = state.status_of(switcher.id).await;
-        list.push(SwitcherSummaryDto::new(switcher, status));
+        let can_view_programs =
+            crate::screenshots::connect_allowed(switcher.connect_programs, viewer);
+        list.push(SwitcherSummaryDto::new(switcher, status, can_view_programs));
     }
 
     Ok(Json(list))

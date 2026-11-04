@@ -8373,7 +8373,7 @@
             }
           },
           "504": {
-            "description": "`connect_timeout`",
+            "description": "`connect_timeout` after up to 65 seconds",
             "content": {
               "application/json": {
                 "schema": {

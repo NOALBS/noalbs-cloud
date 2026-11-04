@@ -22,6 +22,7 @@ use crate::{
     app::ApiState,
     permissions::{SwitcherAccess, SwitcherAuthorized, SwitcherManage, SwitcherView},
     routes::{ApiError, ApiResult, ErrorBody, stream_servers::StreamServerKindDto},
+    screenshots,
 };
 
 pub fn router() -> OpenApiRouter<ApiState> {
@@ -247,6 +248,10 @@ async fn get_stream(
 ) -> ApiResult<Json<StreamDetailDto>> {
     let (_, _, stream_id) = path;
     let access = authorized.into_access();
+    let can_view_programs = screenshots::connect_allowed(
+        access.switcher.connect_programs,
+        screenshots::viewer_for(&state, &access.workspace).await?,
+    );
     let summary = find_stream(&state, &access, stream_id).await?;
     let (from, to) = range(&summary.stream, query.from, query.to)?;
     let step = step_seconds(from, to, MAX_POINTS);
@@ -305,11 +310,15 @@ async fn get_stream(
         events: events
             .into_iter()
             .filter_map(|row| {
-                Some(SwitcherEvent {
+                let mut event = SwitcherEvent {
                     id: row.id,
                     created_at: row.created_at,
                     detail: EventDetail::from_parts(&row.kind, row.data)?,
-                })
+                };
+                if !can_view_programs {
+                    event.detail.redact_program_details();
+                }
+                Some(event)
             })
             .collect(),
     }))

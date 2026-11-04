@@ -526,8 +526,14 @@ async fn run_obs_action(
         .cloned()
         .ok_or_else(|| "setup not found".to_string())?;
 
-    if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
-        stop_setup_streams(&setup, state).await;
+    if matches!(action, ObsAction::Stop | ObsAction::Restart)
+        && !stop_setup_streams_with_timeout(
+            Duration::from_secs(25),
+            stop_setup_streams(&setup, state),
+        )
+        .await
+    {
+        tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
@@ -563,7 +569,8 @@ async fn run_obs_action(
             ObsAction::UploadLog
             | ObsAction::ProgramStart { .. }
             | ObsAction::ProgramStop { .. }
-            | ObsAction::ProgramUpsert { .. }
+            | ObsAction::ProgramAdd { .. }
+            | ObsAction::ProgramEdit { .. }
             | ObsAction::ProgramRemove { .. } => {
                 return Err("This is not an OBS process action".into());
             }
@@ -632,7 +639,7 @@ fn run_program_action(
                 .map_err(|_| "supervisor lock poisoned")?;
             programs::stop(program, &supervisor).map_err(|error| error.to_string())?;
         }
-        ObsAction::ProgramUpsert { mut program } => {
+        ObsAction::ProgramAdd { mut program } => {
             if dashboard_request {
                 programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
                     .map_err(str::to_owned)?;
@@ -645,22 +652,44 @@ fn run_program_action(
                 .iter()
                 .position(|setup| setup.id == setup_id)
                 .ok_or_else(|| "setup not found".to_string())?;
-            if !dashboard_request {
-                program.added_from_dashboard_by = updated_config.setups[index]
-                    .programs
-                    .iter()
-                    .find(|existing| existing.id == program.id)
-                    .and_then(|existing| existing.added_from_dashboard_by.clone());
-            }
             let configured = &mut updated_config.setups[index].programs;
-            if let Some(existing) = configured
-                .iter_mut()
-                .find(|existing| existing.id == program.id)
-            {
-                *existing = program;
-            } else {
-                configured.push(program);
+            if !dashboard_request {
+                program.added_from_dashboard_by = None;
             }
+            programs::add(configured, program).map_err(str::to_owned)?;
+            state
+                .store
+                .save(&updated_config)
+                .map_err(|error| error.to_string())?;
+            *config = updated_config;
+        }
+        ObsAction::ProgramEdit { mut program } => {
+            if dashboard_request {
+                programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
+                    .map_err(str::to_owned)?;
+            }
+            programs::validate(&program).map_err(str::to_owned)?;
+            let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+            let mut updated_config = config.clone();
+            let index = updated_config
+                .setups
+                .iter()
+                .position(|setup| setup.id == setup_id)
+                .ok_or_else(|| "setup not found".to_string())?;
+            let configured = &mut updated_config.setups[index].programs;
+            let existing = programs::find(configured, program.id)
+                .cloned()
+                .ok_or_else(|| "Program not found".to_string())?;
+            programs::require_stopped_for_path_change(
+                &existing,
+                &program,
+                programs::is_running(&existing),
+            )
+            .map_err(str::to_owned)?;
+            if !dashboard_request {
+                program.added_from_dashboard_by = existing.added_from_dashboard_by.clone();
+            }
+            programs::replace(configured, program).map_err(str::to_owned)?;
             state
                 .store
                 .save(&updated_config)
@@ -672,7 +701,16 @@ fn run_program_action(
                 programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
                     .map_err(str::to_owned)?;
             }
-            let program_to_stop = programs::find(&setup.programs, id).cloned();
+            let program_to_stop = programs::find(&setup.programs, id)
+                .cloned()
+                .ok_or_else(|| "Program not found".to_string())?;
+            if programs::is_running(&program_to_stop) {
+                let supervisor = state
+                    .supervisor
+                    .lock()
+                    .map_err(|_| "supervisor lock poisoned")?;
+                programs::stop(&program_to_stop, &supervisor).map_err(|error| error.to_string())?;
+            }
             let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
             let mut updated_config = config.clone();
             let index = updated_config
@@ -688,13 +726,6 @@ fn run_program_action(
                 .save(&updated_config)
                 .map_err(|error| error.to_string())?;
             *config = updated_config;
-            drop(config);
-            if let Some(program) = program_to_stop
-                && let Ok(supervisor) = state.supervisor.lock()
-                && let Err(error) = programs::stop(&program, &supervisor)
-            {
-                tracing::warn!(program = %program.name, %error, "Failed to stop removed program");
-            }
         }
         _ => return Err("Invalid program action".into()),
     }
@@ -709,10 +740,27 @@ fn upsert_program(
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let edit = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .is_some_and(|setup| {
+            setup
+                .programs
+                .iter()
+                .any(|existing| existing.id == program.id)
+        });
     run_program_action(
         state.inner(),
         setup_id,
-        ObsAction::ProgramUpsert { program },
+        if edit {
+            ObsAction::ProgramEdit { program }
+        } else {
+            ObsAction::ProgramAdd { program }
+        },
         false,
     )?;
     Ok(get_state(state))
@@ -823,18 +871,14 @@ fn create_log_upload(
             })
         })
         .collect::<Vec<_>>();
+    let start_time = state
+        .supervisor
+        .lock()
+        .ok()
+        .and_then(|supervisor| supervisor.obs_start_time(&setup));
     let selected = if kind == "crash_report" {
-        files
-            .iter()
-            .filter_map(|file| Some((file, file.modified_at?)))
-            .max_by_key(|(_, modified)| *modified)
-            .map(|(file, _)| file)
+        select_crash_report_file(&files, start_time)
     } else {
-        let start_time = state
-            .supervisor
-            .lock()
-            .ok()
-            .and_then(|supervisor| supervisor.obs_start_time(&setup));
         select_obs_log_file(&files, start_time)
     }
     .ok_or_else(|| format!("No {kind} file is available"))?;
@@ -848,6 +892,19 @@ fn create_log_upload(
         .modified_at
         .map(|modified| chrono::DateTime::<chrono::Utc>::from(modified).to_rfc3339());
     encode_log_upload(kind, file_name, modified_at, &content).map_err(|error| error.to_string())
+}
+
+fn select_crash_report_file(
+    files: &[ObsLogFile],
+    obs_start_time: Option<std::time::SystemTime>,
+) -> Option<&ObsLogFile> {
+    let minimum_modified_at = obs_start_time?.checked_sub(Duration::from_secs(2))?;
+    files
+        .iter()
+        .filter_map(|file| Some((file, file.modified_at?)))
+        .filter(|(_, modified_at)| *modified_at >= minimum_modified_at)
+        .max_by_key(|(_, modified_at)| *modified_at)
+        .map(|(file, _)| file)
 }
 
 async fn stop_setup_streams(setup: &Setup, state: &AppState) {
@@ -877,6 +934,13 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
     if let Some((port, password)) = connection {
         let _ = stop_active_streams(port, &password).await;
     }
+}
+
+async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> bool
+where
+    F: std::future::Future<Output = ()>,
+{
+    tokio::time::timeout(deadline, future).await.is_ok()
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -1394,8 +1458,17 @@ fn start_link_session(
                                     setup_for_watchdog_restart(&config, &monitor_setup)
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
-                            if incident == PcObsState::NotResponding {
-                                stop_setup_streams(&restart_setup, &app_state).await;
+                            if incident == PcObsState::NotResponding
+                                && !stop_setup_streams_with_timeout(
+                                    Duration::from_secs(25),
+                                    stop_setup_streams(&restart_setup, &app_state),
+                                )
+                                .await
+                            {
+                                tracing::warn!(
+                                    setup_id = %restart_setup.id,
+                                    "Timed out stopping streams before OBS watchdog restart"
+                                );
                             }
                             let restart_result = {
                                 let mut supervisor =
@@ -1740,6 +1813,48 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crash_report_selection_ignores_files_older_than_obs_start_slack() {
+        let directory =
+            std::env::temp_dir().join(format!("crash-selection-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&directory).unwrap();
+        let start = std::time::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let stale_path = directory.join("stale.dmp");
+        let fresh_path = directory.join("fresh.dmp");
+        let stale = std::fs::File::create(&stale_path).unwrap();
+        stale.set_modified(start - Duration::from_secs(3)).unwrap();
+        let fresh = std::fs::File::create(&fresh_path).unwrap();
+        fresh.set_modified(start - Duration::from_secs(1)).unwrap();
+        let files = vec![
+            ObsLogFile {
+                path: stale_path,
+                modified_at: Some(start - Duration::from_secs(3)),
+            },
+            ObsLogFile {
+                path: fresh_path.clone(),
+                modified_at: Some(start - Duration::from_secs(1)),
+            },
+        ];
+
+        assert_eq!(
+            select_crash_report_file(&files, Some(start)).unwrap().path,
+            fresh_path
+        );
+        assert!(select_crash_report_file(&files[..1], Some(start)).is_none());
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[tokio::test]
+    async fn stream_stop_timeout_returns_when_obs_side_hangs() {
+        assert!(
+            !stop_setup_streams_with_timeout(
+                Duration::from_millis(1),
+                std::future::pending::<()>(),
+            )
+            .await
+        );
+    }
 
     #[test]
     fn taken_over_relay_error_does_not_forget_pairing() {

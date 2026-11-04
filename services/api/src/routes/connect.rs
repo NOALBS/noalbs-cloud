@@ -88,7 +88,7 @@ async fn add_connect_program(
     send_program_action(
         &state,
         access.switcher.id,
-        common::programs::ConnectCommandAction::ProgramUpsert {
+        common::programs::ConnectCommandAction::ProgramAdd {
             program: program.clone(),
         },
         Some((live::ConnectProgramAction::Added, program, by)),
@@ -116,7 +116,7 @@ async fn edit_connect_program(
     send_program_action(
         &state,
         access.switcher.id,
-        common::programs::ConnectCommandAction::ProgramUpsert {
+        common::programs::ConnectCommandAction::ProgramEdit {
             program: program.clone(),
         },
         Some((live::ConnectProgramAction::Edited, program, by)),
@@ -230,7 +230,7 @@ async fn send_program_action(
         &state.nats,
         live::connect_request_subject(switcher_id),
         payload,
-        std::time::Duration::from_secs(35),
+        std::time::Duration::from_secs(65),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;
@@ -246,7 +246,7 @@ async fn send_program_action(
             switcher_id,
             EventDetail::ConnectProgramCommand {
                 action,
-                program,
+                program: program.into(),
                 by: Some(by),
             },
         )
@@ -356,7 +356,7 @@ async fn upload_connect_log(
         &state.nats,
         live::connect_request_subject(access.switcher.id),
         payload,
-        std::time::Duration::from_secs(35),
+        std::time::Duration::from_secs(65),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;
@@ -854,7 +854,7 @@ pub struct ConnectObsCommand {
         (status = NO_CONTENT),
         (status = FORBIDDEN, description = "`connect_forbidden`", body = ErrorBody),
         (status = CONFLICT, description = "`connect_offline`, `connect_unsupported`, or `connect_refused`", body = ErrorBody),
-        (status = GATEWAY_TIMEOUT, description = "`connect_timeout`", body = ErrorBody),
+        (status = GATEWAY_TIMEOUT, description = "`connect_timeout` after up to 65 seconds", body = ErrorBody),
     ))]
 async fn connect_obs_command(
     State(state): State<ApiState>,
@@ -883,7 +883,7 @@ async fn connect_obs_command(
         &state.nats,
         live::connect_request_subject(access.switcher.id),
         payload,
-        std::time::Duration::from_secs(35),
+        std::time::Duration::from_secs(65),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;
@@ -959,6 +959,13 @@ fn connect_timeout() -> ApiError {
 }
 
 fn connect_command_failure(reply: live::ConnectObsCommandReply) -> ApiError {
+    if reply.error.as_deref() == Some("Program not found") {
+        return ApiError::new(
+            axum::http::StatusCode::NOT_FOUND,
+            "connect_program_not_found",
+            "The program is not in Connect's current configuration",
+        );
+    }
     match reply.code {
         Some(live::ConnectObsCommandCode::Offline) => connect_offline(),
         Some(live::ConnectObsCommandCode::Unsupported) => ApiError::conflict(
@@ -1050,5 +1057,17 @@ mod tests {
         });
         assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
         assert_eq!(error.code(), "connect_offline");
+    }
+
+    #[test]
+    fn missing_program_reply_maps_to_not_found() {
+        let error = connect_command_failure(live::ConnectObsCommandReply {
+            ok: false,
+            code: Some(live::ConnectObsCommandCode::Refused),
+            error: Some("Program not found".into()),
+            log_id: None,
+        });
+        assert_eq!(error.status(), axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(error.code(), "connect_program_not_found");
     }
 }

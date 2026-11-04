@@ -819,8 +819,30 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
          ORDER BY stats.stream_id, stats.bucket_at, stats.server_id"
     );
     const EVENTS: &str = concat!(
-        "SELECT (jsonb_build_object('type', 'event') || to_jsonb(events))::text
+        "SELECT (jsonb_build_object('type', 'event') || CASE
+             WHEN events.kind = 'connect_program_command'
+                  AND NOT (
+                      event_members.role = 'owner'
+                      OR (event_members.role = 'admin'
+                          AND event_switchers.connect_programs IN ('admins', 'everyone'))
+                      OR (event_members.role = 'operator'
+                          AND event_switchers.connect_programs = 'everyone')
+                  )
+             THEN jsonb_set(
+                 to_jsonb(events)
+                     #- '{data,program,path}'
+                     #- '{data,program,start_with_obs}'
+                     #- '{data,program,stop_with_obs}'
+                     #- '{data,program,added_from_dashboard_by}',
+                 '{data,program,args}', '[]'::jsonb, true
+             )
+             ELSE to_jsonb(events)
+         END)::text
          FROM switcher_events AS events
+         JOIN switchers AS event_switchers ON event_switchers.id = events.switcher_id
+         JOIN workspace_members AS event_members
+             ON event_members.workspace_id = event_switchers.workspace_id
+             AND event_members.user_id = $1
          WHERE events.switcher_id IN (",
         your_switchers!(),
         ")
@@ -833,9 +855,19 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
                 logs.content
          FROM connect_logs AS logs
          LEFT JOIN connect_devices AS device ON device.id = logs.device_id
+         JOIN switchers AS log_switcher ON log_switcher.id = logs.switcher_id
+         JOIN workspace_members AS log_members
+             ON log_members.workspace_id = log_switcher.workspace_id
+             AND log_members.user_id = $1
          WHERE logs.switcher_id IN (",
         your_switchers!(),
         ")
+         AND logs.uploaded_at > now() - interval '30 days'
+         AND (
+             log_members.role = 'owner'
+             OR (log_members.role = 'admin' AND log_switcher.connect_logs IN ('admins', 'everyone'))
+             OR (log_members.role = 'operator' AND log_switcher.connect_logs = 'everyone')
+         )
          ORDER BY logs.uploaded_at, logs.id"
     );
 
