@@ -807,7 +807,12 @@ impl Supervisor {
     }
 
     pub fn forget(&mut self, setup_id: Uuid) {
-        self.children.remove(&setup_id);
+        if let Some(child) = self.children.remove(&setup_id) {
+            let mut child_process = child.child;
+            std::thread::spawn(move || {
+                let _ = child_process.wait();
+            });
+        }
         self.adopted.remove(&setup_id);
         self.crashed_pending.remove(&setup_id);
         self.crashed_state.remove(&setup_id);
@@ -2750,6 +2755,15 @@ int main(int argc, char **argv) {
 
         supervisor.forget(setup.id);
 
+        let placeholder_process = PathBuf::from(format!("/proc/{placeholder_pid}"));
+        let reaped = (0..200).any(|_| {
+            if !placeholder_process.exists() {
+                return true;
+            }
+            thread::sleep(Duration::from_millis(10));
+            false
+        });
+        assert!(reaped, "forgotten child was not reaped");
         assert!(!supervisor.has_child(setup.id));
         assert!(!supervisor.adopted.contains_key(&setup.id));
         assert!(!supervisor.connected.contains(&setup.id));
