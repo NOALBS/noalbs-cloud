@@ -959,7 +959,7 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
             } else {
-                process.exe().is_some_and(|exe| same_path(exe, &expected))
+                process_executable_matches(process, &expected)
             };
             let config_matches = !cfg!(target_os = "linux")
                 || setup.obs.config_dir_override.as_ref().is_none_or(|config| {
@@ -983,6 +983,15 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
             (executable_matches && config_matches && port_matches).then_some(*pid)
         })
         .collect()
+}
+
+fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
+    process.exe().is_some_and(|exe| same_path(exe, expected))
+        || (cfg!(target_os = "linux")
+            && process.cmd().first().is_some_and(|argv0| {
+                // Nix/makeWrapper may exec a different binary while preserving argv[0].
+                same_path(&resolve_executable(Path::new(argv0)), expected)
+            }))
 }
 
 fn command_has_option(arguments: &[std::ffi::OsString], option: &str, value: &str) -> bool {
@@ -1015,7 +1024,7 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
             } else {
-                process.exe().is_some_and(|exe| same_path(exe, &expected))
+                process_executable_matches(process, &expected)
             };
             executable_matches.then_some(*pid)
         })
@@ -2272,6 +2281,65 @@ int main(int argc, char **argv) {
         );
         supervisor.stop(&setup).unwrap();
         assert!(!manual_obs.wait().unwrap().success());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn hand_started_obs_matches_argv0_preserving_wrapper() {
+        struct ChildGuard(std::process::Child);
+
+        impl Drop for ChildGuard {
+            fn drop(&mut self) {
+                let _ = self.0.kill();
+                let _ = self.0.wait();
+            }
+        }
+
+        let directory = tempdir().unwrap();
+        let wrapped_binary = directory.path().join(".obs-wrapped");
+        let bash_binary = resolve_executable(Path::new("bash"));
+        assert!(bash_binary.is_file());
+        fs::copy(bash_binary, &wrapped_binary).unwrap();
+
+        let wrapper = directory.path().join("obs");
+        fs::write(
+            &wrapper,
+            format!(
+                "#!/usr/bin/env bash\nexec -a \"$0\" \"{}\" -c 'sleep \"$1\"; :' -- \"$@\"\n",
+                wrapped_binary.display()
+            ),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&wrapper).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&wrapper, permissions).unwrap();
+
+        let child = ChildGuard(Command::new(&wrapper).arg("30").spawn().unwrap());
+        let child_pid = child.0.id();
+        let mut setup = Setup::new("Wrapped OBS".into());
+        setup.obs.install_kind = InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(wrapper);
+
+        let mut matches = Vec::new();
+        for _ in 0..100 {
+            matches = matching_obs_pids(&setup);
+            if matches.iter().any(|pid| pid.as_u32() == child_pid) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(
+            matches.iter().any(|pid| pid.as_u32() == child_pid),
+            "child was not matched: exe={:?}, cmdline={:?}",
+            fs::read_link(format!("/proc/{child_pid}/exe")),
+            fs::read(format!("/proc/{child_pid}/cmdline"))
+        );
+
+        let mut supervisor = Supervisor::default();
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::WaitingForInput
+        );
     }
 
     #[test]
