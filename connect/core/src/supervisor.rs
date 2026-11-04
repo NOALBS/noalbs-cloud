@@ -1027,13 +1027,16 @@ fn any_obs_running() -> bool {
         ProcessRefreshKind::everything(),
     );
     system.processes().values().any(|process| {
-        let name = process.name().to_string_lossy();
-        if cfg!(target_os = "windows") {
-            name.eq_ignore_ascii_case("obs64.exe")
-        } else {
-            name == "obs"
-        }
+        is_obs_process_name(&process.name().to_string_lossy(), HostPlatform::current())
     })
+}
+
+fn is_obs_process_name(name: &str, platform: HostPlatform) -> bool {
+    match platform {
+        HostPlatform::Windows => name.eq_ignore_ascii_case("obs64.exe"),
+        HostPlatform::MacOS => name == "OBS",
+        HostPlatform::Linux => name == "obs",
+    }
 }
 
 fn is_flatpak_obs_process(pid: u32, process: &sysinfo::Process) -> bool {
@@ -1414,11 +1417,11 @@ mod tests {
 
     use super::{
         StartedObs, Supervisor, SupervisorError, copy_latest_crash_report,
-        find_matching_obs_with_start_time, launch_arguments, macos_obs_binary_candidates,
-        macos_obs_config_dir, matching_obs_pids, prepare_after_crash, process_start_time,
-        resolve_executable,
+        find_matching_obs_with_start_time, is_obs_process_name, launch_arguments,
+        macos_obs_binary_candidates, macos_obs_config_dir, matching_obs_pids, prepare_after_crash,
+        process_start_time, resolve_executable,
     };
-    use crate::config::{InstallKind, ObsLaunchConfig, Setup};
+    use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
     #[test]
     fn macos_discovery_candidates_and_config_path_are_platform_specific() {
@@ -1434,6 +1437,14 @@ mod tests {
             macos_obs_config_dir(home),
             PathBuf::from("/Users/tester/Library/Application Support/obs-studio")
         );
+    }
+
+    #[test]
+    fn obs_process_name_matches_host_platform() {
+        assert!(is_obs_process_name("OBS", HostPlatform::MacOS));
+        assert!(!is_obs_process_name("obs", HostPlatform::MacOS));
+        assert!(is_obs_process_name("obs", HostPlatform::Linux));
+        assert!(is_obs_process_name("obs64.exe", HostPlatform::Windows));
     }
 
     fn make_setup(script: &Path, config_dir: &Path) -> Setup {
