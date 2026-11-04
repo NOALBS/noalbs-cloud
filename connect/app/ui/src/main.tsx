@@ -765,8 +765,8 @@ function SetupForm({
 					platform === "windows"
 						? "Normal OBS installs share their settings. Use a portable OBS copy for separate settings."
 						: platform === "macos"
-						? "OBS uses one settings folder. Use shared config with a distinct websocket port for multiple setups."
-						: "Use a separate folder for each setup on this computer."
+							? "OBS uses one settings folder. Use shared config with a distinct websocket port for multiple setups."
+							: "Use a separate folder for each setup on this computer."
 				}
 			>
 				<input
