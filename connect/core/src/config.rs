@@ -116,6 +116,7 @@ pub struct ObsLaunchConfig {
     pub install_kind: InstallKind,
     pub binary_path: Option<PathBuf>,
     pub config_dir_override: Option<PathBuf>,
+    pub portable: bool,
     pub shared_config: bool,
     pub websocket_port: Option<u16>,
     pub websocket_password_override: Option<String>,
@@ -135,6 +136,7 @@ impl Default for ObsLaunchConfig {
             install_kind: InstallKind::Native,
             binary_path: None,
             config_dir_override: None,
+            portable: false,
             shared_config: false,
             websocket_port: None,
             websocket_password_override: None,
@@ -150,16 +152,50 @@ impl Default for ObsLaunchConfig {
     }
 }
 
+pub fn windows_obs_install_root(binary_path: &Path) -> Option<PathBuf> {
+    let architecture_dir = binary_path.parent()?;
+    if !path_component_is(architecture_dir, "64bit") {
+        return None;
+    }
+    let bin_dir = architecture_dir.parent()?;
+    if !path_component_is(bin_dir, "bin") {
+        return None;
+    }
+    bin_dir.parent().map(Path::to_owned)
+}
+
+fn path_component_is(path: &Path, expected: &str) -> bool {
+    path.file_name()
+        .is_some_and(|component| component.to_string_lossy().eq_ignore_ascii_case(expected))
+}
+
 pub fn validate_obs_config_for_platform(
     config: &ObsLaunchConfig,
     platform: HostPlatform,
 ) -> Result<(), &'static str> {
-    if matches!(platform, HostPlatform::MacOS | HostPlatform::Windows)
-        && config.config_dir_override.is_some()
+    if config.config_dir_override.is_some() {
+        match platform {
+            HostPlatform::Windows => {
+                return Err(
+                    "Separate OBS settings folders are not supported on Windows. Use a portable copy of OBS instead.",
+                );
+            }
+            HostPlatform::MacOS => {
+                return Err(
+                    "OBS settings folder overrides are not supported on macOS. Use shared config with a distinct websocket port for multiple setups.",
+                );
+            }
+            HostPlatform::Linux => {}
+        }
+    }
+    if platform == HostPlatform::Windows
+        && config.portable
+        && config
+            .binary_path
+            .as_deref()
+            .is_some_and(|path| windows_obs_install_root(path).is_none())
     {
-        return Err(
-            "OBS settings folder overrides are not supported on macOS or Windows. Use shared config with a distinct websocket port for multiple setups.",
-        );
+        return Err("Portable OBS must be installed under a bin\\64bit folder.");
     }
     if platform != HostPlatform::Linux && matches!(config.install_kind, InstallKind::Flatpak) {
         return Err("Flatpak OBS is only supported on Linux.");
@@ -290,8 +326,9 @@ impl ConfigStore {
 mod tests {
     use super::{
         AppConfig, ConfigStore, HostPlatform, ObsLaunchConfig, PRODUCTION_API_URL, Setup,
-        validate_obs_config_for_platform,
+        validate_obs_config_for_platform, windows_obs_install_root,
     };
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn config_round_trips_setups_and_defaults() {
@@ -390,6 +427,58 @@ mod tests {
         assert!(
             validate_obs_config_for_platform(&ObsLaunchConfig::default(), HostPlatform::Linux)
                 .is_ok()
+        );
+    }
+
+    #[test]
+    fn windows_settings_folder_override_recommends_portable_obs() {
+        let config = ObsLaunchConfig {
+            config_dir_override: Some("custom".into()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            validate_obs_config_for_platform(&config, HostPlatform::Windows),
+            Err(
+                "Separate OBS settings folders are not supported on Windows. Use a portable copy of OBS instead."
+            )
+        );
+    }
+
+    #[test]
+    fn portable_windows_obs_requires_the_standard_install_layout() {
+        let config = ObsLaunchConfig {
+            portable: true,
+            binary_path: Some("custom/obs64.exe".into()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            validate_obs_config_for_platform(&config, HostPlatform::Windows),
+            Err("Portable OBS must be installed under a bin\\64bit folder.")
+        );
+    }
+
+    #[test]
+    fn portable_windows_obs_with_the_standard_layout_is_valid() {
+        let config = ObsLaunchConfig {
+            portable: true,
+            binary_path: Some("C:/obs-portable/bin/64bit/obs64.exe".into()),
+            ..Default::default()
+        };
+
+        assert!(validate_obs_config_for_platform(&config, HostPlatform::Windows).is_ok());
+    }
+
+    #[test]
+    fn windows_obs_install_root_is_above_bin_64bit() {
+        assert_eq!(
+            windows_obs_install_root(Path::new("C:/obs-portable/bin/64bit/obs64.exe")),
+            Some(PathBuf::from("C:/obs-portable"))
+        );
+        assert_eq!(
+            windows_obs_install_root(Path::new("C:/obs-portable/obs64.exe")),
+            None
         );
     }
 }

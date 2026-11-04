@@ -82,9 +82,12 @@ The URL variables are needed when pairing with the local stack; otherwise Connec
 Untick “start when my computer starts” while developing, since the autostart entry runs without
 these variables.
 
-OBS settings folder overrides are supported on Linux only. macOS and Windows use OBS's shared
-settings folder; multiple setups on those platforms need shared config enabled and a distinct
-WebSocket port for each setup.
+OBS settings folder overrides are supported on Linux only. macOS and normal Windows installs use
+OBS's shared settings folder; multiple setups on those platforms need shared config enabled and a
+distinct WebSocket port for each setup. On Windows, enable Portable OBS in Connect or add one of
+OBS's portable marker files (`portable_mode`, `obs_portable_mode`, `portable_mode.txt`, or
+`obs_portable_mode.txt`) to the install root for separate settings under
+`<install root>/config/obs-studio`.
 
 ### Settings
 

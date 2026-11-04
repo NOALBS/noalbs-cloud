@@ -8,6 +8,7 @@ type ObsConfig = {
 	install_kind: "native" | "flatpak" | "custom_binary";
 	binary_path: string | null;
 	config_dir_override: string | null;
+	portable: boolean;
 	shared_config: boolean;
 	websocket_port: number | null;
 	websocket_password_override: string | null;
@@ -748,10 +749,22 @@ function SetupForm({
 					}
 				/>
 			</Field>
+			{platform === "windows" && (
+				<div className="checks">
+					<Check
+						checked={obs.portable}
+						onChange={(checked) => onObsChange("portable", checked)}
+					>
+						Portable OBS (keeps its own settings next to obs64.exe)
+					</Check>
+				</div>
+			)}
 			<Field
 				label="OBS settings folder"
 				hint={
-					platform === "macos" || platform === "windows"
+					platform === "windows"
+						? "Normal OBS installs share their settings. Use a portable OBS copy for separate settings."
+						: platform === "macos"
 						? "OBS uses one settings folder. Use shared config with a distinct websocket port for multiple setups."
 						: "Use a separate folder for each setup on this computer."
 				}

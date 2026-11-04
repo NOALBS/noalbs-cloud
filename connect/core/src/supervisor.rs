@@ -14,9 +14,19 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup, validate_obs_config_for_platform},
+    config::{
+        HostPlatform, InstallKind, ObsLaunchConfig, Setup, validate_obs_config_for_platform,
+        windows_obs_install_root,
+    },
     relay::PcObsState,
 };
+
+const WINDOWS_PORTABLE_MARKERS: [&str; 4] = [
+    "portable_mode",
+    "obs_portable_mode",
+    "portable_mode.txt",
+    "obs_portable_mode.txt",
+];
 
 #[derive(Debug, Error)]
 pub enum SupervisorError {
@@ -134,19 +144,32 @@ pub fn enable_obs_websocket_on_port(
 }
 
 pub fn config_dir(setup: &Setup) -> PathBuf {
+    config_dir_for_platform(setup, HostPlatform::current())
+}
+
+fn config_dir_for_platform(setup: &Setup, platform: HostPlatform) -> PathBuf {
+    let binary = setup
+        .obs
+        .binary_path
+        .clone()
+        .unwrap_or_else(default_obs_binary);
+    if is_portable_obs_for_platform(&setup.obs, &binary, platform)
+        && let Some(root) = windows_obs_install_root(&binary)
+    {
+        return root.join("config").join("obs-studio");
+    }
     if let Some(path) = &setup.obs.config_dir_override {
         return path.clone();
     }
-    #[cfg(target_os = "macos")]
-    {
-        directories::BaseDirs::new()
+    match platform {
+        HostPlatform::MacOS => directories::BaseDirs::new()
             .map(|dirs| macos_obs_config_dir(dirs.home_dir()))
-            .unwrap_or_default()
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        match setup.obs.install_kind {
-            InstallKind::Flatpak => directories::BaseDirs::new()
+            .unwrap_or_default(),
+        HostPlatform::Windows => directories::BaseDirs::new()
+            .map(|dirs| dirs.config_dir().join("obs-studio"))
+            .unwrap_or_default(),
+        HostPlatform::Linux if matches!(setup.obs.install_kind, InstallKind::Flatpak) => {
+            directories::BaseDirs::new()
                 .map(|dirs| {
                     dirs.home_dir()
                         .join(".var/app/com.obsproject.Studio/config/obs-studio")
@@ -155,9 +178,36 @@ pub fn config_dir(setup: &Setup) -> PathBuf {
                     dirs_config_home()
                         .join("..")
                         .join(".var/app/com.obsproject.Studio/config/obs-studio")
-                }),
-            _ => dirs_config_home().join("obs-studio"),
+                })
         }
+        HostPlatform::Linux => dirs_config_home().join("obs-studio"),
+    }
+}
+
+fn is_portable_obs_for_platform(
+    config: &ObsLaunchConfig,
+    binary_path: &Path,
+    platform: HostPlatform,
+) -> bool {
+    platform == HostPlatform::Windows
+        && windows_obs_install_root(binary_path).is_some_and(|root| {
+            config.portable
+                || WINDOWS_PORTABLE_MARKERS
+                    .iter()
+                    .any(|marker| root.join(marker).is_file())
+        })
+}
+
+fn should_launch_multi(
+    portable: bool,
+    any_obs_running: bool,
+    another_child_running: bool,
+    another_child_uses_config: bool,
+) -> bool {
+    if portable {
+        another_child_uses_config
+    } else {
+        any_obs_running || another_child_running
     }
 }
 
@@ -165,7 +215,6 @@ pub fn macos_obs_config_dir(home: &Path) -> PathBuf {
     home.join("Library/Application Support/obs-studio")
 }
 
-#[cfg(not(target_os = "macos"))]
 fn dirs_config_home() -> PathBuf {
     std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
@@ -183,7 +232,34 @@ pub fn launch_arguments(
     scene: Option<&str>,
     obs_version: Option<&str>,
 ) -> Vec<String> {
+    let binary = config
+        .binary_path
+        .clone()
+        .unwrap_or_else(default_obs_binary);
+    launch_arguments_for_platform(
+        config,
+        &binary,
+        HostPlatform::current(),
+        multi,
+        resume,
+        scene,
+        obs_version,
+    )
+}
+
+fn launch_arguments_for_platform(
+    config: &ObsLaunchConfig,
+    binary_path: &Path,
+    platform: HostPlatform,
+    multi: bool,
+    resume: bool,
+    scene: Option<&str>,
+    obs_version: Option<&str>,
+) -> Vec<String> {
     let mut args = vec!["--disable-missing-files-check".to_owned()];
+    if is_portable_obs_for_platform(config, binary_path, platform) {
+        args.push("--portable".into());
+    }
     if multi {
         args.push("--multi".into());
     }
@@ -454,14 +530,25 @@ impl Supervisor {
         if self.crashed_pending.remove(&setup.id) || has_run_sentinel(setup) {
             prepare_after_crash(setup, another_child_uses_config)?;
         }
-        let multi = any_obs_running()
-            || self
-                .children
-                .iter_mut()
-                .any(|(id, child)| *id != setup.id && started_obs_is_running(child));
+        let portable =
+            is_portable_obs_for_platform(&setup.obs, &executable, HostPlatform::current());
+        let another_child_running = self
+            .children
+            .iter_mut()
+            .any(|(id, child)| *id != setup.id && started_obs_is_running(child));
+        let another_portable_instance_running =
+            portable && any_obs_running_for_executable(&executable);
+        let multi = should_launch_multi(
+            portable,
+            !portable && any_obs_running(),
+            another_child_running,
+            another_child_uses_config || another_portable_instance_running,
+        );
         let obs_version = obs_version_for_launch(setup, &self.flatpak_binary);
-        let args = launch_arguments(
+        let args = launch_arguments_for_platform(
             &setup.obs,
+            &executable,
+            HostPlatform::current(),
             multi,
             resume,
             last_scene,
@@ -667,8 +754,12 @@ impl Supervisor {
         if connected {
             self.connected.insert(setup_id);
         } else {
-            self.connected.remove(&setup_id);
+            self.clear_connected(setup_id);
         }
+    }
+
+    pub fn clear_connected(&mut self, setup_id: Uuid) {
+        self.connected.remove(&setup_id);
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
@@ -901,6 +992,10 @@ pub fn find_matching_obs(setup: &Setup) -> Option<Pid> {
 }
 
 pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
+    same_obs_identity_for_platform(left, right, HostPlatform::current())
+}
+
+fn same_obs_identity_for_platform(left: &Setup, right: &Setup, platform: HostPlatform) -> bool {
     let binary = |setup: &Setup| {
         resolve_executable(
             setup
@@ -910,7 +1005,8 @@ pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
                 .unwrap_or(&detected_obs_binary_for(&setup.obs.install_kind)),
         )
     };
-    same_path(&binary(left), &binary(right)) && config_dir(left) == config_dir(right)
+    same_path(&binary(left), &binary(right))
+        && config_dir_for_platform(left, platform) == config_dir_for_platform(right, platform)
 }
 
 fn same_process_identity(left: &Setup, right: &Setup) -> bool {
@@ -972,6 +1068,21 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
             .then_some(*pid)
         })
         .collect()
+}
+
+fn any_obs_running_for_executable(executable: &Path) -> bool {
+    let expected = resolve_executable(executable);
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything().without_tasks(),
+    );
+    system
+        .processes()
+        .values()
+        .filter(|process| process.thread_kind().is_none())
+        .any(|process| process_executable_matches(process, &expected))
 }
 
 fn process_matches_obs_config(
@@ -1498,8 +1609,11 @@ mod tests {
     #[cfg(target_os = "linux")]
     use super::resolve_executable;
     use super::{
-        StartedObs, Supervisor, copy_latest_crash_report, is_obs_process_name, launch_arguments,
-        macos_obs_binary_candidates, macos_obs_config_dir, prepare_after_crash, process_start_time,
+        StartedObs, Supervisor, WINDOWS_PORTABLE_MARKERS, config_dir_for_platform,
+        copy_latest_crash_report, is_obs_process_name, is_portable_obs_for_platform,
+        launch_arguments, launch_arguments_for_platform, macos_obs_binary_candidates,
+        macos_obs_config_dir, prepare_after_crash, process_start_time,
+        same_obs_identity_for_platform, should_launch_multi,
     };
     use super::{SupervisorError, find_matching_obs_with_start_time, matching_obs_pids};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
@@ -1518,6 +1632,164 @@ mod tests {
             macos_obs_config_dir(home),
             PathBuf::from("/Users/tester/Library/Application Support/obs-studio")
         );
+    }
+
+    #[test]
+    fn windows_portable_detection_supports_markers_and_explicit_setting() {
+        let directory = tempdir().unwrap();
+        let root = directory.path().join("obs-portable");
+        let binary = root.join("bin/64bit/obs64.exe");
+        fs::create_dir_all(binary.parent().unwrap()).unwrap();
+        let config = ObsLaunchConfig {
+            binary_path: Some(binary.clone()),
+            ..Default::default()
+        };
+
+        assert!(!is_portable_obs_for_platform(
+            &config,
+            &binary,
+            HostPlatform::Windows
+        ));
+        for marker in WINDOWS_PORTABLE_MARKERS {
+            fs::write(root.join(marker), "").unwrap();
+            assert!(is_portable_obs_for_platform(
+                &config,
+                &binary,
+                HostPlatform::Windows
+            ));
+            fs::remove_file(root.join(marker)).unwrap();
+        }
+        let explicitly_portable = ObsLaunchConfig {
+            portable: true,
+            ..config
+        };
+        assert!(is_portable_obs_for_platform(
+            &explicitly_portable,
+            &binary,
+            HostPlatform::Windows
+        ));
+        assert!(!is_portable_obs_for_platform(
+            &explicitly_portable,
+            &binary,
+            HostPlatform::MacOS
+        ));
+    }
+
+    #[test]
+    fn windows_portable_settings_folder_is_relative_to_the_install_root() {
+        let directory = tempdir().unwrap();
+        let root = directory.path().join("obs-portable");
+        let binary = root.join("bin/64bit/obs64.exe");
+        fs::create_dir_all(binary.parent().unwrap()).unwrap();
+        fs::write(root.join("portable_mode"), "").unwrap();
+        let mut setup = Setup::new("Portable OBS".into());
+        setup.obs.binary_path = Some(binary.clone());
+
+        let portable_config_dir = root.join("config/obs-studio");
+        assert_eq!(
+            config_dir_for_platform(&setup, HostPlatform::Windows),
+            portable_config_dir
+        );
+
+        fs::remove_file(root.join("portable_mode")).unwrap();
+        assert_ne!(
+            config_dir_for_platform(&setup, HostPlatform::Windows),
+            portable_config_dir
+        );
+        setup.obs.portable = true;
+        assert_eq!(
+            config_dir_for_platform(&setup, HostPlatform::Windows),
+            portable_config_dir
+        );
+    }
+
+    #[test]
+    fn portable_launch_arguments_are_windows_only() {
+        let directory = tempdir().unwrap();
+        let root = directory.path().join("obs-portable");
+        let binary = root.join("bin/64bit/obs64.exe");
+        fs::create_dir_all(binary.parent().unwrap()).unwrap();
+        fs::write(root.join("portable_mode"), "").unwrap();
+        let config = ObsLaunchConfig {
+            binary_path: Some(binary.clone()),
+            ..Default::default()
+        };
+
+        let windows_args = launch_arguments_for_platform(
+            &config,
+            &binary,
+            HostPlatform::Windows,
+            false,
+            false,
+            None,
+            None,
+        );
+        assert!(windows_args.iter().any(|arg| arg == "--portable"));
+        fs::remove_file(root.join("portable_mode")).unwrap();
+        let windows_normal_args = launch_arguments_for_platform(
+            &config,
+            &binary,
+            HostPlatform::Windows,
+            false,
+            false,
+            None,
+            None,
+        );
+        assert!(!windows_normal_args.iter().any(|arg| arg == "--portable"));
+        let macos_args = launch_arguments_for_platform(
+            &config,
+            &binary,
+            HostPlatform::MacOS,
+            false,
+            false,
+            None,
+            None,
+        );
+        assert!(!macos_args.iter().any(|arg| arg == "--portable"));
+        let explicitly_portable = ObsLaunchConfig {
+            portable: true,
+            ..config
+        };
+        let explicit_args = launch_arguments_for_platform(
+            &explicitly_portable,
+            &binary,
+            HostPlatform::Windows,
+            false,
+            false,
+            None,
+            None,
+        );
+        assert!(explicit_args.iter().any(|arg| arg == "--portable"));
+    }
+
+    #[test]
+    fn portable_installs_are_isolated_and_only_same_install_needs_multi() {
+        let directory = tempdir().unwrap();
+        let first_binary = directory.path().join("first/bin/64bit/obs64.exe");
+        let second_binary = directory.path().join("second/bin/64bit/obs64.exe");
+        let mut first = Setup::new("First portable OBS".into());
+        first.obs.binary_path = Some(first_binary.clone());
+        first.obs.portable = true;
+        let mut same_install = Setup::new("Same portable OBS".into());
+        same_install.obs.binary_path = Some(first_binary);
+        same_install.obs.portable = true;
+        let mut other_install = Setup::new("Other portable OBS".into());
+        other_install.obs.binary_path = Some(second_binary);
+        other_install.obs.portable = true;
+
+        assert!(same_obs_identity_for_platform(
+            &first,
+            &same_install,
+            HostPlatform::Windows
+        ));
+        assert!(!same_obs_identity_for_platform(
+            &first,
+            &other_install,
+            HostPlatform::Windows
+        ));
+        assert!(!should_launch_multi(true, true, true, false));
+        assert!(should_launch_multi(true, false, true, true));
+        assert!(should_launch_multi(false, true, false, false));
     }
 
     #[test]
@@ -1541,6 +1813,30 @@ mod tests {
             supervisor.state(&setup),
             crate::relay::PcObsState::NotRunning
         );
+    }
+
+    #[test]
+    fn clearing_connected_state_falls_back_to_process_state() {
+        let directory = tempdir().unwrap();
+        let script = make_script(
+            &directory.path().join("fake-obs"),
+            "trap 'exit 0' TERM; while :; do sleep 0.05; done",
+        );
+        let setup = make_setup(&script, &directory.path().join("config"));
+        let mut supervisor =
+            Supervisor::with_timing(Duration::from_secs(1), Duration::from_secs(60));
+
+        supervisor.start(&setup, false, None).unwrap();
+        supervisor.mark_connected(setup.id, true);
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::Connected
+        );
+
+        supervisor.clear_connected(setup.id);
+
+        assert_eq!(supervisor.state(&setup), crate::relay::PcObsState::Starting);
+        supervisor.stop(&setup).unwrap();
     }
 
     fn make_setup(script: &Path, config_dir: &Path) -> Setup {

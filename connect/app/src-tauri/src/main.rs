@@ -593,9 +593,15 @@ fn enable_websocket(
 }
 
 #[tauri::command]
-fn unpair_setup(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+fn unpair_setup(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     clear_pairing_state(&state, id, true)?;
+    let _ = app.emit("connect-state-changed", build_ui_state(&state));
+    let _ = refresh_tray_menu(&app);
     Ok(get_state(state))
 }
 
@@ -637,6 +643,11 @@ fn remove_link_session(
         session.monitor.abort();
         session.command_consumer.abort();
     }
+    state
+        .supervisor
+        .lock()
+        .map_err(|_| "supervisor lock poisoned")?
+        .clear_connected(setup_id);
     Ok(())
 }
 
@@ -982,6 +993,11 @@ fn start_link_session(
         },
     );
     drop(sessions);
+    state
+        .supervisor
+        .lock()
+        .map_err(|_| "supervisor lock poisoned")?
+        .clear_connected(setup.id);
     let _ = link_start.send(());
 
     let app_handle = app.clone();
@@ -1358,6 +1374,84 @@ mod tests {
         assert_eq!(ui_state.setups[0].obs_state, "not_running");
         assert!(!link_task_abort.is_finished());
         link_task_abort.abort();
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn clearing_pairing_falls_back_to_the_running_obs_state() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&test_dir).unwrap();
+        let obs_binary = test_dir.join("fake-obs");
+        std::fs::write(
+            &obs_binary,
+            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then printf 'OBS Studio 33.0.1\\n'; exit 0; fi\ntrap 'exit 0' TERM\nwhile :; do sleep 0.05; done\n",
+        )
+        .unwrap();
+        let mut permissions = std::fs::metadata(&obs_binary).unwrap().permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&obs_binary, permissions).unwrap();
+
+        let mut setup = Setup::new("Rejected pairing".into());
+        setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(obs_binary);
+        setup.pairing = Some(connect_core::config::Pairing {
+            device_id: uuid::Uuid::new_v4(),
+            switcher_id: uuid::Uuid::new_v4(),
+            link_url: "ws://127.0.0.1:11000/link".into(),
+        });
+        let setup_id = setup.id;
+        let store = ConfigStore::new(test_dir.join("config.json"));
+        let tokens = TokenStore::new(test_dir.clone());
+        tokens.set(setup_id, "rejected-token").unwrap();
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup.clone()],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store,
+            tokens,
+            supervisor: Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(1))),
+            link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+        };
+        {
+            let mut supervisor = state.supervisor.lock().unwrap();
+            supervisor.start(&setup, false, None).unwrap();
+            supervisor.mark_connected(setup_id, true);
+            assert_eq!(supervisor.state(&setup), PcObsState::Connected);
+        }
+        let (state_tx, _) = watch::channel(PcObsState::Connected);
+        let (_, effective_obs) = watch::channel(None);
+        state.link_sessions.lock().unwrap().insert(
+            setup_id,
+            LinkSession {
+                state: state_tx,
+                effective_obs,
+                task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+            },
+        );
+
+        clear_pairing_state(&state, setup_id, false).unwrap();
+        let mut supervisor = state.supervisor.lock().unwrap();
+        assert_eq!(supervisor.state(&setup), PcObsState::Starting);
+        assert!(supervisor.owns_running_process(&setup));
+        supervisor.stop(&setup).unwrap();
+        drop(supervisor);
+        assert_eq!(build_ui_state(&state).setups[0].obs_state, "not_running");
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
