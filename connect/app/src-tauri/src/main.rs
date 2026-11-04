@@ -1325,6 +1325,7 @@ mod tests {
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);

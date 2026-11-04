@@ -1330,6 +1330,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
+                    commands: tokio::sync::mpsc::unbounded_channel().0,
                 },
                 state_rx,
                 watchdog_tx,
