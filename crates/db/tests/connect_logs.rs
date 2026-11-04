@@ -80,6 +80,20 @@ async fn insert_get_and_prune_round_trip_gzip_content(pool: PgPool) {
     .fetch_one(&pool)
     .await
     .unwrap();
+    assert!(
+        connect_logs::list(&pool, switcher_id)
+            .await
+            .unwrap()
+            .iter()
+            .all(|row| row.id != stale_id)
+    );
+    assert!(
+        connect_logs::get(&pool, switcher_id, stale_id)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(connect_logs::delete_expired(&pool).await.unwrap(), 1);
     connect_logs::prune(&pool, switcher_id).await.unwrap();
     assert!(
         connect_logs::get(&pool, switcher_id, stale_id)

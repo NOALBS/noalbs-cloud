@@ -548,6 +548,11 @@ msgstr "已移除 {0}"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr ""
 
@@ -627,6 +632,16 @@ msgstr "{0}，有效期至 {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "已更新 {0}"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr ""
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2070,10 +2085,6 @@ msgstr "可在任何套餐（包括 Free）之上购买。增加时按本周期�
 msgid "by {who}"
 msgstr "由 {who} 操作"
 
-#: src/lib/live-format.ts
-msgid "by Connect"
-msgstr ""
-
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "继续即表示你同意<0>服务条款</0>和<1>隐私政策</1>。"
@@ -2497,6 +2508,10 @@ msgstr "平台要求时，请以机器人账号（而不是你自己的账号）
 msgid "Connect computer"
 msgstr ""
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "连接 Moblin"
@@ -2532,6 +2547,14 @@ msgstr ""
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
 msgstr ""
 
 #: src/lib/live-format.ts
@@ -2776,10 +2799,6 @@ msgstr "保持形状铺满框，超出的边缘会被裁掉。"
 
 #: src/components/connect-settings.tsx
 msgid "Crash report"
-msgstr ""
-
-#: src/lib/live-format.ts
-msgid "Crash report uploaded"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -6097,7 +6116,6 @@ msgid "OBS log"
 msgstr ""
 
 #: src/components/connect-settings.tsx
-#: src/lib/live-format.ts
 msgid "OBS log uploaded"
 msgstr ""
 
@@ -7347,7 +7365,7 @@ msgid "Request failed ({0})"
 msgstr "请求失败（{0}）"
 
 #: src/lib/live-format.ts
-msgid "requested an OBS log"
+msgid "Requested an OBS log through Connect"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -8001,6 +8019,10 @@ msgstr "播放结束后不显示任何内容"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "显示更早的记录"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."

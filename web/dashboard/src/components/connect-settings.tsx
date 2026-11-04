@@ -50,6 +50,7 @@ import {
 } from "@/lib/connect";
 import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
+import { redactLog } from "@/lib/redact-log";
 import { formatRelative } from "@/lib/time";
 
 export function ConnectSettings() {
@@ -620,6 +621,7 @@ function ConnectLogViewer({
 }) {
   const [filter, setFilter] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showSensitiveValues, setShowSensitiveValues] = useState(false);
   const detail = useQuery({
     queryKey: [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "log", log?.id],
     queryFn: () =>
@@ -631,20 +633,27 @@ function ConnectLogViewer({
     enabled: open && log !== null,
   });
   const content = (detail.data as ConnectLogDetailDto | undefined)?.content ?? "";
+  const displayedContent = showSensitiveValues ? content : redactLog(content);
   const lines = useMemo(() => {
     const normalized = filter.trim().toLocaleLowerCase();
-    return content
+    return displayedContent
       .split("\n")
       .map((text, index) => ({ text, index }))
       .filter(({ text }) => !normalized || text.toLocaleLowerCase().includes(normalized));
-  }, [content, filter]);
+  }, [displayedContent, filter]);
   const copy = async () => {
-    await navigator.clipboard.writeText(content);
+    await navigator.clipboard.writeText(displayedContent);
     setCopied(true);
     toast.success(t`Copied`);
   };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) setShowSensitiveValues(false);
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="flex h-[min(52rem,90dvh)] flex-col gap-3 sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>{log?.file_name ?? t`OBS log`}</DialogTitle>
@@ -656,7 +665,14 @@ function ConnectLogViewer({
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           />
-          <Button variant="outline" onClick={() => void copy()} disabled={!content}>
+          <Button
+            variant="outline"
+            aria-pressed={showSensitiveValues}
+            onClick={() => setShowSensitiveValues((value) => !value)}
+          >
+            <Trans>Show sensitive values</Trans>
+          </Button>
+          <Button variant="outline" onClick={() => void copy()} disabled={!displayedContent}>
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             {copied ? t`Copied` : t`Copy`}
           </Button>

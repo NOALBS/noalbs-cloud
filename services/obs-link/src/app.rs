@@ -13,7 +13,7 @@ use std::{
 
 use async_nats::jetstream;
 use base64::{Engine, engine::general_purpose::STANDARD};
-use common::{crypto::DataKey, shutdown};
+use common::{MAX_CONNECT_LOG_RAW_BYTES, crypto::DataKey, shutdown};
 use flate2::read::GzDecoder;
 use futures_util::{SinkExt, StreamExt};
 use live::{EventDetail, PcObsState, PcStatus, SwitcherStatus, Takeover};
@@ -46,9 +46,10 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(45);
+const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
-const MAX_DECOMPRESSED_LOG_BYTES: u64 = 32 * 1024 * 1024;
+const REQUESTED_LOG_UPLOADS_PER_HOUR: usize = 30;
+const MAX_DECOMPRESSED_LOG_BYTES: u64 = MAX_CONNECT_LOG_RAW_BYTES;
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.
@@ -336,6 +337,15 @@ fn allow_unsolicited_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -
     true
 }
 
+fn allow_requested_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -> bool {
+    uploads.retain(|uploaded| now.saturating_duration_since(*uploaded) < Duration::from_secs(3600));
+    if uploads.len() >= REQUESTED_LOG_UPLOADS_PER_HOUR {
+        return false;
+    }
+    uploads.push_back(now);
+    true
+}
+
 fn decode_log_upload(upload: &live::ConnectLogUpload) -> Result<Vec<u8>> {
     if upload.content_gzip_base64.len() > 3 * 1024 * 1024 {
         return Err(Error::InvalidLogUpload("too large"));
@@ -375,6 +385,7 @@ struct Session {
     connect_capabilities: Vec<String>,
     pending_connect_commands: HashMap<String, PendingConnectCommand>,
     unsolicited_log_uploads: VecDeque<Instant>,
+    requested_log_uploads: VecDeque<Instant>,
     status: StatusHandle,
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
@@ -852,6 +863,7 @@ impl Connection {
             connect_capabilities: identify.capabilities.clone(),
             pending_connect_commands: HashMap::new(),
             unsolicited_log_uploads: VecDeque::new(),
+            requested_log_uploads: VecDeque::new(),
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
@@ -1045,6 +1057,28 @@ impl Connection {
                     )
                     .await?;
                     return Ok(Flow::Continue);
+                }
+                if request.action == db::connect::ConnectObsAction::UploadLog {
+                    let allowed = self.session.as_mut().is_some_and(|session| {
+                        allow_requested_log_upload(
+                            &mut session.requested_log_uploads,
+                            Instant::now(),
+                        )
+                    });
+                    if !allowed {
+                        telemetry::nats::publish(
+                            &self.shared.nats,
+                            reply,
+                            serde_json::to_vec(&live::ConnectObsCommandReply {
+                                ok: false,
+                                code: Some(live::ConnectObsCommandCode::Refused),
+                                error: Some("Too many log requests; try again later".into()),
+                                log_id: None,
+                            })?,
+                        )
+                        .await?;
+                        return Ok(Flow::Continue);
+                    }
                 }
                 let token = Uuid::new_v4().to_string();
                 self.send_request(
@@ -1547,8 +1581,9 @@ mod tests {
 
     use super::{
         CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES,
-        ObsSettings, PendingConnectCommand, Request, RequestKind, Response, ResponseKind, Settings,
-        UNSOLICITED_LOG_UPLOADS_PER_HOUR, allow_unsolicited_log_upload, connect_command_failure,
+        ObsSettings, PendingConnectCommand, REQUESTED_LOG_UPLOADS_PER_HOUR, Request, RequestKind,
+        Response, ResponseKind, Settings, UNSOLICITED_LOG_UPLOADS_PER_HOUR,
+        allow_requested_log_upload, allow_unsolicited_log_upload, connect_command_failure,
         decode_log_upload, expired_connect_commands, invalid_log_upload_reply, parse_config_change,
         reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
         should_refresh_device_name,
@@ -1811,11 +1846,44 @@ mod tests {
     }
 
     #[test]
+    fn requested_log_uploads_are_limited_to_thirty_per_hour() {
+        let now = Instant::now();
+        let mut uploads = VecDeque::new();
+        for index in 0..REQUESTED_LOG_UPLOADS_PER_HOUR {
+            assert!(allow_requested_log_upload(
+                &mut uploads,
+                now + Duration::from_secs(index as u64)
+            ));
+        }
+        assert!(!allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(40)
+        ));
+        assert!(allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(3601)
+        ));
+    }
+
+    #[test]
     fn connect_log_upload_is_decoded_before_storage() {
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(b"OBS log header\n").unwrap();
         let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
         assert_eq!(decode_log_upload(&upload).unwrap(), b"OBS log header\n");
+    }
+
+    #[test]
+    fn connect_log_upload_accepts_the_shared_raw_limit() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap().len(),
+            MAX_DECOMPRESSED_LOG_BYTES as usize
+        );
     }
 
     #[test]

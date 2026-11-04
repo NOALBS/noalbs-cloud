@@ -891,16 +891,45 @@ impl Supervisor {
             && process_start_time(pid) == Some(expected_start_time)
         {
             force_kill(pid);
+            let reap_deadline = Instant::now() + Duration::from_secs(5);
+            while process_start_time(pid) == Some(expected_start_time)
+                && Instant::now() < reap_deadline
+            {
+                std::thread::sleep(Duration::from_millis(100));
+            }
             self.crashed_pending.insert(setup.id);
-        } else if let Some(child) = child.as_mut()
+        } else if child.is_some()
             && !matches!(setup.obs.install_kind, InstallKind::Flatpak)
         {
-            child.kill()?;
-            let _ = child.wait()?;
+            let needs_reaper = {
+                let process = child.as_mut().ok_or(SupervisorError::Unidentified)?;
+                process.kill()?;
+                let reap_deadline = Instant::now() + Duration::from_secs(5);
+                loop {
+                    if process.try_wait()?.is_some() {
+                        break false;
+                    }
+                    if Instant::now() >= reap_deadline {
+                        break true;
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            };
+            if needs_reaper && let Some(mut process) = child.take() {
+                std::thread::spawn(move || {
+                    let _ = process.wait();
+                });
+            }
             self.crashed_pending.insert(setup.id);
         } else if process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
         {
             force_kill(pid);
+            let reap_deadline = Instant::now() + Duration::from_secs(5);
+            while process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
+                && Instant::now() < reap_deadline
+            {
+                std::thread::sleep(Duration::from_millis(100));
+            }
             self.crashed_pending.insert(setup.id);
         }
         self.adopted.remove(&setup.id);

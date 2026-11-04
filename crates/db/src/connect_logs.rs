@@ -88,6 +88,7 @@ pub async fn list(pool: &PgPool, switcher_id: Uuid) -> Result<Vec<ConnectLogMeta
         FROM connect_logs AS log
         LEFT JOIN connect_devices AS device ON device.id = log.device_id
         WHERE log.switcher_id = $1
+          AND log.uploaded_at > now() - interval '30 days'
         ORDER BY log.uploaded_at DESC, log.id DESC
         ",
     )
@@ -115,6 +116,7 @@ pub async fn get(pool: &PgPool, switcher_id: Uuid, id: Uuid) -> Result<Option<Co
         FROM connect_logs AS log
         LEFT JOIN connect_devices AS device ON device.id = log.device_id
         WHERE log.switcher_id = $1 AND log.id = $2
+          AND log.uploaded_at > now() - interval '30 days'
         ",
     )
     .bind(switcher_id)
@@ -187,4 +189,13 @@ pub async fn prune(pool: &PgPool, switcher_id: Uuid) -> Result<()> {
     .execute(pool)
     .await?;
     Ok(())
+}
+
+#[tracing::instrument(skip(pool))]
+pub async fn delete_expired(pool: &PgPool) -> Result<u64> {
+    let result =
+        sqlx::query("DELETE FROM connect_logs WHERE uploaded_at <= now() - interval '30 days'")
+            .execute(pool)
+            .await?;
+    Ok(result.rows_affected())
 }

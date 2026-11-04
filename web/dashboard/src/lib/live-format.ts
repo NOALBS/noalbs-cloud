@@ -117,11 +117,20 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         detail,
       };
     }
-    case "connect_log_uploaded":
+    case "connect_log_uploaded": {
+      const detail =
+        event.data.kind === "obs_log"
+          ? event.data.by
+            ? t`${event.data.by} uploaded an OBS log through Connect`
+            : t`Connect uploaded an OBS log`
+          : event.data.by
+            ? t`${event.data.by} uploaded a crash report through Connect`
+            : t`Connect uploaded a crash report`;
       return {
-        title: event.data.kind === "obs_log" ? t`OBS log uploaded` : t`Crash report uploaded`,
-        detail: by(event.data.by, t`by Connect`),
+        title: t`Connect log upload`,
+        detail,
       };
+    }
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

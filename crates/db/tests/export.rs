@@ -170,6 +170,8 @@ struct Fixture {
     backpack: Uuid,
     /// In Sam's workspace, where Kate is an admin.
     sams: Uuid,
+    /// In an organization-managed workspace, where Kate is an admin.
+    client: Uuid,
 }
 
 /// Kate: a workspace of her own with a switcher, stream server, chat channel,
@@ -383,7 +385,13 @@ async fn fixture(pool: &PgPool) -> Fixture {
     workspaces::add_member(pool, client, kate, WorkspaceRoleEnum::Admin)
         .await
         .unwrap();
-    switchers::create(pool, client, "Van", b"van")
+    let client_switcher = switchers::create(pool, client, "Van", b"van")
+        .await
+        .unwrap()
+        .id;
+    sqlx::query("UPDATE switchers SET connect_logs = 'owners' WHERE id = $1")
+        .bind(client_switcher)
+        .execute(pool)
         .await
         .unwrap();
 
@@ -401,6 +409,7 @@ async fn fixture(pool: &PgPool) -> Fixture {
         sam,
         backpack,
         sams,
+        client: client_switcher,
     }
 }
 
@@ -552,6 +561,18 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     .unwrap();
     connect_logs::insert(
         &pool,
+        fixture.client,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "client.txt",
+        None,
+        false,
+        b"Organization client's OBS log",
+    )
+    .await
+    .unwrap();
+    connect_logs::insert(
+        &pool,
         fixture.sams,
         None,
         connect_logs::ConnectLogKind::ObsLog,
@@ -589,6 +610,7 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     for line in &lines {
         assert!(!line.to_string().contains(&fixture.sams.to_string()));
         assert!(!line.to_string().contains("Sam's OBS log"));
+        assert!(!line.to_string().contains("Organization client's OBS log"));
     }
 
     // Sam gets his, and nothing of Kate's.

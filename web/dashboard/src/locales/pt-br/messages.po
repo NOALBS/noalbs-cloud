@@ -548,6 +548,11 @@ msgstr "{0} removido"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr ""
 
@@ -627,6 +632,16 @@ msgstr "{0} até {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} atualizado"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr ""
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2070,10 +2085,6 @@ msgstr "Compre além de qualquer plano, inclusive o Free. Ao adicionar, o restan
 msgid "by {who}"
 msgstr "por {who}"
 
-#: src/lib/live-format.ts
-msgid "by Connect"
-msgstr ""
-
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "Ao continuar, você concorda com os <0>termos de serviço</0> e a <1>política de privacidade</1>."
@@ -2497,6 +2508,10 @@ msgstr "Conecte entrando como a conta do bot (não a sua) quando a plataforma pe
 msgid "Connect computer"
 msgstr ""
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Conectar Moblin"
@@ -2532,6 +2547,14 @@ msgstr ""
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
 msgstr ""
 
 #: src/lib/live-format.ts
@@ -2776,10 +2799,6 @@ msgstr "Cobre a caixa mantendo o formato; as bordas são cortadas."
 
 #: src/components/connect-settings.tsx
 msgid "Crash report"
-msgstr ""
-
-#: src/lib/live-format.ts
-msgid "Crash report uploaded"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -6097,7 +6116,6 @@ msgid "OBS log"
 msgstr ""
 
 #: src/components/connect-settings.tsx
-#: src/lib/live-format.ts
 msgid "OBS log uploaded"
 msgstr ""
 
@@ -7347,7 +7365,7 @@ msgid "Request failed ({0})"
 msgstr "A solicitação falhou ({0})"
 
 #: src/lib/live-format.ts
-msgid "requested an OBS log"
+msgid "Requested an OBS log through Connect"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -8001,6 +8019,10 @@ msgstr "Não mostrar nada quando a reprodução terminar"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "Mostrar mais antigos"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."

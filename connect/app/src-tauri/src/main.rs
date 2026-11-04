@@ -522,7 +522,7 @@ async fn run_obs_action(
 
     if matches!(action, ObsAction::Stop | ObsAction::Restart) {
         if !stop_setup_streams_with_timeout(
-            Duration::from_secs(8),
+            Duration::from_secs(25),
             stop_setup_streams(&setup, state),
         )
         .await
@@ -590,18 +590,14 @@ fn create_log_upload(
             })
         })
         .collect::<Vec<_>>();
+    let start_time = state
+        .supervisor
+        .lock()
+        .ok()
+        .and_then(|supervisor| supervisor.obs_start_time(&setup));
     let selected = if kind == "crash_report" {
-        files
-            .iter()
-            .filter_map(|file| Some((file, file.modified_at?)))
-            .max_by_key(|(_, modified)| *modified)
-            .map(|(file, _)| file)
+        select_crash_report_file(&files, start_time)
     } else {
-        let start_time = state
-            .supervisor
-            .lock()
-            .ok()
-            .and_then(|supervisor| supervisor.obs_start_time(&setup));
         select_obs_log_file(&files, start_time)
     }
     .ok_or_else(|| format!("No {kind} file is available"))?;
@@ -615,6 +611,19 @@ fn create_log_upload(
         .modified_at
         .map(|modified| chrono::DateTime::<chrono::Utc>::from(modified).to_rfc3339());
     encode_log_upload(kind, file_name, modified_at, &content).map_err(|error| error.to_string())
+}
+
+fn select_crash_report_file(
+    files: &[ObsLogFile],
+    obs_start_time: Option<std::time::SystemTime>,
+) -> Option<&ObsLogFile> {
+    let minimum_modified_at = obs_start_time?.checked_sub(Duration::from_secs(2))?;
+    files
+        .iter()
+        .filter_map(|file| Some((file, file.modified_at?)))
+        .filter(|(_, modified_at)| *modified_at >= minimum_modified_at)
+        .max_by_key(|(_, modified_at)| *modified_at)
+        .map(|(file, _)| file)
 }
 
 async fn stop_setup_streams(setup: &Setup, state: &AppState) {
@@ -1156,7 +1165,7 @@ fn start_link_session(
                                 .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding {
                                 if !stop_setup_streams_with_timeout(
-                                    Duration::from_secs(8),
+                                    Duration::from_secs(25),
                                     stop_setup_streams(&restart_setup, &app_state),
                                 )
                                 .await
@@ -1497,6 +1506,38 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crash_report_selection_ignores_files_older_than_obs_start_slack() {
+        let directory = std::env::temp_dir().join(format!("crash-selection-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&directory).unwrap();
+        let start = std::time::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let stale_path = directory.join("stale.dmp");
+        let fresh_path = directory.join("fresh.dmp");
+        let stale = std::fs::File::create(&stale_path).unwrap();
+        stale.set_modified(start - Duration::from_secs(3)).unwrap();
+        let fresh = std::fs::File::create(&fresh_path).unwrap();
+        fresh.set_modified(start - Duration::from_secs(1)).unwrap();
+        let files = vec![
+            ObsLogFile {
+                path: stale_path,
+                modified_at: Some(start - Duration::from_secs(3)),
+            },
+            ObsLogFile {
+                path: fresh_path.clone(),
+                modified_at: Some(start - Duration::from_secs(1)),
+            },
+        ];
+
+        assert_eq!(
+            select_crash_report_file(&files, Some(start))
+                .unwrap()
+                .path,
+            fresh_path
+        );
+        assert!(select_crash_report_file(&files[..1], Some(start)).is_none());
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 
     #[tokio::test]
     async fn stream_stop_timeout_returns_when_obs_side_hangs() {

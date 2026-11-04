@@ -96,4 +96,9 @@ async fn upkeep(db: &db::DbPool) {
         Ok(deleted) => tracing::info!(deleted, "Deleted old staff actions"),
         Err(error) => tracing::warn!(%error, "Couldn't delete old staff actions"),
     }
+    match db::connect_logs::delete_expired(db).await {
+        Ok(0) => {}
+        Ok(deleted) => tracing::info!(deleted, "Deleted expired Connect logs"),
+        Err(error) => tracing::warn!(%error, "Couldn't delete expired Connect logs"),
+    }
 }

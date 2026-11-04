@@ -548,6 +548,11 @@ msgstr "{0} removed"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr "{0} requested an OBS log through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr "{0} restarted OBS through Connect"
 
@@ -627,6 +632,16 @@ msgstr "{0} until {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} updated"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr "{0} uploaded a crash report through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr "{0} uploaded an OBS log through Connect"
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2070,10 +2085,6 @@ msgstr "Buy on top of any plan, including Free. Adding is charged now for the re
 msgid "by {who}"
 msgstr "by {who}"
 
-#: src/lib/live-format.ts
-msgid "by Connect"
-msgstr "by Connect"
-
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
@@ -2497,6 +2508,10 @@ msgstr "Connect by signing in as the bot account (not your own) when the platfor
 msgid "Connect computer"
 msgstr "Connect computer"
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr "Connect log upload"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Connect Moblin"
@@ -2533,6 +2548,14 @@ msgstr "Connect this computer"
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
 msgstr "Connect to this switcher"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr "Connect uploaded a crash report"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
+msgstr "Connect uploaded an OBS log"
 
 #: src/lib/live-format.ts
 msgid "Connect watchdog changed"
@@ -2777,10 +2800,6 @@ msgstr "Covers the box, keeping its shape; the edges are cut off."
 #: src/components/connect-settings.tsx
 msgid "Crash report"
 msgstr "Crash report"
-
-#: src/lib/live-format.ts
-msgid "Crash report uploaded"
-msgstr "Crash report uploaded"
 
 #: src/components/connect-settings.tsx
 msgid "Crash reports and OBS logs uploaded by Connect."
@@ -6099,7 +6118,6 @@ msgid "OBS log"
 msgstr "OBS log"
 
 #: src/components/connect-settings.tsx
-#: src/lib/live-format.ts
 msgid "OBS log uploaded"
 msgstr "OBS log uploaded"
 
@@ -7349,8 +7367,8 @@ msgid "Request failed ({0})"
 msgstr "Request failed ({0})"
 
 #: src/lib/live-format.ts
-msgid "requested an OBS log"
-msgstr "requested an OBS log"
+msgid "Requested an OBS log through Connect"
+msgstr "Requested an OBS log through Connect"
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -8003,6 +8021,10 @@ msgstr "Show nothing when playback ends"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "Show older"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr "Show sensitive values"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."

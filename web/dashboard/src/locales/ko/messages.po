@@ -548,6 +548,11 @@ msgstr "{0}을(를) 제거했어요"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr ""
 
@@ -627,6 +632,16 @@ msgstr "{1}까지 {0}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0}을(를) 업데이트했어요"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr ""
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2070,10 +2085,6 @@ msgstr "Free를 포함한 모든 플랜에 추가로 구매할 수 있어요. �
 msgid "by {who}"
 msgstr "실행: {who}"
 
-#: src/lib/live-format.ts
-msgid "by Connect"
-msgstr ""
-
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "계속하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하게 돼요."
@@ -2497,6 +2508,10 @@ msgstr "플랫폼에서 요청하면 본인 계정이 아닌 봇 계정으로 �
 msgid "Connect computer"
 msgstr ""
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Moblin 연결"
@@ -2532,6 +2547,14 @@ msgstr ""
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
 msgstr ""
 
 #: src/lib/live-format.ts
@@ -2776,10 +2799,6 @@ msgstr "모양을 유지하며 상자를 덮어요. 가장자리는 잘려요."
 
 #: src/components/connect-settings.tsx
 msgid "Crash report"
-msgstr ""
-
-#: src/lib/live-format.ts
-msgid "Crash report uploaded"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -6097,7 +6116,6 @@ msgid "OBS log"
 msgstr ""
 
 #: src/components/connect-settings.tsx
-#: src/lib/live-format.ts
 msgid "OBS log uploaded"
 msgstr ""
 
@@ -7347,7 +7365,7 @@ msgid "Request failed ({0})"
 msgstr "요청에 실패했어요 ({0})"
 
 #: src/lib/live-format.ts
-msgid "requested an OBS log"
+msgid "Requested an OBS log through Connect"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -8001,6 +8019,10 @@ msgstr "재생이 끝나면 아무것도 표시하지 않기"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "이전 항목 표시"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."

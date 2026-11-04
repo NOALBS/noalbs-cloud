@@ -6,6 +6,7 @@ use std::{
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use chrono::{Local, NaiveDateTime};
+use common::MAX_CONNECT_LOG_RAW_BYTES;
 use flate2::{Compression, write::GzEncoder};
 use serde::{Deserialize, Serialize};
 
@@ -64,13 +65,18 @@ pub fn encode_log_upload(
     modified_at: Option<String>,
     content: &[u8],
 ) -> std::io::Result<ConnectLogUpload> {
+    let raw_start = content
+        .len()
+        .saturating_sub(MAX_CONNECT_LOG_RAW_BYTES as usize);
+    let content = &content[raw_start..];
+    let raw_truncated = raw_start > 0;
     let compressed = gzip_base64(content)?;
     if compressed.len() <= MAX_GZIP_BASE64_BYTES {
         return Ok(ConnectLogUpload {
             kind: kind.to_owned(),
             file_name: file_name.to_owned(),
             modified_at,
-            truncated: false,
+            truncated: raw_truncated,
             content_gzip_base64: compressed,
         });
     }
@@ -137,7 +143,10 @@ mod tests {
     use base64::{Engine, engine::general_purpose::STANDARD};
     use flate2::read::GzDecoder;
 
-    use super::{MAX_GZIP_BASE64_BYTES, ObsLogFile, encode_log_upload, select_obs_log_file};
+    use super::{
+        MAX_CONNECT_LOG_RAW_BYTES, MAX_GZIP_BASE64_BYTES, ObsLogFile, encode_log_upload,
+        select_obs_log_file,
+    };
 
     fn file(name: &str, modified: u64) -> ObsLogFile {
         ObsLogFile {
@@ -208,6 +217,20 @@ mod tests {
             .unwrap();
         assert!(tail.contains("line-399999-"));
         assert!(!tail.starts_with("line-000000-"));
+    }
+
+    #[test]
+    fn compressible_content_is_limited_before_gzip() {
+        let input = vec![0; 40 * 1024 * 1024];
+        let upload = encode_log_upload("obs_log", "latest.txt", None, &input).unwrap();
+        assert!(upload.truncated);
+        let decoded = STANDARD.decode(upload.content_gzip_base64).unwrap();
+        let mut content = Vec::new();
+        GzDecoder::new(decoded.as_slice())
+            .read_to_end(&mut content)
+            .unwrap();
+        assert_eq!(content.len(), MAX_CONNECT_LOG_RAW_BYTES as usize);
+        assert!(content.iter().all(|byte| *byte == 0));
     }
 
     #[test]

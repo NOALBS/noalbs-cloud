@@ -833,9 +833,19 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
                 logs.content
          FROM connect_logs AS logs
          LEFT JOIN connect_devices AS device ON device.id = logs.device_id
+         JOIN switchers AS log_switcher ON log_switcher.id = logs.switcher_id
+         JOIN workspace_members AS log_members
+             ON log_members.workspace_id = log_switcher.workspace_id
+             AND log_members.user_id = $1
          WHERE logs.switcher_id IN (",
         your_switchers!(),
         ")
+         AND logs.uploaded_at > now() - interval '30 days'
+         AND (
+             log_members.role = 'owner'
+             OR (log_members.role = 'admin' AND log_switcher.connect_logs IN ('admins', 'everyone'))
+             OR (log_members.role = 'operator' AND log_switcher.connect_logs = 'everyone')
+         )
          ORDER BY logs.uploaded_at, logs.id"
     );
 
