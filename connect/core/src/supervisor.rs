@@ -424,12 +424,24 @@ impl Supervisor {
                 return Err(SupervisorError::Unidentified);
             }
         }
-        let executable = setup
-            .obs
-            .binary_path
-            .clone()
-            .unwrap_or_else(default_obs_binary);
-        let working_directory = executable.parent().map(Path::to_owned);
+        let is_flatpak = matches!(setup.obs.install_kind, InstallKind::Flatpak);
+        let executable = if is_flatpak {
+            self.flatpak_binary.clone()
+        } else {
+            setup
+                .obs
+                .binary_path
+                .clone()
+                .unwrap_or_else(default_obs_binary)
+        };
+        let working_directory = if is_flatpak {
+            None
+        } else {
+            executable
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .map(Path::to_owned)
+        };
         let another_child_uses_config = self.children.iter_mut().any(|(id, child)| {
             *id != setup.id
                 && child.config_dir == config_dir(setup)
@@ -451,7 +463,7 @@ impl Supervisor {
             last_scene,
             obs_version.as_deref(),
         );
-        let mut command = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
+        let mut command = if is_flatpak {
             let mut cmd = Command::new(&self.flatpak_binary);
             cmd.arg("run");
             if let Some(config) = &setup.obs.config_dir_override {
@@ -481,7 +493,6 @@ impl Supervisor {
         }
         let launch_started = Instant::now();
         let child = command.spawn()?;
-        let is_flatpak = matches!(setup.obs.install_kind, InstallKind::Flatpak);
         let flatpak_wrapper_start_time = is_flatpak
             .then(|| wait_for_process_start_time(child.id()))
             .flatten();
