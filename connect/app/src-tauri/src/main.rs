@@ -104,6 +104,7 @@ fn get_state(state: State<'_, AppState>) -> UiState {
 
 #[tauri::command]
 fn save_setup(
+    app: tauri::AppHandle,
     setup_id: String,
     name: String,
     obs: connect_core::config::ObsLaunchConfig,
@@ -126,7 +127,11 @@ fn save_setup(
         .store
         .save(&config)
         .map_err(|error| error.to_string())?;
+    let updated_setup = setup.clone();
     drop(config);
+    if updated_setup.pairing.is_some() {
+        start_link_session(&app, state.inner(), updated_setup)?;
+    }
     Ok(get_state(state))
 }
 
