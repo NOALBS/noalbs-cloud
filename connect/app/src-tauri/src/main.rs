@@ -615,7 +615,7 @@ fn remove_setup(
     if token_delete_failed {
         let _ = app.emit(
             "connect-error",
-            "The setup was removed, but its stored token could not be deleted.",
+            "The setup was removed, but stored-token cleanup could not be confirmed. It will be retried at startup.",
         );
     }
     Ok(get_state(state))
@@ -629,6 +629,9 @@ fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<bool, St
         }
         let mut updated_config = config.clone();
         updated_config.setups.retain(|setup| setup.id != setup_id);
+        if !updated_config.pending_token_deletions.contains(&setup_id) {
+            updated_config.pending_token_deletions.push(setup_id);
+        }
         state
             .store
             .save(&updated_config)
@@ -646,7 +649,79 @@ fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<bool, St
         .map_err(|_| "supervisor lock poisoned".to_owned())
         .map(|mut supervisor| supervisor.forget(setup_id));
     forget_result?;
-    Ok(state.tokens.delete(setup_id).is_err())
+    if let Err(error) = state.tokens.delete(setup_id) {
+        tracing::warn!(setup_id = %setup_id, error = %error, "Failed to delete token for removed setup");
+        return Ok(true);
+    }
+    if let Err(error) = clear_pending_token_deletion(state, setup_id) {
+        tracing::warn!(setup_id = %setup_id, error = %error, "Failed to persist completed token deletion");
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+fn clear_pending_token_deletion(state: &AppState, setup_id: uuid::Uuid) -> Result<(), String> {
+    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    if !config.pending_token_deletions.contains(&setup_id) {
+        return Ok(());
+    }
+    let mut updated_config = config.clone();
+    updated_config
+        .pending_token_deletions
+        .retain(|pending_id| *pending_id != setup_id);
+    state
+        .store
+        .save(&updated_config)
+        .map_err(|error| error.to_string())?;
+    *config = updated_config;
+    Ok(())
+}
+
+fn retry_pending_token_deletions(
+    pending: &[uuid::Uuid],
+    mut delete_token: impl FnMut(uuid::Uuid) -> bool,
+) -> Vec<uuid::Uuid> {
+    let mut seen = HashSet::new();
+    let mut remaining = Vec::new();
+    for setup_id in pending.iter().copied() {
+        if seen.insert(setup_id) && !delete_token(setup_id) {
+            remaining.push(setup_id);
+        }
+    }
+    remaining
+}
+
+fn cleanup_startup_tokens(
+    store: &ConfigStore,
+    tokens: &TokenStore,
+    config: &mut AppConfig,
+    config_loaded_without_recovery_error: bool,
+) {
+    if !config_loaded_without_recovery_error {
+        return;
+    }
+    let mut updated_config = config.clone();
+    let pending = updated_config.pending_token_deletions.clone();
+    updated_config.pending_token_deletions =
+        retry_pending_token_deletions(&pending, |setup_id| tokens.delete(setup_id).is_ok());
+    if updated_config.pending_token_deletions != config.pending_token_deletions {
+        match store.save(&updated_config) {
+            Ok(()) => *config = updated_config,
+            Err(error) => tracing::warn!(
+                error = %error,
+                "Failed to persist pending token deletion retries at startup"
+            ),
+        }
+    }
+
+    let active_setups = config
+        .setups
+        .iter()
+        .map(|setup| setup.id)
+        .collect::<HashSet<_>>();
+    if let Err(error) = tokens.remove_orphan_fallback_tokens(&active_setups) {
+        tracing::warn!(error = %error, "Failed to remove orphaned fallback tokens at startup");
+    }
 }
 
 fn abort_link_session(session: Option<LinkSession>) {
@@ -1140,6 +1215,7 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
 fn main() {
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
     let (mut config, mut startup_error) = store.load_or_backup();
+    let config_loaded_without_recovery_error = startup_error.is_none();
     if remove_unsupported_config_dir_overrides(&mut config, HostPlatform::current()) {
         let mut notice =
             "The separate settings folder isn't supported here and was removed.".to_owned();
@@ -1155,14 +1231,12 @@ fn main() {
         );
     }
     let tokens = TokenStore::default_store().expect("token store path");
-    let active_setups = config
-        .setups
-        .iter()
-        .map(|setup| setup.id)
-        .collect::<HashSet<_>>();
-    if let Err(error) = tokens.remove_orphan_fallback_tokens(&active_setups) {
-        tracing::warn!(error = %error, "Failed to remove orphaned fallback tokens at startup");
-    }
+    cleanup_startup_tokens(
+        &store,
+        &tokens,
+        &mut config,
+        config_loaded_without_recovery_error,
+    );
     let autostart_builder = tauri_plugin_autostart::Builder::new().args(["--minimized"]);
     #[cfg(target_os = "macos")]
     let autostart_builder = autostart_builder.macos_launcher(MacosLauncher::LaunchAgent);
@@ -1438,6 +1512,68 @@ mod tests {
         );
     }
 
+    #[test]
+    fn pending_token_deletion_retries_keep_failures_and_drop_completed_entries() {
+        let failed_setup = uuid::Uuid::new_v4();
+        let absent_setup = uuid::Uuid::new_v4();
+        let pending = vec![failed_setup, absent_setup, failed_setup];
+
+        let remaining =
+            retry_pending_token_deletions(&pending, |setup_id| setup_id == absent_setup);
+
+        assert_eq!(remaining, [failed_setup]);
+        assert!(
+            retry_pending_token_deletions(&remaining, |_| true).is_empty(),
+            "successful deletion or confirmed absence should clear the retry id"
+        );
+    }
+
+    #[test]
+    fn broken_config_does_not_sweep_fallback_tokens() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&test_dir).unwrap();
+        let config_path = test_dir.join("config.json");
+        std::fs::write(&config_path, b"{not valid json").unwrap();
+        let store = ConfigStore::new(config_path);
+        let tokens = TokenStore::new(test_dir.clone());
+        let setup_id = uuid::Uuid::new_v4();
+        let fallback_path = test_dir.join("tokens").join(setup_id.to_string());
+        std::fs::create_dir_all(fallback_path.parent().unwrap()).unwrap();
+        std::fs::write(&fallback_path, "orphan-token").unwrap();
+        let (mut config, recovery_error) = store.load_or_backup();
+
+        assert!(recovery_error.is_some());
+        cleanup_startup_tokens(&store, &tokens, &mut config, recovery_error.is_none());
+
+        assert_eq!(
+            std::fs::read_to_string(fallback_path).unwrap(),
+            "orphan-token"
+        );
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn startup_sweep_removes_orphan_fallback_tokens_after_valid_config_load() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&test_dir).unwrap();
+        let store = ConfigStore::new(test_dir.join("config.json"));
+        store.save(&AppConfig::default()).unwrap();
+        let tokens = TokenStore::new(test_dir.clone());
+        let orphaned_setup = uuid::Uuid::new_v4();
+        let fallback_path = test_dir.join("tokens").join(orphaned_setup.to_string());
+        std::fs::create_dir_all(fallback_path.parent().unwrap()).unwrap();
+        std::fs::write(&fallback_path, "orphan-token").unwrap();
+        let (mut config, recovery_error) = store.load_or_backup();
+
+        cleanup_startup_tokens(&store, &tokens, &mut config, recovery_error.is_none());
+
+        assert!(recovery_error.is_none());
+        assert!(!fallback_path.exists());
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
     #[tokio::test]
     async fn clearing_pairing_removes_the_session_and_token() {
         let test_dir =
@@ -1541,12 +1677,18 @@ mod tests {
             },
         );
 
-        remove_setup_state(&state, setup_id).unwrap();
+        let cleanup_warning = remove_setup_state(&state, setup_id).unwrap();
 
         assert!(state.config.lock().unwrap().setups.is_empty());
         assert!(state.link_sessions.lock().unwrap().is_empty());
         assert_eq!(tokens.get(setup_id).unwrap(), None);
-        assert!(store.load().unwrap().setups.is_empty());
+        let persisted_config = store.load().unwrap();
+        assert!(persisted_config.setups.is_empty());
+        if cleanup_warning {
+            assert_eq!(persisted_config.pending_token_deletions, [setup_id]);
+        } else {
+            assert!(persisted_config.pending_token_deletions.is_empty());
+        }
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
@@ -1601,6 +1743,14 @@ mod tests {
 
         assert_eq!(state.config.lock().unwrap().setups[0].id, setup_id);
         assert!(state.config.lock().unwrap().setups[0].pairing.is_some());
+        assert!(
+            state
+                .config
+                .lock()
+                .unwrap()
+                .pending_token_deletions
+                .is_empty()
+        );
         assert_eq!(tokens.get(setup_id).unwrap().as_deref(), Some("kept-token"));
         assert!(state.link_sessions.lock().unwrap().contains_key(&setup_id));
         assert_eq!(
@@ -1683,9 +1833,11 @@ mod tests {
         {
             let in_memory_config = state.config.lock().unwrap();
             assert!(in_memory_config.setups.is_empty());
+            assert_eq!(in_memory_config.pending_token_deletions, [setup_id]);
         }
         let persisted_config = store.load().unwrap();
         assert!(persisted_config.setups.is_empty());
+        assert_eq!(persisted_config.pending_token_deletions, [setup_id]);
         assert!(!state.link_sessions.lock().unwrap().contains_key(&setup_id));
         assert!(fallback_path.is_dir());
         assert!(

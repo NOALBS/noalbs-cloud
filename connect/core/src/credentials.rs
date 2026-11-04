@@ -8,6 +8,8 @@ use uuid::Uuid;
 pub enum CredentialError {
     #[error("could not find the user configuration directory")]
     NoConfigDir,
+    #[error("credential keyring operation failed: {0}")]
+    Keyring(#[from] keyring::Error),
     #[error("credential file I/O failed: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -52,10 +54,11 @@ impl TokenStore {
     }
 
     pub fn delete(&self, setup: Uuid) -> Result<(), CredentialError> {
-        if let Ok(entry) = keyring::Entry::new("com.noalbs.connect", &setup.to_string()) {
-            let _ = entry.delete_credential();
-        }
-        self.remove_fallback(setup)
+        let keyring_result = keyring::Entry::new("com.noalbs.connect", &setup.to_string())
+            .and_then(|entry| entry.delete_credential());
+        let fallback_result = self.remove_fallback(setup);
+        keyring_delete_result(keyring_result)?;
+        fallback_result
     }
 
     pub fn remove_orphan_fallback_tokens(
@@ -135,17 +138,24 @@ impl TokenStore {
     }
 }
 
+fn keyring_delete_result(result: Result<(), keyring::Error>) -> Result<(), CredentialError> {
+    match result {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
 
     use tempfile::tempdir;
 
-    use super::TokenStore;
+    use super::{CredentialError, TokenStore, keyring_delete_result};
     use uuid::Uuid;
 
     #[test]
-    fn successful_keyring_write_removes_stale_fallback_and_delete_removes_both() {
+    fn fallback_token_cleanup_removes_stale_tokens() {
         let directory = tempdir().unwrap();
         let store = TokenStore::new(directory.path().to_owned());
         let setup = Uuid::new_v4();
@@ -156,8 +166,24 @@ mod tests {
 
         assert!(!fallback.exists());
         store.write_fallback(setup, "fallback-token").unwrap();
-        store.delete(setup).unwrap();
+        store.remove_fallback(setup).unwrap();
         assert!(!fallback.exists());
+    }
+
+    #[test]
+    fn keyring_delete_treats_absent_entries_as_success() {
+        assert!(keyring_delete_result(Err(keyring::Error::NoEntry)).is_ok());
+    }
+
+    #[test]
+    fn keyring_delete_returns_errors_other_than_no_entry() {
+        let error =
+            keyring::Error::NoStorageAccess(Box::new(std::io::Error::other("keyring locked")));
+
+        assert!(matches!(
+            keyring_delete_result(Err(error)),
+            Err(CredentialError::Keyring(_))
+        ));
     }
 
     #[test]
