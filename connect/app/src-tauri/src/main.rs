@@ -845,6 +845,7 @@ fn create_log_upload(
     state: &AppState,
     setup_id: uuid::Uuid,
     kind: &str,
+    requested: bool,
 ) -> Result<ConnectLogUpload, String> {
     let setup = state
         .config
@@ -877,7 +878,7 @@ fn create_log_upload(
         .ok()
         .and_then(|supervisor| supervisor.obs_start_time(&setup));
     let selected = if kind == "crash_report" {
-        select_crash_report_file(&files, start_time)
+        select_crash_report_file(&files, start_time, requested)
     } else {
         select_obs_log_file(&files, start_time)
     }
@@ -897,16 +898,18 @@ fn create_log_upload(
 fn select_crash_report_file(
     files: &[ObsLogFile],
     obs_start_time: Option<std::time::SystemTime>,
+    requested: bool,
 ) -> Option<&ObsLogFile> {
+    let minimum_modified_at = match obs_start_time {
+        Some(start_time) => Some(start_time.checked_sub(Duration::from_secs(2))?),
+        None if requested => None,
+        None => return None,
+    };
     files
         .iter()
         .filter_map(|file| Some((file, file.modified_at?)))
         .filter(|(_, modified_at)| {
-            obs_start_time.is_none_or(|start_time| {
-                start_time
-                    .checked_sub(Duration::from_secs(2))
-                    .is_some_and(|minimum_modified_at| *modified_at >= minimum_modified_at)
-            })
+            minimum_modified_at.is_none_or(|minimum| *modified_at >= minimum)
         })
         .max_by_key(|(_, modified_at)| *modified_at)
         .map(|(file, _)| file)
@@ -1432,7 +1435,8 @@ fn start_link_session(
                     handled_incident = Some(incident);
                     if incident == PcObsState::Crashed {
                         for kind in ["crash_report", "obs_log"] {
-                            if let Ok(upload) = create_log_upload(&app_state, monitor_setup.id, kind)
+                            if let Ok(upload) =
+                                create_log_upload(&app_state, monitor_setup.id, kind, false)
                                 && upload_tx.send(upload).is_err()
                             {
                                 break;
@@ -1538,7 +1542,8 @@ fn start_link_session(
             let app_state = command_app.state::<AppState>();
             let result = match command.action.clone() {
                 ObsAction::UploadLog => {
-                    create_log_upload(app_state.inner(), command_setup_id, "obs_log").map(Some)
+                    create_log_upload(app_state.inner(), command_setup_id, "obs_log", true)
+                        .map(Some)
                 }
                 action if action.is_program() => {
                     run_program_action(app_state.inner(), command_setup_id, action, true)
@@ -1843,14 +1848,17 @@ mod tests {
         ];
 
         assert_eq!(
-            select_crash_report_file(&files, Some(start)).unwrap().path,
+            select_crash_report_file(&files, Some(start), false)
+                .unwrap()
+                .path,
             fresh_path
         );
-        assert!(select_crash_report_file(&files[..1], Some(start)).is_none());
+        assert!(select_crash_report_file(&files[..1], Some(start), false).is_none());
         assert_eq!(
-            select_crash_report_file(&files[..1], None).unwrap().path,
-            stale_path
+            select_crash_report_file(&files, None, true).unwrap().path,
+            fresh_path
         );
+        assert!(select_crash_report_file(&files, None, false).is_none());
         std::fs::remove_dir_all(directory).unwrap();
     }
 
