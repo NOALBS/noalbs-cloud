@@ -41,6 +41,18 @@ describe("describeEvent", () => {
     ).toEqual({ title: "OBS log uploaded", detail: "by kate" });
   });
 
+  it("describes Connect OBS commands as complete translated sentences", () => {
+    for (const action of ["start", "stop", "restart"] as const) {
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: "kate" } })
+          .detail,
+      ).toContain("kate");
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: null } }).detail,
+      ).toMatch(/^(Started|Stopped|Restarted) OBS through Connect$/);
+    }
+  });
+
   it("explains automatic switches with their cause", () => {
     const event: SwitcherEvent = {
       ...base,

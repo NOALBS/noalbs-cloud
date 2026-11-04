@@ -507,7 +507,8 @@ function ConnectDeviceRow({
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={obsCommand.isPending}
-              onClick={() => {
+              onClick={(event) => {
+                event.preventDefault();
                 if (confirmAction) {
                   obsCommand.mutate(confirmAction satisfies ConnectObsAction, {
                     onSuccess: () => setConfirmAction(null),

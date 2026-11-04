@@ -46,7 +46,7 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(45);
 const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
 const MAX_DECOMPRESSED_LOG_BYTES: u64 = 32 * 1024 * 1024;
 /// Delay before restarting a switcher that stopped with an error.
