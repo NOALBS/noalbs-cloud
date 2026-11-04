@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
 use connect_core::{
     AppConfig, ConfigStore, HostPlatform, PairingClient, Setup,
@@ -606,17 +609,19 @@ fn remove_setup(
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    remove_setup_state(&state, id)?;
+    let token_delete_failed = remove_setup_state(&state, id)?;
     let _ = app.emit("connect-state-changed", build_ui_state(&state));
     let _ = refresh_tray_menu(&app);
+    if token_delete_failed {
+        let _ = app.emit(
+            "connect-error",
+            "The setup was removed, but its stored token could not be deleted.",
+        );
+    }
     Ok(get_state(state))
 }
 
-fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<(), String> {
-    state
-        .tokens
-        .delete(setup_id)
-        .map_err(|error| error.to_string())?;
+fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<bool, String> {
     {
         let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
         if !config.setups.iter().any(|setup| setup.id == setup_id) {
@@ -641,7 +646,7 @@ fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<(), Stri
         .map_err(|_| "supervisor lock poisoned".to_owned())
         .map(|mut supervisor| supervisor.forget(setup_id));
     forget_result?;
-    Ok(())
+    Ok(state.tokens.delete(setup_id).is_err())
 }
 
 fn abort_link_session(session: Option<LinkSession>) {
@@ -1150,6 +1155,14 @@ fn main() {
         );
     }
     let tokens = TokenStore::default_store().expect("token store path");
+    let active_setups = config
+        .setups
+        .iter()
+        .map(|setup| setup.id)
+        .collect::<HashSet<_>>();
+    if let Err(error) = tokens.remove_orphan_fallback_tokens(&active_setups) {
+        tracing::warn!(error = %error, "Failed to remove orphaned fallback tokens at startup");
+    }
     let autostart_builder = tauri_plugin_autostart::Builder::new().args(["--minimized"]);
     #[cfg(target_os = "macos")]
     let autostart_builder = autostart_builder.macos_launcher(MacosLauncher::LaunchAgent);
@@ -1588,7 +1601,7 @@ mod tests {
 
         assert_eq!(state.config.lock().unwrap().setups[0].id, setup_id);
         assert!(state.config.lock().unwrap().setups[0].pairing.is_some());
-        assert_eq!(tokens.get(setup_id).unwrap(), None);
+        assert_eq!(tokens.get(setup_id).unwrap().as_deref(), Some("kept-token"));
         assert!(state.link_sessions.lock().unwrap().contains_key(&setup_id));
         assert_eq!(
             state
@@ -1613,7 +1626,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn failed_token_deletion_keeps_setup_config_and_link_session() {
+    async fn failed_token_deletion_does_not_block_setup_removal() {
         let test_dir =
             std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&test_dir).unwrap();
@@ -1665,38 +1678,25 @@ mod tests {
             },
         );
 
-        assert!(remove_setup_state(&state, setup_id).is_err());
+        assert!(remove_setup_state(&state, setup_id).unwrap());
 
-        let in_memory_config = state.config.lock().unwrap();
-        assert_eq!(in_memory_config.setups.len(), 1);
-        assert_eq!(in_memory_config.setups[0].id, setup_id);
-        assert!(in_memory_config.setups[0].pairing.is_some());
-        drop(in_memory_config);
+        {
+            let in_memory_config = state.config.lock().unwrap();
+            assert!(in_memory_config.setups.is_empty());
+        }
         let persisted_config = store.load().unwrap();
-        assert_eq!(persisted_config.setups.len(), 1);
-        assert_eq!(persisted_config.setups[0].id, setup_id);
-        assert!(persisted_config.setups[0].pairing.is_some());
-        assert!(state.link_sessions.lock().unwrap().contains_key(&setup_id));
+        assert!(persisted_config.setups.is_empty());
+        assert!(!state.link_sessions.lock().unwrap().contains_key(&setup_id));
         assert!(fallback_path.is_dir());
-        assert_eq!(
-            state
+        assert!(
+            !state
                 .pending_verification_urls
                 .lock()
                 .unwrap()
-                .get(&setup_id)
-                .map(String::as_str),
-            Some("verification-url")
+                .contains_key(&setup_id)
         );
-        assert!(!link_task_abort.is_finished());
-
-        let session = state
-            .link_sessions
-            .lock()
-            .unwrap()
-            .remove(&setup_id)
-            .unwrap();
-        session.task.abort();
-        session.monitor.abort();
+        tokio::task::yield_now().await;
+        assert!(link_task_abort.is_finished());
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 

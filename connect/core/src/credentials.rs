@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path::PathBuf};
+use std::{collections::HashSet, fs, io::Write, path::PathBuf};
 
 use directories::BaseDirs;
 use thiserror::Error;
@@ -58,6 +58,34 @@ impl TokenStore {
         self.remove_fallback(setup)
     }
 
+    pub fn remove_orphan_fallback_tokens(
+        &self,
+        active_setups: &HashSet<Uuid>,
+    ) -> Result<(), CredentialError> {
+        let entries = match fs::read_dir(self.root.join("tokens")) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.into()),
+        };
+        for entry in entries {
+            let entry = entry?;
+            if !entry.file_type()?.is_file() {
+                continue;
+            }
+            let Some(setup_id) = entry
+                .file_name()
+                .to_str()
+                .and_then(|name| Uuid::parse_str(name).ok())
+            else {
+                continue;
+            };
+            if !active_setups.contains(&setup_id) {
+                fs::remove_file(entry.path())?;
+            }
+        }
+        Ok(())
+    }
+
     fn remove_fallback(&self, setup: Uuid) -> Result<(), CredentialError> {
         match fs::remove_file(self.fallback_path(setup)) {
             Ok(()) => Ok(()),
@@ -109,6 +137,8 @@ impl TokenStore {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use tempfile::tempdir;
 
     use super::TokenStore;
@@ -142,5 +172,27 @@ mod tests {
         store.keyring_write_succeeded(setup);
 
         assert!(fallback.is_dir());
+    }
+
+    #[test]
+    fn orphaned_fallback_tokens_are_removed() {
+        let directory = tempdir().unwrap();
+        let store = TokenStore::new(directory.path().to_owned());
+        let active_setup = Uuid::new_v4();
+        let orphaned_setup = Uuid::new_v4();
+        store.write_fallback(active_setup, "active-token").unwrap();
+        store
+            .write_fallback(orphaned_setup, "orphaned-token")
+            .unwrap();
+
+        store
+            .remove_orphan_fallback_tokens(&HashSet::from([active_setup]))
+            .unwrap();
+
+        assert_eq!(
+            store.get(active_setup).unwrap().as_deref(),
+            Some("active-token")
+        );
+        assert_eq!(store.get(orphaned_setup).unwrap(), None);
     }
 }
