@@ -16,6 +16,7 @@ fn validate_url(
 ) -> Result<(), String> {
     let url = reqwest::Url::parse(value).map_err(|error| format!("Invalid {label} URL: {error}"))?;
     let loopback = url.host_str().is_some_and(|host| {
+        let host = host.trim_start_matches('[').trim_end_matches(']');
         host.eq_ignore_ascii_case("localhost")
             || host
                 .parse::<IpAddr>()
