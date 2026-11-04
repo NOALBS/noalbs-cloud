@@ -52,13 +52,52 @@ pub fn read_obs_websocket_config(config_dir: &Path) -> Result<ObsWebsocketConfig
 }
 
 pub fn enable_obs_websocket(config_dir: &Path) -> Result<String, SupervisorError> {
+    enable_obs_websocket_on_port(config_dir, None)
+}
+
+pub fn enable_obs_websocket_on_port(
+    config_dir: &Path,
+    websocket_port: Option<u16>,
+) -> Result<String, SupervisorError> {
     let path = config_dir.join("plugin_config/obs-websocket/config.json");
-    let mut config: Value = serde_json::from_slice(&std::fs::read(&path)?)
-        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+    let mut config: Value = match std::fs::read(&path) {
+        Ok(bytes) => serde_json::from_slice(&bytes)
+            .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            serde_json::json!({
+                "alerts_enabled": false,
+                "auth_required": true,
+                "first_load": false,
+                "server_enabled": true,
+                "server_password": "",
+                "server_port": 4455
+            })
+        }
+        Err(error) => return Err(error.into()),
+    };
+    if !config.is_object() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "OBS websocket configuration must be a JSON object",
+        )
+        .into());
+    }
+    fs::create_dir_all(path.parent().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "websocket config has no parent",
+        )
+    })?)?;
     let password = Uuid::new_v4().simple().to_string();
+    config["alerts_enabled"] = config
+        .get("alerts_enabled")
+        .cloned()
+        .unwrap_or(Value::Bool(false));
     config["server_enabled"] = Value::Bool(true);
     config["auth_required"] = Value::Bool(true);
+    config["first_load"] = Value::Bool(false);
     config["server_password"] = Value::String(password.clone());
+    config["server_port"] = Value::from(websocket_port.unwrap_or(4455));
     let bytes = serde_json::to_vec_pretty(&config)
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
     let temp = path.with_file_name(format!("config.json.tmp-{}", Uuid::new_v4()));
@@ -901,6 +940,27 @@ mod tests {
                 "--websocket_port" | "--websocket_password"
             )
         }));
+    }
+
+    #[test]
+    fn enabling_websocket_creates_first_launch_config_without_password_regeneration() {
+        let directory = tempdir().unwrap();
+        let config_dir = directory.path().join("obs-studio");
+
+        let password = super::enable_obs_websocket_on_port(&config_dir, Some(4458)).unwrap();
+        let path = config_dir.join("plugin_config/obs-websocket/config.json");
+        let config: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+
+        assert_eq!(config["alerts_enabled"], false);
+        assert_eq!(config["auth_required"], true);
+        assert_eq!(config["first_load"], false);
+        assert_eq!(config["server_enabled"], true);
+        assert_eq!(config["server_password"], password);
+        assert_eq!(config["server_port"], 4458);
+        assert_eq!(
+            fs::metadata(path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
     }
 
     #[test]

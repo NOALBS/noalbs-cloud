@@ -7,7 +7,7 @@ use connect_core::{
     relay::{LinkConfig, ObsTelemetry, PcObsState, WatchdogMode, run_link, stop_active_streams},
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
-        enable_obs_websocket, read_obs_websocket_config, same_obs_identity,
+        read_obs_websocket_config, same_obs_identity,
     },
     url_security::{validate_dashboard_url, validate_verification_url},
     watchdog::{Watchdog, WatchdogAction},
@@ -511,7 +511,11 @@ fn enable_websocket(
     if supervisor.state(&setup) != connect_core::relay::PcObsState::NotRunning {
         return Err("Stop this setup's OBS before enabling its websocket server".into());
     }
-    enable_obs_websocket(&config_dir(&setup)).map_err(|error| error.to_string())?;
+    connect_core::supervisor::enable_obs_websocket_on_port(
+        &config_dir(&setup),
+        setup.obs.websocket_port,
+    )
+    .map_err(|error| error.to_string())?;
     drop(supervisor);
     if setup.pairing.is_some() {
         start_link_session(&app, state.inner(), setup)?;
