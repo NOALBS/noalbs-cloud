@@ -1509,7 +1509,7 @@ mod tests {
             let mut permissions = fs::metadata(path).unwrap().permissions();
             permissions.set_mode(0o755);
             fs::set_permissions(path, permissions).unwrap();
-            return path.to_owned();
+            path.to_owned()
         }
         #[cfg(target_os = "macos")]
         {
