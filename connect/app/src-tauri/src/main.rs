@@ -77,6 +77,10 @@ struct UiState {
 
 #[tauri::command]
 fn get_state(state: State<'_, AppState>) -> UiState {
+    build_ui_state(&state)
+}
+
+fn build_ui_state(state: &AppState) -> UiState {
     let (setups, start_at_login, api_url, dashboard_url) = {
         let config = state.config.lock().expect("app config lock");
         let settings = config.settings.effective();
@@ -589,19 +593,24 @@ fn enable_websocket(
 #[tauri::command]
 fn unpair_setup(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    state.tokens.delete(id).map_err(|error| error.to_string())?;
-    if let Some(session) = state
-        .link_sessions
-        .lock()
-        .map_err(|_| "link session lock poisoned")?
-        .remove(&id)
-    {
+    if let Some(session) = clear_pairing_state(&state, id)? {
         session.task.abort();
         session.monitor.abort();
         session.command_consumer.abort();
     }
+    Ok(get_state(state))
+}
+
+fn clear_pairing_state(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+) -> Result<Option<LinkSession>, String> {
+    state
+        .tokens
+        .delete(setup_id)
+        .map_err(|error| error.to_string())?;
     let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
-    if let Some(setup) = config.setups.iter_mut().find(|setup| setup.id == id) {
+    if let Some(setup) = config.setups.iter_mut().find(|setup| setup.id == setup_id) {
         setup.pairing = None;
     }
     state
@@ -609,7 +618,29 @@ fn unpair_setup(setup_id: String, state: State<'_, AppState>) -> Result<UiState,
         .save(&config)
         .map_err(|error| error.to_string())?;
     drop(config);
-    Ok(get_state(state))
+    Ok(state
+        .link_sessions
+        .lock()
+        .map_err(|_| "link session lock poisoned")?
+        .remove(&setup_id))
+}
+
+fn forget_rejected_pairing(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
+    let state = app.state::<AppState>();
+    match clear_pairing_state(&state, setup_id) {
+        Ok(Some(session)) => session.monitor.abort(),
+        Ok(None) => {}
+        Err(error) => {
+            let _ = app.emit("connect-error", error);
+            return;
+        }
+    }
+    let _ = app.emit("connect-state-changed", build_ui_state(&state));
+    let _ = refresh_tray_menu(app);
+    let _ = app.emit(
+        "connect-error",
+        "This computer was removed from NOALBS Cloud. Pair it again to reconnect.",
+    );
 }
 
 fn find_setup(state: &State<'_, AppState>, setup_id: &str) -> Result<Setup, String> {
@@ -741,9 +772,20 @@ fn start_link_session(
         previous.command_consumer.abort();
     }
     let app_handle = app.clone();
+    let link_setup_id = setup.id;
+    let (link_start, link_started) = tokio::sync::oneshot::channel();
     let task = tauri::async_runtime::spawn(async move {
-        if let Err(error) = run_link(link_config, state_rx, watchdog_tx).await {
-            let _ = app_handle.emit("connect-error", error.to_string());
+        if link_started.await.is_err() {
+            return;
+        }
+        match run_link(link_config, state_rx, watchdog_tx).await {
+            Ok(()) => {}
+            Err(connect_core::relay::RelayError::InvalidToken) => {
+                forget_rejected_pairing(&app_handle, link_setup_id);
+            }
+            Err(error) => {
+                let _ = app_handle.emit("connect-error", error.to_string());
+            }
         }
     });
     let monitor_handle = app.clone();
@@ -905,6 +947,7 @@ fn start_link_session(
         },
     );
     drop(sessions);
+    let _ = link_start.send(());
 
     let app_handle = app.clone();
     let mut state_rx = state_tx.subscribe();
@@ -1209,5 +1252,65 @@ mod tests {
                 "Smoke test — OBS not running".into()
             )]
         );
+    }
+
+    #[tokio::test]
+    async fn clearing_pairing_removes_the_session_and_token() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        let mut setup = Setup::new("Rejected pairing".into());
+        setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(test_dir.join("obs"));
+        setup.pairing = Some(connect_core::config::Pairing {
+            device_id: uuid::Uuid::new_v4(),
+            switcher_id: uuid::Uuid::new_v4(),
+            link_url: "ws://127.0.0.1:11000/link".into(),
+        });
+        let setup_id = setup.id;
+        let store = ConfigStore::new(test_dir.join("config.json"));
+        let tokens = TokenStore::new(test_dir.clone());
+        tokens.set(setup_id, "rejected-token").unwrap();
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: store.clone(),
+            tokens: tokens.clone(),
+            supervisor: Mutex::new(Supervisor::default()),
+            link_sessions: Mutex::new(HashMap::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+        };
+        let (state_tx, _) = watch::channel(PcObsState::Starting);
+        let (_, effective_obs) = watch::channel(None);
+        state.link_sessions.lock().unwrap().insert(
+            setup_id,
+            LinkSession {
+                state: state_tx,
+                effective_obs,
+                task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+            },
+        );
+
+        let removed = clear_pairing_state(&state, setup_id).unwrap();
+        let config = store.load().unwrap();
+        let ui_state = build_ui_state(&state);
+
+        assert!(state.link_sessions.lock().unwrap().is_empty());
+        assert!(config.setups[0].pairing.is_none());
+        assert_eq!(tokens.get(setup_id).unwrap(), None);
+        assert!(!ui_state.setups[0].paired);
+        assert_eq!(ui_state.setups[0].obs_state, "not_running");
+        if let Some(session) = removed {
+            session.task.abort();
+            session.monitor.abort();
+        }
+        std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
