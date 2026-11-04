@@ -658,7 +658,7 @@ msgstr "{0}–{1}"
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "{0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "{0}, {1}, {2} mal {3}"
 
 #. placeholder {0}: addon.code
 #. placeholder {1}: addon.quantity
@@ -812,7 +812,7 @@ msgstr "{name} wurde entfernt"
 
 #: src/components/live/placement-canvas.tsx
 msgid "{name}: drag to move, pull a corner to resize, or use the arrow keys"
-msgstr ""
+msgstr "{name}: zum Verschieben ziehen, zum Ändern der Größe an einer Ecke ziehen oder die Pfeiltasten nutzen"
 
 #. placeholder {0}: roleLabels()[role]
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -1002,7 +1002,7 @@ msgstr "7 Tage"
 #. placeholder {1}: canvas.height
 #: src/components/live/source-position.tsx
 msgid "A box in pixels on the {0}×{1} screen, from its top left. The source fits inside it, keeping its shape."
-msgstr ""
+msgstr "Ein Rahmen in Pixeln auf dem {0}×{1}-Bild, von seiner oberen linken Ecke aus. Die Quelle passt hinein und behält ihre Form."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
@@ -1010,11 +1010,11 @@ msgstr "Eine Browserquelle in OBS verbindet es mit diesem Switcher, ohne dass du
 
 #: src/lib/api-messages.ts
 msgid "A browser source is 1 to 8192 pixels wide and high."
-msgstr ""
+msgstr "Eine Browserquelle ist 1 bis 8192 Pixel breit und hoch."
 
 #: src/lib/api-messages.ts
 msgid "A browser source's frame rate is 1 to 60."
-msgstr ""
+msgstr "Die Bildrate einer Browserquelle liegt zwischen 1 und 60."
 
 #. placeholder {0}: firstSwitcher.name
 #: src/components/app-shell.tsx
@@ -1035,11 +1035,11 @@ msgstr "ein gelöschter Nutzer"
 
 #: src/lib/api-messages.ts
 msgid "A font's name is at most 128 characters."
-msgstr ""
+msgstr "Der Name einer Schriftart hat höchstens 128 Zeichen."
 
 #: src/components/live/source-position.tsx
 msgid "A full-screen box has none."
-msgstr ""
+msgstr "Ein Rahmen über das ganze Bild hat keinen."
 
 #: src/lib/api-messages.ts
 msgid "A limit is out of range"
@@ -1060,7 +1060,7 @@ msgstr "Für neue Abos wird in Stripe ein neuer Preis angelegt.{0}"
 
 #: src/components/live/source-editor.tsx
 msgid "A new source with a copy of its settings, filters and placement. Changing one doesn’t change the other."
-msgstr ""
+msgstr "Eine neue Quelle mit einer Kopie ihrer Einstellungen, Filter und Position. Änderungen an der einen ändern die andere nicht."
 
 #: src/lib/api-messages.ts
 msgid "A notice has to end after it starts"
@@ -1085,7 +1085,7 @@ msgstr "Eine Zahlung für diesen Workspace ist fehlgeschlagen. Aktualisiere die 
 
 #: src/lib/api-messages.ts
 msgid "A scene can't be added to itself."
-msgstr ""
+msgstr "Eine Szene kann nicht zu sich selbst hinzugefügt werden."
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "A subscription ends straight away, without a refund."
@@ -1105,11 +1105,11 @@ msgstr "Hier gibt es schon einen Switcher mit diesem Namen"
 
 #: src/lib/api-messages.ts
 msgid "A text source says at most 10,000 characters."
-msgstr ""
+msgstr "Eine Textquelle zeigt höchstens 10.000 Zeichen."
 
 #: src/lib/api-messages.ts
 msgid "A VLC source plays 1 to 50 URLs."
-msgstr ""
+msgstr "Eine VLC-Quelle spielt 1 bis 50 URLs ab."
 
 #: src/components/orgs/client-dialog.tsx
 msgid "A whole number from 0 to {MAX_ALLOCATION}, or empty."
@@ -1216,7 +1216,7 @@ msgstr "Netzwerk per Name hinzufügen…"
 
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
-msgstr ""
+msgstr "Quelle hinzufügen"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -1242,7 +1242,7 @@ msgstr "Füge einen hinzu, um dein OBS zu verbinden. Die Einrichtung dauert nur 
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
-msgstr ""
+msgstr "Szene hinzufügen"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/add-server.tsx
@@ -1252,7 +1252,7 @@ msgstr "Server hinzufügen"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-list.tsx
 msgid "Add source"
-msgstr ""
+msgstr "Quelle hinzufügen"
 
 #: src/components/app-shell.tsx
 #: src/components/create-switcher-dialog.tsx
@@ -1270,7 +1270,7 @@ msgstr "Zu NOALBS Cloud hinzufügen"
 
 #: src/components/live/source-editor.tsx
 msgid "Add URL"
-msgstr ""
+msgstr "URL hinzufügen"
 
 #: src/components/admin/products.tsx
 msgid "Add-on created"
@@ -1299,13 +1299,13 @@ msgstr "{0} hinzugefügt"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Added {0} again"
-msgstr ""
+msgstr "{0} erneut hinzugefügt"
 
 #. placeholder {0}: added.name
 #. placeholder {0}: created.name
 #: src/components/live/source-editor.tsx
 msgid "Added {0} to {sceneName}"
-msgstr ""
+msgstr "{0} zu {sceneName} hinzugefügt"
 
 #: src/lib/support.ts
 msgid "Added a stream server"
@@ -1320,7 +1320,7 @@ msgstr "Switcher hinzugefügt"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Added the scene {0}"
-msgstr ""
+msgstr "Szene {0} hinzugefügt"
 
 #: src/components/create-switcher-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -1503,11 +1503,11 @@ msgstr "Ein Admin dieses Workspace kann einen hinzufügen."
 
 #: src/components/live/scene-grid.tsx
 msgid "An empty scene in OBS. Add sources to it from the Sources card."
-msgstr ""
+msgstr "Eine leere Szene in OBS. Füge ihr Quellen über die Karte Quellen hinzu."
 
 #: src/components/live/source-editor.tsx
 msgid "An srt://, rtmp://, rist://, udp:// or https:// address."
-msgstr ""
+msgstr "Eine srt://-, rtmp://-, rist://-, udp://- oder https://-Adresse."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Announce raids"
@@ -1584,11 +1584,11 @@ msgstr "Wird angewendet…"
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
-msgstr ""
+msgstr "So groß wie möglich, in ihrer Form."
 
 #: src/components/live/source-editor.tsx
 msgid "As the OBS computer names it, e.g. Arial. Empty keeps the font it has."
-msgstr ""
+msgstr "So, wie der OBS-Rechner sie nennt, z. B. Arial. Leer behält die aktuelle Schriftart."
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
@@ -1621,7 +1621,7 @@ msgstr "bei <0>{host}</0>"
 
 #: src/components/live/source-position.tsx
 msgid "At 100% it fills the screen wherever it’s pinned. Make it smaller to put it in a corner or on an edge."
-msgstr ""
+msgstr "Bei 100 % füllt sie das Bild, egal wo sie angeheftet ist. Mach sie kleiner, um sie in eine Ecke oder an einen Rand zu setzen."
 
 #: src/components/moblin-settings.tsx
 msgid "At least {MOBLIN_MIN_PASSWORD} characters"
@@ -1738,7 +1738,7 @@ msgstr "Zurück zur Website"
 
 #: src/components/live/source-editor.tsx
 msgid "Backup SRT"
-msgstr ""
+msgstr "Backup-SRT"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Bad checks in a row before leaving LIVE; one check per second."
@@ -1944,7 +1944,7 @@ msgstr "Bitrate-Auslöser müssen zwischen 1 und 100.000 kbps liegen."
 
 #: src/components/live/source-editor.tsx
 msgid "Bold"
-msgstr ""
+msgstr "Fett"
 
 #: src/components/live/moblin-card.tsx
 msgid "Bonding"
@@ -1960,15 +1960,15 @@ msgstr "Bot-Sprache"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom"
-msgstr ""
+msgstr "Unten"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom left"
-msgstr ""
+msgstr "Unten links"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom right"
-msgstr ""
+msgstr "Unten rechts"
 
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -2092,7 +2092,7 @@ msgstr "Erkenne einen schwächelnden Uplink, bevor die Bitrate einbricht. Nur SR
 
 #: src/components/live/source-position.tsx
 msgid "Center"
-msgstr ""
+msgstr "Mitte"
 
 #: src/components/support-access.tsx
 msgid "Change"
@@ -2113,7 +2113,7 @@ msgstr "Tarif oder Abrechnung ändern"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Changed {0}"
-msgstr ""
+msgstr "{0} geändert"
 
 #: src/lib/org-audit.ts
 msgid "Changed {subject}"
@@ -2207,15 +2207,15 @@ msgstr "Änderungen"
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others, or edit media, VLC, browser and text sources."
-msgstr ""
+msgstr "Änderungen hier werden in OBS gemacht, live im Stream. Schiebe Quellen nach oben, um sie über den anderen zu zeigen, oder bearbeite Medien-, VLC-, Browser- und Textquellen."
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others."
-msgstr ""
+msgstr "Änderungen hier werden in OBS gemacht, live im Stream. Schiebe Quellen nach oben, um sie über den anderen zu zeigen."
 
 #: src/components/live/scene-grid.tsx
 msgid "Changes here are made in OBS. The scene on air, and the scenes the switcher switches to, can’t be removed."
-msgstr ""
+msgstr "Änderungen hier werden in OBS gemacht. Die Szene auf Sendung und die Szenen, zu denen der Switcher wechselt, können nicht entfernt werden."
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something breaks, for example it can’t get online anymore, use the <0>official BELABOX remote</0> (with your secret URL) or the BELABOX’s local UI to fix it."
@@ -2263,7 +2263,7 @@ msgstr "Chat-Benachrichtigung"
 
 #: src/components/live/source-editor.tsx
 msgid "Chat overlay"
-msgstr ""
+msgstr "Chat-Overlay"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Chat service"
@@ -2351,7 +2351,7 @@ msgstr "Schließen"
 
 #: src/components/live/source-editor.tsx
 msgid "Close the stream while it isn’t shown"
-msgstr ""
+msgstr "Stream schließen, solange sie nicht sichtbar ist"
 
 #: src/components/admin/products.tsx
 msgid "Code"
@@ -2359,7 +2359,7 @@ msgstr "Code"
 
 #: src/components/live/source-editor.tsx
 msgid "Color"
-msgstr ""
+msgstr "Farbe"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -2559,7 +2559,7 @@ msgstr "Weiter mit {0}"
 
 #: src/components/live/source-editor.tsx
 msgid "Control its audio from OBS’s Audio Mixer"
-msgstr ""
+msgstr "Ton über den Audio-Mixer von OBS steuern"
 
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
@@ -2586,7 +2586,7 @@ msgstr "Kopiert"
 #: src/components/live/source-editor.tsx
 #: src/lib/live-format.ts
 msgid "Copied {0} as {1}"
-msgstr ""
+msgstr "{0} als {1} kopiert"
 
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
@@ -2675,7 +2675,7 @@ msgstr "Zählt, solange gestreamt wird und die Ende-Szene auf Sendung ist, auch 
 
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
-msgstr ""
+msgstr "Füllt den Rahmen und behält die Form; die Ränder werden abgeschnitten."
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2789,23 +2789,23 @@ msgstr "Kritische Hinweise lassen sich nicht ausblenden."
 
 #: src/components/live/source-position.tsx
 msgid "Crop bottom"
-msgstr ""
+msgstr "Unten zuschneiden"
 
 #: src/lib/api-messages.ts
 msgid "Crop is at most 16384 pixels a side."
-msgstr ""
+msgstr "Zuschnitt ist höchstens 16384 Pixel pro Seite."
 
 #: src/components/live/source-position.tsx
 msgid "Crop left"
-msgstr ""
+msgstr "Links zuschneiden"
 
 #: src/components/live/source-position.tsx
 msgid "Crop right"
-msgstr ""
+msgstr "Rechts zuschneiden"
 
 #: src/components/live/source-position.tsx
 msgid "Crop top"
-msgstr ""
+msgstr "Oben zuschneiden"
 
 #: src/components/admin/products.tsx
 msgid "Currency"
@@ -2821,11 +2821,11 @@ msgstr "Derzeit nicht verfügbar"
 
 #: src/components/live/source-editor.tsx
 msgid "Custom CSS"
-msgstr ""
+msgstr "Eigenes CSS"
 
 #: src/lib/api-messages.ts
 msgid "Custom CSS is at most 20,000 characters."
-msgstr ""
+msgstr "Eigenes CSS hat höchstens 20.000 Zeichen."
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Customer"
@@ -3102,7 +3102,7 @@ msgstr "Stream-Verlauf herunterladen"
 
 #: src/components/live/source-position.tsx
 msgid "Drag"
-msgstr ""
+msgstr "Ziehen"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
@@ -3114,16 +3114,16 @@ msgstr "Verworfene Frames"
 
 #: src/components/live/source-editor.tsx
 msgid "Duplicate"
-msgstr ""
+msgstr "Duplizieren"
 
 #. placeholder {0}: source.name
 #: src/components/live/source-editor.tsx
 msgid "Duplicate {0}"
-msgstr ""
+msgstr "{0} duplizieren"
 
 #: src/components/live/source-list.tsx
 msgid "Duplicate…"
-msgstr ""
+msgstr "Duplizieren…"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Duration"
@@ -3154,7 +3154,7 @@ msgstr "{0} bearbeiten"
 
 #: src/components/live/source-editor.tsx
 msgid "Edit {name}"
-msgstr ""
+msgstr "{name} bearbeiten"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
@@ -3162,7 +3162,7 @@ msgstr "Hinweis bearbeiten"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
-msgstr ""
+msgstr "Bearbeiten…"
 
 #: src/routes/_app/admin/audit.tsx
 msgid "Emergency"
@@ -3195,7 +3195,7 @@ msgstr "Notfallzugriff…"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
-msgstr ""
+msgstr "Leer zum Erkennen, oder z. B. mpegts."
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Enable"
@@ -3301,7 +3301,7 @@ msgstr "endet am {0}"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "Gib eine Stream-URL ein, z. B. srt://, rtmp:// oder https://. Dateien auf dem OBS-Rechner lassen sich nur in OBS auswählen."
 
 #: src/lib/belabox.ts
 msgid "Enter the APN"
@@ -3309,7 +3309,7 @@ msgstr "APN eingeben"
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the page. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "Gib die vollständige http://- oder https://-Adresse der Seite ein. Dateien auf dem OBS-Rechner lassen sich nur in OBS auswählen."
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the stats page"
@@ -3333,7 +3333,7 @@ msgstr "Gib den Benutzernamen zum Passwort ein"
 
 #: src/lib/api-messages.ts
 msgid "Enter what the source plays."
-msgstr ""
+msgstr "Gib ein, was die Quelle abspielt."
 
 #: src/lib/belabox.ts
 msgid "Enter your stream ID"
@@ -3407,15 +3407,15 @@ msgstr "Alles steht im Teil nach dem <0>#</0>, den Browser nie an einen Server s
 
 #: src/components/live/source-position.tsx
 msgid "Exact"
-msgstr ""
+msgstr "Genau"
 
 #: src/components/live/source-position.tsx
 msgid "Exactly the box, out of shape if need be."
-msgstr ""
+msgstr "Genau der Rahmen, notfalls verzerrt."
 
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
-msgstr ""
+msgstr "Vorhandene Quelle"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3443,7 +3443,7 @@ msgstr "Felder"
 
 #: src/components/live/source-position.tsx
 msgid "Fill"
-msgstr ""
+msgstr "Füllen"
 
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
@@ -3456,7 +3456,7 @@ msgstr "Einrichtung abschließen"
 
 #: src/components/live/source-position.tsx
 msgid "Fit"
-msgstr ""
+msgstr "Einpassen"
 
 #: src/components/live/quick-actions.tsx
 msgid "Fix feed"
@@ -3473,11 +3473,11 @@ msgstr "Feed repariert"
 
 #: src/components/live/source-editor.tsx
 msgid "Font"
-msgstr ""
+msgstr "Schriftart"
 
 #: src/components/live/source-editor.tsx
 msgid "Font size"
-msgstr ""
+msgstr "Schriftgröße"
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
@@ -3513,7 +3513,7 @@ msgstr "Netzwerk vergessen"
 
 #: src/components/live/source-editor.tsx
 msgid "Frame rate"
-msgstr ""
+msgstr "Bildrate"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Free disk"
@@ -3527,7 +3527,7 @@ msgstr "Free ist der Tarif, bei dem Workspaces ohne Abo landen."
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "From {0} {1}"
-msgstr ""
+msgstr "Aus {0} {1}"
 
 #. placeholder {0}: channel.links.length
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -3556,7 +3556,7 @@ msgstr "Gib einen Namen mit bis zu 60 Zeichen ein."
 
 #: src/lib/api-messages.ts
 msgid "Give the source a name of up to 256 characters."
-msgstr ""
+msgstr "Gib der Quelle einen Namen mit höchstens 256 Zeichen."
 
 #: src/components/live/audio-mixer.tsx
 msgid "Global"
@@ -3583,7 +3583,7 @@ msgstr "Zu den Szenen"
 
 #: src/lib/api-messages.ts
 msgid "Groups, and what's in them, can only be removed in OBS."
-msgstr ""
+msgstr "Gruppen und was in ihnen ist lassen sich nur in OBS entfernen."
 
 #: src/components/live/moblin-card.tsx
 msgid "Heat"
@@ -3592,7 +3592,7 @@ msgstr "Hitze"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Height"
-msgstr ""
+msgstr "Höhe"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -3809,7 +3809,7 @@ msgstr "Info"
 
 #: src/components/live/source-editor.tsx
 msgid "Input format"
-msgstr ""
+msgstr "Eingabeformat"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -3825,7 +3825,7 @@ msgstr "Schnittstellenname"
 
 #: src/components/live/scene-grid.tsx
 msgid "Intermission"
-msgstr ""
+msgstr "Pause"
 
 #: src/lib/api-messages.ts
 msgid "Internal server error"
@@ -3906,11 +3906,11 @@ msgstr "Es verschwindet aus dieser Liste. Das Audit-Log hält fest, dass es exis
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It isn’t in {0} anymore."
-msgstr ""
+msgstr "Sie ist nicht mehr in {0}."
 
 #: src/components/live/source-position.tsx
 msgid "It isn’t right on the scene on air, so the preview wouldn’t line up: the box is drawn without it."
-msgstr ""
+msgstr "Sie liegt nicht direkt in der Szene auf Sendung, also würde die Vorschau nicht passen: Der Rahmen wird ohne sie gezeichnet."
 
 #: src/lib/api-messages.ts
 msgid "It isn't sold with that billing period"
@@ -3922,11 +3922,11 @@ msgstr "Hat BELABOX Cloud verlassen"
 
 #: src/components/live/source-editor.tsx
 msgid "It plays a file from the OBS computer. Files can only be picked in OBS, and it’s kept unless you replace it with a URL."
-msgstr ""
+msgstr "Sie spielt eine Datei vom OBS-Rechner ab. Dateien lassen sich nur in OBS auswählen, und sie bleibt, bis du sie durch eine URL ersetzt."
 
 #: src/components/live/source-editor.tsx
 msgid "It plays files from the OBS computer. They can only be picked in OBS, and they’re kept unless you replace them with URLs."
-msgstr ""
+msgstr "Sie spielt Dateien vom OBS-Rechner ab. Die lassen sich nur in OBS auswählen, und sie bleiben, bis du sie durch URLs ersetzt."
 
 #: src/lib/live-format.ts
 msgid "It reached BELABOX Cloud"
@@ -3934,16 +3934,16 @@ msgstr "Hat BELABOX Cloud erreicht"
 
 #: src/components/live/source-editor.tsx
 msgid "It shows the text of a file on the OBS computer. Files can only be picked in OBS, and it keeps reading it unless you type text instead."
-msgstr ""
+msgstr "Sie zeigt den Text einer Datei auf dem OBS-Rechner. Dateien lassen sich nur in OBS auswählen, und sie liest sie weiter, bis du stattdessen Text eingibst."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s added on top of the scene in OBS, so it shows over the others."
-msgstr ""
+msgstr "Sie wird in OBS oben auf die Szene gelegt und liegt so über den anderen."
 
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It’s in the group {0}: positions are measured from the group, so they’re only exact if the group fills the screen."
-msgstr ""
+msgstr "Sie ist in der Gruppe {0}: Positionen werden von der Gruppe aus gemessen, sind also nur genau, wenn die Gruppe das ganze Bild füllt."
 
 #: src/lib/api-messages.ts
 msgid "It's in use now. Reload and try again."
@@ -3951,31 +3951,31 @@ msgstr "Es ist gerade in Nutzung. Lade neu und versuch es noch mal."
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s on air: switch to another scene first."
-msgstr ""
+msgstr "Sie ist auf Sendung: Wechsle zuerst zu einer anderen Szene."
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
-msgstr ""
+msgstr "Sie wird sofort aus OBS entfernt, mit allem darauf: OBS löscht die Quellen, die keine andere Szene nutzt, samt ihren Einstellungen."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed from this scene in OBS right away, on stream. The scene itself and what’s in it stay."
-msgstr ""
+msgstr "Sie wird sofort aus dieser Szene in OBS entfernt, live im Stream. Die Szene selbst und was darin ist bleiben."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
-msgstr ""
+msgstr "Sie wird sofort in OBS entfernt, live im Stream. Nutzt keine andere Szene sie, löscht OBS sie samt ihren Einstellungen."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
-msgstr ""
+msgstr "Es ist dieselbe Quelle, keine Kopie: Änderst du sie, ändert sie sich in jeder Szene, in der sie ist. Um sie allein zu ändern, dupliziere sie stattdessen."
 
 #: src/components/live/source-position.tsx
 msgid "It’s turned in OBS, so the box is only roughly where it shows."
-msgstr ""
+msgstr "Sie ist in OBS gedreht, also ist der Rahmen nur ungefähr dort, wo sie erscheint."
 
 #: src/components/live/source-editor.tsx
 msgid "Italic"
-msgstr ""
+msgstr "Kursiv"
 
 #: src/components/chat/chat-links.tsx
 msgid "Its chat stops controlling this switcher, and the bot leaves the channel."
@@ -3995,7 +3995,7 @@ msgstr "Die eigenen Admins verwalten den Rest. Erstelle hier die erste Einladung
 
 #: src/components/live/source-position.tsx
 msgid "Its own size."
-msgstr ""
+msgstr "Ihre eigene Größe."
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4092,11 +4092,11 @@ msgstr "Behalten"
 
 #: src/components/live/source-position.tsx
 msgid "Keep its shape when resizing"
-msgstr ""
+msgstr "Beim Ändern der Größe die Form behalten"
 
 #: src/components/live/source-editor.tsx
 msgid "Keep playing"
-msgstr ""
+msgstr "Weiterspielen"
 
 #: src/components/live/quick-actions.tsx
 msgid "Keep recording"
@@ -4224,7 +4224,7 @@ msgstr "Workspace verlassen"
 
 #: src/components/live/source-position.tsx
 msgid "Left"
-msgstr ""
+msgstr "Links"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Let everyone in chat use commands like !bitrate."
@@ -4382,7 +4382,7 @@ msgstr "Ältere Streams laden"
 
 #: src/components/live/source-editor.tsx
 msgid "Loading its settings from OBS…"
-msgstr ""
+msgstr "Einstellungen werden aus OBS geladen…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4456,7 +4456,7 @@ msgstr "Das Nachschlagen von YouTube-Kanälen braucht einen API-Schlüssel"
 
 #: src/components/live/source-editor.tsx
 msgid "Loop the playlist"
-msgstr ""
+msgstr "Wiedergabeliste wiederholen"
 
 #: src/lib/obs-preview.ts
 msgid "Low"
@@ -4578,7 +4578,7 @@ msgstr "Verwalteter Workspace"
 
 #: src/components/live/source-position.tsx
 msgid "Margin from the edges (% of the screen’s height)"
-msgstr ""
+msgstr "Abstand zu den Rändern (% der Bildhöhe)"
 
 #: src/components/support-access.tsx
 msgid "Mark as seen"
@@ -4640,7 +4640,7 @@ msgstr "Wird gemessen…"
 
 #: src/components/live/source-editor.tsx
 msgid "Media source"
-msgstr ""
+msgstr "Medienquelle"
 
 #: src/lib/obs-preview.ts
 msgid "Medium"
@@ -4889,7 +4889,7 @@ msgstr "Mehr"
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
 msgid "More for {0}"
-msgstr ""
+msgstr "Mehr für {0}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "More latency survives worse connections, {SRT_LATENCY_MIN} to {SRT_LATENCY_MAX}."
@@ -4897,7 +4897,7 @@ msgstr "Mehr Latenz übersteht schlechtere Verbindungen, {SRT_LATENCY_MIN} bis {
 
 #: src/components/live/source-fields.tsx
 msgid "More settings"
-msgstr ""
+msgstr "Weitere Einstellungen"
 
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
@@ -4919,7 +4919,7 @@ msgstr "Zu Free wechseln?"
 #: src/components/live/source-position.tsx
 #: src/lib/live-format.ts
 msgid "Moved {0}"
-msgstr ""
+msgstr "{0} verschoben"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Moved to {code}"
@@ -4985,7 +4985,7 @@ msgstr "Der Name darf höchstens 60 Zeichen lang sein"
 
 #: src/components/live/source-editor.tsx
 msgid "Name of the copy"
-msgstr ""
+msgstr "Name der Kopie"
 
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
@@ -5038,19 +5038,19 @@ msgstr "Netzwerk"
 
 #: src/components/live/source-editor.tsx
 msgid "Network buffering (MB)"
-msgstr ""
+msgstr "Netzwerkpuffer (MB)"
 
 #: src/lib/api-messages.ts
 msgid "Network buffering is 0 to 16 MB."
-msgstr ""
+msgstr "Der Netzwerkpuffer liegt zwischen 0 und 16 MB."
 
 #: src/components/live/source-editor.tsx
 msgid "Network caching (ms)"
-msgstr ""
+msgstr "Netzwerk-Caching (ms)"
 
 #: src/lib/api-messages.ts
 msgid "Network caching is 100 to 60,000 ms."
-msgstr ""
+msgstr "Netzwerk-Caching liegt zwischen 100 und 60.000 ms."
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Network name"
@@ -5126,11 +5126,11 @@ msgstr "Neuer Tarif"
 
 #: src/components/live/scene-grid.tsx
 msgid "New scene"
-msgstr ""
+msgstr "Neue Szene"
 
 #: src/components/live/source-editor.tsx
 msgid "New source"
-msgstr ""
+msgstr "Neue Quelle"
 
 #: src/components/admin/products.tsx
 msgid "New subscriptions can’t choose it anymore. People already paying keep it until they cancel."
@@ -5485,15 +5485,15 @@ msgstr "Der NOALBS-Support hat diesen Workspace ohne deine Erlaubnis geöffnet (
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the bitrate is low. Pick another LOW scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS wechselt zu dieser Szene, wenn die Bitrate niedrig ist. Wähle zuerst auf der Seite Szenen eine andere LOW-Szene."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed drops. Pick another BRB scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS wechselt zu dieser Szene, wenn der Feed abbricht. Wähle zuerst auf der Seite Szenen eine andere BRB-Szene."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed is good. Pick another LIVE scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS wechselt zu dieser Szene, wenn der Feed gut ist. Wähle zuerst auf der Seite Szenen eine andere LIVE-Szene."
 
 #: src/lib/obs-preview.ts
 msgid "Nobody"
@@ -5699,7 +5699,7 @@ msgstr "Noch nicht"
 
 #: src/components/live/source-position.tsx
 msgid "Nothing changes in OBS until you save."
-msgstr ""
+msgstr "In OBS ändert sich nichts, bis du speicherst."
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Nothing happened during this stream."
@@ -5791,7 +5791,7 @@ msgstr "OBS"
 
 #: src/lib/api-messages.ts
 msgid "OBS already has a source or scene with that name."
-msgstr ""
+msgstr "OBS hat schon eine Quelle oder Szene mit diesem Namen."
 
 #: src/lib/admin.ts
 #: src/lib/live-format.ts
@@ -5817,7 +5817,7 @@ msgstr "OBS hat nicht geantwortet. Versuch es gleich noch mal."
 
 #: src/components/live/source-position.tsx
 msgid "OBS didn’t send a picture: the box is drawn without it."
-msgstr ""
+msgstr "OBS hat kein Bild geschickt: Der Rahmen wird ohne es gezeichnet."
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS didn’t send a picture. Trying again…"
@@ -5834,15 +5834,15 @@ msgstr "OBS GETRENNT"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
-msgstr ""
+msgstr "OBS hat das VLC-Plugin nicht"
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its own size yet (it isn’t showing anything), so this can’t be drawn. It still works once it shows something."
-msgstr ""
+msgstr "OBS kennt ihre eigene Größe noch nicht (sie zeigt nichts), also kann sie nicht gezeichnet werden. Sobald sie etwas zeigt, klappt es trotzdem."
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its size yet (it isn’t showing anything), so the box starts in the middle."
-msgstr ""
+msgstr "OBS kennt ihre Größe noch nicht (sie zeigt nichts), also beginnt der Rahmen in der Mitte."
 
 #. placeholder {0}: status?.current_scene ? ` (${status.current_scene.name})` : ""
 #: src/components/live/quick-actions.tsx
@@ -5909,7 +5909,7 @@ msgstr "Stream-Verlauf aufbewahrt"
 
 #: src/components/live/source-position.tsx
 msgid "Of the screen"
-msgstr ""
+msgstr "Vom Bild"
 
 #: src/components/trigger-field.tsx
 msgid "off"
@@ -5923,7 +5923,7 @@ msgstr "Aus"
 
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
-msgstr ""
+msgstr "Außerhalb des Streams ist die Vorschau ausgeblendet: Der Rahmen wird ohne sie gezeichnet."
 
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
@@ -6067,7 +6067,7 @@ msgstr "Nur bei Missbrauch, rechtlicher Pflicht oder einem Sicherheitsproblem, f
 
 #: src/lib/api-messages.ts
 msgid "Only media, VLC, browser and text sources can be edited here. Change this one in OBS."
-msgstr ""
+msgstr "Hier lassen sich nur Medien-, VLC-, Browser- und Textquellen bearbeiten. Ändere diese in OBS."
 
 #: src/lib/api-messages.ts
 msgid "Only members of the workspace can do this"
@@ -6263,7 +6263,7 @@ msgstr "ORGANISATIONEN"
 
 #: src/components/live/source-position.tsx
 msgid "Original"
-msgstr ""
+msgstr "Original"
 
 #: src/components/live/moblin-card.tsx
 msgid "Other"
@@ -6279,7 +6279,7 @@ msgstr "Außerhalb des Bereichs"
 
 #: src/components/live/source-editor.tsx
 msgid "Outline"
-msgstr ""
+msgstr "Kontur"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Over plan limit"
@@ -6287,7 +6287,7 @@ msgstr "Über Tariflimit"
 
 #: src/components/live/source-editor.tsx
 msgid "Overlay links often hold a key: it’s shown hidden."
-msgstr ""
+msgstr "Overlay-Links enthalten oft einen Schlüssel: Er wird verdeckt angezeigt."
 
 #. placeholder {0}: server.name
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -6316,7 +6316,7 @@ msgstr "Inhaber"
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
-msgstr ""
+msgstr "Seiten-URL"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
@@ -6339,7 +6339,7 @@ msgstr "Alte Rechnungen behalten die E-Mail und Kartenendung, die darauf standen
 
 #: src/components/live/source-editor.tsx
 msgid "Pause, and resume when shown"
-msgstr ""
+msgstr "Pausieren und beim Einblenden fortsetzen"
 
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -6400,7 +6400,7 @@ msgstr "Codec wählen"
 
 #: src/lib/api-messages.ts
 msgid "Pick a color."
-msgstr ""
+msgstr "Wähle eine Farbe."
 
 #: src/lib/belabox.ts
 msgid "Pick a network type"
@@ -6428,7 +6428,7 @@ msgstr "Server wählen"
 
 #: src/lib/api-messages.ts
 msgid "Pick a size from 5% to 100% of the screen."
-msgstr ""
+msgstr "Wähle eine Größe von 5 % bis 100 % des Bildes."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Pick a source"
@@ -6469,7 +6469,7 @@ msgstr "Pipeline"
 
 #: src/components/live/source-position.tsx
 msgid "Pixels cut off each side of the source, before it’s sized."
-msgstr ""
+msgstr "Pixel, die an jeder Seite der Quelle abgeschnitten werden, bevor sie skaliert wird."
 
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
@@ -6517,7 +6517,7 @@ msgstr "Plattform"
 
 #: src/components/live/source-editor.tsx
 msgid "Playlist"
-msgstr ""
+msgstr "Wiedergabeliste"
 
 #: src/lib/organizations.ts
 #: src/routes/_app/admin/organizations/$organization.tsx
@@ -6532,11 +6532,11 @@ msgstr "Port"
 #. placeholder {0}: source.name
 #: src/components/live/source-position.tsx
 msgid "Position {0}"
-msgstr ""
+msgstr "{0} positionieren"
 
 #: src/components/live/source-list.tsx
 msgid "Position…"
-msgstr ""
+msgstr "Position…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
@@ -6564,7 +6564,7 @@ msgstr "Präfix {0}"
 
 #: src/components/live/source-position.tsx
 msgid "Presets"
-msgstr ""
+msgstr "Vorlagen"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview"
@@ -6708,7 +6708,7 @@ msgstr "Neu verbinden"
 
 #: src/components/live/source-editor.tsx
 msgid "Reconnect delay (s)"
-msgstr ""
+msgstr "Verzögerung bis zum Neuverbinden (s)"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
@@ -6809,7 +6809,7 @@ msgstr "Relay-Server"
 
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
-msgstr ""
+msgstr "Neu laden, wenn ihre Szene auf Sendung geht"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
@@ -6836,7 +6836,7 @@ msgstr "{0} entfernen"
 #. placeholder {1}: removing?.parent
 #: src/components/live/source-list.tsx
 msgid "Remove {0} from {1}?"
-msgstr ""
+msgstr "{0} aus {1} entfernen?"
 
 #. placeholder {0}: channel.display_name
 #: src/components/chat/chat-links.tsx
@@ -6861,7 +6861,7 @@ msgstr "Alias {alias} entfernen"
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
-msgstr ""
+msgstr "Aus {0} entfernen…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Remove missing"
@@ -6890,12 +6890,12 @@ msgstr "Name {label} entfernen"
 #. placeholder {0}: scene.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}"
-msgstr ""
+msgstr "Szene {0} entfernen"
 
 #. placeholder {0}: removing?.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}?"
-msgstr ""
+msgstr "Szene {0} entfernen?"
 
 #: src/lib/api-messages.ts
 msgid "Remove their staff access before disabling the account."
@@ -6907,7 +6907,7 @@ msgstr "Diesen Hinweis entfernen?"
 
 #: src/components/live/source-editor.tsx
 msgid "Remove this URL"
-msgstr ""
+msgstr "Diese URL entfernen"
 
 #. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
@@ -6920,7 +6920,7 @@ msgstr "{0} entfernt"
 #. placeholder {1}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Removed {0} from {1}"
-msgstr ""
+msgstr "{0} aus {1} entfernt"
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -6947,7 +6947,7 @@ msgstr "Server entfernt"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Removed the scene {0}"
-msgstr ""
+msgstr "Szene {0} entfernt"
 
 #: src/lib/support.ts
 msgid "Removed the workspace’s chat bot"
@@ -6974,7 +6974,7 @@ msgstr "{0} in {subject} umbenannt"
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "Renamed from {0} {1}"
-msgstr ""
+msgstr "Umbenannt von {0} {1}"
 
 #: src/lib/org-audit.ts
 msgid "renamed from {previousName}"
@@ -7007,11 +7007,11 @@ msgstr "Geheime URL ersetzen"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with a URL"
-msgstr ""
+msgstr "Durch eine URL ersetzen"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with URLs"
-msgstr ""
+msgstr "Durch URLs ersetzen"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Reply"
@@ -7028,7 +7028,7 @@ msgstr "Anfrage fehlgeschlagen ({0})"
 
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
-msgstr ""
+msgstr "Wiedergabe neu starten, wenn die Quelle aktiv wird"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -7089,7 +7089,7 @@ msgstr "Chat-Freigaben widerrufen"
 
 #: src/components/live/source-position.tsx
 msgid "Right"
-msgstr ""
+msgstr "Rechts"
 
 #: src/lib/stream-server-kinds.ts
 msgid "RIST receiver"
@@ -7223,7 +7223,7 @@ msgstr "Gespeichert — zum Ersetzen tippen"
 #. placeholder {0}: result.name
 #: src/components/live/source-editor.tsx
 msgid "Saved {0}"
-msgstr ""
+msgstr "{0} gespeichert"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
@@ -7239,11 +7239,11 @@ msgstr "Gespeichert. Zum Ersetzen tippen"
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away, and it reloads what it plays."
-msgstr ""
+msgstr "Speichern ändert sie sofort in OBS, und sie lädt neu, was sie abspielt."
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away."
-msgstr ""
+msgstr "Speichern ändert sie sofort in OBS."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
@@ -7312,7 +7312,7 @@ msgstr "Szenen"
 
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
-msgstr ""
+msgstr "Szenen und Gruppen lassen sich hier nicht duplizieren."
 
 #: src/components/live/scene-grid.tsx
 msgid "Scenes appear once OBS is connected."
@@ -7328,7 +7328,7 @@ msgstr "Geplant"
 
 #: src/components/live/source-editor.tsx
 msgid "Search"
-msgstr ""
+msgstr "Suchen"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -7625,11 +7625,11 @@ msgstr "Jeden Workspace anzeigen"
 
 #: src/components/live/source-editor.tsx
 msgid "Show it right away"
-msgstr ""
+msgstr "Sofort anzeigen"
 
 #: src/components/live/source-editor.tsx
 msgid "Show nothing when playback ends"
-msgstr ""
+msgstr "Nichts zeigen, wenn die Wiedergabe endet"
 
 #: src/components/support-access.tsx
 #: src/routes/_app/admin/audit.tsx
@@ -7685,11 +7685,11 @@ msgstr "Wird auf der Seite Tarif und im Checkout angezeigt."
 
 #: src/components/live/source-editor.tsx
 msgid "Shuffle"
-msgstr ""
+msgstr "Zufällige Reihenfolge"
 
 #: src/components/live/source-editor.tsx
 msgid "Shut it down while it isn’t shown"
-msgstr ""
+msgstr "Abschalten, solange sie nicht sichtbar ist"
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -7828,7 +7828,7 @@ msgstr "Sortieren"
 
 #: src/components/live/source-editor.tsx
 msgid "Source"
-msgstr ""
+msgstr "Quelle"
 
 #: src/components/live/source-list.tsx
 msgid "Sources"
@@ -8103,7 +8103,7 @@ msgstr "Stoppen, wenn offline"
 
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
-msgstr ""
+msgstr "Stoppen und beim Einblenden neu starten"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -8174,11 +8174,11 @@ msgstr "Stream gestoppt"
 
 #: src/components/live/source-editor.tsx
 msgid "stream URL"
-msgstr ""
+msgstr "Stream-URL"
 
 #: src/components/live/source-editor.tsx
 msgid "Stream URL"
-msgstr ""
+msgstr "Stream-URL"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
@@ -8199,7 +8199,7 @@ msgstr "Streams"
 
 #: src/components/live/source-position.tsx
 msgid "Stretch"
-msgstr ""
+msgstr "Strecken"
 
 #: src/components/admin/products.tsx
 msgid "Stripe"
@@ -8334,7 +8334,7 @@ msgstr "Zu {0} wechseln"
 
 #: src/lib/api-messages.ts
 msgid "Switch to another scene first: the scene on air can't be removed."
-msgstr ""
+msgstr "Wechsle zuerst zu einer anderen Szene: Die Szene auf Sendung kann nicht entfernt werden."
 
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
@@ -8526,7 +8526,7 @@ msgstr "Stream-Server getestet"
 
 #: src/components/live/source-editor.tsx
 msgid "Text"
-msgstr ""
+msgstr "Text"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
@@ -8587,7 +8587,7 @@ msgstr "Dieser Preis ist in Stripe archiviert."
 
 #: src/lib/api-messages.ts
 msgid "That scene isn't in OBS anymore. Reload the list."
-msgstr ""
+msgstr "Diese Szene ist nicht mehr in OBS. Lade die Liste neu."
 
 #: src/lib/api-messages.ts
 msgid "That source isn't in the scene anymore. Reload the list."
@@ -8706,7 +8706,7 @@ msgstr "dem Bot wurde der Zugriff entzogen"
 
 #: src/lib/api-messages.ts
 msgid "The box is 1 to 16384 pixels wide and high, within 16384 pixels of the screen."
-msgstr ""
+msgstr "Der Rahmen ist 1 bis 16384 Pixel breit und hoch, höchstens 16384 Pixel vom Bild entfernt."
 
 #: src/lib/triggers.ts
 msgid "The BRB bitrate must be lower than the LOW bitrate."
@@ -8755,7 +8755,7 @@ msgstr "der Feed hat sich geändert"
 
 #: src/lib/api-messages.ts
 msgid "The font size is 1 to 1024."
-msgstr ""
+msgstr "Die Schriftgröße liegt zwischen 1 und 1024."
 
 #: src/lib/api-messages.ts
 msgid "The Free plan has no price."
@@ -8771,7 +8771,7 @@ msgstr "Die Einstellungen des Hotspots wurden außerhalb der BELABOX-Software ge
 
 #: src/lib/api-messages.ts
 msgid "The input format is letters, digits and underscores only, like mpegts."
-msgstr ""
+msgstr "Das Eingabeformat besteht nur aus Buchstaben, Ziffern und Unterstrichen, z. B. mpegts."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "The key your server gives you for this stream."
@@ -8783,7 +8783,7 @@ msgstr "Der Link"
 
 #: src/lib/api-messages.ts
 msgid "The margin is 0% to 25% of the screen."
-msgstr ""
+msgstr "Der Abstand liegt zwischen 0 % und 25 % des Bildes."
 
 #: src/lib/stream-server-kinds.ts
 msgid "The MediaMTX API address of your stream's path. Enable the API in mediamtx.yml."
@@ -8900,7 +8900,7 @@ msgstr "Der Bereich ist leer oder liegt außerhalb des Streams."
 
 #: src/lib/api-messages.ts
 msgid "The reconnect delay is 1 to 60 seconds."
-msgstr ""
+msgstr "Die Verzögerung bis zum Neuverbinden liegt zwischen 1 und 60 Sekunden."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "The recording pauses on any scene not picked here and resumes when you come back to one that is. Leave it empty to record on every scene. If you resume it yourself on another scene, it keeps recording until the next scene change."
@@ -8986,7 +8986,7 @@ msgstr "Der Switcher streamt nicht. Marker gibt es nur bei laufendem Stream."
 #. placeholder {0}: role[1]
 #: src/components/live/scene-grid.tsx
 msgid "The switcher uses it ({0}): pick another on the Scenes page first."
-msgstr ""
+msgstr "Der Switcher nutzt sie ({0}): Wähle zuerst auf der Seite Szenen eine andere."
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "The team isn't counted."
@@ -9146,19 +9146,19 @@ msgstr "Das ist das einzige Konto, mit dem du dich anmeldest. Verbinde zuerst ei
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Ending scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Das ist die Ende-Szene des Switchers. Wähle zuerst auf der Seite Szenen eine andere."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Privacy scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Das ist die Privat-Szene des Switchers. Wähle zuerst auf der Seite Szenen eine andere."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Refresh scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Das ist die Aktualisieren-Szene des Switchers. Wähle zuerst auf der Seite Szenen eine andere."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Starting scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Das ist die Start-Szene des Switchers. Wähle zuerst auf der Seite Szenen eine andere."
 
 #: src/routes/integrate-stream-server.tsx
 msgid "This kind has no other settings."
@@ -9178,11 +9178,11 @@ msgstr "Dieses OAuth-Konto ist schon mit einem anderen Nutzer verknüpft"
 
 #: src/components/live/source-editor.tsx
 msgid "This OBS doesn’t have it"
-msgstr ""
+msgstr "Dieses OBS hat sie nicht"
 
 #: src/lib/api-messages.ts
 msgid "This OBS doesn't have that kind of source."
-msgstr ""
+msgstr "Dieses OBS hat diese Art von Quelle nicht."
 
 #: src/lib/api-messages.ts
 msgid "This OBS version doesn't report scene IDs. Update OBS to do this from here."
@@ -9280,7 +9280,7 @@ msgstr "Tipp: Füge einen zweiten Server als Backup-Uplink hinzu, damit NOALBS a
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "To {0} {1}"
-msgstr ""
+msgstr "Zu {0} {1}"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
@@ -9288,15 +9288,15 @@ msgstr "Token"
 
 #: src/components/live/source-position.tsx
 msgid "Top"
-msgstr ""
+msgstr "Oben"
 
 #: src/components/live/source-position.tsx
 msgid "Top left"
-msgstr ""
+msgstr "Oben links"
 
 #: src/components/live/source-position.tsx
 msgid "Top right"
-msgstr ""
+msgstr "Oben rechts"
 
 #: src/components/transfer-ownership.tsx
 msgid "Transfer ownership"
@@ -9391,7 +9391,7 @@ msgstr "Gib zur Bestätigung <0>{phrase}</0> ein"
 
 #: src/components/live/source-editor.tsx
 msgid "Type text instead"
-msgstr ""
+msgstr "Stattdessen Text eingeben"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/stream-panel.tsx
@@ -9401,7 +9401,7 @@ msgstr "Unverändert"
 
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
-msgstr ""
+msgstr "Änderungen rückgängig machen"
 
 #: src/components/admin/products.tsx
 msgid "Unit"
@@ -9533,7 +9533,7 @@ msgstr "Nutze 2–30 Kleinbuchstaben, Ziffern und Bindestriche."
 
 #: src/components/live/source-editor.tsx
 msgid "Use a frame rate of its own"
-msgstr ""
+msgstr "Eigene Bildrate verwenden"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Use a stream ID instead"
@@ -9553,7 +9553,7 @@ msgstr "Andere Szenen nutzen, solange dieser Server aktiv ist."
 
 #: src/components/live/source-editor.tsx
 msgid "Use hardware decoding when available"
-msgstr ""
+msgstr "Hardware-Dekodierung nutzen, wenn verfügbar"
 
 #: src/components/moblin-settings.tsx
 msgid "Use my own password"
@@ -9641,11 +9641,11 @@ msgstr "VIPs"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video source"
-msgstr ""
+msgstr "VLC-Videoquelle"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video sources need OBS’s VLC plugin and VLC installed."
-msgstr ""
+msgstr "VLC-Videoquellen brauchen das VLC-Plugin von OBS und ein installiertes VLC."
 
 #. placeholder {0}: input.name
 #: src/components/live/audio-mixer.tsx
@@ -9794,7 +9794,7 @@ msgstr "Wenn der OBS-Stream stoppt (aus OBS, dem Dashboard, mit !stop oder durch
 
 #: src/components/live/source-position.tsx
 msgid "Where"
-msgstr ""
+msgstr "Wo"
 
 #. placeholder {0}: Math.round(box.x)
 #. placeholder {1}: Math.round(box.y)
@@ -9802,7 +9802,7 @@ msgstr ""
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "Where {name} would be: {0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "Wo {name} wäre: {0}, {1}, {2} mal {3}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Where the BELABOX sends the stream."
@@ -9822,7 +9822,7 @@ msgstr "Welche Bonding-Verbindungen Moblin nutzt und welche es bevorzugt."
 
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
-msgstr ""
+msgstr "Solange sie nicht sichtbar ist"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
@@ -9860,7 +9860,7 @@ msgstr "Ganzer Stream"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Width"
-msgstr ""
+msgstr "Breite"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "WiFi"
@@ -9963,7 +9963,7 @@ msgstr "Falsches WLAN-Passwort"
 
 #: src/components/live/source-position.tsx
 msgid "X"
-msgstr ""
+msgstr "X"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Xiu media server"
@@ -9975,7 +9975,7 @@ msgstr "Die query_stream-API von Xiu."
 
 #: src/components/live/source-position.tsx
 msgid "Y"
-msgstr ""
+msgstr "Y"
 
 #: src/lib/billing.ts
 #: src/routes/_app/$workspace/settings/plan.tsx
