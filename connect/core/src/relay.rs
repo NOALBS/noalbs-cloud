@@ -135,6 +135,11 @@ async fn connect_once(
     } else {
         None
     };
+    let mut pending_stream_status = if let Some(socket) = obs.as_mut() {
+        Some(request_stream_status(socket).await?)
+    } else {
+        None
+    };
     let (mut upstream, _) = connect_async(&config.link_url).await?;
     upstream
         .send(Message::Text(
@@ -205,6 +210,11 @@ async fn connect_once(
                     } else {
                         None
                     };
+                    pending_stream_status = if let Some(socket) = obs.as_mut() {
+                        Some(request_stream_status(socket).await?)
+                    } else {
+                        None
+                    };
                     pending_stats = None;
                     missed_stats = 0;
                     upstream.send(Message::Text(json!({"obsWsConnected": true}).to_string().into())).await?;
@@ -228,6 +238,7 @@ async fn connect_once(
                         obs = None;
                         request_tokens.clear();
                         pending_scene_request = None;
+                        pending_stream_status = None;
                         pending_stats = None;
                         let _ = config.state_tx.send(PcObsState::NotResponding);
                         upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -276,6 +287,7 @@ async fn connect_once(
                     obs = None;
                     request_tokens.clear();
                     pending_scene_request = None;
+                    pending_stream_status = None;
                     pending_stats = None;
                     missed_stats = 0;
                     upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -317,6 +329,7 @@ async fn connect_once(
                     obs = None;
                     request_tokens.clear();
                     pending_scene_request = None;
+                    pending_stream_status = None;
                     pending_stats = None;
                     missed_stats = 0;
                     upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -341,13 +354,8 @@ async fn connect_once(
                         }
                         continue;
                     }
-                    if id.is_some_and(|id| {
-                        pending_stats
-                            .as_ref()
-                            .is_some_and(|(pending_id, _)| pending_id == id)
-                    }) {
-                        pending_stats = None;
-                        missed_stats = 0;
+                    if id.is_some_and(|id| pending_stream_status.as_deref() == Some(id)) {
+                        pending_stream_status = None;
                         if let Some(active) = value
                             .pointer("/d/responseData/outputActive")
                             .and_then(Value::as_bool)
@@ -355,6 +363,15 @@ async fn connect_once(
                             telemetry.stream_active = active;
                             let _ = config.telemetry_tx.send(telemetry.clone());
                         }
+                        continue;
+                    }
+                    if id.is_some_and(|id| {
+                        pending_stats
+                            .as_ref()
+                            .is_some_and(|(pending_id, _)| pending_id == id)
+                    }) {
+                        pending_stats = None;
+                        missed_stats = 0;
                         continue;
                     }
                     if let Some(token) = id.and_then(|id| request_tokens.remove(id)) {
@@ -583,6 +600,24 @@ async fn request_current_program_scene(socket: &mut Socket) -> Result<String, Re
                 "op": 6,
                 "d": {
                     "requestType": "GetCurrentProgramScene",
+                    "requestId": request_id
+                }
+            })
+            .to_string()
+            .into(),
+        ))
+        .await?;
+    Ok(request_id)
+}
+
+async fn request_stream_status(socket: &mut Socket) -> Result<String, RelayError> {
+    let request_id = format!("noalbs-connect-stream-status-{}", uuid::Uuid::new_v4());
+    socket
+        .send(Message::Text(
+            json!({
+                "op": 6,
+                "d": {
+                    "requestType": "GetStreamStatus",
                     "requestId": request_id
                 }
             })
@@ -907,6 +942,24 @@ mod tests {
                 ))
                 .await
                 .unwrap();
+            let Message::Text(stream_request) = socket.next().await.unwrap().unwrap() else {
+                panic!("GetStreamStatus request expected");
+            };
+            let stream_request: serde_json::Value =
+                serde_json::from_str(&stream_request).unwrap();
+            assert_eq!(
+                stream_request.pointer("/d/requestType").unwrap(),
+                "GetStreamStatus"
+            );
+            let stream_id = stream_request.pointer("/d/requestId").unwrap().clone();
+            socket
+                .send(Message::Text(
+                    json!({"op":7,"d":{"requestId":stream_id,"responseData":{"outputActive":true}}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
             let Message::Text(request) = socket.next().await.unwrap().unwrap() else {
                 panic!("forwarded request expected");
             };
@@ -1010,6 +1063,7 @@ mod tests {
             telemetry_rx.borrow().last_program_scene.as_deref(),
             Some("Main")
         );
+        assert!(telemetry_rx.borrow().stream_active);
         fake_link.await.unwrap();
         fake_obs.await.unwrap();
     }
