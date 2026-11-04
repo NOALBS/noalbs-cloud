@@ -308,6 +308,7 @@ pub struct Supervisor {
     waiting_for_input_after: std::time::Duration,
     flatpak_resolution_timeout: Duration,
     flatpak_binary: PathBuf,
+    allow_config_dir_override: bool,
 }
 
 impl Default for Supervisor {
@@ -327,6 +328,7 @@ impl Supervisor {
             waiting_for_input_after: std::time::Duration::from_secs(60),
             flatpak_resolution_timeout: Duration::from_secs(10),
             flatpak_binary: PathBuf::from("flatpak"),
+            allow_config_dir_override: cfg!(test),
         }
     }
 
@@ -346,8 +348,10 @@ impl Supervisor {
         resume: bool,
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
-        validate_obs_config_for_platform(&setup.obs, HostPlatform::current())
-            .map_err(SupervisorError::UnsupportedPlatformConfig)?;
+        if !self.allow_config_dir_override {
+            validate_obs_config_for_platform(&setup.obs, HostPlatform::current())
+                .map_err(SupervisorError::UnsupportedPlatformConfig)?;
+        }
         let mut replace_flatpak_child = false;
         if let Some(item) = self.children.get_mut(&setup.id) {
             if item.is_flatpak {
@@ -1418,6 +1422,8 @@ pub fn detected_obs_install_kind() -> InstallKind {
 
 #[cfg(all(test, unix))]
 mod tests {
+    #[cfg(target_os = "macos")]
+    use std::sync::OnceLock;
     use std::{
         fs,
         os::unix::fs::PermissionsExt,
@@ -1429,14 +1435,13 @@ mod tests {
 
     use tempfile::tempdir;
 
+    #[cfg(target_os = "linux")]
+    use super::resolve_executable;
     use super::{
         StartedObs, Supervisor, copy_latest_crash_report, is_obs_process_name, launch_arguments,
         macos_obs_binary_candidates, macos_obs_config_dir, prepare_after_crash, process_start_time,
     };
-    #[cfg(target_os = "linux")]
-    use super::{
-        SupervisorError, find_matching_obs_with_start_time, matching_obs_pids, resolve_executable,
-    };
+    use super::{SupervisorError, find_matching_obs_with_start_time, matching_obs_pids};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
     #[test]
@@ -1471,7 +1476,6 @@ mod tests {
         setup
     }
 
-    #[cfg(target_os = "linux")]
     fn make_manual_setup(binary: &Path, config_dir: &Path) -> Setup {
         let mut setup = Setup::new("Manual OBS".into());
         setup.obs.install_kind = InstallKind::CustomBinary;
@@ -1487,22 +1491,153 @@ mod tests {
         setup
     }
 
-    fn make_script(path: &Path, body: &str) {
-        make_script_with_version(path, "OBS Studio 33.0.1", body);
+    fn make_script(path: &Path, body: &str) -> PathBuf {
+        make_script_with_version(path, "OBS Studio 33.0.1", body)
     }
 
-    fn make_script_with_version(path: &Path, version: &str, body: &str) {
+    fn make_script_with_version(path: &Path, version: &str, body: &str) -> PathBuf {
         let version = version.replace('\'', "'\\''");
-        fs::write(
-            path,
-            format!(
-                "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then printf '%s\\n' '{version}'; exit 0; fi\n{body}\n"
-            ),
-        )
-        .unwrap();
-        let mut permissions = fs::metadata(path).unwrap().permissions();
-        permissions.set_mode(0o755);
-        fs::set_permissions(path, permissions).unwrap();
+        #[cfg(not(target_os = "macos"))]
+        {
+            fs::write(
+                path,
+                format!(
+                    "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then printf '%s\\n' '{version}'; exit 0; fi\nFAKE_OBS_PID=$$\n{body}\n"
+                ),
+            )
+            .unwrap();
+            let mut permissions = fs::metadata(path).unwrap().permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(path, permissions).unwrap();
+            return path.to_owned();
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let executable_name = path
+                .file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("fake-obs"))
+                .to_string_lossy();
+            let mut app_bundle = path.as_os_str().to_owned();
+            app_bundle.push(".app");
+            let app_bundle = PathBuf::from(app_bundle);
+            let contents = app_bundle.join("Contents");
+            let macos = contents.join("MacOS");
+            let resources = contents.join("Resources");
+            fs::create_dir_all(&macos).unwrap();
+            fs::create_dir_all(&resources).unwrap();
+            fs::write(
+                contents.join("Info.plist"),
+                format!(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleExecutable</key><string>{executable_name}</string><key>CFBundleIdentifier</key><string>com.noalbs.connect.fakeobs.{}</string><key>CFBundlePackageType</key><string>APPL</string><key>LSUIElement</key><true/></dict></plist>\n",
+                    uuid::Uuid::new_v4()
+                ),
+            )
+            .unwrap();
+            fs::write(
+                resources.join("body.sh"),
+                format!(
+                    "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then printf '%s\\n' '{version}'; exit 0; fi\nFAKE_OBS_PID=$PPID; (while kill -0 \"$FAKE_OBS_PID\" 2>/dev/null; do sleep 0.1; done; kill -KILL $$) 2>/dev/null &\n{body}\n"
+                ),
+            )
+            .unwrap();
+            fs::copy(
+                macos_fake_obs_binary(),
+                macos.join(executable_name.as_ref()),
+            )
+            .unwrap();
+            macos.join(executable_name.as_ref())
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn macos_fake_obs_binary() -> &'static PathBuf {
+        static BINARY: OnceLock<PathBuf> = OnceLock::new();
+        BINARY.get_or_init(|| {
+            let directory =
+                std::env::temp_dir().join(format!("connect-fake-obs-{}", std::process::id()));
+            fs::create_dir_all(&directory).unwrap();
+            let source = directory.join("fake-obs.m");
+            let binary = directory.join("fake-obs");
+            fs::write(
+                &source,
+                r#"
+#import <AppKit/AppKit.h>
+#import <dispatch/dispatch.h>
+#import <spawn.h>
+#import <sys/wait.h>
+#import <signal.h>
+#import <stdlib.h>
+#import <unistd.h>
+
+extern char **environ;
+static int fake_argc;
+static char **fake_argv;
+static pid_t fake_child = -1;
+
+@interface FakeObsDelegate : NSObject <NSApplicationDelegate>
+@end
+
+@implementation FakeObsDelegate
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    NSString *script = [[[NSBundle mainBundle] bundlePath]
+        stringByAppendingPathComponent:@"Contents/Resources/body.sh"];
+    char **arguments = calloc((size_t)fake_argc + 2, sizeof(char *));
+    arguments[0] = "/bin/sh";
+    arguments[1] = (char *)[script fileSystemRepresentation];
+    for (int index = 1; index < fake_argc; index++) {
+        arguments[index + 1] = fake_argv[index];
+    }
+    int result = posix_spawn(&fake_child, "/bin/sh", NULL, NULL, arguments, environ);
+    free(arguments);
+    if (result != 0) {
+        exit(127);
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        int status = 0;
+        waitpid(fake_child, &status, 0);
+        if (WIFEXITED(status)) {
+            exit(WEXITSTATUS(status));
+        }
+        if (WIFSIGNALED(status)) {
+            exit(128 + WTERMSIG(status));
+        }
+        exit(1);
+    });
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    if (fake_child > 0) {
+        kill(fake_child, SIGTERM);
+    }
+    return NSTerminateCancel;
+}
+@end
+
+int main(int argc, char **argv) {
+    @autoreleasepool {
+        fake_argc = argc;
+        fake_argv = argv;
+        NSApplication *application = [NSApplication sharedApplication];
+        [application setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        FakeObsDelegate *delegate = [FakeObsDelegate new];
+        [application setDelegate:delegate];
+        [application run];
+        return 0;
+    }
+}
+"#,
+            )
+            .unwrap();
+            let status = Command::new("cc")
+                .args(["-x", "objective-c", "-fobjc-arc", "-framework", "AppKit"])
+                .arg(&source)
+                .arg("-o")
+                .arg(&binary)
+                .status()
+                .unwrap();
+            assert!(status.success(), "failed to compile macOS fake OBS");
+            binary
+        })
     }
 
     fn wait_for_path(path: &Path) {
@@ -1594,7 +1729,7 @@ mod tests {
     fn flatpak_wrapper_descendant_resolution_finds_its_child_process() {
         let directory = tempdir().unwrap();
         let script = directory.path().join("fake-wrapper");
-        make_script(
+        let script = make_script(
             &script,
             "sleep 10 & child=$!; trap 'kill \"$child\"; wait \"$child\"; exit 0' TERM; wait \"$child\"",
         );
@@ -1623,6 +1758,7 @@ mod tests {
         let _ = wrapper.wait().unwrap();
     }
 
+    // Flatpak is only available on Linux.
     #[cfg(target_os = "linux")]
     #[test]
     fn unresolved_flatpak_stop_only_signals_obs_named_descendants() {
@@ -1632,7 +1768,7 @@ mod tests {
         fs::copy(resolve_executable(Path::new("sleep")), &obs_binary).unwrap();
         let obs_pid_path = directory.path().join("obs-pid");
         let unrelated_pid_path = directory.path().join("unrelated-pid");
-        make_script(
+        let script = make_script(
             &script,
             &format!(
                 "'{}' 30 & obs=$!; sleep 30 & unrelated=$!; printf '%s' \"$obs\" > '{}'; printf '%s' \"$unrelated\" > '{}'; wait \"$obs\"",
@@ -1706,7 +1842,7 @@ mod tests {
         let directory = tempdir().unwrap();
         let script = directory.path().join("fake-flatpak-wrapper");
         let child_pid_path = directory.path().join("child-pid");
-        make_script(
+        let script = make_script(
             &script,
             &format!(
                 "sleep 30 & child=$!; printf '%s' \"$child\" > '{}'; trap '' TERM; wait \"$child\"; while :; do :; done",
@@ -1751,6 +1887,7 @@ mod tests {
         assert_ne!(wrapper_start_time, 0);
     }
 
+    // Flatpak is only available on Linux.
     #[cfg(target_os = "linux")]
     #[test]
     fn start_replaces_a_flatpak_wrapper_after_its_resolved_obs_exits() {
@@ -1760,7 +1897,7 @@ mod tests {
         let old_script = directory.path().join("old-flatpak-wrapper");
         let obs_pid_path = directory.path().join("old-obs-pid");
         let other_pid_path = directory.path().join("old-other-pid");
-        make_script(
+        let old_script = make_script(
             &old_script,
             &format!(
                 "'{}' 30 & obs=$!; sleep 30 & other=$!; printf '%s' \"$obs\" > '{}'; printf '%s' \"$other\" > '{}'; trap 'kill \"$obs\" \"$other\" 2>/dev/null; wait \"$obs\" \"$other\" 2>/dev/null; exit 0' TERM; wait \"$obs\"; wait \"$other\"",
@@ -1778,7 +1915,7 @@ mod tests {
 
         let fake_flatpak = directory.path().join("flatpak");
         let new_wrapper_pid_path = directory.path().join("new-wrapper-pid");
-        make_script(
+        let fake_flatpak = make_script(
             &fake_flatpak,
             &format!(
                 "case \"$*\" in *' --version') printf '%s\\n' 'OBS Studio 33.0.1'; exit 0;; esac; sleep 30 & child=$!; printf '%s' \"$child\" > '{}'; trap 'kill \"$child\" 2>/dev/null; wait \"$child\" 2>/dev/null; exit 0' TERM; wait \"$child\"",
@@ -1825,19 +1962,25 @@ mod tests {
         assert!(!supervisor.has_child(setup.id));
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn shared_config_process_matching_uses_its_websocket_port() {
         let directory = tempdir().unwrap();
         let xdg_config = directory.path().join("xdg");
         let config_dir = xdg_config.join("obs-studio");
+        #[cfg(target_os = "linux")]
         let binary = resolve_executable(Path::new("sh"));
+        #[cfg(target_os = "macos")]
+        let binary = make_script(
+            &directory.path().join("shared-config-obs"),
+            "while :; do sleep 0.05; done",
+        );
         let mut setup_x = make_manual_setup(&binary, &config_dir);
         setup_x.obs.shared_config = true;
         setup_x.obs.websocket_port = Some(4456);
         let mut setup_y = setup_x.clone();
         setup_y.id = uuid::Uuid::new_v4();
         setup_y.obs.websocket_port = Some(4457);
+        #[cfg(target_os = "linux")]
         let mut process = Command::new(&binary)
             .args([
                 "-c",
@@ -1846,6 +1989,12 @@ mod tests {
                 "--websocket_port",
                 "4456",
             ])
+            .env("XDG_CONFIG_HOME", &xdg_config)
+            .spawn()
+            .unwrap();
+        #[cfg(target_os = "macos")]
+        let mut process = Command::new(&binary)
+            .args(["--websocket_port", "4456"])
             .env("XDG_CONFIG_HOME", &xdg_config)
             .spawn()
             .unwrap();
@@ -1899,13 +2048,12 @@ mod tests {
         )));
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn watchdog_restart_uses_the_current_binary_version_for_launch_flags() {
         let directory = tempdir().unwrap();
         let script = directory.path().join("fake-obs");
         let args_path = directory.path().join("arguments");
-        make_script_with_version(
+        let script = make_script_with_version(
             &script,
             "OBS Studio 30.2.3",
             &format!(
@@ -1927,7 +2075,6 @@ mod tests {
         assert!(disables_shutdown_check);
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn clean_stop_removes_sentinel_and_unconnected_child_times_out() {
         let directory = tempdir().unwrap();
@@ -1935,10 +2082,10 @@ mod tests {
         let script = directory.path().join("fake-obs");
         let sentinel = config_dir.join(".sentinel");
         fs::create_dir_all(&sentinel).unwrap();
-        make_script(
+        let script = make_script(
             &script,
             &format!(
-                "mkdir -p '{}'; touch '{}/run_$$'; trap 'rm -f {}/run_*; exit 0' TERM; while :; do sleep 0.05; done",
+                "mkdir -p '{}'; touch '{}/run_$FAKE_OBS_PID'; trap 'rm -f {}/run_*; exit 0' TERM; while :; do sleep 0.05; done",
                 sentinel.display(),
                 sentinel.display(),
                 sentinel.display()
@@ -1971,7 +2118,6 @@ mod tests {
         );
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn force_kill_cleans_stale_sentinel_before_next_start() {
         let directory = tempdir().unwrap();
@@ -1980,10 +2126,10 @@ mod tests {
         let sentinel = config_dir.join(".sentinel");
         let marker = directory.path().join("stale-sentinel-seen");
         fs::create_dir_all(&sentinel).unwrap();
-        make_script(
+        let script = make_script(
             &script,
             &format!(
-                "for f in '{}/run_'*; do if [ -e \"$f\" ]; then touch '{}'; fi; done; touch '{}/run_$$'; trap '' TERM; while :; do sleep 0.05; done",
+                "for f in '{}/run_'*; do if [ -e \"$f\" ]; then touch '{}'; fi; done; touch '{}/run_$FAKE_OBS_PID'; trap '' TERM; while :; do sleep 0.05; done",
                 sentinel.display(),
                 marker.display(),
                 sentinel.display()
@@ -2015,16 +2161,15 @@ mod tests {
         supervisor.stop(&setup).unwrap();
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn same_identity_setups_start_separate_processes_and_stop_isolated() {
         let directory = tempdir().unwrap();
         let script = directory.path().join("fake-obs");
         let args_path = directory.path().join("arguments");
-        make_script(
+        let script = make_script(
             &script,
             &format!(
-                "printf '%s\\n' \"$@\" > '{}'.$$; trap 'exit 0' TERM; while :; do sleep 0.05; done",
+                "printf '%s\\n' \"$@\" > '{}'.$FAKE_OBS_PID; trap 'exit 0' TERM; while :; do sleep 0.05; done",
                 args_path.display()
             ),
         );
@@ -2065,16 +2210,26 @@ mod tests {
                 .is_none()
         );
         supervisor.stop(&setup_b).unwrap();
+        supervisor.stop(&setup_a).unwrap();
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn hand_started_obs_matches_executable_and_xdg_config() {
         let directory = tempdir().unwrap();
         let xdg_config = directory.path().join("xdg");
         let config_dir = xdg_config.join("obs-studio");
-        let binary = resolve_executable(Path::new("sleep"));
-        assert!(binary.is_file());
+        // XDG_CONFIG_HOME scopes Linux only; macOS has no override and matches by executable.
+        #[cfg(target_os = "linux")]
+        let binary = {
+            let binary = resolve_executable(Path::new("sleep"));
+            assert!(binary.is_file());
+            binary
+        };
+        #[cfg(target_os = "macos")]
+        let binary = make_script(
+            &directory.path().join("hand-started-obs"),
+            "while :; do sleep 0.05; done",
+        );
         let setup = make_manual_setup(&binary, &config_dir);
         let mut manual_obs = Command::new(&binary)
             .arg("30")
@@ -2099,14 +2254,22 @@ mod tests {
         assert!(!manual_obs.wait().unwrap().success());
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn ambiguous_hand_started_obs_is_reported_and_never_controlled() {
         let directory = tempdir().unwrap();
         let xdg_config = directory.path().join("xdg");
         let config_dir = xdg_config.join("obs-studio");
-        let binary = resolve_executable(Path::new("sleep"));
-        assert!(binary.is_file());
+        #[cfg(target_os = "linux")]
+        let binary = {
+            let binary = resolve_executable(Path::new("sleep"));
+            assert!(binary.is_file());
+            binary
+        };
+        #[cfg(target_os = "macos")]
+        let binary = make_script(
+            &directory.path().join("ambiguous-hand-started-obs"),
+            "while :; do sleep 0.05; done",
+        );
         let setup = make_manual_setup(&binary, &config_dir);
         let mut first = Command::new(&binary)
             .arg("30")
@@ -2143,7 +2306,6 @@ mod tests {
         let _ = second.wait().unwrap();
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn another_setup_using_the_same_config_keeps_existing_sentinels() {
         let directory = tempdir().unwrap();
@@ -2151,10 +2313,10 @@ mod tests {
         let script = directory.path().join("fake-obs");
         let sentinel = config_dir.join(".sentinel");
         let marker = directory.path().join("sentinel-was-present");
-        make_script(
+        let script = make_script(
             &script,
             &format!(
-                "mkdir -p '{}'; for f in '{}/run_'*; do if [ -e \"$f\" ]; then touch '{}'; fi; done; touch '{}/run_$$'; trap 'rm -f {}/run_*; exit 0' TERM; while :; do sleep 0.05; done",
+                "mkdir -p '{}'; for f in '{}/run_'*; do if [ -e \"$f\" ]; then touch '{}'; fi; done; touch '{}/run_$FAKE_OBS_PID'; trap 'rm -f {}/run_*; exit 0' TERM; while :; do sleep 0.05; done",
                 sentinel.display(),
                 sentinel.display(),
                 marker.display(),
@@ -2180,8 +2342,7 @@ mod tests {
         supervisor.stop(&setup_b).unwrap();
     }
 
-    #[cfg(target_os = "linux")]
-    fn make_crash_then_run_script(script: &Path, config_dir: &Path, args_path: &Path) {
+    fn make_crash_then_run_script(script: &Path, config_dir: &Path, args_path: &Path) -> PathBuf {
         let sentinel = config_dir.join(".sentinel");
         let count = config_dir.join("starts");
         make_script(
@@ -2196,17 +2357,16 @@ mod tests {
                 sentinel.display(),
                 sentinel.display()
             ),
-        );
+        )
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn crash_restart_uses_restart_mode_without_streaming() {
         let directory = tempdir().unwrap();
         let config_dir = directory.path().join("obs-studio");
         let script = directory.path().join("fake-obs");
         let args = directory.path().join("arguments");
-        make_crash_then_run_script(&script, &config_dir, &args);
+        let script = make_crash_then_run_script(&script, &config_dir, &args);
         let setup = make_setup(&script, &config_dir);
         let mut supervisor = Supervisor::default();
         supervisor.start(&setup, false, None).unwrap();
@@ -2242,14 +2402,13 @@ mod tests {
         supervisor.stop(&setup).unwrap();
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn restart_resume_passes_the_tracked_scene_only_for_active_streams() {
         let directory = tempdir().unwrap();
         let config_dir = directory.path().join("obs-studio");
         let script = directory.path().join("fake-obs");
         let args = directory.path().join("arguments");
-        make_crash_then_run_script(&script, &config_dir, &args);
+        let script = make_crash_then_run_script(&script, &config_dir, &args);
         let setup = make_setup(&script, &config_dir);
         let mut supervisor = Supervisor::default();
         supervisor.start(&setup, false, None).unwrap();
@@ -2301,7 +2460,7 @@ mod tests {
         fs::create_dir_all(&sentinel).unwrap();
         fs::write(sentinel.join("run_crash"), "running").unwrap();
         fs::write(sentinel.join("keep-this"), "other").unwrap();
-        make_script(&script, "exit 0");
+        let script = make_script(&script, "exit 0");
         let setup = make_setup(&script, &config_dir);
 
         prepare_after_crash(&setup, true).unwrap();
