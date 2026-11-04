@@ -164,6 +164,7 @@ pub fn launch_arguments(
 #[derive(Debug)]
 pub struct StartedObs {
     pub setup_id: Uuid,
+    setup: Setup,
     pub pid: u32,
     pub child: Child,
     pub started: Instant,
@@ -174,6 +175,7 @@ pub struct StartedObs {
 
 pub struct Supervisor {
     children: HashMap<Uuid, StartedObs>,
+    adopted: HashMap<Uuid, (Setup, u32, u64)>,
     connected: HashSet<Uuid>,
     crashed_pending: HashSet<Uuid>,
     shutdown_grace: std::time::Duration,
@@ -190,6 +192,7 @@ impl Supervisor {
     pub fn with_shutdown_grace(shutdown_grace: std::time::Duration) -> Self {
         Self {
             children: HashMap::new(),
+            adopted: HashMap::new(),
             connected: HashSet::new(),
             crashed_pending: HashSet::new(),
             shutdown_grace,
@@ -225,12 +228,28 @@ impl Supervisor {
             }
         }
         self.children.remove(&setup.id);
+        self.adopted
+            .retain(|_, (_, pid, start_time)| process_start_time(*pid) == Some(*start_time));
+        let sibling_identity = self.children.iter_mut().any(|(id, child)| {
+            *id != setup.id
+                && same_obs_identity(setup, &child.setup)
+                && child.child.try_wait().ok().flatten().is_none()
+        }) || self
+            .adopted
+            .iter()
+            .any(|(id, (other, _, _))| *id != setup.id && same_obs_identity(setup, other));
         let existing = matching_obs_pids(setup);
-        if existing.len() == 1 {
-            return Ok(existing[0].as_u32());
-        }
-        if existing.len() > 1 {
-            return Err(SupervisorError::Unidentified);
+        if !sibling_identity && !setup.obs.shared_config {
+            if existing.len() == 1 {
+                let pid = existing[0].as_u32();
+                if let Some(start_time) = process_start_time(pid) {
+                    self.adopted.insert(setup.id, (setup.clone(), pid, start_time));
+                }
+                return Ok(pid);
+            }
+            if existing.len() > 1 {
+                return Err(SupervisorError::Unidentified);
+            }
         }
         let executable = setup
             .obs
@@ -286,6 +305,7 @@ impl Supervisor {
             setup.id,
             StartedObs {
                 setup_id: setup.id,
+                setup: setup.clone(),
                 pid,
                 child,
                 started: Instant::now(),
@@ -379,6 +399,7 @@ impl Supervisor {
             force_kill(pid);
             self.crashed_pending.insert(setup.id);
         }
+        self.adopted.remove(&setup.id);
         Ok(())
     }
 
@@ -392,6 +413,19 @@ pub fn find_matching_obs(setup: &Setup) -> Option<Pid> {
     (matches.len() == 1).then(|| matches[0])
 }
 
+pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
+    let binary = |setup: &Setup| {
+        resolve_executable(
+            setup
+                .obs
+                .binary_path
+                .as_deref()
+                .unwrap_or(&detected_obs_binary_for(&setup.obs.install_kind)),
+        )
+    };
+    same_path(&binary(left), &binary(right)) && config_dir(left) == config_dir(right)
+}
+
 fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
     let matches = matching_obs_pids(setup);
     if matches.len() != 1 {
@@ -402,6 +436,9 @@ fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
 }
 
 fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
+    if setup.obs.shared_config {
+        return Vec::new();
+    }
     let mut system = System::new();
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
@@ -955,7 +992,7 @@ mod tests {
     }
 
     #[test]
-    fn two_setups_are_isolated_and_second_launch_uses_multi() {
+    fn same_identity_setups_start_separate_processes_and_stop_isolated() {
         let directory = tempdir().unwrap();
         let script = directory.path().join("fake-obs");
         let args_path = directory.path().join("arguments");
@@ -967,7 +1004,7 @@ mod tests {
             ),
         );
         let setup_a = make_setup(&script, &directory.path().join("config-a"));
-        let setup_b = make_setup(&script, &directory.path().join("config-b"));
+        let setup_b = make_setup(&script, &directory.path().join("config-a"));
         let mut supervisor = Supervisor::default();
         let pid_a = supervisor.start(&setup_a, false, None).unwrap();
         let pid_b = supervisor.start(&setup_b, false, None).unwrap();

@@ -8,6 +8,7 @@ use connect_core::{
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
         enable_obs_websocket, read_obs_websocket_config,
+        same_obs_identity,
     },
     watchdog::{Watchdog, WatchdogAction},
 };
@@ -112,27 +113,52 @@ fn save_setup(
 ) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
-    let setup = config
+    let index = config
         .setups
-        .iter_mut()
-        .find(|setup| setup.id == id)
+        .iter()
+        .position(|setup| setup.id == id)
         .ok_or("setup not found")?;
-    setup.name = if name.trim().is_empty() {
+    let mut updated_setup = config.setups[index].clone();
+    updated_setup.name = if name.trim().is_empty() {
         "OBS".into()
     } else {
         name.trim().to_owned()
     };
-    setup.obs = obs;
+    updated_setup.obs = obs;
+    validate_setup_identity(&config.setups, &updated_setup)?;
+    config.setups[index] = updated_setup.clone();
     state
         .store
         .save(&config)
         .map_err(|error| error.to_string())?;
-    let updated_setup = setup.clone();
     drop(config);
     if updated_setup.pairing.is_some() {
         start_link_session(&app, state.inner(), updated_setup)?;
     }
     Ok(get_state(state))
+}
+
+fn validate_setup_identity(
+    setups: &[connect_core::config::Setup],
+    candidate: &connect_core::config::Setup,
+) -> Result<(), String> {
+    for other in setups.iter().filter(|setup| setup.id != candidate.id) {
+        if !same_obs_identity(candidate, other) {
+            continue;
+        }
+        let can_share = candidate.obs.shared_config
+            && other.obs.shared_config
+            && candidate.obs.websocket_port.is_some()
+            && other.obs.websocket_port.is_some()
+            && candidate.obs.websocket_port != other.obs.websocket_port;
+        if !can_share {
+            return Err(
+                "Another setup already uses this OBS binary and config directory. Shared-config setups must use distinct websocket ports."
+                    .into(),
+            );
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
