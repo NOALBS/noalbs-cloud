@@ -285,6 +285,7 @@ struct Session {
     device_token_hash: Option<String>,
     /// The OBS settings last sent, to notice changes.
     obs_settings: (i32, Option<Vec<u8>>),
+    is_connect: bool,
     status: StatusHandle,
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
@@ -560,8 +561,12 @@ impl Connection {
 
         self.send_request(RequestKind::IdentifyAck(true), None)
             .await?;
-        self.send_request(RequestKind::Settings(self.settings_for(&switcher)), None)
-            .await?;
+        let is_connect = identify.client.as_deref() == Some("connect");
+        self.send_request(
+            RequestKind::Settings(self.settings_for(&switcher, is_connect)),
+            None,
+        )
+        .await?;
         db::switchers::touch_last_seen(&self.shared.db, switcher_id).await?;
         let paused = db::switchers::is_paused(&self.shared.db, switcher_id).await?;
         if paused {
@@ -570,7 +575,7 @@ impl Connection {
 
         let mut initial = SwitcherStatus::connected(switcher.bitrate_switcher_enabled);
         initial.paused = paused;
-        if identify.client.as_deref() == Some("connect") {
+        if is_connect {
             initial.pc = Some(PcStatus {
                 device_id: device.as_ref().map(|device| device.id),
                 device_name: device.as_ref().map(|device| device.name.clone()),
@@ -627,6 +632,7 @@ impl Connection {
             device_id: device.as_ref().map(|device| device.id),
             device_token_hash: device_hash,
             obs_settings: (switcher.port, switcher.password.clone()),
+            is_connect,
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
@@ -642,7 +648,7 @@ impl Connection {
         Ok(Flow::Continue)
     }
 
-    fn settings_for(&self, switcher: &db::switchers::Switcher) -> Settings {
+    fn settings_for(&self, switcher: &db::switchers::Switcher, is_connect: bool) -> Settings {
         let password = switcher.password.as_deref().and_then(|encrypted| {
             match self.shared.data_key.decrypt(encrypted) {
                 Ok(bytes) => String::from_utf8(bytes).ok(),
@@ -658,6 +664,9 @@ impl Connection {
                 port: u32::try_from(switcher.port).unwrap_or(4455),
                 password,
             },
+            connect: is_connect.then_some(ConnectSettings {
+                watchdog: switcher.connect_watchdog,
+            }),
         }
     }
 
@@ -813,6 +822,7 @@ impl Connection {
             return Ok(Flow::Continue);
         };
         let switcher_id = session.switcher_id;
+        let is_connect = session.is_connect;
         let (switcher, device) = if let Some(token_hash) = session.device_token_hash.as_deref() {
             match db::connect::by_token_hash(&self.shared.db, token_hash)
                 .await?
@@ -844,9 +854,12 @@ impl Connection {
         }
 
         let obs_settings = (switcher.port, switcher.password.clone());
-        if obs_settings != session.obs_settings {
-            self.send_request(RequestKind::Settings(self.settings_for(&switcher)), None)
-                .await?;
+        if obs_settings != session.obs_settings || is_connect {
+            self.send_request(
+                RequestKind::Settings(self.settings_for(&switcher, is_connect)),
+                None,
+            )
+            .await?;
         }
 
         // A plan change may pause or resume this switcher.
@@ -1115,6 +1128,13 @@ enum RequestErrorKind {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Settings {
     pub obs: ObsSettings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connect: Option<ConnectSettings>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ConnectSettings {
+    pub watchdog: db::connect::Watchdog,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1165,10 +1185,38 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        Identify, Response, ResponseKind, parse_config_change, reconnect_device_id,
-        reset_obs_status, set_pc_device_name, should_close_for_reconnect,
-        should_refresh_device_name,
+        ConnectSettings, Identify, ObsSettings, Response, ResponseKind, Settings,
+        parse_config_change, reconnect_device_id, reset_obs_status, set_pc_device_name,
+        should_close_for_reconnect, should_refresh_device_name,
     };
+
+    #[test]
+    fn browser_settings_wire_shape_is_unchanged_and_connect_gets_watchdog() {
+        let browser = serde_json::to_value(Settings {
+            obs: ObsSettings {
+                port: 4455,
+                password: None,
+            },
+            connect: None,
+        })
+        .unwrap();
+        assert_eq!(browser, json!({"obs": {"port": 4455}}));
+
+        let connect = serde_json::to_value(Settings {
+            obs: ObsSettings {
+                port: 4455,
+                password: None,
+            },
+            connect: Some(ConnectSettings {
+                watchdog: db::connect::Watchdog::RestartResume,
+            }),
+        })
+        .unwrap();
+        assert_eq!(
+            connect,
+            json!({"obs": {"port": 4455}, "connect": {"watchdog": "restart_resume"}})
+        );
+    }
 
     #[test]
     fn reconnects_only_close_the_target_device_session() {
