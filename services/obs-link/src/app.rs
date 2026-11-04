@@ -43,7 +43,7 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(45);
+const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.

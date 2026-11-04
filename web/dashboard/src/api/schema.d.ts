@@ -13062,7 +13062,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description `connect_timeout` */
+            /** @description `connect_timeout` after up to 65 seconds */
             504: {
                 headers: {
                     [name: string]: unknown;

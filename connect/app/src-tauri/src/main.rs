@@ -519,15 +519,14 @@ async fn run_obs_action(
         .cloned()
         .ok_or_else(|| "setup not found".to_string())?;
 
-    if matches!(action, ObsAction::Stop | ObsAction::Restart) {
-        if !stop_setup_streams_with_timeout(
-            Duration::from_secs(8),
+    if matches!(action, ObsAction::Stop | ObsAction::Restart)
+        && !stop_setup_streams_with_timeout(
+            Duration::from_secs(25),
             stop_setup_streams(&setup, state),
         )
         .await
-        {
-            tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
-        }
+    {
+        tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
     }
     let process_state = {
         let mut supervisor = state
@@ -1084,18 +1083,17 @@ fn start_link_session(
                                     setup_for_watchdog_restart(&config, &monitor_setup)
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
-                            if incident == PcObsState::NotResponding {
-                                if !stop_setup_streams_with_timeout(
-                                    Duration::from_secs(8),
+                            if incident == PcObsState::NotResponding
+                                && !stop_setup_streams_with_timeout(
+                                    Duration::from_secs(25),
                                     stop_setup_streams(&restart_setup, &app_state),
                                 )
                                 .await
-                                {
-                                    tracing::warn!(
-                                        setup_id = %restart_setup.id,
-                                        "Timed out stopping streams before OBS watchdog restart"
-                                    );
-                                }
+                            {
+                                tracing::warn!(
+                                    setup_id = %restart_setup.id,
+                                    "Timed out stopping streams before OBS watchdog restart"
+                                );
                             }
                             let restart_result = {
                                 let mut supervisor =

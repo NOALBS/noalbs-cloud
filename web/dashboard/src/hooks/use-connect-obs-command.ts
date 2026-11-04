@@ -7,7 +7,7 @@ import { errorMessage } from "@/lib/errors";
 
 export type ConnectObsAction = "start" | "stop" | "restart";
 
-const OBS_COMMAND_TIMEOUT_MS = 55_000;
+const OBS_COMMAND_TIMEOUT_MS = 70_000;
 const connectObsApi = apiWithTimeout(OBS_COMMAND_TIMEOUT_MS);
 
 export function useConnectObsCommand(path: { workspace_id: string; switcher_id: string }) {

@@ -870,11 +870,9 @@ impl Supervisor {
         {
             force_kill(pid);
             self.crashed_pending.insert(setup.id);
-        } else if let Some(child) = child.as_mut()
-            && !matches!(setup.obs.install_kind, InstallKind::Flatpak)
-        {
-            child.kill()?;
-            let _ = child.wait()?;
+        } else if child.is_some() && !matches!(setup.obs.install_kind, InstallKind::Flatpak) {
+            let child = child.take().expect("child was checked above");
+            Self::reap_child_after_kill(child)?;
             self.crashed_pending.insert(setup.id);
         } else if process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
         {
@@ -883,6 +881,22 @@ impl Supervisor {
         }
         self.adopted.remove(&setup.id);
         Ok(())
+    }
+
+    fn reap_child_after_kill(mut child: std::process::Child) -> Result<bool, SupervisorError> {
+        child.kill()?;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while child.try_wait()?.is_none() && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        if child.try_wait()?.is_some() {
+            Ok(true)
+        } else {
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
+            Ok(false)
+        }
     }
 
     fn stop_flatpak_unresolved(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
@@ -929,7 +943,7 @@ impl Supervisor {
         {
             force_kill(wrapper_pid);
         }
-        let reap_deadline = Instant::now() + self.shutdown_grace;
+        let reap_deadline = Instant::now() + Duration::from_secs(5);
         while (item.child.try_wait()?.is_none()
             || descendants
                 .iter()
@@ -997,7 +1011,7 @@ impl Supervisor {
         {
             force_kill(wrapper_pid);
         }
-        let reap_deadline = Instant::now() + self.shutdown_grace;
+        let reap_deadline = Instant::now() + Duration::from_secs(5);
         while item.child.try_wait()?.is_none() && Instant::now() < reap_deadline {
             std::thread::sleep(Duration::from_millis(100));
         }
@@ -1040,7 +1054,7 @@ fn reap_flatpak_wrapper(
     if item.child.try_wait()?.is_none() && process_start_time(pid) == Some(start_time) {
         force_kill(pid);
     }
-    let reap_deadline = Instant::now() + shutdown_grace;
+    let reap_deadline = Instant::now() + Duration::from_secs(5);
     while item.child.try_wait()?.is_none() && Instant::now() < reap_deadline {
         std::thread::sleep(Duration::from_millis(100));
     }
