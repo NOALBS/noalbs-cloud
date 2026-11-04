@@ -944,7 +944,7 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     let expected = setup
         .obs
@@ -955,6 +955,7 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
     system
         .processes()
         .iter()
+        .filter(|(_, process)| process.thread_kind().is_none())
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
@@ -1029,7 +1030,7 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     let expected = resolve_executable(
         setup
@@ -1041,6 +1042,7 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
     system
         .processes()
         .iter()
+        .filter(|(_, process)| process.thread_kind().is_none())
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
@@ -1074,10 +1076,11 @@ fn any_obs_running() -> bool {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     system.processes().values().any(|process| {
-        is_obs_process_name(&process.name().to_string_lossy(), HostPlatform::current())
+        process.thread_kind().is_none()
+            && is_obs_process_name(&process.name().to_string_lossy(), HostPlatform::current())
     })
 }
 
@@ -1120,7 +1123,7 @@ fn find_flatpak_obs_pid(wrapper_pid: u32) -> Option<(u32, u64)> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     let pid = find_descendant_pid(&system, wrapper_pid, |pid, process| {
         is_flatpak_obs_process(pid.as_u32(), process)
@@ -1134,7 +1137,10 @@ fn find_descendant_pid(
     mut matches: impl FnMut(Pid, &sysinfo::Process) -> bool,
 ) -> Option<Pid> {
     system.processes().iter().find_map(|(pid, process)| {
-        (matches(*pid, process) && is_process_descendant(system, *pid, ancestor)).then_some(*pid)
+        (process.thread_kind().is_none()
+            && matches(*pid, process)
+            && is_process_descendant(system, *pid, ancestor))
+        .then_some(*pid)
     })
 }
 
@@ -1144,14 +1150,16 @@ fn descendant_processes(wrapper_pid: u32) -> Vec<(u32, u64)> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     system
         .processes()
         .iter()
         .filter_map(|(pid, process)| {
-            (is_process_descendant(&system, *pid, ancestor) && is_flatpak_shutdown_target(process))
-                .then_some((pid.as_u32(), process.start_time()))
+            (process.thread_kind().is_none()
+                && is_process_descendant(&system, *pid, ancestor)
+                && is_flatpak_shutdown_target(process))
+            .then_some((pid.as_u32(), process.start_time()))
         })
         .collect()
 }
@@ -1204,7 +1212,7 @@ fn process_start_time(pid: u32) -> Option<u64> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::Some(&[pid]),
         true,
-        ProcessRefreshKind::everything(),
+        ProcessRefreshKind::everything().without_tasks(),
     );
     system.process(pid).map(|process| process.start_time())
 }
@@ -1790,7 +1798,7 @@ int main(int argc, char **argv) {
             system.refresh_processes_specifics(
                 sysinfo::ProcessesToUpdate::All,
                 true,
-                sysinfo::ProcessRefreshKind::everything(),
+                sysinfo::ProcessRefreshKind::everything().without_tasks(),
             );
             descendant = super::find_descendant_pid(
                 &system,
@@ -2361,6 +2369,28 @@ int main(int argc, char **argv) {
             supervisor.state(&setup),
             crate::relay::PcObsState::WaitingForInput
         );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn multithreaded_hand_started_obs_is_matched_once() {
+        let (release_sender, release_receiver) = std::sync::mpsc::channel();
+        let helper = thread::spawn(move || {
+            release_receiver.recv().unwrap();
+        });
+
+        let mut setup = Setup::new("Current process".into());
+        setup.obs.install_kind = InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(std::env::current_exe().unwrap());
+        let expected = vec![sysinfo::Pid::from_u32(std::process::id())];
+        let matching_pids = matching_obs_pids(&setup);
+        let executable_pids = super::executable_obs_pids(&setup);
+
+        release_sender.send(()).unwrap();
+        helper.join().unwrap();
+
+        assert_eq!(matching_pids, expected);
+        assert_eq!(executable_pids, expected);
     }
 
     #[cfg(target_os = "linux")]
