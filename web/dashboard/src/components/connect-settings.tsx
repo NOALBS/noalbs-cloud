@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
-import { connectDevicesQuery, queryKeys } from "@/api/queries";
-import type { ConnectAccess, ConnectDeviceDto, Watchdog } from "@/api/types";
+import { connectDevicesQuery, queryKeys, switchersQuery } from "@/api/queries";
+import type { ConnectAccess, ConnectDeviceDto, PcObsState, Watchdog } from "@/api/types";
 import { Section } from "@/components/page";
+import { StatusDot } from "@/components/switcher-status";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSwitcher } from "@/hooks/use-switcher";
-import { canControlConnect, connectAccessOptions, watchdogOptions } from "@/lib/connect";
+import {
+  canControlConnect,
+  connectAccessOptions,
+  pcObsLabel,
+  watchdogOptions,
+} from "@/lib/connect";
 import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
 import { formatRelative } from "@/lib/time";
@@ -38,10 +44,18 @@ export function ConnectSettings() {
   const { workspace, switcher, actor, canManage, path } = useSwitcher();
   const queryClient = useQueryClient();
   const devices = useQuery(connectDevicesQuery(workspace.id, switcher.id));
+  const summary = useQuery(switchersQuery(workspace.id)).data?.find(
+    (candidate) => candidate.id === switcher.id,
+  );
+  const pc = summary?.status?.pc;
   const owner = isOwner(actor);
   const canManageDevices = canManage && !isSupport(actor);
   const accessOptions = connectAccessOptions(workspace.managed_by?.name ?? null);
   const watchdogAllowed = canControlConnect(switcher.connect_obs_control, actor);
+  const watchdogChoices = watchdogOptions();
+  const watchdogDescription = watchdogChoices.find(
+    (option) => option.value === switcher.connect_watchdog,
+  )?.description;
 
   const savePermissions = useMutation({
     mutationFn: (change: Partial<{ obs_control: ConnectAccess; logs: ConnectAccess }>) =>
@@ -105,6 +119,7 @@ export function ConnectSettings() {
               device={device}
               path={path}
               canManage={canManageDevices}
+              onlineObs={pc?.device_id === device.id ? pc.obs : undefined}
             />
           ))}
         </div>
@@ -148,13 +163,14 @@ export function ConnectSettings() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {watchdogOptions().map((option) => (
+              {watchdogChoices.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <p className="text-sm text-muted-foreground">{watchdogDescription}</p>
           {!watchdogAllowed && (
             <p className="text-sm text-muted-foreground">
               <Trans>
@@ -213,10 +229,12 @@ function ConnectDeviceRow({
   device,
   path,
   canManage,
+  onlineObs,
 }: {
   device: ConnectDeviceDto;
   path: { workspace_id: string; switcher_id: string };
   canManage: boolean;
+  onlineObs?: PcObsState;
 }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(device.name);
@@ -256,7 +274,7 @@ function ConnectDeviceRow({
       await queryClient.invalidateQueries({
         queryKey: queryKeys.connectDevices(path.workspace_id, path.switcher_id),
       });
-      toast.success(t`Device disconnected`);
+      toast.success(t`Computer revoked`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -271,9 +289,16 @@ function ConnectDeviceRow({
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
-          {device.last_seen_at
-            ? t`Last seen ${formatRelative(device.last_seen_at)}`
-            : t`Not connected yet`}
+          {onlineObs ? (
+            <span className="inline-flex items-center gap-1.5">
+              <StatusDot className="bg-live" />
+              {t`Online · ${pcObsLabel(onlineObs)}`}
+            </span>
+          ) : device.last_seen_at ? (
+            t`Last seen ${formatRelative(device.last_seen_at)}`
+          ) : (
+            t`Not connected yet`
+          )}
         </span>
       </div>
       {canManage && (
@@ -302,7 +327,7 @@ function ConnectDeviceRow({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  <Trans>Disconnect {device.name}?</Trans>
+                  <Trans>Revoke {device.name}?</Trans>
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   <Trans>
@@ -315,7 +340,7 @@ function ConnectDeviceRow({
                   <Trans>Cancel</Trans>
                 </AlertDialogCancel>
                 <AlertDialogAction onClick={() => revoke.mutate()}>
-                  <Trans>Disconnect</Trans>
+                  <Trans>Revoke</Trans>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -17,6 +17,7 @@ export type Switcher = Schemas["SwitcherDto"];
 export type PreviewOffAir = Schemas["PreviewOffAir"];
 export type ConnectAccess = Schemas["ConnectAccess"];
 export type Watchdog = Schemas["Watchdog"];
+export type PcObsState = Schemas["PcObsState"];
 export type ConnectDeviceDto = Schemas["ConnectDeviceDto"];
 export type PairingPreview = Schemas["PairingPreview"];
 export type PreviewWatcher = Schemas["PreviewWatcherDto"];

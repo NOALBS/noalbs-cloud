@@ -955,6 +955,11 @@ msgstr "<0>{0}</0> 管理這個工作區。對方的團隊可以查看並操作�
 msgid "<0>{0}</0>per {1} / {2}"
 msgstr "<0>{0}</0>每 {1} / {2}"
 
+#. placeholder {0}: pcObsLabel(status.pc.obs)
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "<0>{connectDeviceName} is connected, but OBS isn’t.</0> {0}."
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "<0>kind</0> and <1>url</1> are required, <2>name</2> is optional (the streamer can change it). Settings a kind doesn’t use are ignored."
 msgstr "<0>kind</0> 和 <1>url</1> 為必填，<2>name</2> 為選填（實況主可自行變更）。該類型用不到的設定會被忽略。"
@@ -2420,6 +2425,10 @@ msgstr ""
 msgid "Computer requesting access"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Computer revoked"
+msgstr ""
+
 #. placeholder {0}: twitch.conduit_id ?? t`not created yet`
 #: src/routes/_app/admin/status.tsx
 msgid "Conduit <0>{0}</0>"
@@ -2438,6 +2447,10 @@ msgstr "正在確認你的付款… 這需要幾秒鐘。"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
 msgstr "連接"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect · {connectDeviceName}"
+msgstr ""
 
 #. placeholder {0}: platform.label
 #: src/routes/_app/$workspace/account.tsx
@@ -2460,6 +2473,10 @@ msgstr "連接 BELABOX Cloud"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "平台要求時，請以機器人帳號（不是你自己的帳號）登入來連接。"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect computer"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
@@ -2526,10 +2543,8 @@ msgstr "已連線"
 msgid "Connected · not streaming"
 msgstr "已連線 · 未在實況"
 
-#. placeholder {0}: event.data.name
 #. placeholder {0}: formatRelative(bot.connected_at)
 #: src/components/orgs/chat-bot-section.tsx
-#: src/lib/live-format.ts
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connected {0}"
 msgstr "連接於 {0}"
@@ -3071,10 +3086,6 @@ msgstr "說明"
 msgid "Dev login"
 msgstr "開發者登入"
 
-#: src/components/connect-settings.tsx
-msgid "Device disconnected"
-msgstr ""
-
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "停用"
@@ -3107,18 +3118,12 @@ msgstr "捨棄"
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/wifi-panel.tsx
-#: src/components/connect-settings.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/$workspace/account.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect"
 msgstr "中斷連接"
-
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Disconnect {0}?"
-msgstr ""
 
 #. placeholder {0}: connection.username
 #: src/routes/_app/$workspace/account.tsx
@@ -3132,11 +3137,6 @@ msgstr "要中斷連接 {label} 機器人嗎？"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect the shared {label} bot?"
 msgstr "要中斷連接共用的 {label} 機器人嗎？"
-
-#. placeholder {0}: event.data.name
-#: src/lib/live-format.ts
-msgid "Disconnected {0}"
-msgstr ""
 
 #. placeholder {0}: text(details.platform) ?? ""
 #: src/lib/org-audit.ts
@@ -3781,6 +3781,18 @@ msgstr "你的登入方式，以及你登入的位置。"
 #: src/routes/integrate-stream-server.tsx
 msgid "HTML"
 msgstr "HTML"
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect only reports it. It doesn’t restart OBS."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it and starts the stream again if it was live."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it. It doesn’t go live again on its own."
+msgstr ""
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -5906,8 +5918,8 @@ msgstr "OBS"
 msgid "OBS already has a source or scene with that name."
 msgstr "OBS 已經有同名的來源或場景。"
 
-#: src/components/switcher-status.tsx
 #: src/lib/admin.ts
+#: src/lib/connect.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -5928,7 +5940,7 @@ msgstr "OBS 透過瀏覽器來源連線"
 msgid "OBS control: {0} · Logs: {1} {2}"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS crashed"
 msgstr ""
 
@@ -5982,12 +5994,16 @@ msgstr "OBS 已沒有這個名稱的音訊來源。請重新載入清單。"
 msgid "OBS hasn't reported its scene yet."
 msgstr "OBS 尚未回報場景。"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is in safe mode"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is waiting for input"
+msgstr ""
+
+#: src/components/live/obs-stats-popover.tsx
+msgid "OBS isn’t connected to Connect on {connectDevice}."
 msgstr ""
 
 #: src/components/live/obs-preview.tsx
@@ -6002,11 +6018,11 @@ msgstr "OBS 未連線。請確認 OBS 已開啟且瀏覽器來源處於使用中
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS 未連線。請開啟 OBS 並啟用 NOALBS 瀏覽器來源以查看統計資料。"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not responding"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not running"
 msgstr ""
 
@@ -6031,11 +6047,11 @@ msgstr "OBS 會儲存目前為止的錄影。再次錄影會建立新檔案。"
 msgid "OBS sent an image we can't read."
 msgstr "OBS 傳送了我們無法讀取的圖片。"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS starting"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS state unknown"
 msgstr ""
 
@@ -6051,7 +6067,7 @@ msgstr ""
 msgid "OBS WebSocket"
 msgstr "OBS WebSocket"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS WebSocket is disabled"
 msgstr ""
 
@@ -6182,6 +6198,11 @@ msgstr "僅此客戶"
 msgid "One client per line, up to {BULK_MAX}. Each URL follows its name (a number is added when it’s taken)."
 msgstr "每行一個客戶，最多 {BULK_MAX} 個。URL 會依名稱產生（已被使用時會加上數字）。"
 
+#. placeholder {0}: pcObsLabel(onlineObs)
+#: src/components/connect-settings.tsx
+msgid "Online · {0}"
+msgstr ""
+
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/connect-settings.tsx
 msgid "Only {0} can change these permissions."
@@ -6220,6 +6241,10 @@ msgstr "只有管理員才能成為擁有者。請先<0>將對方設為管理員
 #: src/lib/api-messages.ts
 msgid "Only an admin can become the owner. Make them an admin first."
 msgstr "只有管理員才能成為擁有者。請先將對方設為管理員。"
+
+#: src/routes/_app/connect.tsx
+msgid "Only continue if NOALBS Cloud Connect is showing this code on your own computer. If someone sent you this link, don’t connect it. The computer will be able to control OBS for this switcher."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Only flat-rate prices above zero can be linked."
@@ -6318,6 +6343,10 @@ msgstr "未使用的邀請"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Open network: no password"
 msgstr "開放網路：無密碼"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Open settings"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open Setup"
@@ -6494,6 +6523,11 @@ msgstr ""
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "頁面 URL"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Paired {0}"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Paired computers"
@@ -7270,6 +7304,11 @@ msgstr "查看"
 msgid "Revoke"
 msgstr "撤銷"
 
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Revoke {0}?"
+msgstr ""
+
 #: src/components/orgs/customer-invite-dialog.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Revoke invite"
@@ -7278,6 +7317,11 @@ msgstr "撤銷邀請"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Revoked"
 msgstr "已撤銷"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Revoked {0}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Revoked a customer invite link for {subject}"

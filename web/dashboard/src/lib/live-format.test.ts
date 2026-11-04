@@ -14,6 +14,23 @@ describe("formatUptime", () => {
 describe("describeEvent", () => {
   const base = { id: "1", created_at: at };
 
+  it("labels Connect pairings and revocations", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_device_paired",
+        data: { name: "Studio PC", by: "kate" },
+      }),
+    ).toEqual({ title: "Paired Studio PC", detail: "by kate" });
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_device_revoked",
+        data: { name: "Studio PC", by: "kate" },
+      }),
+    ).toEqual({ title: "Revoked Studio PC", detail: "by kate" });
+  });
+
   it("explains automatic switches with their cause", () => {
     const event: SwitcherEvent = {
       ...base,

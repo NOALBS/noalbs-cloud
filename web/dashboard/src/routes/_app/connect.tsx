@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { ApiRequestError, api, unwrap } from "@/api/client";
 import {
@@ -199,6 +200,14 @@ function ConnectPairingPage() {
                         : errorMessage(confirm.error)}
                     </p>
                   )}
+                  <p className="flex items-start gap-2 rounded-xl border border-low/30 bg-low/5 p-3 text-sm text-muted-foreground">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-low" aria-hidden="true" />
+                    <Trans>
+                      Only continue if NOALBS Cloud Connect is showing this code on your own
+                      computer. If someone sent you this link, don’t connect it. The computer will
+                      be able to control OBS for this switcher.
+                    </Trans>
+                  </p>
                   <Button
                     className="h-11 rounded-xl"
                     onClick={() => confirm.mutate()}

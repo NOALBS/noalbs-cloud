@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { SwitcherSummary } from "@/api/types";
+import { pcObsLabel } from "@/lib/connect";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -13,17 +14,7 @@ export function switcherStatus(
   const status = switcher.status;
   const withPc = <T extends { label: string }>(result: T): T => {
     if (!status?.pc) return result;
-    const label = {
-      unknown: t`OBS state unknown`,
-      not_running: t`OBS not running`,
-      starting: t`OBS starting`,
-      connected: t`OBS connected`,
-      not_responding: t`OBS not responding`,
-      waiting_for_input: t`OBS is waiting for input`,
-      safe_mode: t`OBS is in safe mode`,
-      crashed: t`OBS crashed`,
-      websocket_disabled: t`OBS WebSocket is disabled`,
-    }[status.pc.obs];
+    const label = pcObsLabel(status.pc.obs);
     return { ...result, label: t`${label} · ${result.label}` };
   };
   if (switcher.paused || status?.paused) {

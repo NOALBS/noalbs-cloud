@@ -955,6 +955,11 @@ msgstr "<0>{0}</0>에서 이 워크스페이스를 관리해요. 해당 팀은 �
 msgid "<0>{0}</0>per {1} / {2}"
 msgstr "<0>{0}</0>{1}당 / {2}"
 
+#. placeholder {0}: pcObsLabel(status.pc.obs)
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "<0>{connectDeviceName} is connected, but OBS isn’t.</0> {0}."
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "<0>kind</0> and <1>url</1> are required, <2>name</2> is optional (the streamer can change it). Settings a kind doesn’t use are ignored."
 msgstr "필수: <0>kind</0>, <1>url</1>. 선택: <2>name</2>(스트리머가 변경할 수 있어요). kind에서 쓰지 않는 설정은 무시돼요."
@@ -2420,6 +2425,10 @@ msgstr ""
 msgid "Computer requesting access"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Computer revoked"
+msgstr ""
+
 #. placeholder {0}: twitch.conduit_id ?? t`not created yet`
 #: src/routes/_app/admin/status.tsx
 msgid "Conduit <0>{0}</0>"
@@ -2438,6 +2447,10 @@ msgstr "결제를 확인하는 중이에요… 몇 초 걸려요."
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
 msgstr "연결"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect · {connectDeviceName}"
+msgstr ""
 
 #. placeholder {0}: platform.label
 #: src/routes/_app/$workspace/account.tsx
@@ -2460,6 +2473,10 @@ msgstr "BELABOX Cloud 연결"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "플랫폼에서 요청하면 본인 계정이 아닌 봇 계정으로 로그인해 연결하세요."
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect computer"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
@@ -2526,10 +2543,8 @@ msgstr "연결됨"
 msgid "Connected · not streaming"
 msgstr "연결됨 · 방송 중 아님"
 
-#. placeholder {0}: event.data.name
 #. placeholder {0}: formatRelative(bot.connected_at)
 #: src/components/orgs/chat-bot-section.tsx
-#: src/lib/live-format.ts
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connected {0}"
 msgstr "{0} 연결됨"
@@ -3071,10 +3086,6 @@ msgstr "설명"
 msgid "Dev login"
 msgstr "개발자 로그인"
 
-#: src/components/connect-settings.tsx
-msgid "Device disconnected"
-msgstr ""
-
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "비활성화"
@@ -3107,18 +3118,12 @@ msgstr "버리기"
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/wifi-panel.tsx
-#: src/components/connect-settings.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/$workspace/account.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect"
 msgstr "연결 해제"
-
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Disconnect {0}?"
-msgstr ""
 
 #. placeholder {0}: connection.username
 #: src/routes/_app/$workspace/account.tsx
@@ -3132,11 +3137,6 @@ msgstr "{label} 봇 연결을 해제할까요?"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect the shared {label} bot?"
 msgstr "공유 {label} 봇 연결을 해제할까요?"
-
-#. placeholder {0}: event.data.name
-#: src/lib/live-format.ts
-msgid "Disconnected {0}"
-msgstr ""
 
 #. placeholder {0}: text(details.platform) ?? ""
 #: src/lib/org-audit.ts
@@ -3781,6 +3781,18 @@ msgstr "로그인 방법과 로그인된 곳이에요."
 #: src/routes/integrate-stream-server.tsx
 msgid "HTML"
 msgstr "HTML"
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect only reports it. It doesn’t restart OBS."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it and starts the stream again if it was live."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it. It doesn’t go live again on its own."
+msgstr ""
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -5906,8 +5918,8 @@ msgstr "OBS"
 msgid "OBS already has a source or scene with that name."
 msgstr "OBS에 이미 그 이름의 소스나 장면이 있어요."
 
-#: src/components/switcher-status.tsx
 #: src/lib/admin.ts
+#: src/lib/connect.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -5928,7 +5940,7 @@ msgstr "OBS는 브라우저 소스를 통해 연결돼요"
 msgid "OBS control: {0} · Logs: {1} {2}"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS crashed"
 msgstr ""
 
@@ -5982,12 +5994,16 @@ msgstr "OBS에 해당 이름의 오디오 소스가 더 이상 없어요. 목록
 msgid "OBS hasn't reported its scene yet."
 msgstr "OBS가 아직 장면을 보고하지 않았어요."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is in safe mode"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is waiting for input"
+msgstr ""
+
+#: src/components/live/obs-stats-popover.tsx
+msgid "OBS isn’t connected to Connect on {connectDevice}."
 msgstr ""
 
 #: src/components/live/obs-preview.tsx
@@ -6002,11 +6018,11 @@ msgstr "OBS가 연결되지 않았어요. 브라우저 소스가 활성화된 �
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS가 연결되지 않았어요. 통계를 보려면 NOALBS 브라우저 소스가 활성화된 상태로 OBS를 여세요."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not responding"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not running"
 msgstr ""
 
@@ -6031,11 +6047,11 @@ msgstr "지금까지의 녹화를 OBS가 저장해요. 다시 녹화하면 새 �
 msgid "OBS sent an image we can't read."
 msgstr "OBS에서 읽을 수 없는 이미지를 보냈어요."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS starting"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS state unknown"
 msgstr ""
 
@@ -6051,7 +6067,7 @@ msgstr ""
 msgid "OBS WebSocket"
 msgstr "OBS WebSocket"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS WebSocket is disabled"
 msgstr ""
 
@@ -6182,6 +6198,11 @@ msgstr "클라이언트 한 곳만"
 msgid "One client per line, up to {BULK_MAX}. Each URL follows its name (a number is added when it’s taken)."
 msgstr "한 줄에 클라이언트 하나씩, 최대 {BULK_MAX}곳까지 입력하세요. URL은 이름을 따르며, 이미 사용 중이면 숫자가 붙어요."
 
+#. placeholder {0}: pcObsLabel(onlineObs)
+#: src/components/connect-settings.tsx
+msgid "Online · {0}"
+msgstr ""
+
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/connect-settings.tsx
 msgid "Only {0} can change these permissions."
@@ -6220,6 +6241,10 @@ msgstr "관리자만 소유자가 될 수 있어요. 먼저 <0>관리자로 지�
 #: src/lib/api-messages.ts
 msgid "Only an admin can become the owner. Make them an admin first."
 msgstr "관리자만 소유자가 될 수 있어요. 먼저 관리자로 지정하세요."
+
+#: src/routes/_app/connect.tsx
+msgid "Only continue if NOALBS Cloud Connect is showing this code on your own computer. If someone sent you this link, don’t connect it. The computer will be able to control OBS for this switcher."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Only flat-rate prices above zero can be linked."
@@ -6318,6 +6343,10 @@ msgstr "열린 초대"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Open network: no password"
 msgstr "개방형 네트워크: 비밀번호 없음"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Open settings"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open Setup"
@@ -6494,6 +6523,11 @@ msgstr ""
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "페이지 URL"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Paired {0}"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Paired computers"
@@ -7270,6 +7304,11 @@ msgstr "확인"
 msgid "Revoke"
 msgstr "취소"
 
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Revoke {0}?"
+msgstr ""
+
 #: src/components/orgs/customer-invite-dialog.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Revoke invite"
@@ -7278,6 +7317,11 @@ msgstr "초대 취소"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Revoked"
 msgstr "취소됨"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Revoked {0}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Revoked a customer invite link for {subject}"

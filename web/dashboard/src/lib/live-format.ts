@@ -80,12 +80,12 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
       };
     case "connect_device_paired":
       return {
-        title: t`Connected ${event.data.name}`,
+        title: t`Paired ${event.data.name}`,
         detail: by(event.data.by, t`from the dashboard`),
       };
     case "connect_device_revoked":
       return {
-        title: t`Disconnected ${event.data.name}`,
+        title: t`Revoked ${event.data.name}`,
         detail: by(event.data.by, t`from the dashboard`),
       };
     case "connect_permissions_changed":

@@ -955,6 +955,11 @@ msgstr "<0>{0}</0> administrerer dette arbejdsområde. Deres team kan se og kør
 msgid "<0>{0}</0>per {1} / {2}"
 msgstr "<0>{0}</0>pr. {1} / {2}"
 
+#. placeholder {0}: pcObsLabel(status.pc.obs)
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "<0>{connectDeviceName} is connected, but OBS isn’t.</0> {0}."
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "<0>kind</0> and <1>url</1> are required, <2>name</2> is optional (the streamer can change it). Settings a kind doesn’t use are ignored."
 msgstr "<0>kind</0> og <1>url</1> er påkrævet, <2>name</2> er valgfrit (streameren kan ændre det). Indstillinger, som en kind ikke bruger, ignoreres."
@@ -2420,6 +2425,10 @@ msgstr ""
 msgid "Computer requesting access"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Computer revoked"
+msgstr ""
+
 #. placeholder {0}: twitch.conduit_id ?? t`not created yet`
 #: src/routes/_app/admin/status.tsx
 msgid "Conduit <0>{0}</0>"
@@ -2438,6 +2447,10 @@ msgstr "Bekræfter din betaling… det tager et par sekunder."
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
 msgstr "Forbind"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect · {connectDeviceName}"
+msgstr ""
 
 #. placeholder {0}: platform.label
 #: src/routes/_app/$workspace/account.tsx
@@ -2460,6 +2473,10 @@ msgstr "Forbind BELABOX Cloud"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "Forbind ved at logge ind som bot-kontoen (ikke din egen), når platformen beder om det."
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect computer"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
@@ -2526,10 +2543,8 @@ msgstr "Forbundet"
 msgid "Connected · not streaming"
 msgstr "Forbundet · streamer ikke"
 
-#. placeholder {0}: event.data.name
 #. placeholder {0}: formatRelative(bot.connected_at)
 #: src/components/orgs/chat-bot-section.tsx
-#: src/lib/live-format.ts
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connected {0}"
 msgstr "Forbundet {0}"
@@ -3071,10 +3086,6 @@ msgstr "Beskrivelse"
 msgid "Dev login"
 msgstr "Dev-login"
 
-#: src/components/connect-settings.tsx
-msgid "Device disconnected"
-msgstr ""
-
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "Deaktiver"
@@ -3107,18 +3118,12 @@ msgstr "Kasser"
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/wifi-panel.tsx
-#: src/components/connect-settings.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/$workspace/account.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect"
 msgstr "Afbryd"
-
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Disconnect {0}?"
-msgstr ""
 
 #. placeholder {0}: connection.username
 #: src/routes/_app/$workspace/account.tsx
@@ -3132,11 +3137,6 @@ msgstr "Afbryd {label}-botten?"
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Disconnect the shared {label} bot?"
 msgstr "Afbryd den delte {label}-bot?"
-
-#. placeholder {0}: event.data.name
-#: src/lib/live-format.ts
-msgid "Disconnected {0}"
-msgstr ""
 
 #. placeholder {0}: text(details.platform) ?? ""
 #: src/lib/org-audit.ts
@@ -3781,6 +3781,18 @@ msgstr "Sådan logger du ind, og hvor du er logget ind."
 #: src/routes/integrate-stream-server.tsx
 msgid "HTML"
 msgstr "HTML"
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect only reports it. It doesn’t restart OBS."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it and starts the stream again if it was live."
+msgstr ""
+
+#: src/lib/connect.ts
+msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it. It doesn’t go live again on its own."
+msgstr ""
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -5906,8 +5918,8 @@ msgstr "OBS"
 msgid "OBS already has a source or scene with that name."
 msgstr "OBS har allerede en kilde eller scene med det navn."
 
-#: src/components/switcher-status.tsx
 #: src/lib/admin.ts
+#: src/lib/connect.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -5928,7 +5940,7 @@ msgstr "OBS forbinder via browserkilden"
 msgid "OBS control: {0} · Logs: {1} {2}"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS crashed"
 msgstr ""
 
@@ -5982,12 +5994,16 @@ msgstr "OBS har ikke længere en lydkilde med det navn. Genindlæs listen."
 msgid "OBS hasn't reported its scene yet."
 msgstr "OBS har ikke rapporteret sin scene endnu."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is in safe mode"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS is waiting for input"
+msgstr ""
+
+#: src/components/live/obs-stats-popover.tsx
+msgid "OBS isn’t connected to Connect on {connectDevice}."
 msgstr ""
 
 #: src/components/live/obs-preview.tsx
@@ -6002,11 +6018,11 @@ msgstr "OBS er ikke forbundet. Tjek, at OBS er åben med browserkilden aktiv."
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS er ikke forbundet. Åbn OBS med NOALBS-browserkilden aktiv for at se dens statistik."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not responding"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS not running"
 msgstr ""
 
@@ -6031,11 +6047,11 @@ msgstr "OBS gemmer optagelsen indtil nu. En ny optagelse starter en ny fil."
 msgid "OBS sent an image we can't read."
 msgstr "OBS sendte et billede, vi ikke kan læse."
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS starting"
 msgstr ""
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS state unknown"
 msgstr ""
 
@@ -6051,7 +6067,7 @@ msgstr ""
 msgid "OBS WebSocket"
 msgstr "OBS WebSocket"
 
-#: src/components/switcher-status.tsx
+#: src/lib/connect.ts
 msgid "OBS WebSocket is disabled"
 msgstr ""
 
@@ -6182,6 +6198,11 @@ msgstr "Kun én kunde"
 msgid "One client per line, up to {BULK_MAX}. Each URL follows its name (a number is added when it’s taken)."
 msgstr "Én kunde pr. linje, op til {BULK_MAX}. Hver URL følger navnet (der tilføjes et tal, hvis den er taget)."
 
+#. placeholder {0}: pcObsLabel(onlineObs)
+#: src/components/connect-settings.tsx
+msgid "Online · {0}"
+msgstr ""
+
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/connect-settings.tsx
 msgid "Only {0} can change these permissions."
@@ -6220,6 +6241,10 @@ msgstr "Kun en admin kan blive ejer. <0>Gør nogen til admin</0> først."
 #: src/lib/api-messages.ts
 msgid "Only an admin can become the owner. Make them an admin first."
 msgstr "Kun en admin kan blive ejer. Gør dem til admin først."
+
+#: src/routes/_app/connect.tsx
+msgid "Only continue if NOALBS Cloud Connect is showing this code on your own computer. If someone sent you this link, don’t connect it. The computer will be able to control OBS for this switcher."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Only flat-rate prices above zero can be linked."
@@ -6318,6 +6343,10 @@ msgstr "Åbne invitationer"
 #: src/components/belabox/wifi-panel.tsx
 msgid "Open network: no password"
 msgstr "Åbent netværk: ingen adgangskode"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Open settings"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open Setup"
@@ -6494,6 +6523,11 @@ msgstr ""
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "sidens URL"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Paired {0}"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Paired computers"
@@ -7270,6 +7304,11 @@ msgstr "Gennemgå"
 msgid "Revoke"
 msgstr "Tilbagekald"
 
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Revoke {0}?"
+msgstr ""
+
 #: src/components/orgs/customer-invite-dialog.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Revoke invite"
@@ -7278,6 +7317,11 @@ msgstr "Tilbagekald invitation"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Revoked"
 msgstr "Tilbagekaldt"
+
+#. placeholder {0}: event.data.name
+#: src/lib/live-format.ts
+msgid "Revoked {0}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Revoked a customer invite link for {subject}"

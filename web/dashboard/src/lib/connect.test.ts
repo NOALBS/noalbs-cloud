@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canControlConnect, connectAccessOptions, watchdogOptions } from "./connect";
+import type { PcObsState } from "@/api/types";
+import { canControlConnect, connectAccessOptions, pcObsLabel, watchdogOptions } from "./connect";
 
 describe("Connect settings", () => {
   it("names roles and organization managers", () => {
@@ -14,6 +15,32 @@ describe("Connect settings", () => {
       "off",
       "restart",
       "restart_resume",
+    ]);
+    expect(watchdogOptions().every((option) => option.description.trim().length > 0)).toBe(true);
+  });
+
+  it("labels every Connect OBS state", () => {
+    const states: PcObsState[] = [
+      "unknown",
+      "not_running",
+      "starting",
+      "connected",
+      "not_responding",
+      "waiting_for_input",
+      "safe_mode",
+      "crashed",
+      "websocket_disabled",
+    ];
+    expect(states.map(pcObsLabel)).toEqual([
+      "OBS state unknown",
+      "OBS not running",
+      "OBS starting",
+      "OBS connected",
+      "OBS not responding",
+      "OBS is waiting for input",
+      "OBS is in safe mode",
+      "OBS crashed",
+      "OBS WebSocket is disabled",
     ]);
   });
 

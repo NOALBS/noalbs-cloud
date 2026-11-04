@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import type { ConnectAccess, Watchdog } from "@/api/types";
+import type { ConnectAccess, PcObsState, Watchdog } from "@/api/types";
 import { type Actor, isOwner, isSupport } from "./permissions";
 
 /** The roles who can control OBS through Connect or view Connect logs. */
@@ -29,12 +29,42 @@ export function connectAccessOptions(
   ];
 }
 
-export function watchdogOptions(): { value: Watchdog; label: string }[] {
+export function watchdogOptions(): {
+  value: Watchdog;
+  label: string;
+  description: string;
+}[] {
   return [
-    { value: "off", label: t`Off` },
-    { value: "restart", label: t`Restart OBS` },
-    { value: "restart_resume", label: t`Restart OBS and go live again` },
+    {
+      value: "off",
+      label: t`Off`,
+      description: t`If OBS crashes or stops responding on a paired computer, Connect only reports it. It doesn’t restart OBS.`,
+    },
+    {
+      value: "restart",
+      label: t`Restart OBS`,
+      description: t`If OBS crashes or stops responding on a paired computer, Connect restarts it. It doesn’t go live again on its own.`,
+    },
+    {
+      value: "restart_resume",
+      label: t`Restart OBS and go live again`,
+      description: t`If OBS crashes or stops responding on a paired computer, Connect restarts it and starts the stream again if it was live.`,
+    },
   ];
+}
+
+export function pcObsLabel(state: PcObsState): string {
+  return {
+    unknown: t`OBS state unknown`,
+    not_running: t`OBS not running`,
+    starting: t`OBS starting`,
+    connected: t`OBS connected`,
+    not_responding: t`OBS not responding`,
+    waiting_for_input: t`OBS is waiting for input`,
+    safe_mode: t`OBS is in safe mode`,
+    crashed: t`OBS crashed`,
+    websocket_disabled: t`OBS WebSocket is disabled`,
+  }[state];
 }
 
 /** Mirrors the API's role check for the watchdog setting; never support. */
