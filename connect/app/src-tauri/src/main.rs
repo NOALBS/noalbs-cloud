@@ -84,15 +84,16 @@ fn get_state(state: State<'_, AppState>) -> UiState {
             .setups
             .iter()
             .map(|setup| {
-                let obs_state = serde_json::to_value(
-                    sessions
-                        .get(&setup.id)
-                        .map(|session| *session.state.borrow())
-                        .unwrap_or_else(|| supervisor.state(setup)),
-                )
-                .ok()
-                .and_then(|value| value.as_str().map(str::to_owned))
-                .unwrap_or_else(|| "unknown".into());
+                let link_state = sessions
+                    .get(&setup.id)
+                    .map(|session| *session.state.borrow());
+                let process_state =
+                    link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
+                let obs_state =
+                    serde_json::to_value(displayed_obs_state(process_state, link_state))
+                        .ok()
+                        .and_then(|value| value.as_str().map(str::to_owned))
+                        .unwrap_or_else(|| "unknown".into());
                 let obs_process_running = supervisor.owns_running_process(setup);
                 SetupSummary {
                     id: setup.id.to_string(),
@@ -585,6 +586,24 @@ fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState)
         )
 }
 
+fn displayed_obs_state(process_state: PcObsState, link_state: Option<PcObsState>) -> PcObsState {
+    link_state.unwrap_or(process_state)
+}
+
+fn obs_state_label(state: PcObsState) -> &'static str {
+    match state {
+        PcObsState::Connected => "OBS connected",
+        PcObsState::Starting => "Starting OBS…",
+        PcObsState::WaitingForInput => "OBS is waiting for input",
+        PcObsState::SafeMode => "OBS is asking about Safe Mode",
+        PcObsState::WebsocketDisabled => "OBS websocket is off",
+        PcObsState::NotResponding => "OBS is not responding",
+        PcObsState::Crashed => "OBS crashed",
+        PcObsState::NotRunning => "OBS not running",
+        PcObsState::Unknown => "OBS running, not started by Connect",
+    }
+}
+
 fn setup_for_watchdog_restart(config: &AppConfig, fallback: &Setup) -> Setup {
     config
         .setups
@@ -822,12 +841,13 @@ fn build_tray_menu(manager: &impl Manager<tauri::Wry>) -> tauri::Result<Menu<tau
     let mut supervisor = state.supervisor.lock().expect("supervisor lock");
     let sessions = state.link_sessions.lock().expect("link session lock");
     for setup in &setups {
-        let status = if let Some(session) = sessions.get(&setup.id) {
-            *session.state.borrow()
-        } else {
-            supervisor.state(setup)
-        };
-        let label = format!("{} — OBS {status:?}", setup.name);
+        let link_state = sessions
+            .get(&setup.id)
+            .map(|session| *session.state.borrow());
+        let process_state =
+            link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
+        let status = displayed_obs_state(process_state, link_state);
+        let label = format!("{} — {}", setup.name, obs_state_label(status));
         let item = MenuItem::with_id(
             manager,
             format!("setup-{}", setup.id),
@@ -870,6 +890,37 @@ fn refresh_tray_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
         tray.set_menu(Some(build_tray_menu(app)?))?;
     }
     Ok(())
+}
+
+fn start_ui_state_monitor(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let mut last_states = None;
+        let mut tick = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            tick.tick().await;
+            let state = get_state(app.state::<AppState>());
+            let current_states: HashMap<_, _> = state
+                .setups
+                .iter()
+                .map(|setup| {
+                    (
+                        setup.id.clone(),
+                        (
+                            setup.name.clone(),
+                            setup.obs_state.clone(),
+                            setup.obs_process_running,
+                        ),
+                    )
+                })
+                .collect();
+            if last_states.as_ref() != Some(&current_states) {
+                last_states = Some(current_states);
+                let _ = app.emit("connect-state-changed", state);
+                let _ = refresh_tray_menu(&app);
+            }
+        }
+    });
 }
 
 fn main() {
@@ -949,6 +1000,7 @@ fn main() {
                     let _ = start_link_session(app.handle(), state.inner(), setup);
                 }
             }
+            start_ui_state_monitor(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -1002,5 +1054,27 @@ mod tests {
             PcObsState::Starting,
             PcObsState::Starting
         ));
+    }
+
+    #[test]
+    fn unpaired_setup_uses_the_supervisor_obs_state() {
+        assert_eq!(
+            displayed_obs_state(PcObsState::Starting, None),
+            PcObsState::Starting
+        );
+        assert_eq!(
+            displayed_obs_state(PcObsState::NotRunning, None),
+            PcObsState::NotRunning
+        );
+        assert_eq!(
+            displayed_obs_state(PcObsState::Starting, Some(PcObsState::Connected)),
+            PcObsState::Connected
+        );
+    }
+
+    #[test]
+    fn tray_obs_state_label_matches_the_window_label() {
+        assert_eq!(obs_state_label(PcObsState::Starting), "Starting OBS…");
+        assert_eq!(obs_state_label(PcObsState::NotRunning), "OBS not running");
     }
 }

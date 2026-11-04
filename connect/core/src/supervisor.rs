@@ -682,6 +682,11 @@ impl Supervisor {
         let (pid, expected_start_time, mut child) = match self.children.remove(&setup.id) {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
             None => {
+                if matching_obs_pids(setup).is_empty() {
+                    self.connected.remove(&setup.id);
+                    self.adopted.remove(&setup.id);
+                    return Ok(());
+                }
                 let Some((pid, start_time)) = find_matching_obs_with_start_time(setup) else {
                     return Err(SupervisorError::Unidentified);
                 };
@@ -1466,6 +1471,21 @@ mod tests {
         assert!(is_obs_process_name("obs", HostPlatform::MacOS));
         assert!(is_obs_process_name("obs", HostPlatform::Linux));
         assert!(is_obs_process_name("obs64.exe", HostPlatform::Windows));
+    }
+
+    #[test]
+    fn stop_is_a_noop_when_obs_is_not_running() {
+        let directory = tempdir().unwrap();
+        let mut setup = Setup::new("Fake OBS".into());
+        setup.obs.install_kind = InstallKind::CustomBinary;
+        setup.obs.binary_path = Some(directory.path().join("missing-obs"));
+        let mut supervisor = Supervisor::default();
+
+        assert!(supervisor.stop(&setup).is_ok());
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::NotRunning
+        );
     }
 
     fn make_setup(script: &Path, config_dir: &Path) -> Setup {
