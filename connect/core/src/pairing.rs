@@ -6,7 +6,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    config::Pairing,
+    config::{HostPlatform, Pairing},
     url_security::{validate_api_url, validate_dashboard_url, validate_verification_url},
 };
 
@@ -16,6 +16,28 @@ pub enum ConnectOs {
     Windows,
     Linux,
     Macos,
+}
+
+impl ConnectOs {
+    pub const fn for_platform(platform: HostPlatform) -> Self {
+        match platform {
+            HostPlatform::Windows => Self::Windows,
+            HostPlatform::MacOS => Self::Macos,
+            HostPlatform::Linux => Self::Linux,
+        }
+    }
+
+    pub const fn current() -> Self {
+        Self::for_platform(HostPlatform::current())
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Windows => "windows",
+            Self::Linux => "linux",
+            Self::Macos => "macos",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -249,7 +271,7 @@ mod tests {
     use axum::{Json, Router, extract::State, routing::post};
     use serde_json::{Value, json};
 
-    use super::{ConnectOs, PairingClient};
+    use super::{ConnectOs, HostPlatform, PairingClient};
 
     type Calls = Arc<Mutex<Vec<(String, Value)>>>;
 
@@ -276,6 +298,10 @@ mod tests {
 
     #[test]
     fn macos_serializes_to_the_server_os_value() {
+        assert_eq!(
+            ConnectOs::for_platform(HostPlatform::MacOS).as_str(),
+            "macos"
+        );
         assert_eq!(
             serde_json::to_value(ConnectOs::Macos).unwrap(),
             json!("macos")

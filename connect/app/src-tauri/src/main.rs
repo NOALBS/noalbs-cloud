@@ -267,13 +267,8 @@ async fn create_pairing(
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
-    let os = match HostPlatform::current() {
-        HostPlatform::Windows => ConnectOs::Windows,
-        HostPlatform::MacOS => ConnectOs::Macos,
-        HostPlatform::Linux => ConnectOs::Linux,
-    };
     let pending = client
-        .create(&name, os, env!("CARGO_PKG_VERSION"))
+        .create(&name, ConnectOs::current(), env!("CARGO_PKG_VERSION"))
         .await
         .map_err(|error| error.to_string())?;
     state
@@ -303,13 +298,8 @@ async fn pair_setup(
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
-    let os = match HostPlatform::current() {
-        HostPlatform::Windows => ConnectOs::Windows,
-        HostPlatform::MacOS => ConnectOs::Macos,
-        HostPlatform::Linux => ConnectOs::Linux,
-    };
     let pending = client
-        .create(&name, os, env!("CARGO_PKG_VERSION"))
+        .create(&name, ConnectOs::current(), env!("CARGO_PKG_VERSION"))
         .await
         .map_err(|error| error.to_string())?;
     state
@@ -633,11 +623,7 @@ fn start_link_session(
         link_url: pairing.link_url.clone(),
         device_token: token,
         version: env!("CARGO_PKG_VERSION").into(),
-        os: if cfg!(target_os = "windows") {
-            "windows".into()
-        } else {
-            "linux".into()
-        },
+        os: ConnectOs::current().as_str().into(),
         obs_port,
         obs_password,
         use_dashboard_obs_settings: setup.obs.use_dashboard_obs_settings,
