@@ -1005,7 +1005,7 @@ mod tests {
             action: common::programs::ConnectCommandAction::Restart,
         };
         assert_eq!(
-            serde_json::to_value(request).unwrap(),
+            serde_json::to_value(&request).unwrap(),
             serde_json::json!({"action": "restart"})
         );
         assert_eq!(
