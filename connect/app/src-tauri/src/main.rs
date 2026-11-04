@@ -316,13 +316,17 @@ async fn pair_setup(
 #[tauri::command]
 fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
     let setup = find_setup(&state, &setup_id)?;
-    state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?
-        .start(&setup, false, None)
-        .map_err(|error| error.to_string())?;
-    set_link_state(state.inner(), setup.id, PcObsState::Starting);
+    let obs_state = {
+        let mut supervisor = state
+            .supervisor
+            .lock()
+            .map_err(|_| "supervisor lock poisoned")?;
+        supervisor
+            .start(&setup, false, None)
+            .map_err(|error| error.to_string())?;
+        supervisor.state(&setup)
+    };
+    set_link_state(state.inner(), setup.id, obs_state);
     Ok(get_state(state))
 }
 
