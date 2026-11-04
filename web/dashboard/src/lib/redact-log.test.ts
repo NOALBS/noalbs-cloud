@@ -4,6 +4,8 @@ import { redactLog } from "./redact-log";
 describe("redactLog", () => {
   it.each([
     ["rtmp://host/app/KEY", "rtmp://host/app/••••"],
+    ["rtmp://host/KEY", "rtmp://host/••••"],
+    ["rtmp://host/app", "rtmp://host/••••"],
     ["rtmps://host/app/KEY", "rtmps://host/app/••••"],
     ["srt://host:9000/app/KEY", "srt://host:9000/app/••••"],
     ["rist://host/app/KEY", "rist://host/app/••••"],
@@ -24,5 +26,13 @@ describe("redactLog", () => {
   it("leaves ordinary OBS lines unchanged", () => {
     const line = "22:14:07.100: [obs-websocket] Connected to server";
     expect(redactLog(line)).toBe(line);
+  });
+
+  it("redacts IPv4 and IPv6 addresses without changing versions or timestamps", () => {
+    expect(redactLog("Connected to 192.168.1.42 and 2001:db8::42")).toBe(
+      "Connected to •••• and ••••",
+    );
+    const line = "16:53:47.275: OBS 30.2.3 connected to 127.0.0.1";
+    expect(redactLog(line)).toBe("16:53:47.275: OBS 30.2.3 connected to ••••");
   });
 });

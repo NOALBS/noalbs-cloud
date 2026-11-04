@@ -119,7 +119,7 @@ export function ConnectSettings() {
   const uploadLatestLog = useMutation({
     mutationFn: () =>
       unwrap(
-        apiWithTimeout(40_000).POST(
+        apiWithTimeout(70_000).POST(
           "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs",
           { params: { path } },
         ),
