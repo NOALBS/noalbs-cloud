@@ -2064,6 +2064,10 @@ msgstr "Køb oven i ethvert abonnement, også Free. Tilføjelser opkræves nu fo
 msgid "by {who}"
 msgstr "af {who}"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "Ved at fortsætte accepterer du <0>servicevilkårene</0> og <1>privatlivspolitikken</1>."
@@ -2654,6 +2658,7 @@ msgstr "Styrede Moblin"
 msgid "Controls"
 msgstr "Styring"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "Kopieret"
 msgid "Copied {0} as {1}"
 msgstr "{0} kopieret som {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "Tæller, mens der streames med Slut-scenen i luften, også med auto-skif
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Dækker rammen og bevarer formen; kanterne skæres af."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "Dage med stream-historik"
 msgid "Decline"
 msgstr "Afvis"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "Slet organisation"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Slet switcher"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "Beskrivelse"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Dev-login"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "Færdig"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "Download"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "Felter"
 msgid "Fill"
 msgstr "Fyld"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Find et felt"
@@ -3631,6 +3666,10 @@ msgstr "Generer"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Generere en ny Moblin-adgangskode?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "Henter dens indstillinger fra OBS…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "Henter dens indstillinger fra OBS…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Indlæser…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "ingen instans"
 msgid "No instance has followed YouTube chats yet."
 msgstr "Ingen instans har fulgt YouTube-chats endnu."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "Ikke længere tilknyttet"
@@ -6030,6 +6085,15 @@ msgstr "OBS er ikke forbundet. Tjek, at OBS er åben med browserkilden aktiv."
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS er ikke forbundet. Åbn OBS med NOALBS-browserkilden aktiv for at se dens statistik."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "Svartilstand"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "Anmodningen mislykkedes ({0})"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "Denne switcher har nået abonnementets grænse for stream-servere. Opgra
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "Denne switcher er sat på pause: arbejdsområdet har flere switchere, end dets abonnement omfatter."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "Denne URL er allerede taget"
@@ -9673,6 +9745,10 @@ msgstr "Forsøgte at se rå statistik"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Forsøgte at se Moblin-adgangskoden"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "Bruger du en BELABOX? Se dens modemer på siden Live, styr den fra dashb
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Bruger du din egen bot? Log ind som bot-kontoen, når du bliver spurgt, ikke som dig selv."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

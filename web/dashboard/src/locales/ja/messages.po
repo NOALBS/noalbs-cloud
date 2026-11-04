@@ -2064,6 +2064,10 @@ msgstr "Freeを含むどのプランにも追加で購入できます。追加�
 msgid "by {who}"
 msgstr "実行者：{who}"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "続行すると、<0>利用規約</0>と<1>プライバシーポリシー</1>に同意したものとみなされます。"
@@ -2654,6 +2658,7 @@ msgstr "Moblinを操作しました"
 msgid "Controls"
 msgstr "操作"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "コピーしました"
 msgid "Copied {0} as {1}"
 msgstr "{0} を {1} としてコピーしました"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "配信中に「終了」シーンが放送されている間、自動切
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "形を保ったまま枠を覆います。はみ出た端は切り取られます。"
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "配信履歴の保存日数"
 msgid "Decline"
 msgstr "辞退"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "組織を削除"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "スイッチャーを削除"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "説明"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "開発用ログイン"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "完了"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "ダウンロード"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "フィールド"
 msgid "Fill"
 msgstr "フィル"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "フィールドを検索"
@@ -3631,6 +3666,10 @@ msgstr "生成"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "新しいMoblinパスワードを生成しますか？"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "OBS から設定を読み込み中…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "OBS から設定を読み込み中…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "読み込み中…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "インスタンスなし"
 msgid "No instance has followed YouTube chats yet."
 msgstr "YouTubeチャットをフォローしたインスタンスはまだありません。"
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "リンクされていません"
@@ -6030,6 +6085,15 @@ msgstr "OBSが接続されていません。OBSが開いていて、ブラウザ
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBSが接続されていません。統計を表示するには、NOALBSブラウザソースを有効にしてOBSを開いてください。"
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "返信モード"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "リクエストに失敗しました（{0}）"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "このスイッチャーはプランの配信サーバー上限に達し
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "このスイッチャーは一時停止中です：ワークスペースのスイッチャー数がプランの上限を超えています。"
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "このURLはすでに使用されています"
@@ -9673,6 +9745,10 @@ msgstr "生の統計の閲覧を試みました"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Moblinパスワードの閲覧を試みました"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "BELABOXを使っていますか？「ライブ」ページでモデム�
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "独自のボットを使いますか？求められたら、自分ではなくボットのアカウントでサインインしてください。"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

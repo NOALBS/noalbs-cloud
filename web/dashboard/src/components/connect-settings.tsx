@@ -1,11 +1,19 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { Check, Copy, Download } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { api, unwrap } from "@/api/client";
+import { api, apiWithTimeout, unwrap } from "@/api/client";
 import { connectDevicesQuery, queryKeys, switchersQuery } from "@/api/queries";
-import type { ConnectAccess, ConnectDeviceDto, PcObsState, Watchdog } from "@/api/types";
+import type {
+  ConnectAccess,
+  ConnectDeviceDto,
+  ConnectLogDetailDto,
+  ConnectLogDto,
+  PcObsState,
+  Watchdog,
+} from "@/api/types";
 import { Section } from "@/components/page";
 import { StatusDot } from "@/components/switcher-status";
 import {
@@ -20,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,6 +42,7 @@ import { type ConnectObsAction, useConnectObsCommand } from "@/hooks/use-connect
 import { useSwitcher } from "@/hooks/use-switcher";
 import {
   canControlConnect,
+  canViewConnectLogs,
   connectAccessOptions,
   connectObsActionAvailability,
   pcObsLabel,
@@ -54,11 +64,24 @@ export function ConnectSettings() {
   const canManageDevices = canManage && !isSupport(actor);
   const accessOptions = connectAccessOptions(workspace.managed_by?.name ?? null);
   const watchdogAllowed = canControlConnect(switcher.connect_obs_control, actor);
+  const logsAllowed = canViewConnectLogs(switcher.connect_logs, actor);
   const obsControlAllowed = watchdogAllowed;
   const watchdogChoices = watchdogOptions();
   const watchdogDescription = watchdogChoices.find(
     (option) => option.value === switcher.connect_watchdog,
   )?.description;
+  const logs = useQuery({
+    queryKey: [...queryKeys.connectDevices(workspace.id, switcher.id), "logs"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs", {
+          params: { path },
+        }),
+      ),
+    enabled: logsAllowed,
+  });
+  const onlineDevice = devices.data?.find((device) => device.id === pc?.device_id);
+  const [viewingLog, setViewingLog] = useState<ConnectLogDto | null>(null);
 
   const savePermissions = useMutation({
     mutationFn: (change: Partial<{ obs_control: ConnectAccess; logs: ConnectAccess }>) =>
@@ -89,6 +112,22 @@ export function ConnectSettings() {
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
       toast.success(t`Saved`);
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  const uploadLatestLog = useMutation({
+    mutationFn: () =>
+      unwrap(
+        apiWithTimeout(40_000).POST(
+          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs",
+          { params: { path } },
+        ),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [...queryKeys.connectDevices(workspace.id, switcher.id), "logs"],
+      });
+      toast.success(t`OBS log uploaded`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -185,6 +224,60 @@ export function ConnectSettings() {
             </p>
           )}
         </div>
+        {logsAllowed && (
+          <section className="flex flex-col gap-3 rounded-lg border border-divider p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold">
+                  <Trans>Logs</Trans>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Crash reports and OBS logs uploaded by Connect.</Trans>
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!onlineDevice || uploadLatestLog.isPending}
+                onClick={() => uploadLatestLog.mutate()}
+              >
+                <Trans>Get latest OBS log</Trans>
+              </Button>
+            </div>
+            {logs.isPending && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>Loading logs…</Trans>
+              </p>
+            )}
+            {logs.error && <p className="text-sm text-destructive">{errorMessage(logs.error)}</p>}
+            {logs.data?.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  No logs yet. Connect uploads one after an OBS crash, or get the latest one here.
+                </Trans>
+              </p>
+            )}
+            {logs.data?.map((log) => (
+              <ConnectLogRow
+                key={log.id}
+                log={log}
+                path={path}
+                onView={() => setViewingLog(log)}
+                onDeleted={() => {
+                  void queryClient.invalidateQueries({
+                    queryKey: [...queryKeys.connectDevices(workspace.id, switcher.id), "logs"],
+                  });
+                }}
+              />
+            ))}
+          </section>
+        )}
+        <ConnectLogViewer
+          log={viewingLog}
+          path={path}
+          open={viewingLog !== null}
+          onOpenChange={(open) => !open && setViewingLog(null)}
+        />
       </div>
     </Section>
   );
@@ -429,4 +522,185 @@ function ConnectDeviceRow({
       </AlertDialog>
     </div>
   );
+}
+
+function ConnectLogRow({
+  log,
+  path,
+  onView,
+  onDeleted,
+}: {
+  log: ConnectLogDto;
+  path: { workspace_id: string; switcher_id: string };
+  onView: () => void;
+  onDeleted: () => void;
+}) {
+  const remove = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}", {
+          params: { path: { ...path, log_id: log.id } },
+        }),
+      ),
+    onSuccess: onDeleted,
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-divider p-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+            {log.kind === "obs_log" ? t`OBS log` : t`Crash report`}
+          </span>
+          <span className="truncate text-muted-foreground">{log.file_name}</span>
+          {log.truncated && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              <Trans>Truncated</Trans>
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {formatRelative(log.uploaded_at)} · {formatBytes(log.size_bytes)} ·{" "}
+          {log.device_name ?? t`Device removed`}
+        </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onView}>
+        <Trans>View</Trans>
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          void downloadLog(path, log).catch((error) => toast.error(errorMessage(error)))
+        }
+      >
+        <Download className="size-4" />
+        <Trans>Download .txt</Trans>
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Trans>Delete</Trans>
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete this log?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>This uploaded log will be permanently deleted.</Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction disabled={remove.isPending} onClick={() => remove.mutate()}>
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function ConnectLogViewer({
+  log,
+  path,
+  open,
+  onOpenChange,
+}: {
+  log: ConnectLogDto | null;
+  path: { workspace_id: string; switcher_id: string };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [filter, setFilter] = useState("");
+  const [copied, setCopied] = useState(false);
+  const detail = useQuery({
+    queryKey: [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "log", log?.id],
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}", {
+          params: { path: { ...path, log_id: log?.id ?? "" } },
+        }),
+      ),
+    enabled: open && log !== null,
+  });
+  const content = (detail.data as ConnectLogDetailDto | undefined)?.content ?? "";
+  const lines = useMemo(() => {
+    const normalized = filter.trim().toLocaleLowerCase();
+    return content
+      .split("\n")
+      .map((text, index) => ({ text, index }))
+      .filter(({ text }) => !normalized || text.toLocaleLowerCase().includes(normalized));
+  }, [content, filter]);
+  const copy = async () => {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    toast.success(t`Copied`);
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[min(52rem,90dvh)] flex-col gap-3 sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>{log?.file_name ?? t`OBS log`}</DialogTitle>
+        </DialogHeader>
+        <div className="flex gap-2">
+          <Input
+            aria-label={t`Filter log lines`}
+            placeholder={t`Filter log lines`}
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+          />
+          <Button variant="outline" onClick={() => void copy()} disabled={!content}>
+            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+            {copied ? t`Copied` : t`Copy`}
+          </Button>
+        </div>
+        {detail.isPending && (
+          <p className="text-sm text-muted-foreground">
+            <Trans>Loading log…</Trans>
+          </p>
+        )}
+        {detail.error && <p className="text-sm text-destructive">{errorMessage(detail.error)}</p>}
+        <pre className="min-h-0 flex-1 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed">
+          {lines.map(({ text, index }) => (
+            <div key={index}>
+              {filter && text.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()) ? (
+                <mark>{text}</mark>
+              ) : (
+                text
+              )}
+            </div>
+          ))}
+        </pre>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+async function downloadLog(
+  path: { workspace_id: string; switcher_id: string },
+  log: ConnectLogDto,
+) {
+  const detail = await unwrap(
+    api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}", {
+      params: { path: { ...path, log_id: log.id } },
+    }),
+  );
+  const url = URL.createObjectURL(new Blob([detail.content], { type: "text/plain;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${log.file_name.replace(/\.txt$/i, "")}.txt`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatBytes(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }

@@ -40,6 +40,7 @@ pub enum ConnectObsAction {
     Start,
     Stop,
     Restart,
+    UploadLog,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -319,6 +320,7 @@ mod tests {
             (ConnectObsAction::Start, "start"),
             (ConnectObsAction::Stop, "stop"),
             (ConnectObsAction::Restart, "restart"),
+            (ConnectObsAction::UploadLog, "upload_log"),
         ] {
             assert_eq!(
                 serde_json::to_string(&action).unwrap(),

@@ -6,7 +6,9 @@ publish.workspace = true
 
 [dependencies]
 base64.workspace = true
+chrono.workspace = true
 directories.workspace = true
+flate2.workspace = true
 futures-util.workspace = true
 keyring.workspace = true
 reqwest.workspace = true

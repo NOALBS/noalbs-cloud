@@ -2064,6 +2064,10 @@ msgstr "Free를 포함한 모든 플랜에 추가로 구매할 수 있어요. �
 msgid "by {who}"
 msgstr "실행: {who}"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "계속하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하게 돼요."
@@ -2654,6 +2658,7 @@ msgstr "Moblin 제어"
 msgid "Controls"
 msgstr "제어"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "복사됨"
 msgid "Copied {0} as {1}"
 msgstr "{0}을(를) {1}(으)로 복사했어요"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "자동 전환이 꺼져 있어도 방송 중에 종료 장면이 송출�
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "모양을 유지하며 상자를 덮어요. 가장자리는 잘려요."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "방송 기록 보관 일수"
 msgid "Decline"
 msgstr "거절"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "조직 삭제"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "스위처 삭제"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "설명"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "개발자 로그인"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "완료"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "다운로드"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "필드"
 msgid "Fill"
 msgstr "채우기"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "필드 찾기"
@@ -3631,6 +3666,10 @@ msgstr "생성"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "새 Moblin 비밀번호를 생성할까요?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "OBS에서 설정을 불러오는 중…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "OBS에서 설정을 불러오는 중…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "불러오는 중…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "인스턴스 없음"
 msgid "No instance has followed YouTube chats yet."
 msgstr "아직 YouTube 채팅을 팔로우한 인스턴스가 없어요."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "더 이상 연결되지 않음"
@@ -6030,6 +6085,15 @@ msgstr "OBS가 연결되지 않았어요. 브라우저 소스가 활성화된 �
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS가 연결되지 않았어요. 통계를 보려면 NOALBS 브라우저 소스가 활성화된 상태로 OBS를 여세요."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "응답 모드"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "요청에 실패했어요 ({0})"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "이 스위처가 플랜의 스트림 서버 한도에 도달했어요. �
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "이 스위처는 일시 중지됐어요. 워크스페이스의 스위처가 플랜에 포함된 수를 넘었어요."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "이미 사용 중인 URL이에요"
@@ -9673,6 +9745,10 @@ msgstr "원시 통계 조회 시도"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Moblin 비밀번호 조회 시도"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "BELABOX를 사용하나요? 라이브 페이지에서 모뎀을 보고, 
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "자체 봇을 사용하나요? 요청이 표시되면 내 계정이 아닌 봇 계정으로 로그인하세요."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

@@ -2361,6 +2361,38 @@ export interface paths {
         patch: operations["rename_device"];
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_connect_logs"];
+        put?: never;
+        post: operations["upload_connect_log"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_connect_log"];
+        put?: never;
+        post?: never;
+        delete: operations["delete_connect_log"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs": {
         parameters: {
             query?: never;
@@ -4661,8 +4693,39 @@ export interface components {
         ConnectLink: {
             browser_source_url: string;
         };
+        ConnectLogDetailDto: {
+            content: string;
+            device_name?: string | null;
+            /** Format: date-time */
+            file_modified_at?: string | null;
+            file_name: string;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ConnectLogKind"];
+            /** Format: int32 */
+            size_bytes: number;
+            truncated: boolean;
+            /** Format: date-time */
+            uploaded_at: string;
+        };
+        ConnectLogDto: {
+            device_name?: string | null;
+            /** Format: date-time */
+            file_modified_at?: string | null;
+            file_name: string;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ConnectLogKind"];
+            /** Format: int32 */
+            size_bytes: number;
+            truncated: boolean;
+            /** Format: date-time */
+            uploaded_at: string;
+        };
         /** @enum {string} */
-        ConnectObsAction: "start" | "stop" | "restart";
+        ConnectLogKind: "obs_log" | "crash_report";
+        /** @enum {string} */
+        ConnectObsAction: "start" | "stop" | "restart" | "upload_log";
         ConnectObsCommand: {
             action: components["schemas"]["ConnectObsAction"];
         };
@@ -5371,6 +5434,15 @@ export interface components {
             };
             /** @enum {string} */
             kind: "connect_obs_command";
+        } | {
+            data: {
+                by?: string | null;
+                kind: components["schemas"]["ConnectLogKind"];
+                /** Format: uuid */
+                log_id: string;
+            };
+            /** @enum {string} */
+            kind: "connect_log_uploaded";
         };
         ExistingSourceDto: {
             /** @description The input's kind (e.g. `ffmpeg_source`); `null` for scenes. */
@@ -13003,6 +13075,158 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ConnectDeviceDto"];
                 };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_connect_logs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectLogDto"][];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    upload_connect_log: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectLogDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_connect_log: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                log_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectLogDetailDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_connect_log: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                log_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             403: {
                 headers: {

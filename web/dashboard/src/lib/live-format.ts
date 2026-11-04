@@ -103,6 +103,7 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         start: t`started`,
         stop: t`stopped`,
         restart: t`restarted`,
+        upload_log: t`requested an OBS log`,
       }[event.data.action];
       return {
         title: t`OBS command`,
@@ -111,6 +112,11 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
           : t`${verb} OBS through Connect`,
       };
     }
+    case "connect_log_uploaded":
+      return {
+        title: event.data.kind === "obs_log" ? t`OBS log uploaded` : t`Crash report uploaded`,
+        detail: by(event.data.by, t`by Connect`),
+      };
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

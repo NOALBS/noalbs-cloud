@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PcObsState } from "@/api/types";
 import {
   canControlConnect,
+  canViewConnectLogs,
   connectAccessOptions,
   connectObsActionAvailability,
   pcObsLabel,
@@ -66,6 +67,14 @@ describe("Connect settings", () => {
       [true, true, false, false],
       [true, true, true, false],
     ]);
+  });
+
+  it("shows Connect logs only to roles allowed by the log setting", () => {
+    const owner = { role: "owner", staff: false } as const;
+    const member = { role: "operator", staff: false } as const;
+    expect(canViewConnectLogs("owners", owner)).toBe(true);
+    expect(canViewConnectLogs("owners", member)).toBe(false);
+    expect(canViewConnectLogs("everyone", member)).toBe(true);
   });
 
   it("enables OBS actions only for the states that support them", () => {

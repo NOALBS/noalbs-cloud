@@ -1,5 +1,6 @@
 pub mod config;
 pub mod credentials;
+pub mod logs;
 pub mod pairing;
 pub mod relay;
 pub mod supervisor;

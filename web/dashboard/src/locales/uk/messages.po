@@ -2064,6 +2064,10 @@ msgstr "Купуй до будь-якого тарифу, зокрема Free. �
 msgid "by {who}"
 msgstr "від {who}"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "Продовжуючи, ти погоджуєшся з <0>умовами надання послуг</0> і <1>політикою конфіденційності</1>."
@@ -2654,6 +2658,7 @@ msgstr "Керування Moblin"
 msgid "Controls"
 msgstr "Керування"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "Скопійовано"
 msgid "Copied {0} as {1}"
 msgstr "{0} скопійовано як {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "Рахується під час стріму зі сценою «Кін
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Заповнює рамку, зберігаючи форму; краї обрізаються."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "Днів історії стрімів"
 msgid "Decline"
 msgstr "Відхилити"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "Видалити організацію"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Видалити світчер"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "Опис"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Вхід для розробників"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "Готово"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "Завантажити"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "Поля"
 msgid "Fill"
 msgstr "Заповнити"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Знайти поле"
@@ -3631,6 +3666,10 @@ msgstr "Згенерувати"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Згенерувати новий пароль Moblin?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "Завантаження його налаштувань з OBS…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "Завантаження його налаштувань з OBS…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Завантаження…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "немає екземпляра"
 msgid "No instance has followed YouTube chats yet."
 msgstr "Жоден екземпляр ще не стежив за чатами YouTube."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "Більше не прив’язано"
@@ -6030,6 +6085,15 @@ msgstr "OBS не підключено. Перевір, що OBS відкрито
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS не підключено. Відкрий OBS з активним джерелом «Браузер» NOALBS, щоб побачити його статистику."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "Режим відповіді"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "Запит не вдався ({0})"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "Цей світчер досяг ліміту стрім-сервері�
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "Цей світчер призупинено: у робочому просторі більше світчерів, ніж передбачає його тариф."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "Цей URL уже зайнято"
@@ -9673,6 +9745,10 @@ msgstr "Спроба переглянути необроблену статис�
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Спроба переглянути пароль Moblin"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "Використовуєш BELABOX? Дивись його модеми �
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Використовуєш власного бота? Коли попросять, увійди як обліковий запис бота, а не у свій власний."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

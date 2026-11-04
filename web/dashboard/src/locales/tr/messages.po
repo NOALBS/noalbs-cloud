@@ -2064,6 +2064,10 @@ msgstr "Free dahil her planın üzerine satın al. Ekleme, dönemin kalanı içi
 msgid "by {who}"
 msgstr "yapan: {who}"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "Devam ederek <0>hizmet şartlarını</0> ve <1>gizlilik politikasını</1> kabul etmiş olursun."
@@ -2654,6 +2658,7 @@ msgstr "Moblin’i kontrol etti"
 msgid "Controls"
 msgstr "Kontroller"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "Kopyalandı"
 msgid "Copied {0} as {1}"
 msgstr "{0}, {1} olarak kopyalandı"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "Yayın sürerken Bitiş sahnesi yayındayken sayılır, otomatik geçiş
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Şeklini koruyarak kutuyu kaplar; kenarlar kesilir."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "Yayın geçmişi günü"
 msgid "Decline"
 msgstr "Reddet"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "Kuruluşu sil"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Switcher’ı sil"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "Açıklama"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Geliştirici girişi"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "Tamam"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "İndir"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "Alanlar"
 msgid "Fill"
 msgstr "Doldur"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Alan bul"
@@ -3631,6 +3666,10 @@ msgstr "Oluştur"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Yeni bir Moblin şifresi oluşturulsun mu?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "Ayarları OBS’ten yükleniyor…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "Ayarları OBS’ten yükleniyor…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Yükleniyor…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "örnek yok"
 msgid "No instance has followed YouTube chats yet."
 msgstr "Henüz hiçbir örnek YouTube sohbetlerini takip etmedi."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "Artık bağlı değil"
@@ -6030,6 +6085,15 @@ msgstr "OBS bağlı değil. OBS’in tarayıcı kaynağı etkin olarak açık ol
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS bağlı değil. İstatistiklerini görmek için OBS’i NOALBS tarayıcı kaynağı etkin olarak aç."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "Yanıt modu"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "İstek başarısız oldu ({0})"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "Bu switcher planının yayın sunucusu limitine ulaştı. Daha fazla ekl
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "Bu switcher duraklatıldı: çalışma alanında planın içerdiğinden fazla switcher var."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "Bu URL zaten alınmış"
@@ -9673,6 +9745,10 @@ msgstr "Ham istatistikleri görmeye çalıştı"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Moblin şifresini görmeye çalıştı"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "BELABOX mu kullanıyorsun? Modemlerini Canlı sayfasında gör, panelden
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Kendi botunu mu kullanıyorsun? Sorulduğunda kendin olarak değil, bot hesabıyla giriş yap."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

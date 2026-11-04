@@ -2064,6 +2064,10 @@ msgstr "可在任何套餐（包括 Free）之上购买。增加时按本周期�
 msgid "by {who}"
 msgstr "由 {who} 操作"
 
+#: src/lib/live-format.ts
+msgid "by Connect"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "By continuing you agree to the <0>terms of service</0> and the <1>privacy policy</1>."
 msgstr "继续即表示你同意<0>服务条款</0>和<1>隐私政策</1>。"
@@ -2654,6 +2658,7 @@ msgstr "控制了 Moblin"
 msgid "Controls"
 msgstr "控制"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2669,6 +2674,7 @@ msgstr "已复制"
 msgid "Copied {0} as {1}"
 msgstr "已将 {0} 复制为 {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2761,6 +2767,18 @@ msgstr "在直播且结尾场景正在播出时计时，即使自动切换已关
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "保持形状铺满框，超出的边缘会被裁掉。"
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Crash report uploaded"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2971,6 +2989,7 @@ msgstr "直播历史天数"
 msgid "Decline"
 msgstr "拒绝"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3028,6 +3047,10 @@ msgstr "删除组织"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "删除切换器"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3094,6 +3117,10 @@ msgstr "描述"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "开发登录"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3172,6 +3199,10 @@ msgstr "完成"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "下载"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3531,6 +3562,10 @@ msgstr "字段"
 msgid "Fill"
 msgstr "填充"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "查找字段"
@@ -3631,6 +3666,10 @@ msgstr "生成"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "生成新的 Moblin 密码？"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4491,6 +4530,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "正在从 OBS 读取设置…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4500,6 +4547,10 @@ msgstr "正在从 OBS 读取设置…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "加载中……"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5382,6 +5433,10 @@ msgstr "无实例"
 msgid "No instance has followed YouTube chats yet."
 msgstr "还没有实例关注过 YouTube 聊天。"
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "已不再关联"
@@ -6030,6 +6085,15 @@ msgstr "OBS 未连接。请检查 OBS 是否已打开且浏览器来源处于活
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS 未连接。请打开 OBS 并启用 NOALBS 浏览器来源以查看其统计数据。"
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7275,6 +7339,10 @@ msgstr "回复方式"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "请求失败（{0}）"
+
+#: src/lib/live-format.ts
+msgid "requested an OBS log"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
@@ -9564,6 +9632,10 @@ msgstr "此切换器已达到套餐的推流服务器上限。请升级套餐以
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "此切换器已暂停：工作区的切换器数量超出了套餐限额。"
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "此 URL 已被占用"
@@ -9673,6 +9745,10 @@ msgstr "尝试查看原始统计数据"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "尝试查看 Moblin 密码"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9966,6 +10042,7 @@ msgstr "使用 BELABOX？可以在“直播”页面查看其调制解调器，�
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "使用你自己的机器人？出现提示时请以机器人账号登录，而不是你自己的账号。"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

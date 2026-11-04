@@ -42,6 +42,157 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(set_permissions))
         .routes(routes!(set_watchdog))
         .routes(routes!(connect_obs_command))
+        .routes(routes!(list_connect_logs))
+        .routes(routes!(get_connect_log))
+        .routes(routes!(upload_connect_log))
+        .routes(routes!(delete_connect_log))
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ConnectLogDto {
+    pub id: Uuid,
+    pub kind: db::connect_logs::ConnectLogKind,
+    pub file_name: String,
+    pub file_modified_at: Option<chrono::DateTime<Utc>>,
+    pub uploaded_at: chrono::DateTime<Utc>,
+    pub size_bytes: i32,
+    pub truncated: bool,
+    pub device_name: Option<String>,
+}
+
+impl From<db::connect_logs::ConnectLogMetadata> for ConnectLogDto {
+    fn from(row: db::connect_logs::ConnectLogMetadata) -> Self {
+        Self {
+            id: row.id,
+            kind: row.kind,
+            file_name: row.file_name,
+            file_modified_at: row.file_modified_at,
+            uploaded_at: row.uploaded_at,
+            size_bytes: row.size_bytes,
+            truncated: row.truncated,
+            device_name: row.device_name,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ConnectLogDetailDto {
+    pub id: Uuid,
+    pub kind: db::connect_logs::ConnectLogKind,
+    pub file_name: String,
+    pub file_modified_at: Option<chrono::DateTime<Utc>>,
+    pub uploaded_at: chrono::DateTime<Utc>,
+    pub size_bytes: i32,
+    pub truncated: bool,
+    pub device_name: Option<String>,
+    pub content: String,
+}
+
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses((status = OK, body = [ConnectLogDto]), (status = FORBIDDEN, body = ErrorBody)))]
+async fn list_connect_logs(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> ApiResult<Json<Vec<ConnectLogDto>>> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_logs(access.switcher.connect_logs, viewer)?;
+    let rows = db::connect_logs::list(&state.db, access.switcher.id).await?;
+    Ok(Json(rows.into_iter().map(Into::into).collect()))
+}
+
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ("log_id" = Uuid, Path)),
+    responses((status = OK, body = ConnectLogDetailDto), (status = FORBIDDEN, body = ErrorBody), (status = NOT_FOUND, body = ErrorBody)))]
+async fn get_connect_log(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Path((_workspace_id, _switcher_id, log_id)): Path<(Uuid, Uuid, Uuid)>,
+) -> ApiResult<Json<ConnectLogDetailDto>> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_logs(access.switcher.connect_logs, viewer)?;
+    let log = db::connect_logs::get(&state.db, access.switcher.id, log_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("Connect log not found"))?;
+    let m = log.metadata;
+    Ok(Json(ConnectLogDetailDto {
+        id: m.id,
+        kind: m.kind,
+        file_name: m.file_name,
+        file_modified_at: m.file_modified_at,
+        uploaded_at: m.uploaded_at,
+        size_bytes: m.size_bytes,
+        truncated: m.truncated,
+        device_name: m.device_name,
+        content: log.content,
+    }))
+}
+
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses((status = CREATED, body = ConnectLogDto), (status = FORBIDDEN, body = ErrorBody), (status = CONFLICT, body = ErrorBody), (status = GATEWAY_TIMEOUT, body = ErrorBody)))]
+async fn upload_connect_log(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> ApiResult<(StatusCode, Json<ConnectLogDto>)> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_logs(access.switcher.connect_logs, viewer)?;
+    let by = access.workspace.display_name(&state).await?;
+    let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
+        action: ConnectObsAction::UploadLog,
+    })
+    .map_err(|_| ApiError::internal())?;
+    let response = telemetry::nats::request_with_timeout(
+        &state.nats,
+        live::connect_request_subject(access.switcher.id),
+        payload,
+        std::time::Duration::from_secs(35),
+    )
+    .await
+    .map_err(|error| connect_request_error(error.kind()))?;
+    let reply: live::ConnectObsCommandReply =
+        serde_json::from_slice(&response.payload).map_err(|_| ApiError::internal())?;
+    if !reply.ok {
+        return Err(connect_command_failure(reply));
+    }
+    let id = reply.log_id.ok_or_else(ApiError::internal)?;
+    let metadata = db::connect_logs::list(&state.db, access.switcher.id)
+        .await?
+        .into_iter()
+        .find(|row| row.id == id)
+        .ok_or_else(ApiError::internal)?;
+    live::record_event(
+        &state.db,
+        &state.nats,
+        access.switcher.id,
+        EventDetail::ConnectLogUploaded {
+            kind: metadata.kind,
+            log_id: id,
+            by: Some(by),
+        },
+    )
+    .await?;
+    Ok((StatusCode::CREATED, Json(metadata.into())))
+}
+
+#[utoipa::path(delete, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ("log_id" = Uuid, Path)),
+    responses((status = NO_CONTENT), (status = FORBIDDEN, body = ErrorBody), (status = NOT_FOUND, body = ErrorBody)))]
+async fn delete_connect_log(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Path((_workspace_id, _switcher_id, log_id)): Path<(Uuid, Uuid, Uuid)>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_logs(access.switcher.connect_logs, viewer)?;
+    if !db::connect_logs::delete(&state.db, access.switcher.id, log_id).await? {
+        return Err(ApiError::not_found("Connect log not found"));
+    }
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, ToSchema)]
@@ -501,7 +652,11 @@ async fn connect_obs_command(
 ) -> ApiResult<StatusCode> {
     let access = authorized.into_access();
     let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
-    require_connect_obs_control(access.switcher.connect_obs_control, viewer)?;
+    if request.action == ConnectObsAction::UploadLog {
+        require_connect_logs(access.switcher.connect_logs, viewer)?;
+    } else {
+        require_connect_obs_control(access.switcher.connect_obs_control, viewer)?;
+    }
 
     let by = access.workspace.display_name(&state).await?;
     let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
@@ -553,6 +708,17 @@ fn require_connect_obs_control(level: ConnectAccess, viewer: screenshots::Viewer
     }
 }
 
+fn require_connect_logs(level: ConnectAccess, viewer: screenshots::Viewer) -> ApiResult<()> {
+    if screenshots::connect_allowed(level, viewer) {
+        Ok(())
+    } else {
+        Err(ApiError::forbidden(
+            "connect_forbidden_logs",
+            "Your role cannot view Connect logs",
+        ))
+    }
+}
+
 fn connect_request_error(kind: async_nats::RequestErrorKind) -> ApiError {
     match kind {
         async_nats::RequestErrorKind::NoResponders => connect_offline(),
@@ -588,7 +754,8 @@ fn connect_command_failure(reply: live::ConnectObsCommandReply) -> ApiError {
 #[cfg(test)]
 mod tests {
     use super::{
-        ConnectOs, connect_command_failure, connect_request_error, require_connect_obs_control,
+        ConnectOs, connect_command_failure, connect_request_error, require_connect_logs,
+        require_connect_obs_control,
     };
     use crate::screenshots::Viewer;
     use db::connect::ConnectAccess;
@@ -610,6 +777,14 @@ mod tests {
     }
 
     #[test]
+    fn member_is_forbidden_when_only_owners_may_view_connect_logs() {
+        let error = require_connect_logs(ConnectAccess::Owners, Viewer::Operator).unwrap_err();
+        assert_eq!(error.status(), axum::http::StatusCode::FORBIDDEN);
+        assert_eq!(error.code(), "connect_forbidden_logs");
+        assert_eq!(error.message(), "Your role cannot view Connect logs");
+    }
+
+    #[test]
     fn no_responders_maps_to_offline_conflict() {
         let error = connect_request_error(async_nats::RequestErrorKind::NoResponders);
         assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
@@ -622,6 +797,7 @@ mod tests {
             ok: false,
             code: Some(live::ConnectObsCommandCode::Offline),
             error: Some("offline".into()),
+            log_id: None,
         });
         assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
         assert_eq!(error.code(), "connect_offline");

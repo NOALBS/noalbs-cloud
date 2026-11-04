@@ -9,6 +9,7 @@ use connect_core::{
     AppConfig, ConfigStore, HostPlatform, PairingClient, Setup,
     config::validate_obs_config_for_platform,
     credentials::TokenStore,
+    logs::{ConnectLogUpload, ObsLogFile, encode_log_upload, select_obs_log_file},
     pairing::ConnectOs,
     relay::{
         LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState, WatchdogMode, run_link,
@@ -544,11 +545,69 @@ async fn run_obs_action(
                     .start(&setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
+            ObsAction::UploadLog => return Err("UploadLog is not an OBS process action".into()),
         }
         supervisor.state(&setup)
     };
     set_link_state(state, setup_id, process_state);
     Ok(())
+}
+
+fn create_log_upload(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+    kind: &str,
+) -> Result<ConnectLogUpload, String> {
+    let setup = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .cloned()
+        .ok_or_else(|| "setup not found".to_string())?;
+    let directory = config_dir(&setup).join(if kind == "crash_report" {
+        "crashes"
+    } else {
+        "logs"
+    });
+    let files = std::fs::read_dir(directory)
+        .map_err(|error| error.to_string())?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let metadata = entry.metadata().ok()?;
+            metadata.is_file().then_some(ObsLogFile {
+                path: entry.path(),
+                modified_at: metadata.modified().ok(),
+            })
+        })
+        .collect::<Vec<_>>();
+    let selected = if kind == "crash_report" {
+        files
+            .iter()
+            .filter_map(|file| Some((file, file.modified_at?)))
+            .max_by_key(|(_, modified)| *modified)
+            .map(|(file, _)| file)
+    } else {
+        let start_time = state
+            .supervisor
+            .lock()
+            .ok()
+            .and_then(|supervisor| supervisor.obs_start_time(&setup));
+        select_obs_log_file(&files, start_time)
+    }
+    .ok_or_else(|| format!("No {kind} file is available"))?;
+    let content = std::fs::read(&selected.path).map_err(|error| error.to_string())?;
+    let file_name = selected
+        .path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "Invalid log filename".to_string())?;
+    let modified_at = selected
+        .modified_at
+        .map(|modified| chrono::DateTime::<chrono::Utc>::from(modified).to_rfc3339());
+    encode_log_upload(kind, file_name, modified_at, &content).map_err(|error| error.to_string())
 }
 
 async fn stop_setup_streams(setup: &Setup, state: &AppState) {
@@ -957,6 +1016,7 @@ fn start_link_session(
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
     let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
+    let (upload_tx, upload_rx) = mpsc::unbounded_channel();
     let link_config = LinkConfig {
         link_url: pairing.link_url.clone(),
         device_token: token,
@@ -969,6 +1029,7 @@ fn start_link_session(
         telemetry_tx,
         effective_obs_tx,
         commands: command_tx,
+        unsolicited_uploads: upload_rx,
     };
     let mut sessions = state
         .link_sessions
@@ -1046,6 +1107,15 @@ fn start_link_session(
                         continue;
                     }
                     handled_incident = Some(incident);
+                    if incident == PcObsState::Crashed {
+                        for kind in ["crash_report", "obs_log"] {
+                            if let Ok(upload) = create_log_upload(&app_state, monitor_setup.id, kind)
+                                && upload_tx.send(upload).is_err()
+                            {
+                                break;
+                            }
+                        }
+                    }
                     let telemetry = monitor_telemetry.borrow().clone();
                     let watchdog_mode = *monitor_watchdog.borrow();
                     match watchdog.decide(
@@ -1133,12 +1203,14 @@ fn start_link_session(
     let command_setup_id = setup.id;
     let command_consumer = tauri::async_runtime::spawn(async move {
         while let Some(command) = command_rx.recv().await {
-            let result = run_obs_action(
-                command_app.state::<AppState>().inner(),
-                command_setup_id,
-                command.action,
-            )
-            .await;
+            let app_state = command_app.state::<AppState>();
+            let result = if command.action == ObsAction::UploadLog {
+                create_log_upload(app_state.inner(), command_setup_id, "obs_log").map(Some)
+            } else {
+                run_obs_action(app_state.inner(), command_setup_id, command.action)
+                    .await
+                    .map(|()| None)
+            };
             let _ = command.reply.send(result);
             let _ = command_app.emit(
                 "connect-state-changed",

@@ -31,6 +31,16 @@ describe("describeEvent", () => {
     ).toEqual({ title: "Revoked Studio PC", detail: "by kate" });
   });
 
+  it("describes Connect log uploads", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_log_uploaded",
+        data: { kind: "obs_log", log_id: "log-1", by: "kate" },
+      }),
+    ).toEqual({ title: "OBS log uploaded", detail: "by kate" });
+  });
+
   it("explains automatic switches with their cause", () => {
     const event: SwitcherEvent = {
       ...base,
