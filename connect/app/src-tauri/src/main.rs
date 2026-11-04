@@ -9,7 +9,7 @@ use connect_core::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
         enable_obs_websocket, read_obs_websocket_config, same_obs_identity,
     },
-    url_security::validate_verification_url,
+    url_security::{validate_dashboard_url, validate_verification_url},
     watchdog::{Watchdog, WatchdogAction},
 };
 use serde::Serialize;
@@ -56,6 +56,7 @@ struct SetupSummary {
 struct UiState {
     start_at_login: bool,
     api_url: String,
+    dashboard_url: Option<String>,
     startup_error: Option<String>,
     first_run: bool,
     setups: Vec<SetupSummary>,
@@ -69,6 +70,7 @@ fn get_state(state: State<'_, AppState>) -> UiState {
     UiState {
         start_at_login: config.settings.start_at_login,
         api_url: config.settings.api_url.clone(),
+        dashboard_url: config.settings.dashboard_url.clone(),
         startup_error: state.startup_error.clone(),
         first_run: config.setups.is_empty(),
         setups: config
@@ -187,11 +189,17 @@ fn save_settings(
     app: tauri::AppHandle,
     start_at_login: bool,
     api_url: String,
+    dashboard_url: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
+    let dashboard_url = dashboard_url.filter(|url| !url.trim().is_empty());
+    if let Some(url) = dashboard_url.as_deref() {
+        validate_dashboard_url(url)?;
+    }
     let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
     config.settings.start_at_login = start_at_login;
     config.settings.api_url = api_url;
+    config.settings.dashboard_url = dashboard_url;
     state
         .store
         .save(&config)
@@ -224,16 +232,21 @@ async fn create_pairing(
     state: State<'_, AppState>,
 ) -> Result<connect_core::PairingCreated, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    let (api_url, name) = {
+    let (api_url, dashboard_url, name) = {
         let config = state.config.lock().map_err(|_| "config lock poisoned")?;
         let setup = config
             .setups
             .iter()
             .find(|setup| setup.id.to_string() == setup_id)
             .ok_or("setup not found")?;
-        (config.settings.api_url.clone(), setup.name.clone())
+        (
+            config.settings.api_url.clone(),
+            config.settings.dashboard_url.clone(),
+            setup.name.clone(),
+        )
     };
-    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
+    let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
+        .map_err(|error| error.to_string())?;
     let os = if cfg!(target_os = "windows") {
         ConnectOs::Windows
     } else {
@@ -258,16 +271,21 @@ async fn pair_setup(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    let (api_url, name) = {
+    let (api_url, dashboard_url, name) = {
         let config = state.config.lock().map_err(|_| "config lock poisoned")?;
         let setup = config
             .setups
             .iter()
             .find(|setup| setup.id.to_string() == setup_id)
             .ok_or("setup not found")?;
-        (config.settings.api_url.clone(), setup.name.clone())
+        (
+            config.settings.api_url.clone(),
+            config.settings.dashboard_url.clone(),
+            setup.name.clone(),
+        )
     };
-    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
+    let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
+        .map_err(|error| error.to_string())?;
     let os = if cfg!(target_os = "windows") {
         ConnectOs::Windows
     } else {
@@ -354,14 +372,13 @@ fn open_verification_url(
         .get(&id)
         .cloned()
         .ok_or("No active verification URL for this setup")?;
-    let api_url = state
-        .config
-        .lock()
-        .map_err(|_| "config lock poisoned")?
-        .settings
-        .api_url
-        .clone();
-    validate_verification_url(&api_url, &verification_url)?;
+    let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    validate_verification_url(
+        &config.settings.api_url,
+        config.settings.dashboard_url.as_deref(),
+        &verification_url,
+    )?;
+    drop(config);
     app.opener()
         .open_url(verification_url, None::<&str>)
         .map_err(|error| error.to_string())

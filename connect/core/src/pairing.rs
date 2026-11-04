@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     config::Pairing,
-    url_security::{validate_api_url, validate_verification_url},
+    url_security::{validate_api_url, validate_dashboard_url, validate_verification_url},
 };
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -69,15 +69,27 @@ pub enum PairingError {
 #[derive(Debug, Clone)]
 pub struct PairingClient {
     api_url: String,
+    dashboard_url: Option<String>,
     client: reqwest::Client,
 }
 
 impl PairingClient {
     pub fn new(api_url: impl Into<String>) -> Result<Self, PairingError> {
+        Self::new_with_dashboard_url(api_url, None)
+    }
+
+    pub fn new_with_dashboard_url(
+        api_url: impl Into<String>,
+        dashboard_url: Option<String>,
+    ) -> Result<Self, PairingError> {
         let api_url = api_url.into().trim_end_matches('/').to_owned();
         validate_api_url(&api_url).map_err(PairingError::UnsafeUrl)?;
+        if let Some(dashboard_url) = dashboard_url.as_deref() {
+            validate_dashboard_url(dashboard_url).map_err(PairingError::UnsafeUrl)?;
+        }
         Ok(Self {
             api_url,
+            dashboard_url,
             client: reqwest::Client::new(),
         })
     }
@@ -102,8 +114,12 @@ impl PairingClient {
             return Err(api_error(response).await);
         }
         let created: PairingCreated = response.json().await?;
-        validate_verification_url(&self.api_url, &created.verification_url)
-            .map_err(PairingError::UnsafeUrl)?;
+        validate_verification_url(
+            &self.api_url,
+            self.dashboard_url.as_deref(),
+            &created.verification_url,
+        )
+        .map_err(PairingError::UnsafeUrl)?;
         Ok(created)
     }
 

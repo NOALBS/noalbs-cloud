@@ -33,6 +33,7 @@ type Setup = {
 type State = {
 	start_at_login: boolean;
 	api_url: string;
+	dashboard_url: string | null;
 	startup_error: string | null;
 	first_run: boolean;
 	setups: Setup[];
@@ -54,6 +55,7 @@ function App() {
 	);
 	const [pairingStatus, setPairingStatus] = React.useState("");
 	const [apiUrl, setApiUrl] = React.useState("");
+	const [dashboardUrl, setDashboardUrl] = React.useState("");
 	const [firstRunStartAtLogin, setFirstRunStartAtLogin] = React.useState(true);
 	const [editing, setEditing] = React.useState<Setup | null>(null);
 	const [secondsLeft, setSecondsLeft] = React.useState(0);
@@ -62,6 +64,7 @@ function App() {
 			.then((value) => {
 				setState(value);
 				setApiUrl(value.api_url);
+				setDashboardUrl(value.dashboard_url ?? "");
 				if (value.startup_error) setError(value.startup_error);
 			})
 			.catch((e) => setError(String(e)));
@@ -82,6 +85,7 @@ function App() {
 		void listen<State>("connect-state-changed", (event) => {
 			setState(event.payload);
 			setApiUrl(event.payload.api_url);
+			setDashboardUrl(event.payload.dashboard_url ?? "");
 			setPairing(null);
 			setPairingSetupId(null);
 		}).then((fn) => {
@@ -114,6 +118,7 @@ function App() {
 				await invoke("save_settings", {
 					startAtLogin: firstRunStartAtLogin,
 					apiUrl,
+					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 				});
 			setState(await invoke<State>("add_setup", { name }));
 			setName("");
@@ -166,7 +171,13 @@ function App() {
 	}
 	async function saveSettings(startAtLogin = state?.start_at_login ?? true) {
 		try {
-			setState(await invoke<State>("save_settings", { startAtLogin, apiUrl }));
+			setState(
+				await invoke<State>("save_settings", {
+					startAtLogin,
+					apiUrl,
+					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
+				}),
+			);
 		} catch (e) {
 			setError(String(e));
 		}
@@ -483,8 +494,16 @@ function App() {
 							onChange={(event) => setApiUrl(event.target.value)}
 						/>
 					</label>
+					<label>
+						Dashboard URL (optional)
+						<input
+							aria-label="Dashboard URL"
+							value={dashboardUrl}
+							onChange={(event) => setDashboardUrl(event.target.value)}
+						/>
+					</label>
 					<button type="button" onClick={() => saveSettings()}>
-						Save API URL
+						Save URLs
 					</button>
 				</details>
 				{!state.start_at_login && (

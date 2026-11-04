@@ -8,26 +8,62 @@ pub fn validate_link_url(value: &str) -> Result<(), String> {
     validate_url(value, "wss", "ws", "link")
 }
 
-pub fn validate_verification_url(api_base_url: &str, value: &str) -> Result<(), String> {
+pub fn validate_dashboard_url(value: &str) -> Result<(), String> {
+    validate_url(value, "https", "http", "dashboard")?;
+    let url =
+        reqwest::Url::parse(value).map_err(|error| format!("Invalid dashboard URL: {error}"))?;
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err("Dashboard URL must not contain credentials".into());
+    }
+    Ok(())
+}
+
+pub fn validate_verification_url(
+    api_base_url: &str,
+    dashboard_url: Option<&str>,
+    value: &str,
+) -> Result<(), String> {
+    validate_api_url(api_base_url)?;
     let api_url = reqwest::Url::parse(api_base_url)
         .map_err(|error| format!("Invalid configured API URL: {error}"))?;
     let verification_url =
         reqwest::Url::parse(value).map_err(|error| format!("Invalid verification URL: {error}"))?;
-    let api_host = api_url
-        .host_str()
-        .ok_or_else(|| "Configured API URL has no host".to_owned())?;
     let verification_host = verification_url
         .host_str()
         .ok_or_else(|| "Verification URL has no host".to_owned())?;
-    if !api_host.eq_ignore_ascii_case(verification_host) {
-        return Err("Verification URL must use the same host as the configured API URL".into());
-    }
     if !verification_url.username().is_empty() || verification_url.password().is_some() {
         return Err("Verification URL must not contain credentials".into());
     }
-    let api_is_loopback_http = api_url.scheme() == "http" && is_loopback_host(api_host);
+
+    let dashboard_url = dashboard_url
+        .map(|url| {
+            validate_dashboard_url(url)?;
+            reqwest::Url::parse(url).map_err(|error| format!("Invalid dashboard URL: {error}"))
+        })
+        .transpose()?;
+    let origin_url = dashboard_url.as_ref().unwrap_or(&api_url);
+    let origin_host = origin_url
+        .host_str()
+        .ok_or_else(|| "Configured URL has no host".to_owned())?;
+    let origin_matches = if dashboard_url.is_some() {
+        origin_url.scheme() == verification_url.scheme()
+            && origin_host.eq_ignore_ascii_case(verification_host)
+            && origin_url.port_or_known_default() == verification_url.port_or_known_default()
+    } else {
+        origin_host.eq_ignore_ascii_case(verification_host)
+    };
+    if !origin_matches {
+        let url_kind = if dashboard_url.is_some() {
+            "configured dashboard URL origin"
+        } else {
+            "configured API URL host"
+        };
+        return Err(format!("Verification URL must use the same {url_kind}"));
+    }
+
+    let loopback_http_allowed = origin_url.scheme() == "http" && is_loopback_host(origin_host);
     let valid_scheme = verification_url.scheme() == "https"
-        || (api_is_loopback_http
+        || (loopback_http_allowed
             && verification_url.scheme() == "http"
             && is_loopback_host(verification_host));
     if !valid_scheme {
@@ -66,7 +102,9 @@ fn is_loopback_host(host: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{validate_api_url, validate_link_url, validate_verification_url};
+    use super::{
+        validate_api_url, validate_dashboard_url, validate_link_url, validate_verification_url,
+    };
 
     #[test]
     fn insecure_urls_are_allowed_only_for_loopback_hosts() {
@@ -85,6 +123,7 @@ mod tests {
         assert!(
             validate_verification_url(
                 "https://cloud.example/api",
+                None,
                 "https://cloud.example/connect/verify?code=abc"
             )
             .is_ok()
@@ -92,6 +131,7 @@ mod tests {
         assert!(
             validate_verification_url(
                 "https://cloud.example/api",
+                None,
                 "https://attacker.example/connect/verify?code=abc"
             )
             .is_err()
@@ -99,6 +139,7 @@ mod tests {
         assert!(
             validate_verification_url(
                 "https://cloud.example/api",
+                None,
                 "http://cloud.example/connect/verify?code=abc"
             )
             .is_err()
@@ -106,6 +147,7 @@ mod tests {
         assert!(
             validate_verification_url(
                 "http://127.0.0.1:12000/api",
+                None,
                 "http://127.0.0.1:12001/connect/verify?code=abc"
             )
             .is_ok()
@@ -113,9 +155,57 @@ mod tests {
         assert!(
             validate_verification_url(
                 "http://127.0.0.1:12000/api",
+                None,
                 "http://localhost/connect/verify?code=abc"
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn verification_url_uses_the_dashboard_origin_when_configured() {
+        assert!(validate_dashboard_url("https://dashboard.example").is_ok());
+        assert!(validate_dashboard_url("http://127.0.0.1:3000").is_ok());
+        assert!(validate_dashboard_url("http://dashboard.example").is_err());
+        assert!(
+            validate_verification_url(
+                "https://api.example/api",
+                Some("https://dashboard.example"),
+                "https://dashboard.example/connect/verify?code=abc"
+            )
+            .is_ok()
+        );
+        assert!(
+            validate_verification_url(
+                "https://api.example/api",
+                None,
+                "https://dashboard.example/connect/verify?code=abc"
+            )
+            .is_err()
+        );
+        assert!(
+            validate_verification_url(
+                "https://api.example/api",
+                Some("https://dashboard.example"),
+                "https://user@dashboard.example/connect/verify?code=abc"
+            )
+            .is_err()
+        );
+        assert!(
+            validate_verification_url(
+                "https://api.example/api",
+                Some("https://dashboard.example:8443"),
+                "https://dashboard.example/connect/verify?code=abc"
+            )
+            .is_err()
+        );
+        assert!(
+            validate_verification_url(
+                "https://api.example/api",
+                Some("http://127.0.0.1:3000"),
+                "http://127.0.0.1:3000/connect/verify?code=abc"
+            )
+            .is_ok()
         );
     }
 }

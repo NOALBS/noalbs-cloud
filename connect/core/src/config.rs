@@ -27,6 +27,7 @@ pub enum ConfigError {
 pub struct AppSettings {
     pub start_at_login: bool,
     pub api_url: String,
+    pub dashboard_url: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -35,6 +36,9 @@ impl Default for AppSettings {
             start_at_login: true,
             api_url: std::env::var("NOALBS_CONNECT_API_URL")
                 .unwrap_or_else(|_| PRODUCTION_API_URL.to_owned()),
+            dashboard_url: std::env::var("NOALBS_CONNECT_DASHBOARD_URL")
+                .ok()
+                .filter(|url| !url.trim().is_empty()),
         }
     }
 }
