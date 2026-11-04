@@ -31,7 +31,7 @@ impl TokenStore {
         if let Ok(entry) = keyring::Entry::new("com.noalbs.connect", &setup.to_string())
             && entry.set_password(token).is_ok()
         {
-            self.keyring_write_succeeded(setup)?;
+            self.keyring_write_succeeded(setup);
             return Ok(());
         }
         self.write_fallback(setup, token)
@@ -96,8 +96,14 @@ impl TokenStore {
         Ok(())
     }
 
-    fn keyring_write_succeeded(&self, setup: Uuid) -> Result<(), CredentialError> {
-        self.remove_fallback(setup)
+    fn keyring_write_succeeded(&self, setup: Uuid) {
+        if let Err(error) = self.remove_fallback(setup) {
+            tracing::warn!(
+                setup_id = %setup,
+                error = %error,
+                "Failed to remove stale fallback token after storing token in the keyring"
+            );
+        }
     }
 }
 
@@ -116,11 +122,25 @@ mod tests {
         store.write_fallback(setup, "stale-token").unwrap();
         let fallback = store.fallback_path(setup);
 
-        store.keyring_write_succeeded(setup).unwrap();
+        store.keyring_write_succeeded(setup);
 
         assert!(!fallback.exists());
         store.write_fallback(setup, "fallback-token").unwrap();
         store.delete(setup).unwrap();
         assert!(!fallback.exists());
+    }
+
+    #[test]
+    fn fallback_cleanup_failure_after_keyring_write_is_non_fatal() {
+        let directory = tempdir().unwrap();
+        let store = TokenStore::new(directory.path().to_owned());
+        let setup = Uuid::new_v4();
+        let fallback = store.fallback_path(setup);
+        std::fs::create_dir_all(fallback.parent().unwrap()).unwrap();
+        std::fs::create_dir(&fallback).unwrap();
+
+        store.keyring_write_succeeded(setup);
+
+        assert!(fallback.is_dir());
     }
 }
