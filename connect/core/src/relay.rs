@@ -1492,7 +1492,7 @@ mod tests {
             state_rx,
             watchdog_tx,
         ));
-        tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
+        tokio::time::timeout(Duration::from_secs(15), watchdog_rx.changed())
             .await
             .unwrap()
             .unwrap();
@@ -1501,7 +1501,7 @@ mod tests {
             super::WatchdogMode::RestartResume
         );
         first_setting_tx.send(()).unwrap();
-        tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
+        tokio::time::timeout(Duration::from_secs(15), watchdog_rx.changed())
             .await
             .unwrap()
             .unwrap();

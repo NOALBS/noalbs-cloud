@@ -4797,6 +4797,16 @@ export interface components {
         };
         /** @enum {string} */
         ConnectProgramAction: "added" | "edited" | "removed" | "started" | "stopped";
+        ConnectProgramEventProgram: {
+            added_from_dashboard_by?: string | null;
+            args?: string[];
+            /** Format: uuid */
+            id: string;
+            name: string;
+            path?: string | null;
+            start_with_obs?: boolean | null;
+            stop_with_obs?: boolean | null;
+        };
         ConnectedBot: {
             /** @description The workspace or organization it answers for; `None` for NOALBS's shared bot. */
             answers_for?: string | null;
@@ -5499,7 +5509,7 @@ export interface components {
             data: {
                 action: components["schemas"]["ConnectProgramAction"];
                 by?: string | null;
-                program: components["schemas"]["Program"];
+                program: components["schemas"]["ConnectProgramEventProgram"];
             };
             /** @enum {string} */
             kind: "connect_program_command";

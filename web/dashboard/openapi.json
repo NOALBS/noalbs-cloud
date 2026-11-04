@@ -16938,6 +16938,52 @@
           "stopped"
         ]
       },
+      "ConnectProgramEventProgram": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "added_from_dashboard_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "stop_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
       "ConnectedBot": {
         "type": "object",
         "required": [
@@ -19539,7 +19585,7 @@
                     ]
                   },
                   "program": {
-                    "$ref": "#/components/schemas/Program"
+                    "$ref": "#/components/schemas/ConnectProgramEventProgram"
                   }
                 }
               },
