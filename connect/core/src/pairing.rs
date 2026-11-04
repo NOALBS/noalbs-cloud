@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::{config::Pairing, url_security::validate_api_url};
+use crate::{
+    config::Pairing,
+    url_security::{validate_api_url, validate_verification_url},
+};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -98,7 +101,10 @@ impl PairingClient {
         if !response.status().is_success() {
             return Err(api_error(response).await);
         }
-        Ok(response.json().await?)
+        let created: PairingCreated = response.json().await?;
+        validate_verification_url(&self.api_url, &created.verification_url)
+            .map_err(PairingError::UnsafeUrl)?;
+        Ok(created)
     }
 
     pub async fn poll(&self, device_code: &str) -> Result<PairingResult, PairingError> {
@@ -235,7 +241,7 @@ mod tests {
         Json(json!({
             "device_code": "private-device-code",
             "user_code": "ABCDEFGH",
-            "verification_url": "https://app.noalbs.com/connect?code=ABCDEFGH",
+            "verification_url": "http://127.0.0.1/connect?code=ABCDEFGH",
             "expires_in": 600,
             "interval": 10
         }))

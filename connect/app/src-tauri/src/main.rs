@@ -9,6 +9,7 @@ use connect_core::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
         enable_obs_websocket, read_obs_websocket_config, same_obs_identity,
     },
+    url_security::validate_verification_url,
     watchdog::{Watchdog, WatchdogAction},
 };
 use serde::Serialize;
@@ -19,6 +20,7 @@ use tauri::{
     tray::TrayIconBuilder,
 };
 use tauri_plugin_autostart::ManagerExt;
+use tauri_plugin_opener::OpenerExt;
 use tokio::sync::watch;
 
 struct LinkSession {
@@ -35,6 +37,7 @@ struct AppState {
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
+    pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
 }
 
 #[derive(Clone, Serialize)]
@@ -220,33 +223,7 @@ async fn create_pairing(
     setup_id: String,
     state: State<'_, AppState>,
 ) -> Result<connect_core::PairingCreated, String> {
-    let (api_url, name) = {
-        let config = state.config.lock().map_err(|_| "config lock poisoned")?;
-        let setup = config
-            .setups
-            .iter()
-            .find(|setup| setup.id.to_string() == setup_id)
-            .ok_or("setup not found")?;
-        (config.settings.api_url.clone(), setup.name.clone())
-    };
-    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
-    let os = if cfg!(target_os = "windows") {
-        ConnectOs::Windows
-    } else {
-        ConnectOs::Linux
-    };
-    client
-        .create(&name, os, env!("CARGO_PKG_VERSION"))
-        .await
-        .map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-async fn pair_setup(
-    app: tauri::AppHandle,
-    setup_id: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     let (api_url, name) = {
         let config = state.config.lock().map_err(|_| "config lock poisoned")?;
         let setup = config
@@ -266,6 +243,45 @@ async fn pair_setup(
         .create(&name, os, env!("CARGO_PKG_VERSION"))
         .await
         .map_err(|error| error.to_string())?;
+    state
+        .pending_verification_urls
+        .lock()
+        .map_err(|_| "pending verification URL lock poisoned")?
+        .insert(id, pending.verification_url.clone());
+    Ok(pending)
+}
+
+#[tauri::command]
+async fn pair_setup(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let (api_url, name) = {
+        let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+        let setup = config
+            .setups
+            .iter()
+            .find(|setup| setup.id.to_string() == setup_id)
+            .ok_or("setup not found")?;
+        (config.settings.api_url.clone(), setup.name.clone())
+    };
+    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
+    let os = if cfg!(target_os = "windows") {
+        ConnectOs::Windows
+    } else {
+        ConnectOs::Linux
+    };
+    let pending = client
+        .create(&name, os, env!("CARGO_PKG_VERSION"))
+        .await
+        .map_err(|error| error.to_string())?;
+    state
+        .pending_verification_urls
+        .lock()
+        .map_err(|_| "pending verification URL lock poisoned")?
+        .insert(id, pending.verification_url.clone());
     let interval = pending.interval.max(1);
     app.emit("pairing-created", &pending)
         .map_err(|error| error.to_string())?;
@@ -277,9 +293,21 @@ async fn pair_setup(
                 let _ = app.emit("pairing-status", format!("{status:?}"));
             },
         )
-        .await
-        .map_err(|error| error.to_string())?;
-    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+        .await;
+    let result = match result {
+        Ok(result) => result,
+        Err(error) => {
+            if let Ok(mut urls) = state.pending_verification_urls.lock() {
+                urls.remove(&id);
+            }
+            return Err(error.to_string());
+        }
+    };
+    state
+        .pending_verification_urls
+        .lock()
+        .map_err(|_| "pending verification URL lock poisoned")?
+        .remove(&id);
     state
         .tokens
         .set(id, &result.device_token)
@@ -309,6 +337,33 @@ async fn pair_setup(
         let _ = app.emit("connect-error", error);
     }
     app.emit("connect-state-changed", get_state(state))
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn open_verification_url(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let verification_url = state
+        .pending_verification_urls
+        .lock()
+        .map_err(|_| "pending verification URL lock poisoned")?
+        .get(&id)
+        .cloned()
+        .ok_or("No active verification URL for this setup")?;
+    let api_url = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .settings
+        .api_url
+        .clone();
+    validate_verification_url(&api_url, &verification_url)?;
+    app.opener()
+        .open_url(verification_url, None::<&str>)
         .map_err(|error| error.to_string())
 }
 
@@ -788,6 +843,7 @@ fn main() {
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
         })
         .setup(|app| {
             let has_tray = tray_available();
@@ -850,6 +906,7 @@ fn main() {
             save_setup,
             create_pairing,
             pair_setup,
+            open_verification_url,
             start_obs,
             stop_obs,
             restart_obs,

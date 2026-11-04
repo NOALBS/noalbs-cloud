@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./style.css";
@@ -41,7 +40,6 @@ type State = {
 type Pairing = {
 	device_code: string;
 	user_code: string;
-	verification_url: string;
 	expires_in: number;
 	interval: number;
 };
@@ -51,6 +49,9 @@ function App() {
 	const [name, setName] = React.useState("");
 	const [error, setError] = React.useState("");
 	const [pairing, setPairing] = React.useState<Pairing | null>(null);
+	const [pairingSetupId, setPairingSetupId] = React.useState<string | null>(
+		null,
+	);
 	const [pairingStatus, setPairingStatus] = React.useState("");
 	const [apiUrl, setApiUrl] = React.useState("");
 	const [firstRunStartAtLogin, setFirstRunStartAtLogin] = React.useState(true);
@@ -82,6 +83,7 @@ function App() {
 			setState(event.payload);
 			setApiUrl(event.payload.api_url);
 			setPairing(null);
+			setPairingSetupId(null);
 		}).then((fn) => {
 			unlistenState = fn;
 		});
@@ -142,10 +144,12 @@ function App() {
 	async function startPairing(id: string) {
 		setError("");
 		setPairing(null);
+		setPairingSetupId(id);
 		setPairingStatus("Waiting for confirmation…");
 		try {
 			await invoke("pair_setup", { setupId: id });
 		} catch (e) {
+			setPairingSetupId(null);
 			setError(String(e));
 			setPairingStatus("");
 		}
@@ -444,9 +448,10 @@ function App() {
 					<button
 						type="button"
 						onClick={() =>
-							openUrl(pairing.verification_url).catch((e) =>
-								setError(String(e)),
-							)
+							pairingSetupId &&
+							invoke("open_verification_url", {
+								setupId: pairingSetupId,
+							}).catch((e) => setError(String(e)))
 						}
 					>
 						Open browser
