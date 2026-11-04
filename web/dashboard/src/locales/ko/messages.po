@@ -658,7 +658,7 @@ msgstr "{0}–{1}"
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "{0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "{0}, {1}, {2}×{3}"
 
 #. placeholder {0}: addon.code
 #. placeholder {1}: addon.quantity
@@ -812,7 +812,7 @@ msgstr "{name}을(를) 제거했어요"
 
 #: src/components/live/placement-canvas.tsx
 msgid "{name}: drag to move, pull a corner to resize, or use the arrow keys"
-msgstr ""
+msgstr "{name}: 끌어서 옮기고, 모서리를 당겨 크기를 바꾸거나, 화살표 키를 쓰세요"
 
 #. placeholder {0}: roleLabels()[role]
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -1002,7 +1002,7 @@ msgstr "7일"
 #. placeholder {1}: canvas.height
 #: src/components/live/source-position.tsx
 msgid "A box in pixels on the {0}×{1} screen, from its top left. The source fits inside it, keeping its shape."
-msgstr ""
+msgstr "{0}×{1} 화면에서 왼쪽 위 모서리부터 잰 픽셀 단위 상자예요. 소스는 모양을 유지한 채 상자 안에 맞춰져요."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
@@ -1010,11 +1010,11 @@ msgstr "OBS의 브라우저 소스가 이 스위처와 연결해 주므로 포�
 
 #: src/lib/api-messages.ts
 msgid "A browser source is 1 to 8192 pixels wide and high."
-msgstr ""
+msgstr "브라우저 소스의 너비와 높이는 1~8192픽셀이에요."
 
 #: src/lib/api-messages.ts
 msgid "A browser source's frame rate is 1 to 60."
-msgstr ""
+msgstr "브라우저 소스의 프레임 속도는 1~60이에요."
 
 #. placeholder {0}: firstSwitcher.name
 #: src/components/app-shell.tsx
@@ -1035,11 +1035,11 @@ msgstr "삭제된 사용자"
 
 #: src/lib/api-messages.ts
 msgid "A font's name is at most 128 characters."
-msgstr ""
+msgstr "글꼴 이름은 최대 128자예요."
 
 #: src/components/live/source-position.tsx
 msgid "A full-screen box has none."
-msgstr ""
+msgstr "화면 전체 상자에는 없어요."
 
 #: src/lib/api-messages.ts
 msgid "A limit is out of range"
@@ -1060,7 +1060,7 @@ msgstr "새 구독에 적용할 새 가격이 Stripe에 만들어져요.{0}"
 
 #: src/components/live/source-editor.tsx
 msgid "A new source with a copy of its settings, filters and placement. Changing one doesn’t change the other."
-msgstr ""
+msgstr "설정, 필터, 배치를 복사한 새 소스예요. 하나를 바꿔도 다른 하나는 바뀌지 않아요."
 
 #: src/lib/api-messages.ts
 msgid "A notice has to end after it starts"
@@ -1085,7 +1085,7 @@ msgstr "이 워크스페이스의 결제에 실패했어요. 넘겨주기 전에
 
 #: src/lib/api-messages.ts
 msgid "A scene can't be added to itself."
-msgstr ""
+msgstr "장면을 자기 자신에 추가할 수는 없어요."
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "A subscription ends straight away, without a refund."
@@ -1105,11 +1105,11 @@ msgstr "이 이름의 스위처가 이미 있어요"
 
 #: src/lib/api-messages.ts
 msgid "A text source says at most 10,000 characters."
-msgstr ""
+msgstr "텍스트 소스는 최대 10,000자를 표시해요."
 
 #: src/lib/api-messages.ts
 msgid "A VLC source plays 1 to 50 URLs."
-msgstr ""
+msgstr "VLC 소스는 URL을 1~50개 재생해요."
 
 #: src/components/orgs/client-dialog.tsx
 msgid "A whole number from 0 to {MAX_ALLOCATION}, or empty."
@@ -1216,7 +1216,7 @@ msgstr "이름으로 네트워크 추가…"
 
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
-msgstr ""
+msgstr "소스 추가"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -1242,7 +1242,7 @@ msgstr "OBS를 연결하려면 하나 추가하세요. 초기 설정은 몇 분�
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
-msgstr ""
+msgstr "장면 추가"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/add-server.tsx
@@ -1252,7 +1252,7 @@ msgstr "서버 추가"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-list.tsx
 msgid "Add source"
-msgstr ""
+msgstr "소스 추가"
 
 #: src/components/app-shell.tsx
 #: src/components/create-switcher-dialog.tsx
@@ -1270,7 +1270,7 @@ msgstr "NOALBS Cloud에 추가"
 
 #: src/components/live/source-editor.tsx
 msgid "Add URL"
-msgstr ""
+msgstr "URL 추가"
 
 #: src/components/admin/products.tsx
 msgid "Add-on created"
@@ -1299,13 +1299,13 @@ msgstr "{0} 추가"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Added {0} again"
-msgstr ""
+msgstr "{0}을(를) 다시 추가했어요"
 
 #. placeholder {0}: added.name
 #. placeholder {0}: created.name
 #: src/components/live/source-editor.tsx
 msgid "Added {0} to {sceneName}"
-msgstr ""
+msgstr "{0}을(를) {sceneName}에 추가했어요"
 
 #: src/lib/support.ts
 msgid "Added a stream server"
@@ -1320,7 +1320,7 @@ msgstr "스위처 추가"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Added the scene {0}"
-msgstr ""
+msgstr "장면 {0}을(를) 추가했어요"
 
 #: src/components/create-switcher-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -1503,11 +1503,11 @@ msgstr "이 워크스페이스의 관리자가 추가할 수 있어요."
 
 #: src/components/live/scene-grid.tsx
 msgid "An empty scene in OBS. Add sources to it from the Sources card."
-msgstr ""
+msgstr "OBS의 빈 장면이에요. 소스 카드에서 소스를 추가하세요."
 
 #: src/components/live/source-editor.tsx
 msgid "An srt://, rtmp://, rist://, udp:// or https:// address."
-msgstr ""
+msgstr "srt://, rtmp://, rist://, udp:// 또는 https:// 주소예요."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Announce raids"
@@ -1584,11 +1584,11 @@ msgstr "적용 중…"
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
-msgstr ""
+msgstr "모양을 유지하면서 들어갈 수 있는 만큼 크게."
 
 #: src/components/live/source-editor.tsx
 msgid "As the OBS computer names it, e.g. Arial. Empty keeps the font it has."
-msgstr ""
+msgstr "OBS 컴퓨터에서 부르는 이름이에요. 예: Arial. 비워 두면 지금 글꼴을 유지해요."
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
@@ -1621,7 +1621,7 @@ msgstr "주소: <0>{host}</0>"
 
 #: src/components/live/source-position.tsx
 msgid "At 100% it fills the screen wherever it’s pinned. Make it smaller to put it in a corner or on an edge."
-msgstr ""
+msgstr "100%에서는 어디에 고정하든 화면을 가득 채워요. 모서리나 가장자리에 두려면 더 작게 하세요."
 
 #: src/components/moblin-settings.tsx
 msgid "At least {MOBLIN_MIN_PASSWORD} characters"
@@ -1738,7 +1738,7 @@ msgstr "사이트로 돌아가기"
 
 #: src/components/live/source-editor.tsx
 msgid "Backup SRT"
-msgstr ""
+msgstr "예비 SRT"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Bad checks in a row before leaving LIVE; one check per second."
@@ -1944,7 +1944,7 @@ msgstr "비트레이트 트리거는 1~100,000 kbps 사이여야 해요."
 
 #: src/components/live/source-editor.tsx
 msgid "Bold"
-msgstr ""
+msgstr "굵게"
 
 #: src/components/live/moblin-card.tsx
 msgid "Bonding"
@@ -1960,15 +1960,15 @@ msgstr "봇 언어"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom"
-msgstr ""
+msgstr "아래"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom left"
-msgstr ""
+msgstr "왼쪽 아래"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom right"
-msgstr ""
+msgstr "오른쪽 아래"
 
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -2092,7 +2092,7 @@ msgstr "비트레이트가 떨어지기 전에 불안정한 업링크를 잡아�
 
 #: src/components/live/source-position.tsx
 msgid "Center"
-msgstr ""
+msgstr "가운데"
 
 #: src/components/support-access.tsx
 msgid "Change"
@@ -2113,7 +2113,7 @@ msgstr "플랜 또는 결제 변경"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Changed {0}"
-msgstr ""
+msgstr "{0}을(를) 바꿨어요"
 
 #: src/lib/org-audit.ts
 msgid "Changed {subject}"
@@ -2207,15 +2207,15 @@ msgstr "변경 사항"
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others, or edit media, VLC, browser and text sources."
-msgstr ""
+msgstr "여기서 바꾼 내용은 방송 중인 OBS에 바로 적용돼요. 소스를 위로 옮기면 다른 소스 위에 보여요. 미디어, VLC, 브라우저, 텍스트 소스도 편집할 수 있어요."
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others."
-msgstr ""
+msgstr "여기서 바꾼 내용은 방송 중인 OBS에 바로 적용돼요. 소스를 위로 옮기면 다른 소스 위에 보여요."
 
 #: src/components/live/scene-grid.tsx
 msgid "Changes here are made in OBS. The scene on air, and the scenes the switcher switches to, can’t be removed."
-msgstr ""
+msgstr "여기서 바꾼 내용은 OBS에 적용돼요. 송출 중인 장면과 스위처가 전환하는 장면은 제거할 수 없어요."
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something breaks, for example it can’t get online anymore, use the <0>official BELABOX remote</0> (with your secret URL) or the BELABOX’s local UI to fix it."
@@ -2263,7 +2263,7 @@ msgstr "채팅 알림"
 
 #: src/components/live/source-editor.tsx
 msgid "Chat overlay"
-msgstr ""
+msgstr "채팅 오버레이"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Chat service"
@@ -2351,7 +2351,7 @@ msgstr "닫기"
 
 #: src/components/live/source-editor.tsx
 msgid "Close the stream while it isn’t shown"
-msgstr ""
+msgstr "보이지 않는 동안 스트림 닫기"
 
 #: src/components/admin/products.tsx
 msgid "Code"
@@ -2359,7 +2359,7 @@ msgstr "코드"
 
 #: src/components/live/source-editor.tsx
 msgid "Color"
-msgstr ""
+msgstr "색상"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -2559,7 +2559,7 @@ msgstr "{0}(으)로 계속"
 
 #: src/components/live/source-editor.tsx
 msgid "Control its audio from OBS’s Audio Mixer"
-msgstr ""
+msgstr "OBS 오디오 믹서에서 소리 조절"
 
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
@@ -2586,7 +2586,7 @@ msgstr "복사됨"
 #: src/components/live/source-editor.tsx
 #: src/lib/live-format.ts
 msgid "Copied {0} as {1}"
-msgstr ""
+msgstr "{0}을(를) {1}(으)로 복사했어요"
 
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
@@ -2675,7 +2675,7 @@ msgstr "자동 전환이 꺼져 있어도 방송 중에 종료 장면이 송출�
 
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
-msgstr ""
+msgstr "모양을 유지하며 상자를 덮어요. 가장자리는 잘려요."
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2789,23 +2789,23 @@ msgstr "심각 공지는 숨길 수 없어요."
 
 #: src/components/live/source-position.tsx
 msgid "Crop bottom"
-msgstr ""
+msgstr "아래 자르기"
 
 #: src/lib/api-messages.ts
 msgid "Crop is at most 16384 pixels a side."
-msgstr ""
+msgstr "자르기는 한 변에 최대 16384픽셀이에요."
 
 #: src/components/live/source-position.tsx
 msgid "Crop left"
-msgstr ""
+msgstr "왼쪽 자르기"
 
 #: src/components/live/source-position.tsx
 msgid "Crop right"
-msgstr ""
+msgstr "오른쪽 자르기"
 
 #: src/components/live/source-position.tsx
 msgid "Crop top"
-msgstr ""
+msgstr "위 자르기"
 
 #: src/components/admin/products.tsx
 msgid "Currency"
@@ -2821,11 +2821,11 @@ msgstr "현재 이용 불가"
 
 #: src/components/live/source-editor.tsx
 msgid "Custom CSS"
-msgstr ""
+msgstr "사용자 CSS"
 
 #: src/lib/api-messages.ts
 msgid "Custom CSS is at most 20,000 characters."
-msgstr ""
+msgstr "사용자 CSS는 최대 20,000자예요."
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Customer"
@@ -3102,7 +3102,7 @@ msgstr "방송 기록 다운로드"
 
 #: src/components/live/source-position.tsx
 msgid "Drag"
-msgstr ""
+msgstr "끌기"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
@@ -3114,16 +3114,16 @@ msgstr "드롭된 프레임"
 
 #: src/components/live/source-editor.tsx
 msgid "Duplicate"
-msgstr ""
+msgstr "복제"
 
 #. placeholder {0}: source.name
 #: src/components/live/source-editor.tsx
 msgid "Duplicate {0}"
-msgstr ""
+msgstr "{0} 복제"
 
 #: src/components/live/source-list.tsx
 msgid "Duplicate…"
-msgstr ""
+msgstr "복제…"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Duration"
@@ -3154,7 +3154,7 @@ msgstr "{0} 편집"
 
 #: src/components/live/source-editor.tsx
 msgid "Edit {name}"
-msgstr ""
+msgstr "{name} 편집"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
@@ -3162,7 +3162,7 @@ msgstr "공지 편집"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
-msgstr ""
+msgstr "편집…"
 
 #: src/routes/_app/admin/audit.tsx
 msgid "Emergency"
@@ -3195,7 +3195,7 @@ msgstr "긴급 액세스…"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
-msgstr ""
+msgstr "비워 두면 자동 감지해요. 예: mpegts."
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Enable"
@@ -3301,7 +3301,7 @@ msgstr "{0} 종료"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "srt://, rtmp://, https:// 같은 스트림 URL을 입력하세요. OBS 컴퓨터의 파일은 OBS에서만 고를 수 있어요."
 
 #: src/lib/belabox.ts
 msgid "Enter the APN"
@@ -3309,7 +3309,7 @@ msgstr "APN을 입력하세요"
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the page. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "페이지의 전체 http:// 또는 https:// 주소를 입력하세요. OBS 컴퓨터의 파일은 OBS에서만 고를 수 있어요."
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the stats page"
@@ -3333,7 +3333,7 @@ msgstr "비밀번호와 짝을 이루는 사용자 이름을 입력하세요"
 
 #: src/lib/api-messages.ts
 msgid "Enter what the source plays."
-msgstr ""
+msgstr "소스가 재생할 내용을 입력하세요."
 
 #: src/lib/belabox.ts
 msgid "Enter your stream ID"
@@ -3407,15 +3407,15 @@ msgstr "모든 값은 <0>#</0> 뒤에 들어가요. 브라우저는 이 부분�
 
 #: src/components/live/source-position.tsx
 msgid "Exact"
-msgstr ""
+msgstr "정확히"
 
 #: src/components/live/source-position.tsx
 msgid "Exactly the box, out of shape if need be."
-msgstr ""
+msgstr "필요하면 모양이 바뀌더라도 상자에 딱 맞춰요."
 
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
-msgstr ""
+msgstr "기존 소스"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3443,7 +3443,7 @@ msgstr "필드"
 
 #: src/components/live/source-position.tsx
 msgid "Fill"
-msgstr ""
+msgstr "채우기"
 
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
@@ -3456,7 +3456,7 @@ msgstr "초기 설정 마치기"
 
 #: src/components/live/source-position.tsx
 msgid "Fit"
-msgstr ""
+msgstr "맞추기"
 
 #: src/components/live/quick-actions.tsx
 msgid "Fix feed"
@@ -3473,11 +3473,11 @@ msgstr "피드 복구"
 
 #: src/components/live/source-editor.tsx
 msgid "Font"
-msgstr ""
+msgstr "글꼴"
 
 #: src/components/live/source-editor.tsx
 msgid "Font size"
-msgstr ""
+msgstr "글꼴 크기"
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
@@ -3513,7 +3513,7 @@ msgstr "네트워크 삭제"
 
 #: src/components/live/source-editor.tsx
 msgid "Frame rate"
-msgstr ""
+msgstr "프레임 속도"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Free disk"
@@ -3527,7 +3527,7 @@ msgstr "구독이 없는 워크스페이스는 Free로 이동해요."
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "From {0} {1}"
-msgstr ""
+msgstr "{0}에서 {1}"
 
 #. placeholder {0}: channel.links.length
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -3556,7 +3556,7 @@ msgstr "60자 이내로 이름을 입력하세요."
 
 #: src/lib/api-messages.ts
 msgid "Give the source a name of up to 256 characters."
-msgstr ""
+msgstr "소스 이름은 256자 이하로 정하세요."
 
 #: src/components/live/audio-mixer.tsx
 msgid "Global"
@@ -3583,7 +3583,7 @@ msgstr "장면으로 이동"
 
 #: src/lib/api-messages.ts
 msgid "Groups, and what's in them, can only be removed in OBS."
-msgstr ""
+msgstr "그룹과 그 안의 항목은 OBS에서만 제거할 수 있어요."
 
 #: src/components/live/moblin-card.tsx
 msgid "Heat"
@@ -3592,7 +3592,7 @@ msgstr "발열"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Height"
-msgstr ""
+msgstr "높이"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -3809,7 +3809,7 @@ msgstr "정보"
 
 #: src/components/live/source-editor.tsx
 msgid "Input format"
-msgstr ""
+msgstr "입력 형식"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -3825,7 +3825,7 @@ msgstr "인터페이스 이름"
 
 #: src/components/live/scene-grid.tsx
 msgid "Intermission"
-msgstr ""
+msgstr "휴식 시간"
 
 #: src/lib/api-messages.ts
 msgid "Internal server error"
@@ -3906,11 +3906,11 @@ msgstr "이 목록에서 사라져요. 감사 로그에는 존재했다는 기�
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It isn’t in {0} anymore."
-msgstr ""
+msgstr "이제 {0}에 없어요."
 
 #: src/components/live/source-position.tsx
 msgid "It isn’t right on the scene on air, so the preview wouldn’t line up: the box is drawn without it."
-msgstr ""
+msgstr "송출 중인 장면에 바로 있지 않아서 미리보기가 맞지 않아요. 상자는 미리보기 없이 그려져요."
 
 #: src/lib/api-messages.ts
 msgid "It isn't sold with that billing period"
@@ -3922,11 +3922,11 @@ msgstr "BELABOX Cloud에서 연결이 해제됐어요"
 
 #: src/components/live/source-editor.tsx
 msgid "It plays a file from the OBS computer. Files can only be picked in OBS, and it’s kept unless you replace it with a URL."
-msgstr ""
+msgstr "OBS 컴퓨터의 파일을 재생하고 있어요. 파일은 OBS에서만 고를 수 있고, URL로 바꿀 때까지 그대로 남아요."
 
 #: src/components/live/source-editor.tsx
 msgid "It plays files from the OBS computer. They can only be picked in OBS, and they’re kept unless you replace them with URLs."
-msgstr ""
+msgstr "OBS 컴퓨터의 파일들을 재생하고 있어요. 파일은 OBS에서만 고를 수 있고, URL로 바꿀 때까지 그대로 남아요."
 
 #: src/lib/live-format.ts
 msgid "It reached BELABOX Cloud"
@@ -3934,16 +3934,16 @@ msgstr "BELABOX Cloud에 연결됐어요"
 
 #: src/components/live/source-editor.tsx
 msgid "It shows the text of a file on the OBS computer. Files can only be picked in OBS, and it keeps reading it unless you type text instead."
-msgstr ""
+msgstr "OBS 컴퓨터에 있는 파일의 텍스트를 표시하고 있어요. 파일은 OBS에서만 고를 수 있고, 대신 텍스트를 입력할 때까지 계속 읽어요."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s added on top of the scene in OBS, so it shows over the others."
-msgstr ""
+msgstr "OBS 장면의 맨 위에 추가돼서 다른 소스 위에 보여요."
 
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It’s in the group {0}: positions are measured from the group, so they’re only exact if the group fills the screen."
-msgstr ""
+msgstr "그룹 {0} 안에 있어요. 위치는 그룹 기준이라 그룹이 화면을 가득 채울 때만 정확해요."
 
 #: src/lib/api-messages.ts
 msgid "It's in use now. Reload and try again."
@@ -3951,31 +3951,31 @@ msgstr "지금 사용 중이에요. 새로고침 후 다시 시도하세요."
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s on air: switch to another scene first."
-msgstr ""
+msgstr "송출 중이에요. 먼저 다른 장면으로 전환하세요."
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
-msgstr ""
+msgstr "안에 있는 것과 함께 OBS에서 바로 제거돼요. 다른 장면에서 쓰지 않는 소스는 OBS가 설정과 함께 삭제해요."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed from this scene in OBS right away, on stream. The scene itself and what’s in it stay."
-msgstr ""
+msgstr "방송 중인 OBS의 이 장면에서 바로 제거돼요. 장면 자체와 그 안의 것은 남아요."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
-msgstr ""
+msgstr "방송 중인 OBS에서 바로 제거돼요. 다른 장면에서 쓰지 않으면 OBS가 설정과 함께 삭제해요."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
-msgstr ""
+msgstr "복사본이 아니라 같은 소스예요. 바꾸면 그 소스가 있는 모든 장면에서 바뀌어요. 하나만 바꾸려면 대신 복제하세요."
 
 #: src/components/live/source-position.tsx
 msgid "It’s turned in OBS, so the box is only roughly where it shows."
-msgstr ""
+msgstr "OBS에서 회전돼 있어서 상자는 보이는 위치와 대략만 맞아요."
 
 #: src/components/live/source-editor.tsx
 msgid "Italic"
-msgstr ""
+msgstr "기울임"
 
 #: src/components/chat/chat-links.tsx
 msgid "Its chat stops controlling this switcher, and the bot leaves the channel."
@@ -3995,7 +3995,7 @@ msgstr "나머지는 해당 조직의 관리자가 관리해요. 여기서 첫 �
 
 #: src/components/live/source-position.tsx
 msgid "Its own size."
-msgstr ""
+msgstr "원래 크기 그대로."
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4092,11 +4092,11 @@ msgstr "유지"
 
 #: src/components/live/source-position.tsx
 msgid "Keep its shape when resizing"
-msgstr ""
+msgstr "크기를 바꿀 때 모양 유지"
 
 #: src/components/live/source-editor.tsx
 msgid "Keep playing"
-msgstr ""
+msgstr "계속 재생"
 
 #: src/components/live/quick-actions.tsx
 msgid "Keep recording"
@@ -4224,7 +4224,7 @@ msgstr "워크스페이스 나가기"
 
 #: src/components/live/source-position.tsx
 msgid "Left"
-msgstr ""
+msgstr "왼쪽"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Let everyone in chat use commands like !bitrate."
@@ -4382,7 +4382,7 @@ msgstr "이전 방송 더 보기"
 
 #: src/components/live/source-editor.tsx
 msgid "Loading its settings from OBS…"
-msgstr ""
+msgstr "OBS에서 설정을 불러오는 중…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4456,7 +4456,7 @@ msgstr "YouTube 채널을 조회하려면 API 키가 필요해요"
 
 #: src/components/live/source-editor.tsx
 msgid "Loop the playlist"
-msgstr ""
+msgstr "재생 목록 반복"
 
 #: src/lib/obs-preview.ts
 msgid "Low"
@@ -4578,7 +4578,7 @@ msgstr "관리형 워크스페이스"
 
 #: src/components/live/source-position.tsx
 msgid "Margin from the edges (% of the screen’s height)"
-msgstr ""
+msgstr "가장자리 여백(화면 높이의 %)"
 
 #: src/components/support-access.tsx
 msgid "Mark as seen"
@@ -4640,7 +4640,7 @@ msgstr "측정 중…"
 
 #: src/components/live/source-editor.tsx
 msgid "Media source"
-msgstr ""
+msgstr "미디어 소스"
 
 #: src/lib/obs-preview.ts
 msgid "Medium"
@@ -4889,7 +4889,7 @@ msgstr "수량 늘리기"
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
 msgid "More for {0}"
-msgstr ""
+msgstr "{0} 더보기"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "More latency survives worse connections, {SRT_LATENCY_MIN} to {SRT_LATENCY_MAX}."
@@ -4897,7 +4897,7 @@ msgstr "지연 시간이 길수록 나쁜 연결에서도 버틸 수 있어요. 
 
 #: src/components/live/source-fields.tsx
 msgid "More settings"
-msgstr ""
+msgstr "추가 설정"
 
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
@@ -4919,7 +4919,7 @@ msgstr "Free로 이동할까요?"
 #: src/components/live/source-position.tsx
 #: src/lib/live-format.ts
 msgid "Moved {0}"
-msgstr ""
+msgstr "{0}을(를) 옮겼어요"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Moved to {code}"
@@ -4985,7 +4985,7 @@ msgstr "이름은 최대 60자예요"
 
 #: src/components/live/source-editor.tsx
 msgid "Name of the copy"
-msgstr ""
+msgstr "복사본 이름"
 
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
@@ -5038,19 +5038,19 @@ msgstr "네트워크"
 
 #: src/components/live/source-editor.tsx
 msgid "Network buffering (MB)"
-msgstr ""
+msgstr "네트워크 버퍼링(MB)"
 
 #: src/lib/api-messages.ts
 msgid "Network buffering is 0 to 16 MB."
-msgstr ""
+msgstr "네트워크 버퍼링은 0~16MB예요."
 
 #: src/components/live/source-editor.tsx
 msgid "Network caching (ms)"
-msgstr ""
+msgstr "네트워크 캐시(ms)"
 
 #: src/lib/api-messages.ts
 msgid "Network caching is 100 to 60,000 ms."
-msgstr ""
+msgstr "네트워크 캐시는 100~60,000ms예요."
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Network name"
@@ -5126,11 +5126,11 @@ msgstr "새 플랜"
 
 #: src/components/live/scene-grid.tsx
 msgid "New scene"
-msgstr ""
+msgstr "새 장면"
 
 #: src/components/live/source-editor.tsx
 msgid "New source"
-msgstr ""
+msgstr "새 소스"
 
 #: src/components/admin/products.tsx
 msgid "New subscriptions can’t choose it anymore. People already paying keep it until they cancel."
@@ -5485,15 +5485,15 @@ msgstr "NOALBS 지원팀이 허가 없이 이 워크스페이스를 열었어요
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the bitrate is low. Pick another LOW scene on the Scenes page first."
-msgstr ""
+msgstr "비트레이트가 낮으면 NOALBS가 이 장면으로 전환해요. 먼저 장면 페이지에서 다른 LOW 장면을 선택하세요."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed drops. Pick another BRB scene on the Scenes page first."
-msgstr ""
+msgstr "영상이 끊기면 NOALBS가 이 장면으로 전환해요. 먼저 장면 페이지에서 다른 BRB 장면을 선택하세요."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed is good. Pick another LIVE scene on the Scenes page first."
-msgstr ""
+msgstr "영상이 좋으면 NOALBS가 이 장면으로 전환해요. 먼저 장면 페이지에서 다른 LIVE 장면을 선택하세요."
 
 #: src/lib/obs-preview.ts
 msgid "Nobody"
@@ -5699,7 +5699,7 @@ msgstr "아직"
 
 #: src/components/live/source-position.tsx
 msgid "Nothing changes in OBS until you save."
-msgstr ""
+msgstr "저장하기 전에는 OBS에서 아무것도 바뀌지 않아요."
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Nothing happened during this stream."
@@ -5791,7 +5791,7 @@ msgstr "OBS"
 
 #: src/lib/api-messages.ts
 msgid "OBS already has a source or scene with that name."
-msgstr ""
+msgstr "OBS에 이미 그 이름의 소스나 장면이 있어요."
 
 #: src/lib/admin.ts
 #: src/lib/live-format.ts
@@ -5817,7 +5817,7 @@ msgstr "OBS가 응답하지 않았어요. 잠시 후 다시 시도하세요."
 
 #: src/components/live/source-position.tsx
 msgid "OBS didn’t send a picture: the box is drawn without it."
-msgstr ""
+msgstr "OBS가 화면을 보내지 않았어요. 상자는 화면 없이 그려져요."
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS didn’t send a picture. Trying again…"
@@ -5834,15 +5834,15 @@ msgstr "OBS 연결 끊김"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
-msgstr ""
+msgstr "OBS에 VLC 플러그인이 없어요"
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its own size yet (it isn’t showing anything), so this can’t be drawn. It still works once it shows something."
-msgstr ""
+msgstr "OBS가 아직 이 소스 자체의 크기를 몰라요(아무것도 표시하지 않음). 그래서 그릴 수 없지만, 무언가 표시되면 그대로 작동해요."
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its size yet (it isn’t showing anything), so the box starts in the middle."
-msgstr ""
+msgstr "OBS가 아직 크기를 몰라요(아무것도 표시하지 않음). 그래서 상자는 가운데에서 시작해요."
 
 #. placeholder {0}: status?.current_scene ? ` (${status.current_scene.name})` : ""
 #: src/components/live/quick-actions.tsx
@@ -5909,7 +5909,7 @@ msgstr "방송 기록 보관"
 
 #: src/components/live/source-position.tsx
 msgid "Of the screen"
-msgstr ""
+msgstr "화면 대비"
 
 #: src/components/trigger-field.tsx
 msgid "off"
@@ -5923,7 +5923,7 @@ msgstr "꺼짐"
 
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
-msgstr ""
+msgstr "방송 중이 아닐 때는 미리보기가 숨겨져요. 상자는 미리보기 없이 그려져요."
 
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
@@ -6067,7 +6067,7 @@ msgstr "악용, 법적 의무, 보안 문제에만 1시간 동안 사용할 수 
 
 #: src/lib/api-messages.ts
 msgid "Only media, VLC, browser and text sources can be edited here. Change this one in OBS."
-msgstr ""
+msgstr "여기서는 미디어, VLC, 브라우저, 텍스트 소스만 편집할 수 있어요. 이 소스는 OBS에서 바꾸세요."
 
 #: src/lib/api-messages.ts
 msgid "Only members of the workspace can do this"
@@ -6263,7 +6263,7 @@ msgstr "조직"
 
 #: src/components/live/source-position.tsx
 msgid "Original"
-msgstr ""
+msgstr "원래 크기"
 
 #: src/components/live/moblin-card.tsx
 msgid "Other"
@@ -6279,7 +6279,7 @@ msgstr "범위 밖"
 
 #: src/components/live/source-editor.tsx
 msgid "Outline"
-msgstr ""
+msgstr "외곽선"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Over plan limit"
@@ -6287,7 +6287,7 @@ msgstr "플랜 한도 초과"
 
 #: src/components/live/source-editor.tsx
 msgid "Overlay links often hold a key: it’s shown hidden."
-msgstr ""
+msgstr "오버레이 링크에는 키가 들어 있는 경우가 많아서 숨겨서 보여 줘요."
 
 #. placeholder {0}: server.name
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -6316,7 +6316,7 @@ msgstr "소유자"
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
-msgstr ""
+msgstr "페이지 URL"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
@@ -6339,7 +6339,7 @@ msgstr "지난 청구서에는 당시의 이메일과 카드 끝자리가 그대
 
 #: src/components/live/source-editor.tsx
 msgid "Pause, and resume when shown"
-msgstr ""
+msgstr "일시 정지하고 보이면 다시 재생"
 
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -6400,7 +6400,7 @@ msgstr "코덱을 선택하세요"
 
 #: src/lib/api-messages.ts
 msgid "Pick a color."
-msgstr ""
+msgstr "색상을 고르세요."
 
 #: src/lib/belabox.ts
 msgid "Pick a network type"
@@ -6428,7 +6428,7 @@ msgstr "서버를 선택하세요"
 
 #: src/lib/api-messages.ts
 msgid "Pick a size from 5% to 100% of the screen."
-msgstr ""
+msgstr "화면의 5%~100% 사이 크기를 고르세요."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Pick a source"
@@ -6469,7 +6469,7 @@ msgstr "파이프라인"
 
 #: src/components/live/source-position.tsx
 msgid "Pixels cut off each side of the source, before it’s sized."
-msgstr ""
+msgstr "크기를 맞추기 전에 소스의 각 변에서 잘라낼 픽셀이에요."
 
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
@@ -6517,7 +6517,7 @@ msgstr "플랫폼"
 
 #: src/components/live/source-editor.tsx
 msgid "Playlist"
-msgstr ""
+msgstr "재생 목록"
 
 #: src/lib/organizations.ts
 #: src/routes/_app/admin/organizations/$organization.tsx
@@ -6532,11 +6532,11 @@ msgstr "포트"
 #. placeholder {0}: source.name
 #: src/components/live/source-position.tsx
 msgid "Position {0}"
-msgstr ""
+msgstr "{0} 배치"
 
 #: src/components/live/source-list.tsx
 msgid "Position…"
-msgstr ""
+msgstr "배치…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
@@ -6564,7 +6564,7 @@ msgstr "접두사 {0}"
 
 #: src/components/live/source-position.tsx
 msgid "Presets"
-msgstr ""
+msgstr "프리셋"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview"
@@ -6708,7 +6708,7 @@ msgstr "다시 연결"
 
 #: src/components/live/source-editor.tsx
 msgid "Reconnect delay (s)"
-msgstr ""
+msgstr "재연결 대기 시간(초)"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
@@ -6809,7 +6809,7 @@ msgstr "릴레이 서버"
 
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
-msgstr ""
+msgstr "장면이 송출되면 다시 불러오기"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
@@ -6836,7 +6836,7 @@ msgstr "{0} 제거"
 #. placeholder {1}: removing?.parent
 #: src/components/live/source-list.tsx
 msgid "Remove {0} from {1}?"
-msgstr ""
+msgstr "{1}에서 {0}을(를) 제거할까요?"
 
 #. placeholder {0}: channel.display_name
 #: src/components/chat/chat-links.tsx
@@ -6861,7 +6861,7 @@ msgstr "별칭 {alias} 제거"
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
-msgstr ""
+msgstr "{0}에서 제거…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Remove missing"
@@ -6890,12 +6890,12 @@ msgstr "이름 {label} 제거"
 #. placeholder {0}: scene.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}"
-msgstr ""
+msgstr "장면 {0} 제거"
 
 #. placeholder {0}: removing?.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}?"
-msgstr ""
+msgstr "장면 {0}을(를) 제거할까요?"
 
 #: src/lib/api-messages.ts
 msgid "Remove their staff access before disabling the account."
@@ -6907,7 +6907,7 @@ msgstr "이 공지를 제거할까요?"
 
 #: src/components/live/source-editor.tsx
 msgid "Remove this URL"
-msgstr ""
+msgstr "이 URL 제거"
 
 #. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
@@ -6920,7 +6920,7 @@ msgstr "{0} 제거"
 #. placeholder {1}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Removed {0} from {1}"
-msgstr ""
+msgstr "{1}에서 {0}을(를) 제거했어요"
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -6947,7 +6947,7 @@ msgstr "서버 제거됨"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Removed the scene {0}"
-msgstr ""
+msgstr "장면 {0}을(를) 제거했어요"
 
 #: src/lib/support.ts
 msgid "Removed the workspace’s chat bot"
@@ -6974,7 +6974,7 @@ msgstr "이름 변경: {0} → {subject}"
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "Renamed from {0} {1}"
-msgstr ""
+msgstr "{0}에서 이름을 바꿈 {1}"
 
 #: src/lib/org-audit.ts
 msgid "renamed from {previousName}"
@@ -7007,11 +7007,11 @@ msgstr "시크릿 URL 교체"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with a URL"
-msgstr ""
+msgstr "URL로 바꾸기"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with URLs"
-msgstr ""
+msgstr "URL들로 바꾸기"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Reply"
@@ -7028,7 +7028,7 @@ msgstr "요청에 실패했어요 ({0})"
 
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
-msgstr ""
+msgstr "소스가 활성화되면 재생 다시 시작"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -7089,7 +7089,7 @@ msgstr "채팅 권한 취소"
 
 #: src/components/live/source-position.tsx
 msgid "Right"
-msgstr ""
+msgstr "오른쪽"
 
 #: src/lib/stream-server-kinds.ts
 msgid "RIST receiver"
@@ -7223,7 +7223,7 @@ msgstr "저장됨 — 입력해 교체"
 #. placeholder {0}: result.name
 #: src/components/live/source-editor.tsx
 msgid "Saved {0}"
-msgstr ""
+msgstr "{0}을(를) 저장했어요"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
@@ -7239,11 +7239,11 @@ msgstr "저장됨. 입력해 교체"
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away, and it reloads what it plays."
-msgstr ""
+msgstr "저장하면 OBS에서 바로 바뀌고, 재생하던 내용을 다시 불러와요."
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away."
-msgstr ""
+msgstr "저장하면 OBS에서 바로 바뀌어요."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
@@ -7312,7 +7312,7 @@ msgstr "장면"
 
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
-msgstr ""
+msgstr "장면과 그룹은 여기서 복제할 수 없어요."
 
 #: src/components/live/scene-grid.tsx
 msgid "Scenes appear once OBS is connected."
@@ -7328,7 +7328,7 @@ msgstr "예약됨"
 
 #: src/components/live/source-editor.tsx
 msgid "Search"
-msgstr ""
+msgstr "검색"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -7625,11 +7625,11 @@ msgstr "모든 워크스페이스 표시"
 
 #: src/components/live/source-editor.tsx
 msgid "Show it right away"
-msgstr ""
+msgstr "바로 표시"
 
 #: src/components/live/source-editor.tsx
 msgid "Show nothing when playback ends"
-msgstr ""
+msgstr "재생이 끝나면 아무것도 표시하지 않기"
 
 #: src/components/support-access.tsx
 #: src/routes/_app/admin/audit.tsx
@@ -7685,11 +7685,11 @@ msgstr "플랜 페이지와 Checkout에 표시돼요."
 
 #: src/components/live/source-editor.tsx
 msgid "Shuffle"
-msgstr ""
+msgstr "무작위 재생"
 
 #: src/components/live/source-editor.tsx
 msgid "Shut it down while it isn’t shown"
-msgstr ""
+msgstr "보이지 않는 동안 끄기"
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -7828,7 +7828,7 @@ msgstr "정렬"
 
 #: src/components/live/source-editor.tsx
 msgid "Source"
-msgstr ""
+msgstr "소스"
 
 #: src/components/live/source-list.tsx
 msgid "Sources"
@@ -8103,7 +8103,7 @@ msgstr "오프라인 시 중지"
 
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
-msgstr ""
+msgstr "정지하고 보이면 처음부터 재생"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -8174,11 +8174,11 @@ msgstr "방송 중지됨"
 
 #: src/components/live/source-editor.tsx
 msgid "stream URL"
-msgstr ""
+msgstr "스트림 URL"
 
 #: src/components/live/source-editor.tsx
 msgid "Stream URL"
-msgstr ""
+msgstr "스트림 URL"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
@@ -8199,7 +8199,7 @@ msgstr "방송"
 
 #: src/components/live/source-position.tsx
 msgid "Stretch"
-msgstr ""
+msgstr "늘리기"
 
 #: src/components/admin/products.tsx
 msgid "Stripe"
@@ -8334,7 +8334,7 @@ msgstr "{0}(으)로 전환"
 
 #: src/lib/api-messages.ts
 msgid "Switch to another scene first: the scene on air can't be removed."
-msgstr ""
+msgstr "먼저 다른 장면으로 전환하세요. 송출 중인 장면은 제거할 수 없어요."
 
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
@@ -8526,7 +8526,7 @@ msgstr "스트림 서버 테스트"
 
 #: src/components/live/source-editor.tsx
 msgid "Text"
-msgstr ""
+msgstr "텍스트"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
@@ -8587,7 +8587,7 @@ msgstr "이 가격은 Stripe에 보관 처리됐어요."
 
 #: src/lib/api-messages.ts
 msgid "That scene isn't in OBS anymore. Reload the list."
-msgstr ""
+msgstr "그 장면은 이제 OBS에 없어요. 목록을 다시 불러오세요."
 
 #: src/lib/api-messages.ts
 msgid "That source isn't in the scene anymore. Reload the list."
@@ -8706,7 +8706,7 @@ msgstr "봇 액세스가 취소됐어요"
 
 #: src/lib/api-messages.ts
 msgid "The box is 1 to 16384 pixels wide and high, within 16384 pixels of the screen."
-msgstr ""
+msgstr "상자의 너비와 높이는 1~16384픽셀이고, 화면에서 16384픽셀 이내예요."
 
 #: src/lib/triggers.ts
 msgid "The BRB bitrate must be lower than the LOW bitrate."
@@ -8755,7 +8755,7 @@ msgstr "피드 변경됨"
 
 #: src/lib/api-messages.ts
 msgid "The font size is 1 to 1024."
-msgstr ""
+msgstr "글꼴 크기는 1~1024예요."
 
 #: src/lib/api-messages.ts
 msgid "The Free plan has no price."
@@ -8771,7 +8771,7 @@ msgstr "핫스팟 설정이 BELABOX 소프트웨어 외부에서 변경됐어요
 
 #: src/lib/api-messages.ts
 msgid "The input format is letters, digits and underscores only, like mpegts."
-msgstr ""
+msgstr "입력 형식은 영문자, 숫자, 밑줄만 쓸 수 있어요. 예: mpegts."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "The key your server gives you for this stream."
@@ -8783,7 +8783,7 @@ msgstr "링크"
 
 #: src/lib/api-messages.ts
 msgid "The margin is 0% to 25% of the screen."
-msgstr ""
+msgstr "여백은 화면의 0%~25%예요."
 
 #: src/lib/stream-server-kinds.ts
 msgid "The MediaMTX API address of your stream's path. Enable the API in mediamtx.yml."
@@ -8900,7 +8900,7 @@ msgstr "범위가 비어 있거나 방송 범위를 벗어났어요."
 
 #: src/lib/api-messages.ts
 msgid "The reconnect delay is 1 to 60 seconds."
-msgstr ""
+msgstr "재연결 대기 시간은 1~60초예요."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "The recording pauses on any scene not picked here and resumes when you come back to one that is. Leave it empty to record on every scene. If you resume it yourself on another scene, it keeps recording until the next scene change."
@@ -8986,7 +8986,7 @@ msgstr "스위처가 방송 중이 아니에요. 마커는 진행 중인 방송�
 #. placeholder {0}: role[1]
 #: src/components/live/scene-grid.tsx
 msgid "The switcher uses it ({0}): pick another on the Scenes page first."
-msgstr ""
+msgstr "스위처가 이 장면을 쓰고 있어요({0}). 먼저 장면 페이지에서 다른 장면을 선택하세요."
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "The team isn't counted."
@@ -9146,19 +9146,19 @@ msgstr "로그인에 쓰는 유일한 계정이에요. 먼저 다른 계정을 �
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Ending scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "스위처의 종료 장면이에요. 먼저 장면 페이지에서 다른 장면을 선택하세요."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Privacy scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "스위처의 프라이버시 장면이에요. 먼저 장면 페이지에서 다른 장면을 선택하세요."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Refresh scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "스위처의 새로고침 장면이에요. 먼저 장면 페이지에서 다른 장면을 선택하세요."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Starting scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "스위처의 시작 장면이에요. 먼저 장면 페이지에서 다른 장면을 선택하세요."
 
 #: src/routes/integrate-stream-server.tsx
 msgid "This kind has no other settings."
@@ -9178,11 +9178,11 @@ msgstr "이 OAuth 계정은 이미 다른 사용자에게 연결되어 있어요
 
 #: src/components/live/source-editor.tsx
 msgid "This OBS doesn’t have it"
-msgstr ""
+msgstr "이 OBS에는 없어요"
 
 #: src/lib/api-messages.ts
 msgid "This OBS doesn't have that kind of source."
-msgstr ""
+msgstr "이 OBS에는 그런 종류의 소스가 없어요."
 
 #: src/lib/api-messages.ts
 msgid "This OBS version doesn't report scene IDs. Update OBS to do this from here."
@@ -9280,7 +9280,7 @@ msgstr "팁: 두 번째 서버를 백업 업링크로 추가하면 NOALBS가 장
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "To {0} {1}"
-msgstr ""
+msgstr "{0}(으)로 {1}"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
@@ -9288,15 +9288,15 @@ msgstr "토큰"
 
 #: src/components/live/source-position.tsx
 msgid "Top"
-msgstr ""
+msgstr "위"
 
 #: src/components/live/source-position.tsx
 msgid "Top left"
-msgstr ""
+msgstr "왼쪽 위"
 
 #: src/components/live/source-position.tsx
 msgid "Top right"
-msgstr ""
+msgstr "오른쪽 위"
 
 #: src/components/transfer-ownership.tsx
 msgid "Transfer ownership"
@@ -9391,7 +9391,7 @@ msgstr "확인하려면 <0>{phrase}</0>을(를) 입력하세요"
 
 #: src/components/live/source-editor.tsx
 msgid "Type text instead"
-msgstr ""
+msgstr "대신 텍스트 입력"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/stream-panel.tsx
@@ -9401,7 +9401,7 @@ msgstr "변경 없음"
 
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
-msgstr ""
+msgstr "변경 취소"
 
 #: src/components/admin/products.tsx
 msgid "Unit"
@@ -9533,7 +9533,7 @@ msgstr "소문자, 숫자, 대시로 2~30자를 사용하세요."
 
 #: src/components/live/source-editor.tsx
 msgid "Use a frame rate of its own"
-msgstr ""
+msgstr "별도 프레임 속도 사용"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Use a stream ID instead"
@@ -9553,7 +9553,7 @@ msgstr "이 서버를 사용하는 동안 다른 장면을 사용해요."
 
 #: src/components/live/source-editor.tsx
 msgid "Use hardware decoding when available"
-msgstr ""
+msgstr "가능하면 하드웨어 디코딩 사용"
 
 #: src/components/moblin-settings.tsx
 msgid "Use my own password"
@@ -9641,11 +9641,11 @@ msgstr "VIP"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video source"
-msgstr ""
+msgstr "VLC 비디오 소스"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video sources need OBS’s VLC plugin and VLC installed."
-msgstr ""
+msgstr "VLC 비디오 소스를 쓰려면 OBS의 VLC 플러그인과 VLC 설치가 필요해요."
 
 #. placeholder {0}: input.name
 #: src/components/live/audio-mixer.tsx
@@ -9794,7 +9794,7 @@ msgstr "OBS 방송이 중지되면(OBS, 대시보드, !stop, 레이드) Moblin�
 
 #: src/components/live/source-position.tsx
 msgid "Where"
-msgstr ""
+msgstr "위치"
 
 #. placeholder {0}: Math.round(box.x)
 #. placeholder {1}: Math.round(box.y)
@@ -9802,7 +9802,7 @@ msgstr ""
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "Where {name} would be: {0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "{name}의 위치: {0}, {1}, {2}×{3}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Where the BELABOX sends the stream."
@@ -9822,7 +9822,7 @@ msgstr "Moblin이 어떤 본딩 연결을 사용하고 어떤 연결을 우선�
 
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
-msgstr ""
+msgstr "보이지 않는 동안"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
@@ -9860,7 +9860,7 @@ msgstr "방송 전체"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Width"
-msgstr ""
+msgstr "너비"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "WiFi"
@@ -9963,7 +9963,7 @@ msgstr "WiFi 비밀번호가 틀렸어요"
 
 #: src/components/live/source-position.tsx
 msgid "X"
-msgstr ""
+msgstr "X"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Xiu media server"
@@ -9975,7 +9975,7 @@ msgstr "Xiu의 query_stream API예요."
 
 #: src/components/live/source-position.tsx
 msgid "Y"
-msgstr ""
+msgstr "Y"
 
 #: src/lib/billing.ts
 #: src/routes/_app/$workspace/settings/plan.tsx

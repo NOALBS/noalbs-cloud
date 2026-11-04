@@ -658,7 +658,7 @@ msgstr "{0}–{1}"
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "{0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "{0}, {1}, {2} на {3}"
 
 #. placeholder {0}: addon.code
 #. placeholder {1}: addon.quantity
@@ -812,7 +812,7 @@ msgstr "{name} вилучено"
 
 #: src/components/live/placement-canvas.tsx
 msgid "{name}: drag to move, pull a corner to resize, or use the arrow keys"
-msgstr ""
+msgstr "{name}: перетягни, щоб перемістити, потягни за кут, щоб змінити розмір, або скористайся стрілками"
 
 #. placeholder {0}: roleLabels()[role]
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -1002,7 +1002,7 @@ msgstr "7 днів"
 #. placeholder {1}: canvas.height
 #: src/components/live/source-position.tsx
 msgid "A box in pixels on the {0}×{1} screen, from its top left. The source fits inside it, keeping its shape."
-msgstr ""
+msgstr "Рамка в пікселях на зображенні {0}×{1}, від її лівого верхнього кута. Джерело вміщується в неї, зберігаючи форму."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
@@ -1010,11 +1010,11 @@ msgstr "Джерело «Браузер» в OBS пов’язує його з �
 
 #: src/lib/api-messages.ts
 msgid "A browser source is 1 to 8192 pixels wide and high."
-msgstr ""
+msgstr "Джерело браузера має від 1 до 8192 пікселів завширшки й заввишки."
 
 #: src/lib/api-messages.ts
 msgid "A browser source's frame rate is 1 to 60."
-msgstr ""
+msgstr "Частота кадрів джерела браузера — від 1 до 60."
 
 #. placeholder {0}: firstSwitcher.name
 #: src/components/app-shell.tsx
@@ -1035,11 +1035,11 @@ msgstr "видалений користувач"
 
 #: src/lib/api-messages.ts
 msgid "A font's name is at most 128 characters."
-msgstr ""
+msgstr "Назва шрифту — не більше 128 символів."
 
 #: src/components/live/source-position.tsx
 msgid "A full-screen box has none."
-msgstr ""
+msgstr "Рамка на весь екран його не має."
 
 #: src/lib/api-messages.ts
 msgid "A limit is out of range"
@@ -1060,7 +1060,7 @@ msgstr "Для нових підписок у Stripe створюється но
 
 #: src/components/live/source-editor.tsx
 msgid "A new source with a copy of its settings, filters and placement. Changing one doesn’t change the other."
-msgstr ""
+msgstr "Нове джерело з копією налаштувань, фільтрів і розташування. Зміни одного не змінюють іншого."
 
 #: src/lib/api-messages.ts
 msgid "A notice has to end after it starts"
@@ -1085,7 +1085,7 @@ msgstr "Платіж за цей робочий простір не пройшо
 
 #: src/lib/api-messages.ts
 msgid "A scene can't be added to itself."
-msgstr ""
+msgstr "Сцену не можна додати в саму себе."
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "A subscription ends straight away, without a refund."
@@ -1105,11 +1105,11 @@ msgstr "Світчер із такою назвою тут уже існує"
 
 #: src/lib/api-messages.ts
 msgid "A text source says at most 10,000 characters."
-msgstr ""
+msgstr "Текстове джерело показує не більше 10 000 символів."
 
 #: src/lib/api-messages.ts
 msgid "A VLC source plays 1 to 50 URLs."
-msgstr ""
+msgstr "Джерело VLC відтворює від 1 до 50 URL."
 
 #: src/components/orgs/client-dialog.tsx
 msgid "A whole number from 0 to {MAX_ALLOCATION}, or empty."
@@ -1216,7 +1216,7 @@ msgstr "Додати мережу за назвою…"
 
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
-msgstr ""
+msgstr "Додати джерело"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -1242,7 +1242,7 @@ msgstr "Додай його, щоб підключити свій OBS. Це за
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
-msgstr ""
+msgstr "Додати сцену"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/add-server.tsx
@@ -1252,7 +1252,7 @@ msgstr "Додати сервер"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-list.tsx
 msgid "Add source"
-msgstr ""
+msgstr "Додати джерело"
 
 #: src/components/app-shell.tsx
 #: src/components/create-switcher-dialog.tsx
@@ -1270,7 +1270,7 @@ msgstr "Додати до NOALBS Cloud"
 
 #: src/components/live/source-editor.tsx
 msgid "Add URL"
-msgstr ""
+msgstr "Додати URL"
 
 #: src/components/admin/products.tsx
 msgid "Add-on created"
@@ -1299,13 +1299,13 @@ msgstr "Додано {0}"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Added {0} again"
-msgstr ""
+msgstr "{0} знову додано"
 
 #. placeholder {0}: added.name
 #. placeholder {0}: created.name
 #: src/components/live/source-editor.tsx
 msgid "Added {0} to {sceneName}"
-msgstr ""
+msgstr "{0} додано до {sceneName}"
 
 #: src/lib/support.ts
 msgid "Added a stream server"
@@ -1320,7 +1320,7 @@ msgstr "Додано світчер"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Added the scene {0}"
-msgstr ""
+msgstr "Сцену {0} додано"
 
 #: src/components/create-switcher-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -1503,11 +1503,11 @@ msgstr "Адміністратор цього робочого простору 
 
 #: src/components/live/scene-grid.tsx
 msgid "An empty scene in OBS. Add sources to it from the Sources card."
-msgstr ""
+msgstr "Порожня сцена в OBS. Додай до неї джерела на картці «Джерела»."
 
 #: src/components/live/source-editor.tsx
 msgid "An srt://, rtmp://, rist://, udp:// or https:// address."
-msgstr ""
+msgstr "Адреса srt://, rtmp://, rist://, udp:// або https://."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Announce raids"
@@ -1584,11 +1584,11 @@ msgstr "Застосування…"
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
-msgstr ""
+msgstr "Якомога більше, зберігаючи форму."
 
 #: src/components/live/source-editor.tsx
 msgid "As the OBS computer names it, e.g. Arial. Empty keeps the font it has."
-msgstr ""
+msgstr "Як його називає комп’ютер з OBS, наприклад Arial. Порожньо — залишити поточний шрифт."
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
@@ -1621,7 +1621,7 @@ msgstr "на <0>{host}</0>"
 
 #: src/components/live/source-position.tsx
 msgid "At 100% it fills the screen wherever it’s pinned. Make it smaller to put it in a corner or on an edge."
-msgstr ""
+msgstr "На 100% воно заповнює зображення, хоч би де було закріплене. Зменш його, щоб поставити в кут або до краю."
 
 #: src/components/moblin-settings.tsx
 msgid "At least {MOBLIN_MIN_PASSWORD} characters"
@@ -1738,7 +1738,7 @@ msgstr "Назад на сайт"
 
 #: src/components/live/source-editor.tsx
 msgid "Backup SRT"
-msgstr ""
+msgstr "Запасний SRT"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Bad checks in a row before leaving LIVE; one check per second."
@@ -1944,7 +1944,7 @@ msgstr "Тригери бітрейту мають бути від 1 до 100 00
 
 #: src/components/live/source-editor.tsx
 msgid "Bold"
-msgstr ""
+msgstr "Жирний"
 
 #: src/components/live/moblin-card.tsx
 msgid "Bonding"
@@ -1960,15 +1960,15 @@ msgstr "Мова бота"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom"
-msgstr ""
+msgstr "Знизу"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom left"
-msgstr ""
+msgstr "Знизу ліворуч"
 
 #: src/components/live/source-position.tsx
 msgid "Bottom right"
-msgstr ""
+msgstr "Знизу праворуч"
 
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -2092,7 +2092,7 @@ msgstr "Виявляй проблемний канал передачі ще д�
 
 #: src/components/live/source-position.tsx
 msgid "Center"
-msgstr ""
+msgstr "По центру"
 
 #: src/components/support-access.tsx
 msgid "Change"
@@ -2113,7 +2113,7 @@ msgstr "Змінювати тариф чи оплату"
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
 msgid "Changed {0}"
-msgstr ""
+msgstr "{0} змінено"
 
 #: src/lib/org-audit.ts
 msgid "Changed {subject}"
@@ -2207,15 +2207,15 @@ msgstr "Зміни"
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others, or edit media, VLC, browser and text sources."
-msgstr ""
+msgstr "Зміни тут робляться в OBS, просто в ефірі. Пересувай джерела вище, щоб показати їх поверх інших, або редагуй медіа, VLC, браузерні та текстові джерела."
 
 #: src/components/live/source-list.tsx
 msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others."
-msgstr ""
+msgstr "Зміни тут робляться в OBS, просто в ефірі. Пересувай джерела вище, щоб показати їх поверх інших."
 
 #: src/components/live/scene-grid.tsx
 msgid "Changes here are made in OBS. The scene on air, and the scenes the switcher switches to, can’t be removed."
-msgstr ""
+msgstr "Зміни тут робляться в OBS. Сцену в ефірі та сцени, на які перемикається світчер, вилучити не можна."
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something breaks, for example it can’t get online anymore, use the <0>official BELABOX remote</0> (with your secret URL) or the BELABOX’s local UI to fix it."
@@ -2263,7 +2263,7 @@ msgstr "Сповіщення в чаті"
 
 #: src/components/live/source-editor.tsx
 msgid "Chat overlay"
-msgstr ""
+msgstr "Оверлей чату"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Chat service"
@@ -2351,7 +2351,7 @@ msgstr "Закрити"
 
 #: src/components/live/source-editor.tsx
 msgid "Close the stream while it isn’t shown"
-msgstr ""
+msgstr "Закривати потік, поки його не видно"
 
 #: src/components/admin/products.tsx
 msgid "Code"
@@ -2359,7 +2359,7 @@ msgstr "Код"
 
 #: src/components/live/source-editor.tsx
 msgid "Color"
-msgstr ""
+msgstr "Колір"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -2559,7 +2559,7 @@ msgstr "Продовжити з {0}"
 
 #: src/components/live/source-editor.tsx
 msgid "Control its audio from OBS’s Audio Mixer"
-msgstr ""
+msgstr "Керувати його звуком з аудіомікшера OBS"
 
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
@@ -2586,7 +2586,7 @@ msgstr "Скопійовано"
 #: src/components/live/source-editor.tsx
 #: src/lib/live-format.ts
 msgid "Copied {0} as {1}"
-msgstr ""
+msgstr "{0} скопійовано як {1}"
 
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
@@ -2675,7 +2675,7 @@ msgstr "Рахується під час стріму зі сценою «Кін
 
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
-msgstr ""
+msgstr "Заповнює рамку, зберігаючи форму; краї обрізаються."
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2789,23 +2789,23 @@ msgstr "Критичні оголошення не можна приховати
 
 #: src/components/live/source-position.tsx
 msgid "Crop bottom"
-msgstr ""
+msgstr "Обрізати знизу"
 
 #: src/lib/api-messages.ts
 msgid "Crop is at most 16384 pixels a side."
-msgstr ""
+msgstr "Обрізання — не більше 16384 пікселів з кожного боку."
 
 #: src/components/live/source-position.tsx
 msgid "Crop left"
-msgstr ""
+msgstr "Обрізати ліворуч"
 
 #: src/components/live/source-position.tsx
 msgid "Crop right"
-msgstr ""
+msgstr "Обрізати праворуч"
 
 #: src/components/live/source-position.tsx
 msgid "Crop top"
-msgstr ""
+msgstr "Обрізати згори"
 
 #: src/components/admin/products.tsx
 msgid "Currency"
@@ -2821,11 +2821,11 @@ msgstr "Зараз недоступно"
 
 #: src/components/live/source-editor.tsx
 msgid "Custom CSS"
-msgstr ""
+msgstr "Свій CSS"
 
 #: src/lib/api-messages.ts
 msgid "Custom CSS is at most 20,000 characters."
-msgstr ""
+msgstr "Свій CSS — не більше 20 000 символів."
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Customer"
@@ -3102,7 +3102,7 @@ msgstr "Завантажити історію стрімів"
 
 #: src/components/live/source-position.tsx
 msgid "Drag"
-msgstr ""
+msgstr "Перетягування"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
@@ -3114,16 +3114,16 @@ msgstr "Пропущені кадри"
 
 #: src/components/live/source-editor.tsx
 msgid "Duplicate"
-msgstr ""
+msgstr "Дублювати"
 
 #. placeholder {0}: source.name
 #: src/components/live/source-editor.tsx
 msgid "Duplicate {0}"
-msgstr ""
+msgstr "Дублювати {0}"
 
 #: src/components/live/source-list.tsx
 msgid "Duplicate…"
-msgstr ""
+msgstr "Дублювати…"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Duration"
@@ -3154,7 +3154,7 @@ msgstr "Редагувати {0}"
 
 #: src/components/live/source-editor.tsx
 msgid "Edit {name}"
-msgstr ""
+msgstr "Редагувати {name}"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
@@ -3162,7 +3162,7 @@ msgstr "Редагувати оголошення"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
-msgstr ""
+msgstr "Редагувати…"
 
 #: src/routes/_app/admin/audit.tsx
 msgid "Emergency"
@@ -3195,7 +3195,7 @@ msgstr "Екстрений доступ…"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
-msgstr ""
+msgstr "Порожньо — визначити самостійно, або наприклад mpegts."
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Enable"
@@ -3301,7 +3301,7 @@ msgstr "закінчується {0}"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "Введи URL потоку, наприклад srt://, rtmp:// або https://. Файли з комп’ютера з OBS вибираються лише в OBS."
 
 #: src/lib/belabox.ts
 msgid "Enter the APN"
@@ -3309,7 +3309,7 @@ msgstr "Введи APN"
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the page. Files on the OBS computer can only be picked in OBS."
-msgstr ""
+msgstr "Введи повну адресу сторінки http:// або https://. Файли з комп’ютера з OBS вибираються лише в OBS."
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the stats page"
@@ -3333,7 +3333,7 @@ msgstr "Введи ім’я користувача, що відповідає �
 
 #: src/lib/api-messages.ts
 msgid "Enter what the source plays."
-msgstr ""
+msgstr "Введи, що відтворює джерело."
 
 #: src/lib/belabox.ts
 msgid "Enter your stream ID"
@@ -3407,15 +3407,15 @@ msgstr "Усе міститься в частині після <0>#</0>, яку 
 
 #: src/components/live/source-position.tsx
 msgid "Exact"
-msgstr ""
+msgstr "Точно"
 
 #: src/components/live/source-position.tsx
 msgid "Exactly the box, out of shape if need be."
-msgstr ""
+msgstr "Точно за рамкою, навіть якщо спотворюється."
 
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
-msgstr ""
+msgstr "Наявне джерело"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3443,7 +3443,7 @@ msgstr "Поля"
 
 #: src/components/live/source-position.tsx
 msgid "Fill"
-msgstr ""
+msgstr "Заповнити"
 
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
@@ -3456,7 +3456,7 @@ msgstr "Завершити підключення"
 
 #: src/components/live/source-position.tsx
 msgid "Fit"
-msgstr ""
+msgstr "Вписати"
 
 #: src/components/live/quick-actions.tsx
 msgid "Fix feed"
@@ -3473,11 +3473,11 @@ msgstr "Сигнал виправлено"
 
 #: src/components/live/source-editor.tsx
 msgid "Font"
-msgstr ""
+msgstr "Шрифт"
 
 #: src/components/live/source-editor.tsx
 msgid "Font size"
-msgstr ""
+msgstr "Розмір шрифту"
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
@@ -3513,7 +3513,7 @@ msgstr "Забути мережу"
 
 #: src/components/live/source-editor.tsx
 msgid "Frame rate"
-msgstr ""
+msgstr "Частота кадрів"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Free disk"
@@ -3527,7 +3527,7 @@ msgstr "Free: тариф, на який потрапляють робочі пр
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "From {0} {1}"
-msgstr ""
+msgstr "З {0} {1}"
 
 #. placeholder {0}: channel.links.length
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -3556,7 +3556,7 @@ msgstr "Дай назву до 60 символів."
 
 #: src/lib/api-messages.ts
 msgid "Give the source a name of up to 256 characters."
-msgstr ""
+msgstr "Дай джерелу назву завдовжки до 256 символів."
 
 #: src/components/live/audio-mixer.tsx
 msgid "Global"
@@ -3583,7 +3583,7 @@ msgstr "До сцен"
 
 #: src/lib/api-messages.ts
 msgid "Groups, and what's in them, can only be removed in OBS."
-msgstr ""
+msgstr "Групи і те, що в них, вилучаються лише в OBS."
 
 #: src/components/live/moblin-card.tsx
 msgid "Heat"
@@ -3592,7 +3592,7 @@ msgstr "Нагрів"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Height"
-msgstr ""
+msgstr "Висота"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -3809,7 +3809,7 @@ msgstr "Інформація"
 
 #: src/components/live/source-editor.tsx
 msgid "Input format"
-msgstr ""
+msgstr "Формат входу"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -3825,7 +3825,7 @@ msgstr "Назва інтерфейсу"
 
 #: src/components/live/scene-grid.tsx
 msgid "Intermission"
-msgstr ""
+msgstr "Перерва"
 
 #: src/lib/api-messages.ts
 msgid "Internal server error"
@@ -3906,11 +3906,11 @@ msgstr "Воно зникне з цього списку. У журналі ау
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It isn’t in {0} anymore."
-msgstr ""
+msgstr "Його більше немає в {0}."
 
 #: src/components/live/source-position.tsx
 msgid "It isn’t right on the scene on air, so the preview wouldn’t line up: the box is drawn without it."
-msgstr ""
+msgstr "Воно лежить не просто в сцені в ефірі, тож прев’ю не збіглося б: рамку намальовано без нього."
 
 #: src/lib/api-messages.ts
 msgid "It isn't sold with that billing period"
@@ -3922,11 +3922,11 @@ msgstr "Він вийшов із BELABOX Cloud"
 
 #: src/components/live/source-editor.tsx
 msgid "It plays a file from the OBS computer. Files can only be picked in OBS, and it’s kept unless you replace it with a URL."
-msgstr ""
+msgstr "Воно відтворює файл з комп’ютера з OBS. Файли вибираються лише в OBS, і він лишається, доки ти не заміниш його на URL."
 
 #: src/components/live/source-editor.tsx
 msgid "It plays files from the OBS computer. They can only be picked in OBS, and they’re kept unless you replace them with URLs."
-msgstr ""
+msgstr "Воно відтворює файли з комп’ютера з OBS. Вони вибираються лише в OBS і лишаються, доки ти не заміниш їх на URL."
 
 #: src/lib/live-format.ts
 msgid "It reached BELABOX Cloud"
@@ -3934,16 +3934,16 @@ msgstr "Він дістався BELABOX Cloud"
 
 #: src/components/live/source-editor.tsx
 msgid "It shows the text of a file on the OBS computer. Files can only be picked in OBS, and it keeps reading it unless you type text instead."
-msgstr ""
+msgstr "Воно показує текст із файлу на комп’ютері з OBS. Файли вибираються лише в OBS, і воно читатиме його, доки ти не введеш текст замість нього."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s added on top of the scene in OBS, so it shows over the others."
-msgstr ""
+msgstr "Воно додається на верх сцени в OBS, тож видно його поверх інших."
 
 #. placeholder {0}: source.parent
 #: src/components/live/source-position.tsx
 msgid "It’s in the group {0}: positions are measured from the group, so they’re only exact if the group fills the screen."
-msgstr ""
+msgstr "Воно в групі {0}: розташування відраховується від групи, тож воно точне, лише коли група займає все зображення."
 
 #: src/lib/api-messages.ts
 msgid "It's in use now. Reload and try again."
@@ -3951,31 +3951,31 @@ msgstr "Зараз це використовується. Перезаванта
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s on air: switch to another scene first."
-msgstr ""
+msgstr "Вона в ефірі: спершу перемкнися на іншу сцену."
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
-msgstr ""
+msgstr "Її одразу вилучено з OBS разом з усім, що на ній: OBS видаляє джерела, яких не використовує жодна інша сцена, разом з їхніми налаштуваннями."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed from this scene in OBS right away, on stream. The scene itself and what’s in it stay."
-msgstr ""
+msgstr "Його одразу вилучено з цієї сцени в OBS, просто в ефірі. Сама сцена і те, що в ній, лишаються."
 
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
-msgstr ""
+msgstr "Його одразу вилучено в OBS, просто в ефірі. Якщо його не використовує жодна інша сцена, OBS видаляє його разом з налаштуваннями."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
-msgstr ""
+msgstr "Це те саме джерело, а не копія: зміни зачеплять його в усіх сценах, де воно є. Щоб змінити лише одне, зроби дублікат."
 
 #: src/components/live/source-position.tsx
 msgid "It’s turned in OBS, so the box is only roughly where it shows."
-msgstr ""
+msgstr "Воно повернуте в OBS, тож рамка лише приблизно там, де його видно."
 
 #: src/components/live/source-editor.tsx
 msgid "Italic"
-msgstr ""
+msgstr "Курсив"
 
 #: src/components/chat/chat-links.tsx
 msgid "Its chat stops controlling this switcher, and the bot leaves the channel."
@@ -3995,7 +3995,7 @@ msgstr "Рештою керують її власні адміністратор
 
 #: src/components/live/source-position.tsx
 msgid "Its own size."
-msgstr ""
+msgstr "Власний розмір."
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4092,11 +4092,11 @@ msgstr "Залишити"
 
 #: src/components/live/source-position.tsx
 msgid "Keep its shape when resizing"
-msgstr ""
+msgstr "Зберігати форму під час зміни розміру"
 
 #: src/components/live/source-editor.tsx
 msgid "Keep playing"
-msgstr ""
+msgstr "Продовжувати відтворення"
 
 #: src/components/live/quick-actions.tsx
 msgid "Keep recording"
@@ -4224,7 +4224,7 @@ msgstr "Вийти з робочого простору"
 
 #: src/components/live/source-position.tsx
 msgid "Left"
-msgstr ""
+msgstr "Ліворуч"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Let everyone in chat use commands like !bitrate."
@@ -4382,7 +4382,7 @@ msgstr "Завантажити старіші стріми"
 
 #: src/components/live/source-editor.tsx
 msgid "Loading its settings from OBS…"
-msgstr ""
+msgstr "Завантаження його налаштувань з OBS…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4456,7 +4456,7 @@ msgstr "Для пошуку каналів YouTube потрібен ключ API
 
 #: src/components/live/source-editor.tsx
 msgid "Loop the playlist"
-msgstr ""
+msgstr "Повторювати плейлист"
 
 #: src/lib/obs-preview.ts
 msgid "Low"
@@ -4578,7 +4578,7 @@ msgstr "Керований робочий простір"
 
 #: src/components/live/source-position.tsx
 msgid "Margin from the edges (% of the screen’s height)"
-msgstr ""
+msgstr "Відступ від країв (% висоти зображення)"
 
 #: src/components/support-access.tsx
 msgid "Mark as seen"
@@ -4640,7 +4640,7 @@ msgstr "Вимірювання…"
 
 #: src/components/live/source-editor.tsx
 msgid "Media source"
-msgstr ""
+msgstr "Джерело медіа"
 
 #: src/lib/obs-preview.ts
 msgid "Medium"
@@ -4889,7 +4889,7 @@ msgstr "Більше"
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
 msgid "More for {0}"
-msgstr ""
+msgstr "Ще для {0}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "More latency survives worse connections, {SRT_LATENCY_MIN} to {SRT_LATENCY_MAX}."
@@ -4897,7 +4897,7 @@ msgstr "Більша затримка витримує гірші з’єдна�
 
 #: src/components/live/source-fields.tsx
 msgid "More settings"
-msgstr ""
+msgstr "Інші налаштування"
 
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
@@ -4919,7 +4919,7 @@ msgstr "Перейти на Free?"
 #: src/components/live/source-position.tsx
 #: src/lib/live-format.ts
 msgid "Moved {0}"
-msgstr ""
+msgstr "{0} переміщено"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Moved to {code}"
@@ -4985,7 +4985,7 @@ msgstr "Назва має містити щонайбільше 60 символ�
 
 #: src/components/live/source-editor.tsx
 msgid "Name of the copy"
-msgstr ""
+msgstr "Назва копії"
 
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
@@ -5038,19 +5038,19 @@ msgstr "Мережа"
 
 #: src/components/live/source-editor.tsx
 msgid "Network buffering (MB)"
-msgstr ""
+msgstr "Мережева буферизація (МБ)"
 
 #: src/lib/api-messages.ts
 msgid "Network buffering is 0 to 16 MB."
-msgstr ""
+msgstr "Мережева буферизація — від 0 до 16 МБ."
 
 #: src/components/live/source-editor.tsx
 msgid "Network caching (ms)"
-msgstr ""
+msgstr "Мережеве кешування (мс)"
 
 #: src/lib/api-messages.ts
 msgid "Network caching is 100 to 60,000 ms."
-msgstr ""
+msgstr "Мережеве кешування — від 100 до 60 000 мс."
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Network name"
@@ -5126,11 +5126,11 @@ msgstr "Новий тариф"
 
 #: src/components/live/scene-grid.tsx
 msgid "New scene"
-msgstr ""
+msgstr "Нова сцена"
 
 #: src/components/live/source-editor.tsx
 msgid "New source"
-msgstr ""
+msgstr "Нове джерело"
 
 #: src/components/admin/products.tsx
 msgid "New subscriptions can’t choose it anymore. People already paying keep it until they cancel."
@@ -5485,15 +5485,15 @@ msgstr "Підтримка NOALBS відкрила цей робочий про�
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the bitrate is low. Pick another LOW scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS перемикається на цю сцену, коли бітрейт низький. Спершу вибери іншу сцену LOW на сторінці «Сцени»."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed drops. Pick another BRB scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS перемикається на цю сцену, коли сигнал зникає. Спершу вибери іншу сцену BRB на сторінці «Сцени»."
 
 #: src/lib/api-messages.ts
 msgid "NOALBS switches to this scene when the feed is good. Pick another LIVE scene on the Scenes page first."
-msgstr ""
+msgstr "NOALBS перемикається на цю сцену, коли сигнал добрий. Спершу вибери іншу сцену LIVE на сторінці «Сцени»."
 
 #: src/lib/obs-preview.ts
 msgid "Nobody"
@@ -5699,7 +5699,7 @@ msgstr "Ще ні"
 
 #: src/components/live/source-position.tsx
 msgid "Nothing changes in OBS until you save."
-msgstr ""
+msgstr "В OBS нічого не змінюється, доки ти не збережеш."
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Nothing happened during this stream."
@@ -5791,7 +5791,7 @@ msgstr "OBS"
 
 #: src/lib/api-messages.ts
 msgid "OBS already has a source or scene with that name."
-msgstr ""
+msgstr "В OBS уже є джерело або сцена з такою назвою."
 
 #: src/lib/admin.ts
 #: src/lib/live-format.ts
@@ -5817,7 +5817,7 @@ msgstr "OBS не відповів. Спробуй ще раз за мить."
 
 #: src/components/live/source-position.tsx
 msgid "OBS didn’t send a picture: the box is drawn without it."
-msgstr ""
+msgstr "OBS не надіслав зображення: рамку намальовано без нього."
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS didn’t send a picture. Trying again…"
@@ -5834,15 +5834,15 @@ msgstr "OBS ВІДКЛЮЧЕНО"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
-msgstr ""
+msgstr "В OBS немає плагіна VLC"
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its own size yet (it isn’t showing anything), so this can’t be drawn. It still works once it shows something."
-msgstr ""
+msgstr "OBS ще не знає його власного розміру (воно нічого не показує), тож його не можна намалювати. Усе запрацює, щойно воно щось покаже."
 
 #: src/components/live/source-position.tsx
 msgid "OBS doesn’t know its size yet (it isn’t showing anything), so the box starts in the middle."
-msgstr ""
+msgstr "OBS ще не знає його розміру (воно нічого не показує), тож рамка починається в центрі."
 
 #. placeholder {0}: status?.current_scene ? ` (${status.current_scene.name})` : ""
 #: src/components/live/quick-actions.tsx
@@ -5909,7 +5909,7 @@ msgstr "історії стрімів зберігається"
 
 #: src/components/live/source-position.tsx
 msgid "Of the screen"
-msgstr ""
+msgstr "Від зображення"
 
 #: src/components/trigger-field.tsx
 msgid "off"
@@ -5923,7 +5923,7 @@ msgstr "Вимкнено"
 
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
-msgstr ""
+msgstr "Поза ефіром прев’ю приховано: рамку намальовано без нього."
 
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
@@ -6067,7 +6067,7 @@ msgstr "Лише у випадку зловживання, юридичного 
 
 #: src/lib/api-messages.ts
 msgid "Only media, VLC, browser and text sources can be edited here. Change this one in OBS."
-msgstr ""
+msgstr "Тут можна редагувати лише медіа, VLC, браузерні та текстові джерела. Зміни це в OBS."
 
 #: src/lib/api-messages.ts
 msgid "Only members of the workspace can do this"
@@ -6263,7 +6263,7 @@ msgstr "ОРГАНІЗАЦІЇ"
 
 #: src/components/live/source-position.tsx
 msgid "Original"
-msgstr ""
+msgstr "Вихідний"
 
 #: src/components/live/moblin-card.tsx
 msgid "Other"
@@ -6279,7 +6279,7 @@ msgstr "Поза діапазоном"
 
 #: src/components/live/source-editor.tsx
 msgid "Outline"
-msgstr ""
+msgstr "Обведення"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Over plan limit"
@@ -6287,7 +6287,7 @@ msgstr "Понад ліміт тарифу"
 
 #: src/components/live/source-editor.tsx
 msgid "Overlay links often hold a key: it’s shown hidden."
-msgstr ""
+msgstr "Посилання на оверлеї часто містять ключ: його показано прихованим."
 
 #. placeholder {0}: server.name
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -6316,7 +6316,7 @@ msgstr "Власник"
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
-msgstr ""
+msgstr "URL сторінки"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
@@ -6339,7 +6339,7 @@ msgstr "Минулі рахунки зберігають електронну а
 
 #: src/components/live/source-editor.tsx
 msgid "Pause, and resume when shown"
-msgstr ""
+msgstr "Ставити на паузу й продовжувати під час показу"
 
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -6400,7 +6400,7 @@ msgstr "Вибери кодек"
 
 #: src/lib/api-messages.ts
 msgid "Pick a color."
-msgstr ""
+msgstr "Вибери колір."
 
 #: src/lib/belabox.ts
 msgid "Pick a network type"
@@ -6428,7 +6428,7 @@ msgstr "Вибери сервер"
 
 #: src/lib/api-messages.ts
 msgid "Pick a size from 5% to 100% of the screen."
-msgstr ""
+msgstr "Вибери розмір від 5% до 100% зображення."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Pick a source"
@@ -6469,7 +6469,7 @@ msgstr "Конвеєр"
 
 #: src/components/live/source-position.tsx
 msgid "Pixels cut off each side of the source, before it’s sized."
-msgstr ""
+msgstr "Пікселі, що обрізаються з кожного боку джерела, перш ніж задати йому розмір."
 
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
@@ -6517,7 +6517,7 @@ msgstr "Платформа"
 
 #: src/components/live/source-editor.tsx
 msgid "Playlist"
-msgstr ""
+msgstr "Плейлист"
 
 #: src/lib/organizations.ts
 #: src/routes/_app/admin/organizations/$organization.tsx
@@ -6532,11 +6532,11 @@ msgstr "Порт"
 #. placeholder {0}: source.name
 #: src/components/live/source-position.tsx
 msgid "Position {0}"
-msgstr ""
+msgstr "Розташування {0}"
 
 #: src/components/live/source-list.tsx
 msgid "Position…"
-msgstr ""
+msgstr "Розташування…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
@@ -6564,7 +6564,7 @@ msgstr "Префікс {0}"
 
 #: src/components/live/source-position.tsx
 msgid "Presets"
-msgstr ""
+msgstr "Заготовки"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview"
@@ -6708,7 +6708,7 @@ msgstr "Перепідключити"
 
 #: src/components/live/source-editor.tsx
 msgid "Reconnect delay (s)"
-msgstr ""
+msgstr "Затримка перепідключення (с)"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
@@ -6809,7 +6809,7 @@ msgstr "Сервер реле"
 
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
-msgstr ""
+msgstr "Перезавантажувати, коли його сцена виходить в ефір"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
@@ -6836,7 +6836,7 @@ msgstr "Вилучити {0}"
 #. placeholder {1}: removing?.parent
 #: src/components/live/source-list.tsx
 msgid "Remove {0} from {1}?"
-msgstr ""
+msgstr "Вилучити {0} з {1}?"
 
 #. placeholder {0}: channel.display_name
 #: src/components/chat/chat-links.tsx
@@ -6861,7 +6861,7 @@ msgstr "Вилучити псевдонім {alias}"
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
-msgstr ""
+msgstr "Вилучити з {0}…"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Remove missing"
@@ -6890,12 +6890,12 @@ msgstr "Вилучити назву {label}"
 #. placeholder {0}: scene.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}"
-msgstr ""
+msgstr "Вилучити сцену {0}"
 
 #. placeholder {0}: removing?.name
 #: src/components/live/scene-grid.tsx
 msgid "Remove the scene {0}?"
-msgstr ""
+msgstr "Вилучити сцену {0}?"
 
 #: src/lib/api-messages.ts
 msgid "Remove their staff access before disabling the account."
@@ -6907,7 +6907,7 @@ msgstr "Вилучити це оголошення?"
 
 #: src/components/live/source-editor.tsx
 msgid "Remove this URL"
-msgstr ""
+msgstr "Вилучити цей URL"
 
 #. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
@@ -6920,7 +6920,7 @@ msgstr "Вилучено {0}"
 #. placeholder {1}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Removed {0} from {1}"
-msgstr ""
+msgstr "{0} вилучено з {1}"
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -6947,7 +6947,7 @@ msgstr "Вилучений сервер"
 #: src/components/live/scene-grid.tsx
 #: src/lib/live-format.ts
 msgid "Removed the scene {0}"
-msgstr ""
+msgstr "Сцену {0} вилучено"
 
 #: src/lib/support.ts
 msgid "Removed the workspace’s chat bot"
@@ -6974,7 +6974,7 @@ msgstr "{0} перейменовано на {subject}"
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "Renamed from {0} {1}"
-msgstr ""
+msgstr "Перейменовано з {0} {1}"
 
 #: src/lib/org-audit.ts
 msgid "renamed from {previousName}"
@@ -7007,11 +7007,11 @@ msgstr "Замінити секретний URL"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with a URL"
-msgstr ""
+msgstr "Замінити на URL"
 
 #: src/components/live/source-editor.tsx
 msgid "Replace with URLs"
-msgstr ""
+msgstr "Замінити на URL-адреси"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Reply"
@@ -7028,7 +7028,7 @@ msgstr "Запит не вдався ({0})"
 
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
-msgstr ""
+msgstr "Перезапускати відтворення, коли джерело стає активним"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -7089,7 +7089,7 @@ msgstr "Відкликано дозволи чату"
 
 #: src/components/live/source-position.tsx
 msgid "Right"
-msgstr ""
+msgstr "Праворуч"
 
 #: src/lib/stream-server-kinds.ts
 msgid "RIST receiver"
@@ -7223,7 +7223,7 @@ msgstr "Збережено — введи, щоб замінити"
 #. placeholder {0}: result.name
 #: src/components/live/source-editor.tsx
 msgid "Saved {0}"
-msgstr ""
+msgstr "{0} збережено"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
@@ -7239,11 +7239,11 @@ msgstr "Збережено. Введи, щоб замінити"
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away, and it reloads what it plays."
-msgstr ""
+msgstr "Збереження одразу змінює його в OBS, і воно знову завантажує те, що відтворює."
 
 #: src/components/live/source-editor.tsx
 msgid "Saving changes it in OBS right away."
-msgstr ""
+msgstr "Збереження одразу змінює його в OBS."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
@@ -7312,7 +7312,7 @@ msgstr "Сцени"
 
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
-msgstr ""
+msgstr "Сцени й групи тут не можна дублювати."
 
 #: src/components/live/scene-grid.tsx
 msgid "Scenes appear once OBS is connected."
@@ -7328,7 +7328,7 @@ msgstr "Заплановано"
 
 #: src/components/live/source-editor.tsx
 msgid "Search"
-msgstr ""
+msgstr "Пошук"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -7625,11 +7625,11 @@ msgstr "Показати всі робочі простори"
 
 #: src/components/live/source-editor.tsx
 msgid "Show it right away"
-msgstr ""
+msgstr "Показати одразу"
 
 #: src/components/live/source-editor.tsx
 msgid "Show nothing when playback ends"
-msgstr ""
+msgstr "Нічого не показувати після закінчення відтворення"
 
 #: src/components/support-access.tsx
 #: src/routes/_app/admin/audit.tsx
@@ -7685,11 +7685,11 @@ msgstr "Показується на сторінці «Тариф» і в Checko
 
 #: src/components/live/source-editor.tsx
 msgid "Shuffle"
-msgstr ""
+msgstr "Перемішати"
 
 #: src/components/live/source-editor.tsx
 msgid "Shut it down while it isn’t shown"
-msgstr ""
+msgstr "Вимикати, поки його не видно"
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -7828,7 +7828,7 @@ msgstr "Сортування"
 
 #: src/components/live/source-editor.tsx
 msgid "Source"
-msgstr ""
+msgstr "Джерело"
 
 #: src/components/live/source-list.tsx
 msgid "Sources"
@@ -8103,7 +8103,7 @@ msgstr "Зупиняти в офлайні"
 
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
-msgstr ""
+msgstr "Зупиняти й запускати знову під час показу"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -8174,11 +8174,11 @@ msgstr "Стрім зупинено"
 
 #: src/components/live/source-editor.tsx
 msgid "stream URL"
-msgstr ""
+msgstr "URL потоку"
 
 #: src/components/live/source-editor.tsx
 msgid "Stream URL"
-msgstr ""
+msgstr "URL потоку"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
@@ -8199,7 +8199,7 @@ msgstr "Стріми"
 
 #: src/components/live/source-position.tsx
 msgid "Stretch"
-msgstr ""
+msgstr "Розтягнути"
 
 #: src/components/admin/products.tsx
 msgid "Stripe"
@@ -8334,7 +8334,7 @@ msgstr "Перемкнути на {0}"
 
 #: src/lib/api-messages.ts
 msgid "Switch to another scene first: the scene on air can't be removed."
-msgstr ""
+msgstr "Спершу перемкнися на іншу сцену: сцену в ефірі вилучити не можна."
 
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
@@ -8526,7 +8526,7 @@ msgstr "Перевірено стрім-сервер"
 
 #: src/components/live/source-editor.tsx
 msgid "Text"
-msgstr ""
+msgstr "Текст"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
@@ -8587,7 +8587,7 @@ msgstr "Цю ціну заархівовано в Stripe."
 
 #: src/lib/api-messages.ts
 msgid "That scene isn't in OBS anymore. Reload the list."
-msgstr ""
+msgstr "Цієї сцени більше немає в OBS. Онови список."
 
 #: src/lib/api-messages.ts
 msgid "That source isn't in the scene anymore. Reload the list."
@@ -8706,7 +8706,7 @@ msgstr "доступ бота було відкликано"
 
 #: src/lib/api-messages.ts
 msgid "The box is 1 to 16384 pixels wide and high, within 16384 pixels of the screen."
-msgstr ""
+msgstr "Рамка — від 1 до 16384 пікселів завширшки й заввишки і не далі 16384 пікселів від зображення."
 
 #: src/lib/triggers.ts
 msgid "The BRB bitrate must be lower than the LOW bitrate."
@@ -8755,7 +8755,7 @@ msgstr "сигнал змінився"
 
 #: src/lib/api-messages.ts
 msgid "The font size is 1 to 1024."
-msgstr ""
+msgstr "Розмір шрифту — від 1 до 1024."
 
 #: src/lib/api-messages.ts
 msgid "The Free plan has no price."
@@ -8771,7 +8771,7 @@ msgstr "Налаштування точки доступу було змінен
 
 #: src/lib/api-messages.ts
 msgid "The input format is letters, digits and underscores only, like mpegts."
-msgstr ""
+msgstr "Формат входу — лише літери, цифри та підкреслення, наприклад mpegts."
 
 #: src/components/belabox/stream-panel.tsx
 msgid "The key your server gives you for this stream."
@@ -8783,7 +8783,7 @@ msgstr "Посилання"
 
 #: src/lib/api-messages.ts
 msgid "The margin is 0% to 25% of the screen."
-msgstr ""
+msgstr "Відступ — від 0% до 25% зображення."
 
 #: src/lib/stream-server-kinds.ts
 msgid "The MediaMTX API address of your stream's path. Enable the API in mediamtx.yml."
@@ -8900,7 +8900,7 @@ msgstr "Діапазон порожній або поза межами стрі�
 
 #: src/lib/api-messages.ts
 msgid "The reconnect delay is 1 to 60 seconds."
-msgstr ""
+msgstr "Затримка перепідключення — від 1 до 60 секунд."
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "The recording pauses on any scene not picked here and resumes when you come back to one that is. Leave it empty to record on every scene. If you resume it yourself on another scene, it keeps recording until the next scene change."
@@ -8986,7 +8986,7 @@ msgstr "Світчер не в ефірі. Маркери ставляться �
 #. placeholder {0}: role[1]
 #: src/components/live/scene-grid.tsx
 msgid "The switcher uses it ({0}): pick another on the Scenes page first."
-msgstr ""
+msgstr "Світчер її використовує ({0}): спершу вибери іншу на сторінці «Сцени»."
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "The team isn't counted."
@@ -9146,19 +9146,19 @@ msgstr "Це єдиний обліковий запис, через який т�
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Ending scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Це сцена «Кінець» світчера. Спершу вибери іншу на сторінці «Сцени»."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Privacy scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Це сцена «Приватність» світчера. Спершу вибери іншу на сторінці «Сцени»."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Refresh scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Це сцена «Оновлення» світчера. Спершу вибери іншу на сторінці «Сцени»."
 
 #: src/lib/api-messages.ts
 msgid "This is the switcher's Starting scene. Pick another one on the Scenes page first."
-msgstr ""
+msgstr "Це сцена «Початок» світчера. Спершу вибери іншу на сторінці «Сцени»."
 
 #: src/routes/integrate-stream-server.tsx
 msgid "This kind has no other settings."
@@ -9178,11 +9178,11 @@ msgstr "Цей обліковий запис OAuth уже прив’язано 
 
 #: src/components/live/source-editor.tsx
 msgid "This OBS doesn’t have it"
-msgstr ""
+msgstr "У цьому OBS його немає"
 
 #: src/lib/api-messages.ts
 msgid "This OBS doesn't have that kind of source."
-msgstr ""
+msgstr "У цьому OBS немає такого типу джерела."
 
 #: src/lib/api-messages.ts
 msgid "This OBS version doesn't report scene IDs. Update OBS to do this from here."
@@ -9280,7 +9280,7 @@ msgstr "Порада: додай другий сервер як резервни
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "To {0} {1}"
-msgstr ""
+msgstr "До {0} {1}"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
@@ -9288,15 +9288,15 @@ msgstr "Токен"
 
 #: src/components/live/source-position.tsx
 msgid "Top"
-msgstr ""
+msgstr "Згори"
 
 #: src/components/live/source-position.tsx
 msgid "Top left"
-msgstr ""
+msgstr "Згори ліворуч"
 
 #: src/components/live/source-position.tsx
 msgid "Top right"
-msgstr ""
+msgstr "Згори праворуч"
 
 #: src/components/transfer-ownership.tsx
 msgid "Transfer ownership"
@@ -9391,7 +9391,7 @@ msgstr "Введи <0>{phrase}</0> для підтвердження"
 
 #: src/components/live/source-editor.tsx
 msgid "Type text instead"
-msgstr ""
+msgstr "Ввести текст замість цього"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/stream-panel.tsx
@@ -9401,7 +9401,7 @@ msgstr "Без змін"
 
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
-msgstr ""
+msgstr "Скасувати зміни"
 
 #: src/components/admin/products.tsx
 msgid "Unit"
@@ -9533,7 +9533,7 @@ msgstr "Використовуй 2–30 малих літер, цифр і де�
 
 #: src/components/live/source-editor.tsx
 msgid "Use a frame rate of its own"
-msgstr ""
+msgstr "Використовувати власну частоту кадрів"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Use a stream ID instead"
@@ -9553,7 +9553,7 @@ msgstr "Використовувати інші сцени, поки цей се
 
 #: src/components/live/source-editor.tsx
 msgid "Use hardware decoding when available"
-msgstr ""
+msgstr "Використовувати апаратне декодування, коли можна"
 
 #: src/components/moblin-settings.tsx
 msgid "Use my own password"
@@ -9641,11 +9641,11 @@ msgstr "VIP"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video source"
-msgstr ""
+msgstr "Джерело відео VLC"
 
 #: src/components/live/source-editor.tsx
 msgid "VLC video sources need OBS’s VLC plugin and VLC installed."
-msgstr ""
+msgstr "Для джерел відео VLC потрібен плагін VLC в OBS і встановлений VLC."
 
 #. placeholder {0}: input.name
 #: src/components/live/audio-mixer.tsx
@@ -9794,7 +9794,7 @@ msgstr "Коли стрім OBS зупиняється (з OBS, панелі к�
 
 #: src/components/live/source-position.tsx
 msgid "Where"
-msgstr ""
+msgstr "Де"
 
 #. placeholder {0}: Math.round(box.x)
 #. placeholder {1}: Math.round(box.y)
@@ -9802,7 +9802,7 @@ msgstr ""
 #. placeholder {3}: Math.round(box.height)
 #: src/components/live/placement-canvas.tsx
 msgid "Where {name} would be: {0}, {1}, {2} by {3}"
-msgstr ""
+msgstr "Де було б {name}: {0}, {1}, {2} на {3}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Where the BELABOX sends the stream."
@@ -9822,7 +9822,7 @@ msgstr "Які бондинг-підключення використовує Mo
 
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
-msgstr ""
+msgstr "Поки його не видно"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
@@ -9860,7 +9860,7 @@ msgstr "Весь стрім"
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 msgid "Width"
-msgstr ""
+msgstr "Ширина"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "WiFi"
@@ -9963,7 +9963,7 @@ msgstr "Неправильний пароль WiFi"
 
 #: src/components/live/source-position.tsx
 msgid "X"
-msgstr ""
+msgstr "X"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Xiu media server"
@@ -9975,7 +9975,7 @@ msgstr "API query_stream сервера Xiu."
 
 #: src/components/live/source-position.tsx
 msgid "Y"
-msgstr ""
+msgstr "Y"
 
 #: src/lib/billing.ts
 #: src/routes/_app/$workspace/settings/plan.tsx
