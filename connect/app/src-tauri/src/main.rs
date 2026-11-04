@@ -69,19 +69,26 @@ struct UiState {
 
 #[tauri::command]
 fn get_state(state: State<'_, AppState>) -> UiState {
-    let config = state.config.lock().expect("app config lock");
+    let (setups, start_at_login, api_url, dashboard_url) = {
+        let config = state.config.lock().expect("app config lock");
+        let settings = config.settings.effective();
+        (
+            config.setups.clone(),
+            config.settings.start_at_login,
+            settings.api_url,
+            settings.dashboard_url,
+        )
+    };
     let mut supervisor = state.supervisor.lock().expect("supervisor lock");
     let sessions = state.link_sessions.lock().expect("link session lock");
-    let settings = config.settings.effective();
     UiState {
         platform: HostPlatform::current().as_str().to_owned(),
-        start_at_login: config.settings.start_at_login,
-        api_url: settings.api_url,
-        dashboard_url: settings.dashboard_url,
+        start_at_login,
+        api_url,
+        dashboard_url,
         startup_error: state.startup_error.clone(),
-        first_run: config.setups.is_empty(),
-        setups: config
-            .setups
+        first_run: setups.is_empty(),
+        setups: setups
             .iter()
             .map(|setup| {
                 let link_state = sessions
@@ -216,25 +223,26 @@ fn save_settings(
     if let Some(url) = effective_dashboard_url {
         validate_dashboard_url(url)?;
     }
-    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
-    config.settings.start_at_login = start_at_login;
-    if api_url_override.is_none() {
-        config.settings.api_url = api_url;
+    {
+        let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+        config.settings.start_at_login = start_at_login;
+        if api_url_override.is_none() {
+            config.settings.api_url = api_url;
+        }
+        if dashboard_url_override.is_none() {
+            config.settings.dashboard_url = dashboard_url;
+        }
+        state
+            .store
+            .save(&config)
+            .map_err(|error| error.to_string())?;
     }
-    if dashboard_url_override.is_none() {
-        config.settings.dashboard_url = dashboard_url;
-    }
-    state
-        .store
-        .save(&config)
-        .map_err(|error| error.to_string())?;
     let autostart = app.autolaunch();
     if start_at_login {
         autostart.enable().map_err(|error| error.to_string())?;
     } else {
         autostart.disable().map_err(|error| error.to_string())?;
     }
-    drop(config);
     Ok(get_state(state))
 }
 
@@ -604,6 +612,27 @@ fn obs_state_label(state: PcObsState) -> &'static str {
     }
 }
 
+fn tray_setup_labels(state: &AppState) -> Vec<(String, String)> {
+    let setups = state.config.lock().expect("app config lock").setups.clone();
+    let mut supervisor = state.supervisor.lock().expect("supervisor lock");
+    let sessions = state.link_sessions.lock().expect("link session lock");
+    setups
+        .iter()
+        .map(|setup| {
+            let link_state = sessions
+                .get(&setup.id)
+                .map(|session| *session.state.borrow());
+            let process_state =
+                link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
+            let status = displayed_obs_state(process_state, link_state);
+            (
+                format!("setup-{}", setup.id),
+                format!("{} — {}", setup.name, obs_state_label(status)),
+            )
+        })
+        .collect()
+}
+
 fn setup_for_watchdog_restart(config: &AppConfig, fallback: &Setup) -> Setup {
     config
         .setups
@@ -738,19 +767,25 @@ fn start_link_session(
                             if incident == PcObsState::NotResponding {
                                 stop_setup_streams(&restart_setup, &app_state).await;
                             }
-                            let mut supervisor = app_state.supervisor.lock().expect("supervisor lock");
-                            if incident == PcObsState::NotResponding
-                                && let Err(error) = supervisor.stop(&restart_setup)
-                            {
-                                let _ = monitor_handle.emit("connect-error", error.to_string());
-                                continue;
-                            }
-                            match supervisor.start(
-                                &restart_setup,
-                                resume,
-                                telemetry.last_program_scene.as_deref(),
-                            ) {
-                                Ok(_) => {
+                            let restart_result = {
+                                let mut supervisor =
+                                    app_state.supervisor.lock().expect("supervisor lock");
+                                if incident == PcObsState::NotResponding
+                                    && let Err(error) = supervisor.stop(&restart_setup)
+                                {
+                                    Err(error)
+                                } else {
+                                    supervisor
+                                        .start(
+                                            &restart_setup,
+                                            resume,
+                                            telemetry.last_program_scene.as_deref(),
+                                        )
+                                        .map(|_| ())
+                                }
+                            };
+                            match restart_result {
+                                Ok(()) => {
                                     let _ = monitor_state_tx.send(PcObsState::Starting);
                                 }
                                 Err(error) => {
@@ -835,26 +870,11 @@ fn tray_available() -> bool {
 }
 
 fn build_tray_menu(manager: &impl Manager<tauri::Wry>) -> tauri::Result<Menu<tauri::Wry>> {
-    let menu = Menu::new(manager)?;
     let state = manager.state::<AppState>();
-    let setups = state.config.lock().expect("app config lock").setups.clone();
-    let mut supervisor = state.supervisor.lock().expect("supervisor lock");
-    let sessions = state.link_sessions.lock().expect("link session lock");
-    for setup in &setups {
-        let link_state = sessions
-            .get(&setup.id)
-            .map(|session| *session.state.borrow());
-        let process_state =
-            link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
-        let status = displayed_obs_state(process_state, link_state);
-        let label = format!("{} — {}", setup.name, obs_state_label(status));
-        let item = MenuItem::with_id(
-            manager,
-            format!("setup-{}", setup.id),
-            label,
-            false,
-            None::<&str>,
-        )?;
+    let setup_labels = tray_setup_labels(&state);
+    let menu = Menu::new(manager)?;
+    for (id, label) in setup_labels {
+        let item = MenuItem::with_id(manager, id, label, false, None::<&str>)?;
         menu.append(&item)?;
     }
     let open = MenuItem::with_id(manager, "open", "Open", true, None::<&str>)?;
@@ -978,13 +998,11 @@ fn main() {
                 }
             }
             let state = app.state::<AppState>();
-            if state
-                .config
-                .lock()
-                .expect("app config lock")
-                .settings
-                .start_at_login
-            {
+            let start_at_login = {
+                let config = state.config.lock().expect("app config lock");
+                config.settings.start_at_login
+            };
+            if start_at_login {
                 let _ = app.autolaunch().enable();
             }
             let setups = state.config.lock().expect("app config lock").setups.clone();
@@ -1076,5 +1094,33 @@ mod tests {
     fn tray_obs_state_label_matches_the_window_label() {
         assert_eq!(obs_state_label(PcObsState::Starting), "Starting OBS…");
         assert_eq!(obs_state_label(PcObsState::NotRunning), "OBS not running");
+    }
+
+    #[test]
+    fn tray_setup_labels_use_setup_ids_and_human_readable_states() {
+        let mut setup = Setup::new("Smoke test".into());
+        setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
+        setup.obs.binary_path = Some("/noalbs-connect-test-obs".into());
+        let setup_id = setup.id;
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: ConfigStore::new(Default::default()),
+            tokens: TokenStore::new(Default::default()),
+            supervisor: Mutex::new(Supervisor::default()),
+            link_sessions: Mutex::new(HashMap::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+        };
+
+        assert_eq!(
+            tray_setup_labels(&state),
+            vec![(
+                format!("setup-{setup_id}"),
+                "Smoke test — OBS not running".into()
+            )]
+        );
     }
 }
