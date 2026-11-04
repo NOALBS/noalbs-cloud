@@ -68,6 +68,20 @@ Pull requests that look generated and unreviewed will be closed.
 
 ## Local development
 
+### NOALBS Cloud Connect
+
+Use `nix develop .#connect` on NixOS; on other Linux distributions, install the packages used by
+Connect CI: `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libssl-dev`,
+`patchelf` and `libxdo-dev`. Start the app with:
+
+    NOALBS_CONNECT_API_URL=http://localhost:5173/api \
+    NOALBS_CONNECT_DASHBOARD_URL=http://localhost:5173 \
+    nix develop .#connect -c bash -c 'cd connect/app/ui && pnpm install --frozen-lockfile && cd .. && ./ui/node_modules/.bin/tauri dev'
+
+The URL variables are needed when pairing with the local stack; otherwise Connect uses production.
+Untick “start when my computer starts” while developing, since the autostart entry runs without
+these variables.
+
 ### Settings
 
 Each service reads an optional `config.toml` from the directory you start it in (gitignored), then

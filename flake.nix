@@ -23,29 +23,66 @@
                 hash = "sha256-67PQ6Ay+5QPEwZpwiR3XWJ4i6AFBJjCgytQCsZynjJM=";
             };
         } "install -Dm755 $src $out/bin/biome";
-    in {
-        devShells.x86_64-linux.default = pkgs.mkShell {
-            packages = [
-                rustToolchain
-                pkgs.rust-analyzer
-                pkgs.cargo-machete
 
-                pkgs.nats-server
-                # `stripe listen` forwards test webhooks to a local API.
-                pkgs.stripe-cli
+        sharedPackages = [
+            rustToolchain
+            pkgs.rust-analyzer
+            pkgs.cargo-machete
 
-                pkgs.nodejs_24
-                pkgs.pnpm
-                biome
+            pkgs.nats-server
+            # `stripe listen` forwards test webhooks to a local API.
+            pkgs.stripe-cli
 
-                pkgs.pkg-config
-                pkgs.openssl
-            ];
-            env.RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+            pkgs.nodejs_24
+            pkgs.pnpm
+            biome
+
+            pkgs.pkg-config
+            pkgs.openssl
+        ];
+
+        sharedEnv = {
+            RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             # The npm Biome binary is dynamically linked and won't run on NixOS;
             # point its wrapper at the one above. Keep the version in
             # web/dashboard/package.json in sync with it.
-            env.BIOME_BINARY = "${biome}/bin/biome";
+            BIOME_BINARY = "${biome}/bin/biome";
+        };
+
+        connectPackages = with pkgs; [
+            gobject-introspection
+            at-spi2-atk
+            atkmm
+            cairo
+            gdk-pixbuf
+            glib
+            glib-networking
+            gtk3
+            harfbuzz
+            librsvg
+            libsoup_3
+            pango
+            webkitgtk_4_1
+            wrapGAppsHook4
+
+            xdotool
+            libayatana-appindicator
+        ];
+    in {
+        devShells.x86_64-linux.default = pkgs.mkShell {
+            packages = sharedPackages;
+            env = sharedEnv;
+        };
+
+        devShells.x86_64-linux.connect = pkgs.mkShell {
+            packages = sharedPackages ++ connectPackages;
+            env = sharedEnv // {
+                LD_LIBRARY_PATH =
+                    pkgs.lib.makeLibraryPath [ pkgs.libayatana-appindicator ];
+            };
+            shellHook = ''
+                export XDG_DATA_DIRS="$GSETTINGS_SCHEMAS_PATH''${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+            '';
         };
     };
 }
