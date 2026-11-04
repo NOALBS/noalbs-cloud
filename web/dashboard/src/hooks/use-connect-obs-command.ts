@@ -32,9 +32,9 @@ export function useConnectObsCommand(path: { workspace_id: string; switcher_id: 
       ]);
       toast.success(
         {
-          start: t`Start command sent to Connect`,
-          stop: t`Stop command sent to Connect`,
-          restart: t`Restart command sent to Connect`,
+          start: t`OBS started`,
+          stop: t`OBS stopped`,
+          restart: t`OBS restarted`,
         }[action],
       );
     },

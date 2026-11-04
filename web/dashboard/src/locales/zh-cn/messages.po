@@ -6052,6 +6052,10 @@ msgstr "OBS 预览"
 msgid "OBS preview off air"
 msgstr "未开播时的 OBS 预览"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "OBS 会保存目前已录制的内容。再次录制会开始一个新文件。"
@@ -6059,6 +6063,10 @@ msgstr "OBS 会保存目前已录制的内容。再次录制会开始一个新�
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "OBS 发送了我们无法读取的图像。"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6071,6 +6079,10 @@ msgstr ""
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "OBS 统计数据"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7264,10 +7276,6 @@ msgstr "回复方式"
 msgid "Request failed ({0})"
 msgstr "请求失败（{0}）"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Restart command sent to Connect"
-msgstr ""
-
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -8204,10 +8212,6 @@ msgstr "随直播一起开始和停止录制。"
 msgid "Start BELABOX with the OBS stream"
 msgstr "随 OBS 直播启动 BELABOX"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Start command sent to Connect"
-msgstr ""
-
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "启动热点"
@@ -8328,10 +8332,6 @@ msgstr "停止 BELABOX"
 #: src/components/belabox-settings.tsx
 msgid "Stop BELABOX with the OBS stream"
 msgstr "随 OBS 直播停止 BELABOX"
-
-#: src/hooks/use-connect-obs-command.ts
-msgid "Stop command sent to Connect"
-msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"

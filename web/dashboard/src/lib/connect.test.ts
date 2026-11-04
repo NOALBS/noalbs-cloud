@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { PcObsState } from "@/api/types";
 import {
   canControlConnect,
-  canShowConnectObsControls,
   connectAccessOptions,
   connectObsActionAvailability,
   pcObsLabel,
@@ -67,15 +66,6 @@ describe("Connect settings", () => {
       [true, true, false, false],
       [true, true, true, false],
     ]);
-  });
-
-  it("shows Connect OBS controls only to permitted roles on an online device", () => {
-    const owner = { role: "owner", staff: false } as const;
-    const admin = { role: "admin", staff: false } as const;
-    expect(canShowConnectObsControls("owners", owner, "not_running")).toBe(true);
-    expect(canShowConnectObsControls("owners", admin, "not_running")).toBe(false);
-    expect(canShowConnectObsControls("admins", admin, "crashed")).toBe(true);
-    expect(canShowConnectObsControls("everyone", admin, undefined)).toBe(false);
   });
 
   it("enables OBS actions only for the states that support them", () => {

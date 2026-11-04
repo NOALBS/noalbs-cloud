@@ -6052,6 +6052,10 @@ msgstr "OBS 미리보기"
 msgid "OBS preview off air"
 msgstr "방송 중이 아닐 때 OBS 미리보기"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "지금까지의 녹화를 OBS가 저장해요. 다시 녹화하면 새 파일로 시작돼요."
@@ -6059,6 +6063,10 @@ msgstr "지금까지의 녹화를 OBS가 저장해요. 다시 녹화하면 새 �
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "OBS에서 읽을 수 없는 이미지를 보냈어요."
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6071,6 +6079,10 @@ msgstr ""
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "OBS 통계"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7264,10 +7276,6 @@ msgstr "응답 모드"
 msgid "Request failed ({0})"
 msgstr "요청에 실패했어요 ({0})"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Restart command sent to Connect"
-msgstr ""
-
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -8204,10 +8212,6 @@ msgstr "방송과 함께 녹화를 시작하고 중지해요."
 msgid "Start BELABOX with the OBS stream"
 msgstr "OBS 방송과 함께 BELABOX 시작"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Start command sent to Connect"
-msgstr ""
-
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "핫스팟 시작"
@@ -8328,10 +8332,6 @@ msgstr "BELABOX 중지"
 #: src/components/belabox-settings.tsx
 msgid "Stop BELABOX with the OBS stream"
 msgstr "OBS 방송과 함께 BELABOX 중지"
-
-#: src/hooks/use-connect-obs-command.ts
-msgid "Stop command sent to Connect"
-msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"

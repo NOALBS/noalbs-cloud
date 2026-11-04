@@ -501,12 +501,7 @@ async fn connect_obs_command(
 ) -> ApiResult<StatusCode> {
     let access = authorized.into_access();
     let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
-    if !screenshots::connect_allowed(access.switcher.connect_obs_control, viewer) {
-        return Err(ApiError::forbidden(
-            "connect_forbidden",
-            "Your role cannot control OBS through Connect",
-        ));
-    }
+    require_connect_obs_control(access.switcher.connect_obs_control, viewer)?;
 
     let by = access.workspace.display_name(&state).await?;
     let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {

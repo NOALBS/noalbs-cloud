@@ -87,11 +87,3 @@ export function connectObsActionAvailability(state: PcObsState | undefined) {
     canStopOrRestart: state !== undefined && state !== "not_running" && state !== "unknown",
   };
 }
-
-export function canShowConnectObsControls(
-  level: ConnectAccess,
-  actor: Actor,
-  state: PcObsState | undefined,
-): boolean {
-  return connectObsActionAvailability(state).visible && canControlConnect(level, actor);
-}

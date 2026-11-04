@@ -6052,6 +6052,10 @@ msgstr "Prévia do OBS"
 msgid "OBS preview off air"
 msgstr "Prévia do OBS fora do ar"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "O OBS salva a gravação até aqui. Gravar de novo inicia um novo arquivo."
@@ -6059,6 +6063,10 @@ msgstr "O OBS salva a gravação até aqui. Gravar de novo inicia um novo arquiv
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "O OBS enviou uma imagem que não conseguimos ler."
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6071,6 +6079,10 @@ msgstr ""
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "Estatísticas do OBS"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7264,10 +7276,6 @@ msgstr "Modo de resposta"
 msgid "Request failed ({0})"
 msgstr "A solicitação falhou ({0})"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Restart command sent to Connect"
-msgstr ""
-
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -8204,10 +8212,6 @@ msgstr "Inicie e pare a gravação junto com o stream."
 msgid "Start BELABOX with the OBS stream"
 msgstr "Iniciar o BELABOX com o stream do OBS"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Start command sent to Connect"
-msgstr ""
-
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "Iniciar hotspot"
@@ -8328,10 +8332,6 @@ msgstr "Parar BELABOX"
 #: src/components/belabox-settings.tsx
 msgid "Stop BELABOX with the OBS stream"
 msgstr "Parar o BELABOX com o stream do OBS"
-
-#: src/hooks/use-connect-obs-command.ts
-msgid "Stop command sent to Connect"
-msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"

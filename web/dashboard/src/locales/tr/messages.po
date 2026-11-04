@@ -6052,6 +6052,10 @@ msgstr "OBS önizlemesi"
 msgid "OBS preview off air"
 msgstr "Yayın dışında OBS önizlemesi"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "OBS o ana kadarki kaydı kaydeder. Yeniden kayıt yeni bir dosya başlatır."
@@ -6059,6 +6063,10 @@ msgstr "OBS o ana kadarki kaydı kaydeder. Yeniden kayıt yeni bir dosya başlat
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "OBS okuyamadığımız bir görüntü gönderdi."
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6071,6 +6079,10 @@ msgstr ""
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "OBS istatistikleri"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7264,10 +7276,6 @@ msgstr "Yanıt modu"
 msgid "Request failed ({0})"
 msgstr "İstek başarısız oldu ({0})"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Restart command sent to Connect"
-msgstr ""
-
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -8204,10 +8212,6 @@ msgstr "Kaydı yayınla birlikte başlat ve durdur."
 msgid "Start BELABOX with the OBS stream"
 msgstr "BELABOX’ı OBS yayınıyla başlat"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Start command sent to Connect"
-msgstr ""
-
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "Hotspot’u başlat"
@@ -8328,10 +8332,6 @@ msgstr "BELABOX’ı durdur"
 #: src/components/belabox-settings.tsx
 msgid "Stop BELABOX with the OBS stream"
 msgstr "BELABOX’ı OBS yayınıyla durdur"
-
-#: src/hooks/use-connect-obs-command.ts
-msgid "Stop command sent to Connect"
-msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"

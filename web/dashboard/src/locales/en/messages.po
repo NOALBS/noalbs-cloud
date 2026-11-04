@@ -6054,6 +6054,10 @@ msgstr "OBS preview"
 msgid "OBS preview off air"
 msgstr "OBS preview off air"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr "OBS restarted"
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "OBS saves the recording so far. Recording again starts a new file."
@@ -6061,6 +6065,10 @@ msgstr "OBS saves the recording so far. Recording again starts a new file."
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "OBS sent an image we can't read."
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr "OBS started"
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6073,6 +6081,10 @@ msgstr "OBS state unknown"
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "OBS stats"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr "OBS stopped"
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7266,10 +7278,6 @@ msgstr "Reply mode"
 msgid "Request failed ({0})"
 msgstr "Request failed ({0})"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Restart command sent to Connect"
-msgstr "Restart command sent to Connect"
-
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -8206,10 +8214,6 @@ msgstr "Start and stop recording together with the stream."
 msgid "Start BELABOX with the OBS stream"
 msgstr "Start BELABOX with the OBS stream"
 
-#: src/hooks/use-connect-obs-command.ts
-msgid "Start command sent to Connect"
-msgstr "Start command sent to Connect"
-
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "Start hotspot"
@@ -8330,10 +8334,6 @@ msgstr "Stop BELABOX"
 #: src/components/belabox-settings.tsx
 msgid "Stop BELABOX with the OBS stream"
 msgstr "Stop BELABOX with the OBS stream"
-
-#: src/hooks/use-connect-obs-command.ts
-msgid "Stop command sent to Connect"
-msgstr "Stop command sent to Connect"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"
