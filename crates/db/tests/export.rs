@@ -633,6 +633,27 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
 #[sqlx::test(migrator = "db::MIGRATOR")]
 async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
     let fixture = fixture(&pool).await;
+    let operator = users::create(&pool).await.unwrap().id;
+    let client_workspace: Uuid =
+        sqlx::query_scalar("SELECT workspace_id FROM switchers WHERE id = $1")
+            .bind(fixture.client)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    workspaces::add_member(
+        &pool,
+        client_workspace,
+        operator,
+        WorkspaceRoleEnum::Operator,
+    )
+    .await
+    .unwrap();
+    sqlx::query("UPDATE switchers SET connect_programs = 'owners' WHERE id IN ($1, $2)")
+        .bind(fixture.backpack)
+        .bind(fixture.client)
+        .execute(&pool)
+        .await
+        .unwrap();
     let data = json!({
         "action": "added",
         "program": {
@@ -687,6 +708,21 @@ async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
         admin_event["data"]["program"]
             .get("added_from_dashboard_by")
             .is_none()
+    );
+
+    let operator_lines: Vec<String> = export::history(&pool, operator)
+        .try_collect()
+        .await
+        .unwrap();
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("connect_program_command"))
+    );
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("/home/kate/Streamer.bot.exe"))
     );
 }
 
