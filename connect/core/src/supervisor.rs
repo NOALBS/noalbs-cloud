@@ -232,20 +232,19 @@ impl Supervisor {
             .retain(|_, (_, pid, start_time)| process_start_time(*pid) == Some(*start_time));
         let sibling_identity = self.children.iter_mut().any(|(id, child)| {
             *id != setup.id
-                && same_obs_identity(setup, &child.setup)
+                && same_process_identity(setup, &child.setup)
                 && child.child.try_wait().ok().flatten().is_none()
         }) || self
             .adopted
             .iter()
-            .any(|(id, (other, _, _))| *id != setup.id && same_obs_identity(setup, other));
+            .any(|(id, (other, _, _))| *id != setup.id && same_process_identity(setup, other));
         let existing = matching_obs_pids(setup);
-        if !sibling_identity && !setup.obs.shared_config {
+        if !sibling_identity {
             if existing.len() == 1 {
                 let pid = existing[0].as_u32();
-                if let Some(start_time) = process_start_time(pid) {
-                    self.adopted
-                        .insert(setup.id, (setup.clone(), pid, start_time));
-                }
+                let start_time = process_start_time(pid).ok_or(SupervisorError::Unidentified)?;
+                self.adopted
+                    .insert(setup.id, (setup.clone(), pid, start_time));
                 return Ok(pid);
             }
             if existing.len() > 1 {
@@ -427,6 +426,12 @@ pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
     same_path(&binary(left), &binary(right)) && config_dir(left) == config_dir(right)
 }
 
+fn same_process_identity(left: &Setup, right: &Setup) -> bool {
+    same_obs_identity(left, right)
+        && (!(left.obs.shared_config && right.obs.shared_config)
+            || left.obs.websocket_port == right.obs.websocket_port)
+}
+
 fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
     let matches = matching_obs_pids(setup);
     if matches.len() != 1 {
@@ -437,9 +442,6 @@ fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
 }
 
 fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
-    if setup.obs.shared_config {
-        return Vec::new();
-    }
     let mut system = System::new();
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
@@ -482,9 +484,22 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
                                 argument.to_string_lossy() == format!("--env={expected}")
                             }))
                 });
-            (executable_matches && config_matches).then_some(*pid)
+            let port_matches = !setup.obs.shared_config
+                || setup.obs.websocket_port.is_some_and(|port| {
+                    command_has_option(process.cmd(), "--websocket_port", &port.to_string())
+                });
+            (executable_matches && config_matches && port_matches).then_some(*pid)
         })
         .collect()
+}
+
+fn command_has_option(arguments: &[std::ffi::OsString], option: &str, value: &str) -> bool {
+    arguments
+        .windows(2)
+        .any(|pair| pair[0].to_string_lossy() == option && pair[1].to_string_lossy() == value)
+        || arguments
+            .iter()
+            .any(|argument| argument.to_string_lossy() == format!("{option}={value}"))
 }
 
 fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
@@ -819,8 +834,9 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        Supervisor, SupervisorError, copy_latest_crash_report, launch_arguments, matching_obs_pids,
-        prepare_after_crash, resolve_executable,
+        Supervisor, SupervisorError, copy_latest_crash_report, find_matching_obs_with_start_time,
+        launch_arguments, matching_obs_pids, prepare_after_crash, process_start_time,
+        resolve_executable,
     };
     use crate::config::{InstallKind, ObsLaunchConfig, Setup};
 
@@ -885,6 +901,48 @@ mod tests {
                 "--websocket_port" | "--websocket_password"
             )
         }));
+    }
+
+    #[test]
+    fn shared_config_process_matching_uses_its_websocket_port() {
+        let directory = tempdir().unwrap();
+        let xdg_config = directory.path().join("xdg");
+        let config_dir = xdg_config.join("obs-studio");
+        let binary = resolve_executable(Path::new("sh"));
+        let mut setup_x = make_manual_setup(&binary, &config_dir);
+        setup_x.obs.shared_config = true;
+        setup_x.obs.websocket_port = Some(4456);
+        let mut setup_y = setup_x.clone();
+        setup_y.id = uuid::Uuid::new_v4();
+        setup_y.obs.websocket_port = Some(4457);
+        let mut process = Command::new(&binary)
+            .args([
+                "-c",
+                "while :; do sleep 0.05; done",
+                "fake-obs",
+                "--websocket_port",
+                "4456",
+            ])
+            .env("XDG_CONFIG_HOME", &xdg_config)
+            .spawn()
+            .unwrap();
+
+        let mut matches = Vec::new();
+        for _ in 0..100 {
+            matches = matching_obs_pids(&setup_x);
+            if !matches.is_empty() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].as_u32(), process.id());
+        let (_, start_time) = find_matching_obs_with_start_time(&setup_x).unwrap();
+        assert_eq!(process_start_time(process.id()), Some(start_time));
+        assert!(matching_obs_pids(&setup_y).is_empty());
+
+        process.kill().unwrap();
+        let _ = process.wait().unwrap();
     }
 
     #[test]
