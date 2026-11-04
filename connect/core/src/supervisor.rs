@@ -14,7 +14,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    config::{InstallKind, ObsLaunchConfig, Setup},
+    config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup, validate_obs_config_for_platform},
     relay::PcObsState,
 };
 
@@ -26,6 +26,8 @@ pub enum SupervisorError {
     WebsocketDisabled,
     #[error("OBS process is not identified; refusing to control it")]
     Unidentified,
+    #[error("{0}")]
+    UnsupportedPlatformConfig(&'static str),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -135,21 +137,35 @@ pub fn config_dir(setup: &Setup) -> PathBuf {
     if let Some(path) = &setup.obs.config_dir_override {
         return path.clone();
     }
-    match setup.obs.install_kind {
-        InstallKind::Flatpak => directories::BaseDirs::new()
-            .map(|dirs| {
-                dirs.home_dir()
-                    .join(".var/app/com.obsproject.Studio/config/obs-studio")
-            })
-            .unwrap_or_else(|| {
-                dirs_config_home()
-                    .join("..")
-                    .join(".var/app/com.obsproject.Studio/config/obs-studio")
-            }),
-        _ => dirs_config_home().join("obs-studio"),
+    #[cfg(target_os = "macos")]
+    {
+        return directories::BaseDirs::new()
+            .map(|dirs| macos_obs_config_dir(dirs.home_dir()))
+            .unwrap_or_default();
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        match setup.obs.install_kind {
+            InstallKind::Flatpak => directories::BaseDirs::new()
+                .map(|dirs| {
+                    dirs.home_dir()
+                        .join(".var/app/com.obsproject.Studio/config/obs-studio")
+                })
+                .unwrap_or_else(|| {
+                    dirs_config_home()
+                        .join("..")
+                        .join(".var/app/com.obsproject.Studio/config/obs-studio")
+                }),
+            _ => dirs_config_home().join("obs-studio"),
+        }
     }
 }
 
+pub fn macos_obs_config_dir(home: &Path) -> PathBuf {
+    home.join("Library/Application Support/obs-studio")
+}
+
+#[cfg(not(target_os = "macos"))]
 fn dirs_config_home() -> PathBuf {
     std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
@@ -330,6 +346,8 @@ impl Supervisor {
         resume: bool,
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
+        validate_obs_config_for_platform(&setup.obs, HostPlatform::current())
+            .map_err(SupervisorError::UnsupportedPlatformConfig)?;
         let mut replace_flatpak_child = false;
         if let Some(item) = self.children.get_mut(&setup.id) {
             if item.is_flatpak {
@@ -1108,13 +1126,25 @@ fn is_process_descendant(system: &System, pid: Pid, ancestor: Pid) -> bool {
     false
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn request_graceful_close(pid: u32) {
     use nix::{
         sys::signal::{Signal, kill},
         unistd::Pid,
     };
     let _ = kill(Pid::from_raw(pid as i32), Signal::SIGTERM);
+}
+
+#[cfg(target_os = "macos")]
+fn request_graceful_close(pid: u32) {
+    use objc2_app_kit::NSRunningApplication;
+    unsafe {
+        if let Some(application) =
+            NSRunningApplication::runningApplicationWithProcessIdentifier(pid as i32)
+        {
+            application.terminate();
+        }
+    }
 }
 
 fn process_start_time(pid: u32) -> Option<u64> {
@@ -1314,7 +1344,7 @@ fn default_obs_binary() -> PathBuf {
     PathBuf::from(r"C:\Program Files\obs-studio\bin\64bit\obs64.exe")
 }
 
-#[cfg(not(windows))]
+#[cfg(all(not(windows), not(target_os = "macos")))]
 fn default_obs_binary() -> PathBuf {
     env::split_paths(&env::var_os("PATH").unwrap_or_default())
         .map(|directory| directory.join("obs"))
@@ -1322,12 +1352,30 @@ fn default_obs_binary() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("obs"))
 }
 
+pub fn macos_obs_binary_candidates(home: &Path) -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/Applications/OBS.app/Contents/MacOS/OBS"),
+        home.join("Applications/OBS.app/Contents/MacOS/OBS"),
+    ]
+}
+
+#[cfg(target_os = "macos")]
+fn default_obs_binary() -> PathBuf {
+    let home = directories::BaseDirs::new()
+        .map(|dirs| dirs.home_dir().to_owned())
+        .unwrap_or_default();
+    macos_obs_binary_candidates(&home)
+        .into_iter()
+        .find(|candidate| candidate.is_file())
+        .unwrap_or_else(|| PathBuf::from("/Applications/OBS.app/Contents/MacOS/OBS"))
+}
+
 pub fn detected_obs_binary() -> PathBuf {
     default_obs_binary()
 }
 
 pub fn detected_obs_binary_for(install_kind: &InstallKind) -> PathBuf {
-    if matches!(install_kind, InstallKind::Flatpak) {
+    if cfg!(target_os = "linux") && matches!(install_kind, InstallKind::Flatpak) {
         resolve_executable(Path::new("flatpak"))
     } else {
         default_obs_binary()
@@ -1356,7 +1404,7 @@ mod tests {
     use std::{
         fs,
         os::unix::fs::PermissionsExt,
-        path::Path,
+        path::{Path, PathBuf},
         process::Command,
         thread,
         time::{Duration, Instant, UNIX_EPOCH},
@@ -1366,10 +1414,27 @@ mod tests {
 
     use super::{
         StartedObs, Supervisor, SupervisorError, copy_latest_crash_report,
-        find_matching_obs_with_start_time, launch_arguments, matching_obs_pids,
-        prepare_after_crash, process_start_time, resolve_executable,
+        find_matching_obs_with_start_time, launch_arguments, macos_obs_binary_candidates,
+        macos_obs_config_dir, matching_obs_pids, prepare_after_crash, process_start_time,
+        resolve_executable,
     };
     use crate::config::{InstallKind, ObsLaunchConfig, Setup};
+
+    #[test]
+    fn macos_discovery_candidates_and_config_path_are_platform_specific() {
+        let home = Path::new("/Users/tester");
+        assert_eq!(
+            macos_obs_binary_candidates(home),
+            vec![
+                PathBuf::from("/Applications/OBS.app/Contents/MacOS/OBS"),
+                PathBuf::from("/Users/tester/Applications/OBS.app/Contents/MacOS/OBS")
+            ]
+        );
+        assert_eq!(
+            macos_obs_config_dir(home),
+            PathBuf::from("/Users/tester/Library/Application Support/obs-studio")
+        );
+    }
 
     fn make_setup(script: &Path, config_dir: &Path) -> Setup {
         let mut setup = Setup::new("Fake OBS".into());

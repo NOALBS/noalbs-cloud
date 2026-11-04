@@ -1,7 +1,8 @@
 use std::{collections::HashMap, sync::Mutex};
 
 use connect_core::{
-    AppConfig, ConfigStore, PairingClient, Setup,
+    AppConfig, ConfigStore, HostPlatform, PairingClient, Setup,
+    config::validate_obs_config_for_platform,
     credentials::TokenStore,
     pairing::ConnectOs,
     relay::{LinkConfig, ObsTelemetry, PcObsState, WatchdogMode, run_link, stop_active_streams},
@@ -19,6 +20,8 @@ use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
 };
+#[cfg(target_os = "macos")]
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 use tokio::sync::watch;
@@ -55,6 +58,7 @@ struct SetupSummary {
 
 #[derive(Clone, Serialize)]
 struct UiState {
+    platform: String,
     start_at_login: bool,
     api_url: String,
     dashboard_url: Option<String>,
@@ -70,6 +74,7 @@ fn get_state(state: State<'_, AppState>) -> UiState {
     let sessions = state.link_sessions.lock().expect("link session lock");
     let settings = config.settings.effective();
     UiState {
+        platform: HostPlatform::current().as_str().to_owned(),
         start_at_login: config.settings.start_at_login,
         api_url: settings.api_url,
         dashboard_url: settings.dashboard_url,
@@ -153,6 +158,8 @@ fn validate_setup_identity(
     setups: &[connect_core::config::Setup],
     candidate: &connect_core::config::Setup,
 ) -> Result<(), String> {
+    validate_obs_config_for_platform(&candidate.obs, HostPlatform::current())
+        .map_err(str::to_owned)?;
     for other in setups.iter().filter(|setup| setup.id != candidate.id) {
         if !same_obs_identity(candidate, other) {
             continue;
@@ -260,10 +267,10 @@ async fn create_pairing(
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
-    let os = if cfg!(target_os = "windows") {
-        ConnectOs::Windows
-    } else {
-        ConnectOs::Linux
+    let os = match HostPlatform::current() {
+        HostPlatform::Windows => ConnectOs::Windows,
+        HostPlatform::MacOS => ConnectOs::Macos,
+        HostPlatform::Linux => ConnectOs::Linux,
     };
     let pending = client
         .create(&name, os, env!("CARGO_PKG_VERSION"))
@@ -296,10 +303,10 @@ async fn pair_setup(
     };
     let client = PairingClient::new_with_dashboard_url(api_url, dashboard_url)
         .map_err(|error| error.to_string())?;
-    let os = if cfg!(target_os = "windows") {
-        ConnectOs::Windows
-    } else {
-        ConnectOs::Linux
+    let os = match HostPlatform::current() {
+        HostPlatform::Windows => ConnectOs::Windows,
+        HostPlatform::MacOS => ConnectOs::Macos,
+        HostPlatform::Linux => ConnectOs::Linux,
     };
     let pending = client
         .create(&name, os, env!("CARGO_PKG_VERSION"))
@@ -883,6 +890,9 @@ fn main() {
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
     let (config, startup_error) = store.load_or_backup();
     let tokens = TokenStore::default_store().expect("token store path");
+    let autostart_builder = tauri_plugin_autostart::Builder::new().args(["--minimized"]);
+    #[cfg(target_os = "macos")]
+    let autostart_builder = autostart_builder.macos_launcher(MacosLauncher::LaunchAgent);
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -890,11 +900,7 @@ fn main() {
                 let _ = window.set_focus();
             }
         }))
-        .plugin(
-            tauri_plugin_autostart::Builder::new()
-                .args(["--minimized"])
-                .build(),
-        )
+        .plugin(autostart_builder.build())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
             config: Mutex::new(config),

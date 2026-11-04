@@ -32,6 +32,7 @@ type Setup = {
 	config_dir: string;
 };
 type State = {
+	platform: string;
 	start_at_login: boolean;
 	api_url: string;
 	dashboard_url: string | null;
@@ -482,6 +483,7 @@ function App() {
 					) : setup ? (
 						<SetupDetail
 							setup={setup}
+							platform={state?.platform ?? "linux"}
 							editing={editing?.id === setup.id ? editing : null}
 							pairing={pairingSetupId === setup.id ? pairing : null}
 							pairingActive={pairingSetupId === setup.id}
@@ -516,6 +518,7 @@ function App() {
 
 function SetupDetail({
 	setup,
+	platform,
 	editing,
 	pairing,
 	pairingActive,
@@ -531,6 +534,7 @@ function SetupDetail({
 	onCancel,
 }: {
 	setup: Setup;
+	platform: string;
 	editing: Setup | null;
 	pairing: Pairing | null;
 	pairingActive: boolean;
@@ -660,6 +664,7 @@ function SetupDetail({
 				{editing ? (
 					<SetupForm
 						setup={editing}
+						platform={platform}
 						onChange={onEditChange}
 						onObsChange={onObsChange}
 						onSave={onSave}
@@ -694,12 +699,14 @@ function SetupDetail({
 
 function SetupForm({
 	setup,
+	platform,
 	onChange,
 	onObsChange,
 	onSave,
 	onCancel,
 }: {
 	setup: Setup;
+	platform: string;
 	onChange: (setup: Setup) => void;
 	onObsChange: <K extends keyof ObsConfig>(key: K, value: ObsConfig[K]) => void;
 	onSave: () => void;
@@ -724,11 +731,13 @@ function SetupForm({
 						)
 					}
 				>
-					{Object.entries(INSTALL_KINDS).map(([value, label]) => (
-						<option key={value} value={value}>
-							{label}
-						</option>
-					))}
+					{Object.entries(INSTALL_KINDS)
+						.filter(([value]) => value !== "flatpak" || platform === "linux")
+						.map(([value, label]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
 				</select>
 			</Field>
 			<Field label="OBS program">
@@ -741,9 +750,14 @@ function SetupForm({
 			</Field>
 			<Field
 				label="OBS settings folder"
-				hint="Use a separate folder for each setup on this computer."
+				hint={
+					platform === "macos"
+						? "OBS uses one settings folder. Use shared config with a distinct websocket port for multiple setups."
+						: "Use a separate folder for each setup on this computer."
+				}
 			>
 				<input
+					disabled={platform === "macos"}
 					value={obs.config_dir_override ?? setup.config_dir}
 					onChange={(event) =>
 						onObsChange(

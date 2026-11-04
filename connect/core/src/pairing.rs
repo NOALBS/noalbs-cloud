@@ -15,6 +15,7 @@ use crate::{
 pub enum ConnectOs {
     Windows,
     Linux,
+    Macos,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -271,6 +272,14 @@ mod tests {
             "switcher_id": "22222222-2222-4222-8222-222222222222",
             "link_url": "wss://app.noalbs.com/link"
         }))
+    }
+
+    #[test]
+    fn macos_serializes_to_the_server_os_value() {
+        assert_eq!(
+            serde_json::to_value(ConnectOs::Macos).unwrap(),
+            json!("macos")
+        );
     }
 
     #[tokio::test]

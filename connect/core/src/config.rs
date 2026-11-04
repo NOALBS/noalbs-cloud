@@ -83,6 +83,33 @@ pub enum InstallKind {
     CustomBinary,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HostPlatform {
+    Linux,
+    MacOS,
+    Windows,
+}
+
+impl HostPlatform {
+    pub const fn current() -> Self {
+        if cfg!(target_os = "macos") {
+            Self::MacOS
+        } else if cfg!(target_os = "windows") {
+            Self::Windows
+        } else {
+            Self::Linux
+        }
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Linux => "linux",
+            Self::MacOS => "macos",
+            Self::Windows => "windows",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ObsLaunchConfig {
@@ -121,6 +148,21 @@ impl Default for ObsLaunchConfig {
             use_dashboard_obs_settings: false,
         }
     }
+}
+
+pub fn validate_obs_config_for_platform(
+    config: &ObsLaunchConfig,
+    platform: HostPlatform,
+) -> Result<(), &'static str> {
+    if platform == HostPlatform::MacOS && config.config_dir_override.is_some() {
+        return Err(
+            "OBS settings folder overrides are not supported on macOS. Use shared config with a distinct websocket port for multiple setups.",
+        );
+    }
+    if platform != HostPlatform::Linux && matches!(config.install_kind, InstallKind::Flatpak) {
+        return Err("Flatpak OBS is only supported on Linux.");
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -244,7 +286,10 @@ impl ConfigStore {
 
 #[cfg(test)]
 mod tests {
-    use super::{AppConfig, ConfigStore, PRODUCTION_API_URL, Setup};
+    use super::{
+        AppConfig, ConfigStore, HostPlatform, ObsLaunchConfig, PRODUCTION_API_URL, Setup,
+        validate_obs_config_for_platform,
+    };
 
     #[test]
     fn config_round_trips_setups_and_defaults() {
@@ -320,5 +365,23 @@ mod tests {
         let persisted = store.load().unwrap();
         assert_eq!(persisted.settings.api_url, PRODUCTION_API_URL);
         assert_eq!(persisted.settings.dashboard_url, None);
+    }
+
+    #[test]
+    fn macos_rejects_config_dir_overrides_and_flatpak() {
+        let mut config = ObsLaunchConfig {
+            config_dir_override: Some("custom".into()),
+            ..Default::default()
+        };
+        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_err());
+        config.config_dir_override = None;
+        config.install_kind = super::InstallKind::Flatpak;
+        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_err());
+        config.install_kind = super::InstallKind::Native;
+        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_ok());
+        assert!(
+            validate_obs_config_for_platform(&ObsLaunchConfig::default(), HostPlatform::Linux)
+                .is_ok()
+        );
     }
 }
