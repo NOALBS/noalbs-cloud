@@ -507,9 +507,9 @@ impl Supervisor {
         if self
             .children
             .get(&setup.id)
-            .is_some_and(|child| child.is_flatpak && child.flatpak_obs.is_none())
+            .is_some_and(|child| child.is_flatpak)
         {
-            return self.stop_flatpak_unresolved(setup);
+            return self.stop_flatpak(setup);
         }
         let (pid, expected_start_time, mut child) = match self.children.remove(&setup.id) {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
@@ -608,6 +608,47 @@ impl Supervisor {
         }
         self.children.remove(&setup.id);
         self.adopted.remove(&setup.id);
+        Ok(())
+    }
+
+    fn stop_flatpak(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        if self
+            .children
+            .get(&setup.id)
+            .is_some_and(|child| child.flatpak_obs.is_none())
+        {
+            return self.stop_flatpak_unresolved(setup);
+        }
+
+        self.connected.remove(&setup.id);
+        let Some(item) = self.children.get_mut(&setup.id) else {
+            return Err(SupervisorError::Unidentified);
+        };
+        let Some((pid, start_time)) = item.flatpak_obs else {
+            return Err(SupervisorError::Unidentified);
+        };
+        if process_start_time(pid) == Some(start_time) {
+            request_graceful_close(pid);
+        }
+        let deadline = Instant::now() + self.shutdown_grace;
+        while process_start_time(pid) == Some(start_time) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        if process_start_time(pid) == Some(start_time) {
+            force_kill(pid);
+            self.crashed_pending.insert(setup.id);
+        }
+
+        let wrapper_deadline = Instant::now() + self.shutdown_grace;
+        while item.child.try_wait()?.is_none() && Instant::now() < wrapper_deadline {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        let wrapper_reaped = item.child.try_wait()?.is_some();
+        let obs_running = process_start_time(pid) == Some(start_time);
+        if wrapper_reaped && !obs_running {
+            self.children.remove(&setup.id);
+            self.adopted.remove(&setup.id);
+        }
         Ok(())
     }
 
@@ -1322,6 +1363,55 @@ mod tests {
         assert!(!supervisor.has_child(setup.id));
         assert_eq!(process_start_time(wrapper_pid), None);
         assert_eq!(process_start_time(descendant_pid), None);
+    }
+
+    #[test]
+    fn flatpak_stop_reaps_its_wrapper_after_obs_exits() {
+        let directory = tempdir().unwrap();
+        let script = directory.path().join("fake-flatpak-wrapper");
+        let child_pid_path = directory.path().join("child-pid");
+        make_script(
+            &script,
+            &format!(
+                "sleep 30 & child=$!; printf '%s' \"$child\" > '{}'; trap 'kill \"$child\"; wait \"$child\"; exit 0' TERM; wait \"$child\"",
+                child_pid_path.display()
+            ),
+        );
+        let wrapper = Command::new(&script).spawn().unwrap();
+        let wrapper_pid = wrapper.id();
+        wait_for_path(&child_pid_path);
+        let obs_pid: u32 = fs::read_to_string(&child_pid_path)
+            .unwrap()
+            .parse()
+            .unwrap();
+        let obs_start_time = process_start_time(obs_pid).unwrap();
+        let wrapper_start_time = process_start_time(wrapper_pid).unwrap();
+
+        let setup = make_flatpak_setup(&directory.path().join("config"));
+        let mut supervisor =
+            Supervisor::with_timing(Duration::from_secs(1), Duration::from_secs(60));
+        supervisor.children.insert(
+            setup.id,
+            StartedObs {
+                setup_id: setup.id,
+                setup: setup.clone(),
+                pid: obs_pid,
+                child: wrapper,
+                started: Instant::now(),
+                process_start_time: obs_start_time,
+                multi: false,
+                config_dir: super::config_dir(&setup),
+                is_flatpak: true,
+                flatpak_obs: Some((obs_pid, obs_start_time)),
+            },
+        );
+
+        supervisor.stop(&setup).unwrap();
+
+        assert!(!supervisor.has_child(setup.id));
+        assert_eq!(process_start_time(wrapper_pid), None);
+        assert_eq!(process_start_time(obs_pid), None);
+        assert_ne!(wrapper_start_time, 0);
     }
 
     #[test]
