@@ -165,6 +165,7 @@ pub fn launch_arguments(
     multi: bool,
     resume: bool,
     scene: Option<&str>,
+    obs_version: Option<&str>,
 ) -> Vec<String> {
     let mut args = vec!["--disable-missing-files-check".to_owned()];
     if multi {
@@ -173,13 +174,7 @@ pub fn launch_arguments(
     if config.disable_updater {
         args.push("--disable-updater".into());
     }
-    if config
-        .last_obs_version
-        .as_deref()
-        .and_then(|version| version.split('.').next())
-        .and_then(|major| major.parse::<u32>().ok())
-        .is_some_and(|major| major < 32)
-    {
+    if should_disable_shutdown_check(obs_version) {
         args.push("--disable-shutdown-check".into());
     }
     if config.minimize_to_tray {
@@ -206,6 +201,71 @@ pub fn launch_arguments(
         }
     }
     args
+}
+
+fn should_disable_shutdown_check(obs_version: Option<&str>) -> bool {
+    let major = obs_version.and_then(|version| {
+        version
+            .split(|character: char| !character.is_ascii_digit() && character != '.')
+            .filter(|part| part.contains('.'))
+            .find_map(|part| part.split('.').next()?.parse::<u32>().ok())
+    });
+    major.is_none_or(|major| major < 32)
+}
+
+fn obs_version_for_launch(setup: &Setup) -> Option<String> {
+    let mut command = if matches!(&setup.obs.install_kind, InstallKind::Flatpak) {
+        let mut command = Command::new("flatpak");
+        command.arg("run");
+        if let Some(config) = &setup.obs.config_dir_override {
+            command.arg(format!(
+                "--env=XDG_CONFIG_HOME={}",
+                config.parent().unwrap_or(config).display()
+            ));
+        }
+        command.args(["com.obsproject.Studio", "--version"]);
+        command
+    } else {
+        let mut command = Command::new(
+            setup
+                .obs
+                .binary_path
+                .clone()
+                .unwrap_or_else(default_obs_binary),
+        );
+        command.arg("--version");
+        command
+    };
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .ok()?;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => {
+                let output = child.wait_with_output().ok()?;
+                return if output.status.success() {
+                    Some(format!(
+                        "{}{}",
+                        String::from_utf8_lossy(&output.stdout),
+                        String::from_utf8_lossy(&output.stderr)
+                    ))
+                } else {
+                    None
+                };
+            }
+            Ok(None) if Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Ok(None) | Err(_) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -343,6 +403,14 @@ impl Supervisor {
                 .children
                 .iter_mut()
                 .any(|(id, child)| *id != setup.id && started_obs_is_running(child));
+        let obs_version = obs_version_for_launch(setup);
+        let args = launch_arguments(
+            &setup.obs,
+            multi,
+            resume,
+            last_scene,
+            obs_version.as_deref(),
+        );
         let mut command = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
             let mut cmd = Command::new("flatpak");
             cmd.arg("run");
@@ -1189,7 +1257,18 @@ mod tests {
     }
 
     fn make_script(path: &Path, body: &str) {
-        fs::write(path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        make_script_with_version(path, "OBS Studio 33.0.1", body);
+    }
+
+    fn make_script_with_version(path: &Path, version: &str, body: &str) {
+        let version = version.replace('\'', "'\\''");
+        fs::write(
+            path,
+            format!(
+                "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then printf '%s\\n' '{version}'; exit 0; fi\n{body}\n"
+            ),
+        )
+        .unwrap();
         let mut permissions = fs::metadata(path).unwrap().permissions();
         permissions.set_mode(0o755);
         fs::set_permissions(path, permissions).unwrap();
@@ -1213,7 +1292,7 @@ mod tests {
             websocket_password_override: Some("test-password".into()),
             ..Default::default()
         };
-        let args = launch_arguments(&config, true, true, Some("BRB"));
+        let args = launch_arguments(&config, true, true, Some("BRB"), Some("31.1.0"));
         assert!(args.contains(&"--multi".into()));
         assert!(args.contains(&"--startstreaming".into()));
         assert!(
@@ -1226,7 +1305,13 @@ mod tests {
         );
         assert!(args.windows(2).any(|pair| pair == ["--scene", "BRB"]));
 
-        let non_shared = launch_arguments(&ObsLaunchConfig::default(), false, false, None);
+        let non_shared = launch_arguments(
+            &ObsLaunchConfig::default(),
+            false,
+            false,
+            None,
+            Some("33.0.1"),
+        );
         assert!(!non_shared.iter().any(|argument| {
             matches!(
                 argument.as_str(),
@@ -1466,13 +1551,52 @@ mod tests {
             collection: Some("Main".into()),
             ..Default::default()
         };
-        let args = launch_arguments(&config, false, false, None);
+        let args = launch_arguments(&config, false, false, None, Some("31.1.0"));
         assert!(args.contains(&"--disable-missing-files-check".into()));
         assert!(args.contains(&"--disable-shutdown-check".into()));
         assert!(args.contains(&"--disable-updater".into()));
         assert!(args.contains(&"--minimize-to-tray".into()));
         assert!(args.windows(2).any(|pair| pair == ["--profile", "Live"]));
         assert!(args.windows(2).any(|pair| pair == ["--collection", "Main"]));
+    }
+
+    #[test]
+    fn unknown_obs_version_uses_legacy_shutdown_check_flag() {
+        assert!(super::should_disable_shutdown_check(None));
+        assert!(super::should_disable_shutdown_check(Some("unknown")));
+        assert!(super::should_disable_shutdown_check(Some(
+            "OBS Studio - 30.2.3"
+        )));
+        assert!(!super::should_disable_shutdown_check(Some(
+            "OBS Studio - 33.0.1"
+        )));
+    }
+
+    #[test]
+    fn watchdog_restart_uses_the_current_binary_version_for_launch_flags() {
+        let directory = tempdir().unwrap();
+        let script = directory.path().join("fake-obs");
+        let args_path = directory.path().join("arguments");
+        make_script_with_version(
+            &script,
+            "OBS Studio 30.2.3",
+            &format!(
+                "printf '%s\\n' \"$@\" > '{}'; trap 'exit 0' TERM; while :; do sleep 0.05; done",
+                args_path.display()
+            ),
+        );
+        let mut setup = make_setup(&script, &directory.path().join("config"));
+        setup.obs.last_obs_version = Some("33.0.1".into());
+
+        let mut supervisor = Supervisor::default();
+        supervisor.start(&setup, true, None).unwrap();
+        wait_for_path(&args_path);
+        let args = fs::read_to_string(&args_path).unwrap();
+        let starts_streaming = args.lines().any(|arg| arg == "--startstreaming");
+        let disables_shutdown_check = args.lines().any(|arg| arg == "--disable-shutdown-check");
+        supervisor.stop(&setup).unwrap();
+        assert!(starts_streaming);
+        assert!(disables_shutdown_check);
     }
 
     #[test]

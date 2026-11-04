@@ -582,6 +582,15 @@ fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState)
         )
 }
 
+fn setup_for_watchdog_restart(config: &AppConfig, fallback: &Setup) -> Setup {
+    config
+        .setups
+        .iter()
+        .find(|setup| setup.id == fallback.id)
+        .cloned()
+        .unwrap_or_else(|| fallback.clone())
+}
+
 fn start_link_session(
     app: &tauri::AppHandle,
     state: &AppState,
@@ -701,18 +710,25 @@ fn start_link_session(
                             );
                         }
                         WatchdogAction::Restart { resume } => {
+                            let restart_setup = app_state
+                                .config
+                                .lock()
+                                .map(|config| {
+                                    setup_for_watchdog_restart(&config, &monitor_setup)
+                                })
+                                .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding {
-                                stop_setup_streams(&monitor_setup, &app_state).await;
+                                stop_setup_streams(&restart_setup, &app_state).await;
                             }
                             let mut supervisor = app_state.supervisor.lock().expect("supervisor lock");
                             if incident == PcObsState::NotResponding
-                                && let Err(error) = supervisor.stop(&monitor_setup)
+                                && let Err(error) = supervisor.stop(&restart_setup)
                             {
                                 let _ = monitor_handle.emit("connect-error", error.to_string());
                                 continue;
                             }
                             match supervisor.start(
-                                &monitor_setup,
+                                &restart_setup,
                                 resume,
                                 telemetry.last_program_scene.as_deref(),
                             ) {
@@ -958,6 +974,21 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn watchdog_restart_uses_the_latest_setup_version() {
+        let mut fallback = Setup::new("OBS".into());
+        fallback.obs.last_obs_version = Some("33.0.1".into());
+        let mut current = fallback.clone();
+        current.obs.last_obs_version = Some("30.2.3".into());
+        let config = AppConfig {
+            setups: vec![current],
+            ..Default::default()
+        };
+
+        let setup = setup_for_watchdog_restart(&config, &fallback);
+        assert_eq!(setup.obs.last_obs_version.as_deref(), Some("30.2.3"));
+    }
 
     #[test]
     fn process_exit_corrects_stale_starting_state_without_overwriting_disabled() {
