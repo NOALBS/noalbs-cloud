@@ -99,16 +99,20 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         detail: t`Mode: ${event.data.mode} ${by(event.data.by, t`from the dashboard`)}`,
       };
     case "connect_obs_command": {
-      const verb = {
-        start: t`started`,
-        stop: t`stopped`,
-        restart: t`restarted`,
-      }[event.data.action];
+      const detail = event.data.by
+        ? {
+            start: t`${event.data.by} started OBS through Connect`,
+            stop: t`${event.data.by} stopped OBS through Connect`,
+            restart: t`${event.data.by} restarted OBS through Connect`,
+          }[event.data.action]
+        : {
+            start: t`Started OBS through Connect`,
+            stop: t`Stopped OBS through Connect`,
+            restart: t`Restarted OBS through Connect`,
+          }[event.data.action];
       return {
         title: t`OBS command`,
-        detail: event.data.by
-          ? t`${event.data.by} ${verb} OBS through Connect`
-          : t`${verb} OBS through Connect`,
+        detail,
       };
     }
     case "feed_fixed":

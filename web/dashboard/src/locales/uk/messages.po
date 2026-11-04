@@ -360,11 +360,6 @@ msgstr "{0} · список оновлюється сам; скануй, щоб 
 msgid "{0} (customer)"
 msgstr "{0} (кінцевий клієнт)"
 
-#. placeholder {0}: event.data.by
-#: src/lib/live-format.ts
-msgid "{0} {verb} OBS through Connect"
-msgstr ""
-
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -551,6 +546,11 @@ msgstr "Тариф {0}"
 msgid "{0} removed"
 msgstr "{0} вилучено"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} restarted OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
@@ -575,11 +575,21 @@ msgstr "Вибрано: {0}"
 msgid "{0} servers · {1}"
 msgstr "Серверів: {0} · {1}"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} started OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
 msgstr "{0} діє до {1}, потім робочий простір переходить на Free. Кошти не повертаються."
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} stopped OBS through Connect"
+msgstr ""
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -909,10 +919,6 @@ msgstr "Бот {team}"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, one {# робочий простір. Персонал відкриває його як будь-який робочий простір: через його доступ підтримки.} few {# робочі простори. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.} many {# робочих просторів. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.} other {# робочого простору. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.}}"
-
-#: src/lib/live-format.ts
-msgid "{verb} OBS through Connect"
-msgstr ""
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -7299,7 +7305,7 @@ msgid "Restart playback when the source becomes active"
 msgstr "Перезапускати відтворення, коли джерело стає активним"
 
 #: src/lib/live-format.ts
-msgid "restarted"
+msgid "Restarted OBS through Connect"
 msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
@@ -8242,13 +8248,13 @@ msgstr "Запустити стрім?"
 msgid "Start, end & raids"
 msgstr "Початок, кінець і рейди"
 
-#: src/lib/live-format.ts
-msgid "started"
-msgstr ""
-
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "Розпочато Checkout"
+
+#: src/lib/live-format.ts
+msgid "Started OBS through Connect"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8420,7 +8426,7 @@ msgid "Stop, and restart when shown"
 msgstr "Зупиняти й запускати знову під час показу"
 
 #: src/lib/live-format.ts
-msgid "stopped"
+msgid "Stopped OBS through Connect"
 msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx

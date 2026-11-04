@@ -360,11 +360,6 @@ msgstr "{0} · the list refreshes by itself; scan to look again."
 msgid "{0} (customer)"
 msgstr "{0} (customer)"
 
-#. placeholder {0}: event.data.by
-#: src/lib/live-format.ts
-msgid "{0} {verb} OBS through Connect"
-msgstr "{0} {verb} OBS through Connect"
-
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -551,6 +546,11 @@ msgstr "{0} plan"
 msgid "{0} removed"
 msgstr "{0} removed"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} restarted OBS through Connect"
+msgstr "{0} restarted OBS through Connect"
+
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
@@ -575,11 +575,21 @@ msgstr "{0} selected"
 msgid "{0} servers · {1}"
 msgstr "{0} servers · {1}"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} started OBS through Connect"
+msgstr "{0} started OBS through Connect"
+
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
 msgstr "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} stopped OBS through Connect"
+msgstr "{0} stopped OBS through Connect"
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -909,10 +919,6 @@ msgstr "{team}’s bot"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
-
-#: src/lib/live-format.ts
-msgid "{verb} OBS through Connect"
-msgstr "{verb} OBS through Connect"
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -7301,8 +7307,8 @@ msgid "Restart playback when the source becomes active"
 msgstr "Restart playback when the source becomes active"
 
 #: src/lib/live-format.ts
-msgid "restarted"
-msgstr "restarted"
+msgid "Restarted OBS through Connect"
+msgstr "Restarted OBS through Connect"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -8244,13 +8250,13 @@ msgstr "Start the stream?"
 msgid "Start, end & raids"
 msgstr "Start, end & raids"
 
-#: src/lib/live-format.ts
-msgid "started"
-msgstr "started"
-
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "Started a checkout"
+
+#: src/lib/live-format.ts
+msgid "Started OBS through Connect"
+msgstr "Started OBS through Connect"
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8422,8 +8428,8 @@ msgid "Stop, and restart when shown"
 msgstr "Stop, and restart when shown"
 
 #: src/lib/live-format.ts
-msgid "stopped"
-msgstr "stopped"
+msgid "Stopped OBS through Connect"
+msgstr "Stopped OBS through Connect"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx

@@ -360,11 +360,6 @@ msgstr "{0} · リストは自動で更新されます。もう一度探すに�
 msgid "{0} (customer)"
 msgstr "{0}（顧客）"
 
-#. placeholder {0}: event.data.by
-#: src/lib/live-format.ts
-msgid "{0} {verb} OBS through Connect"
-msgstr ""
-
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -551,6 +546,11 @@ msgstr "{0}プラン"
 msgid "{0} removed"
 msgstr "{0}を削除しました"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} restarted OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
@@ -575,11 +575,21 @@ msgstr "{0} 件を選択中"
 msgid "{0} servers · {1}"
 msgstr "サーバー {0} 台 · {1}"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} started OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
 msgstr "{0}は{1}まで継続し、その後ワークスペースはFreeに移行します。返金はありません。"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} stopped OBS through Connect"
+msgstr ""
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -909,10 +919,6 @@ msgstr "{team}のボット"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, other {ワークスペース # 件。スタッフは通常のワークスペースと同じく、サポートアクセスで開きます。}}"
-
-#: src/lib/live-format.ts
-msgid "{verb} OBS through Connect"
-msgstr ""
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -7299,7 +7305,7 @@ msgid "Restart playback when the source becomes active"
 msgstr "ソースがアクティブになったら再生をやり直す"
 
 #: src/lib/live-format.ts
-msgid "restarted"
+msgid "Restarted OBS through Connect"
 msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
@@ -8242,13 +8248,13 @@ msgstr "配信を開始しますか？"
 msgid "Start, end & raids"
 msgstr "開始、終了、レイド"
 
-#: src/lib/live-format.ts
-msgid "started"
-msgstr ""
-
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "Checkoutを開始しました"
+
+#: src/lib/live-format.ts
+msgid "Started OBS through Connect"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8420,7 +8426,7 @@ msgid "Stop, and restart when shown"
 msgstr "停止し、表示されたら最初から再生"
 
 #: src/lib/live-format.ts
-msgid "stopped"
+msgid "Stopped OBS through Connect"
 msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx

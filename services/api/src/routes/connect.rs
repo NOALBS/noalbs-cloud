@@ -492,7 +492,7 @@ pub struct ConnectObsCommand {
         (status = NO_CONTENT),
         (status = FORBIDDEN, description = "`connect_forbidden`", body = ErrorBody),
         (status = CONFLICT, description = "`connect_offline`, `connect_unsupported`, or `connect_refused`", body = ErrorBody),
-        (status = GATEWAY_TIMEOUT, description = "`connect_timeout`", body = ErrorBody),
+        (status = GATEWAY_TIMEOUT, description = "`connect_timeout` after up to 50 seconds", body = ErrorBody),
     ))]
 async fn connect_obs_command(
     State(state): State<ApiState>,
@@ -512,7 +512,7 @@ async fn connect_obs_command(
         &state.nats,
         live::connect_request_subject(access.switcher.id),
         payload,
-        std::time::Duration::from_secs(35),
+        std::time::Duration::from_secs(50),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;

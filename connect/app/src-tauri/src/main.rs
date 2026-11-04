@@ -520,7 +520,14 @@ async fn run_obs_action(
         .ok_or_else(|| "setup not found".to_string())?;
 
     if matches!(action, ObsAction::Stop | ObsAction::Restart) {
-        stop_setup_streams(&setup, state).await;
+        if !stop_setup_streams_with_timeout(
+            Duration::from_secs(8),
+            stop_setup_streams(&setup, state),
+        )
+        .await
+        {
+            tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
+        }
     }
     let process_state = {
         let mut supervisor = state
@@ -578,6 +585,13 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
     if let Some((port, password)) = connection {
         let _ = stop_active_streams(port, &password).await;
     }
+}
+
+async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> bool
+where
+    F: std::future::Future<Output = ()>,
+{
+    tokio::time::timeout(deadline, future).await.is_ok()
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -1071,7 +1085,17 @@ fn start_link_session(
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding {
-                                stop_setup_streams(&restart_setup, &app_state).await;
+                                if !stop_setup_streams_with_timeout(
+                                    Duration::from_secs(8),
+                                    stop_setup_streams(&restart_setup, &app_state),
+                                )
+                                .await
+                                {
+                                    tracing::warn!(
+                                        setup_id = %restart_setup.id,
+                                        "Timed out stopping streams before OBS watchdog restart"
+                                    );
+                                }
                             }
                             let restart_result = {
                                 let mut supervisor =
@@ -1401,6 +1425,17 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn stream_stop_timeout_returns_when_obs_side_hangs() {
+        assert!(
+            !stop_setup_streams_with_timeout(
+                Duration::from_millis(1),
+                std::future::pending::<()>(),
+            )
+            .await
+        );
+    }
 
     #[test]
     fn taken_over_relay_error_does_not_forget_pairing() {
