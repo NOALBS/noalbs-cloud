@@ -751,13 +751,13 @@ function SetupForm({
 			<Field
 				label="OBS settings folder"
 				hint={
-					platform === "macos"
+					platform === "macos" || platform === "windows"
 						? "OBS uses one settings folder. Use shared config with a distinct websocket port for multiple setups."
 						: "Use a separate folder for each setup on this computer."
 				}
 			>
 				<input
-					disabled={platform === "macos"}
+					disabled={platform === "macos" || platform === "windows"}
 					value={obs.config_dir_override ?? setup.config_dir}
 					onChange={(event) =>
 						onObsChange(

@@ -962,28 +962,45 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
             } else {
                 process_executable_matches(process, &expected)
             };
-            let config_matches = !cfg!(target_os = "linux")
-                || setup.obs.config_dir_override.as_ref().is_none_or(|config| {
-                    let expected = format!(
-                        "XDG_CONFIG_HOME={}",
-                        config.parent().unwrap_or(config).display()
-                    );
-                    process
-                        .environ()
-                        .iter()
-                        .any(|entry| entry.to_string_lossy() == expected)
-                        || (matches!(setup.obs.install_kind, InstallKind::Flatpak)
-                            && process.cmd().iter().any(|argument| {
-                                argument.to_string_lossy() == format!("--env={expected}")
-                            }))
-                });
-            let port_matches = !setup.obs.shared_config
-                || setup.obs.websocket_port.is_some_and(|port| {
-                    command_has_option(process.cmd(), "--websocket_port", &port.to_string())
-                });
-            (executable_matches && config_matches && port_matches).then_some(*pid)
+            (executable_matches
+                && process_matches_obs_config(
+                    setup,
+                    HostPlatform::current(),
+                    process.environ(),
+                    process.cmd(),
+                ))
+            .then_some(*pid)
         })
         .collect()
+}
+
+fn process_matches_obs_config(
+    setup: &Setup,
+    platform: HostPlatform,
+    environ: &[std::ffi::OsString],
+    arguments: &[std::ffi::OsString],
+) -> bool {
+    let config_matches = match platform {
+        HostPlatform::Linux => setup.obs.config_dir_override.as_ref().is_none_or(|config| {
+            let expected = format!(
+                "XDG_CONFIG_HOME={}",
+                config.parent().unwrap_or(config).display()
+            );
+            environ
+                .iter()
+                .any(|entry| entry.to_string_lossy() == expected)
+                || (matches!(setup.obs.install_kind, InstallKind::Flatpak)
+                    && arguments
+                        .iter()
+                        .any(|argument| argument.to_string_lossy() == format!("--env={expected}")))
+        }),
+        HostPlatform::MacOS | HostPlatform::Windows => true,
+    };
+    let port_matches = !setup.obs.shared_config
+        || setup.obs.websocket_port.is_some_and(|port| {
+            command_has_option(arguments, "--websocket_port", &port.to_string())
+        });
+    config_matches && port_matches
 }
 
 fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
@@ -2073,6 +2090,40 @@ int main(int argc, char **argv) {
 
         process.kill().unwrap();
         let _ = process.wait().unwrap();
+    }
+
+    #[test]
+    fn windows_shared_config_matching_uses_its_websocket_port() {
+        let mut setup = Setup::new("Windows setup".into());
+        setup.obs.shared_config = true;
+        setup.obs.websocket_port = Some(4456);
+        let args = [
+            "obs64.exe",
+            "--multi",
+            "--websocket_port",
+            "4456",
+        ]
+        .map(std::ffi::OsString::from);
+        let other_port = [
+            "obs64.exe",
+            "--multi",
+            "--websocket_port",
+            "4457",
+        ]
+        .map(std::ffi::OsString::from);
+
+        assert!(super::process_matches_obs_config(
+            &setup,
+            HostPlatform::Windows,
+            &[],
+            &args
+        ));
+        assert!(!super::process_matches_obs_config(
+            &setup,
+            HostPlatform::Windows,
+            &[],
+            &other_port
+        ));
     }
 
     #[test]
