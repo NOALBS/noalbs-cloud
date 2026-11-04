@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+	font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	color: #182230;
+	background: #f3f6fa;
+	font-synthesis: none;
+}
+body {
+	margin: 0;
+}
+main {
+	max-width: 820px;
+	margin: 0 auto;
+	padding: 48px 24px;
+}
+header {
+	padding: 28px;
+	border-radius: 18px;
+	color: white;
+	background: linear-gradient(130deg, #153f65, #247b8b);
+}
+.eyebrow {
+	font-size: 12px;
+	letter-spacing: 0.18em;
+	opacity: 0.8;
+}
+h1 {
+	margin: 4px 0;
+	font-size: 36px;
+}
+section {
+	margin-top: 26px;
+	padding: 24px;
+	border-radius: 16px;
+	background: white;
+	box-shadow: 0 4px 18px #10233a0c;
+}
+article {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid #e5eaf0;
+	padding: 14px 0;
+}
+article p,
+.note {
+	color: #5d6b7a;
+	font-size: 14px;
+}
+button {
+	border: 0;
+	border-radius: 8px;
+	padding: 10px 16px;
+	color: white;
+	background: #176b85;
+	cursor: pointer;
+}
+button:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+.add {
+	display: flex;
+	gap: 10px;
+	margin-top: 18px;
+}
+.pairing {
+	text-align: center;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+}
+.quiet {
+	color: #334155;
+	background: #e2e8f0;
+}
+.code {
+	display: block;
+	margin: 18px;
+	font-size: 38px;
+	letter-spacing: 0.14em;
+	color: #153f65;
+}
+input:not([type="checkbox"]) {
+	flex: 1;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 10px;
+}
+label {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+details {
+	margin-top: 18px;
+}
