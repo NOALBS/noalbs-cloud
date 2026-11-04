@@ -236,7 +236,13 @@ function App() {
 			const updated = await invoke<State>("save_setup", {
 				setupId: editing.id,
 				name: editing.name,
-				obs: editing.obs,
+				obs: {
+					...editing.obs,
+					config_dir_override:
+						state?.platform === "linux"
+							? editing.obs.config_dir_override
+							: null,
+				},
 			});
 			setEditing(null);
 			return updated;
@@ -279,7 +285,8 @@ function App() {
 			| "stop_obs"
 			| "restart_obs"
 			| "unpair_setup"
-			| "enable_websocket",
+			| "enable_websocket"
+			| "remove_setup",
 		id: string,
 	) => run(() => invoke<State>(command, { setupId: id }));
 
@@ -547,7 +554,8 @@ function SetupDetail({
 			| "stop_obs"
 			| "restart_obs"
 			| "unpair_setup"
-			| "enable_websocket",
+			| "enable_websocket"
+			| "remove_setup",
 	) => void;
 	onPair: () => void;
 	onOpenBrowser: () => void;
@@ -690,6 +698,20 @@ function SetupDetail({
 							<button type="button" onClick={onEdit}>
 								Edit…
 							</button>
+							<button
+								type="button"
+								onClick={() => {
+									if (
+										window.confirm(
+											`Remove ${setup.name}? OBS will keep running.`,
+										)
+									) {
+										onAction("remove_setup");
+									}
+								}}
+							>
+								Remove setup…
+							</button>
 						</div>
 					</>
 				)}
@@ -771,7 +793,11 @@ function SetupForm({
 			>
 				<input
 					disabled={platform === "macos" || platform === "windows"}
-					value={obs.config_dir_override ?? setup.config_dir}
+					value={
+						platform === "linux"
+							? (obs.config_dir_override ?? setup.config_dir)
+							: ""
+					}
 					onChange={(event) =>
 						onObsChange(
 							"config_dir_override",
