@@ -87,6 +87,10 @@ impl ApiError {
         Self::new(StatusCode::BAD_GATEWAY, "upstream_error", message)
     }
 
+    pub fn gateway_timeout(code: &'static str, message: impl Into<String>) -> Self {
+        Self::new(StatusCode::GATEWAY_TIMEOUT, code, message)
+    }
+
     /// 429 `rate_limited`: too many requests; another one is allowed after `wait`.
     pub fn rate_limited(wait: std::time::Duration) -> Self {
         let seconds = wait.as_secs() + u64::from(wait.subsec_nanos() > 0);

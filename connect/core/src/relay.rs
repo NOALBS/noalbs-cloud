@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures_util::{SinkExt, StreamExt};
@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
-use tokio::{net::TcpStream, sync::watch};
+use tokio::{
+    net::TcpStream,
+    sync::{mpsc, oneshot, watch},
+};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +43,20 @@ pub struct ObsTelemetry {
     pub obs_version: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ObsAction {
+    Start,
+    Stop,
+    Restart,
+}
+
+#[derive(Debug)]
+pub struct ObsCommandRequest {
+    pub action: ObsAction,
+    pub reply: oneshot::Sender<Result<(), String>>,
+}
+
 #[derive(Debug, Clone)]
 pub struct LinkConfig {
     pub link_url: String,
@@ -52,6 +69,7 @@ pub struct LinkConfig {
     pub state_tx: watch::Sender<PcObsState>,
     pub telemetry_tx: watch::Sender<ObsTelemetry>,
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
+    pub commands: mpsc::UnboundedSender<ObsCommandRequest>,
 }
 
 #[derive(Debug, Error)]
@@ -177,6 +195,18 @@ async fn connect_once(
         Duration::from_secs(5),
     );
     let mut request_tokens = HashMap::<String, String>::new();
+    let mut command_replies = futures_util::stream::FuturesUnordered::<
+        Pin<
+            Box<
+                dyn Future<
+                        Output = (
+                            String,
+                            Result<Result<(), String>, oneshot::error::RecvError>,
+                        ),
+                    > + Send,
+            >,
+        >,
+    >::new();
     let mut pending_meters = HashMap::<String, Vec<Vec<f64>>>::new();
     let mut pending_stats: Option<(String, tokio::time::Instant)> = None;
     let mut missed_stats = 0_u8;
@@ -315,6 +345,41 @@ async fn connect_once(
                         socket.send(Message::Text(request.to_string().into())).await?;
                     }
                 }
+                if let Some(command) = value.get("connectCommand") {
+                    let token = value.get("token").and_then(Value::as_str).map(str::to_owned);
+                    let action = command
+                        .get("action")
+                        .and_then(Value::as_str)
+                        .and_then(|action| serde_json::from_value::<ObsAction>(json!(action)).ok());
+                    match (token, action) {
+                        (Some(token), Some(action)) => {
+                            let (reply, receiver) = oneshot::channel();
+                            if config.commands.send(ObsCommandRequest { action, reply }).is_ok() {
+                                command_replies.push(Box::pin(async move {
+                                    (token, receiver.await)
+                                }));
+                            } else {
+                                upstream.send(Message::Text(json!({
+                                    "token": token,
+                                    "connectCommandResult": {
+                                        "ok": false,
+                                        "error": "Connect couldn't run the command"
+                                    }
+                                }).to_string().into())).await?;
+                            }
+                        }
+                        (Some(token), None) => {
+                            upstream.send(Message::Text(json!({
+                                "token": token,
+                                "connectCommandResult": {
+                                    "ok": false,
+                                    "error": "Unknown OBS command"
+                                }
+                            }).to_string().into())).await?;
+                        }
+                        _ => {}
+                    }
+                }
                 if !identified
                     && value
                         .get("identifyAck")
@@ -326,6 +391,20 @@ async fn connect_once(
                     let current_state = *obs_state.borrow();
                     send_pc_state(&mut upstream, current_state).await?;
                 }
+            }
+            Some((token, result)) = command_replies.next(), if !command_replies.is_empty() => {
+                let response = match result {
+                    Ok(Ok(())) => json!({"ok": true}),
+                    Ok(Err(error)) => json!({"ok": false, "error": error}),
+                    Err(_) => json!({
+                        "ok": false,
+                        "error": "Connect couldn't run the command"
+                    }),
+                };
+                upstream.send(Message::Text(json!({
+                    "token": token,
+                    "connectCommandResult": response
+                }).to_string().into())).await?;
             }
             message = next_obs(&mut obs) => {
                 let Some(message) = message else {
@@ -702,7 +781,7 @@ fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
             "token": config.device_token,
             "version": config.version,
             "client": "connect",
-            "capabilities": ["obs_process"],
+            "capabilities": ["obs_process", "obs_control"],
             "os": config.os,
             "obsVersion": obs_version
         }
@@ -795,6 +874,7 @@ mod tests {
             state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            commands: tokio::sync::mpsc::unbounded_channel().0,
         };
         let payload = identify_payload(&config, Some("31.0.0"));
         assert_eq!(
@@ -805,7 +885,7 @@ mod tests {
                     "token":"device-token",
                     "version":"0.1.0",
                     "client":"connect",
-                    "capabilities":["obs_process"],
+                    "capabilities":["obs_process","obs_control"],
                     "os":"linux",
                     "obsVersion":"31.0.0"
                 }
@@ -815,6 +895,97 @@ mod tests {
             identify_payload(&config, None).pointer("/identify/obsVersion"),
             Some(&serde_json::Value::Null)
         );
+    }
+
+    #[tokio::test]
+    async fn connect_command_is_queued_without_blocking_the_relay() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let (frame_tx, frame_rx) = tokio::sync::oneshot::channel();
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut socket = accept_async(stream).await.unwrap();
+            let _identify = socket.next().await.unwrap().unwrap();
+            let _state = socket.next().await.unwrap().unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"identifyAck":true}).to_string().into(),
+                ))
+                .await
+                .unwrap();
+            let _state = socket.next().await.unwrap().unwrap();
+            socket
+                .send(Message::Text(
+                    json!({
+                        "token":"command-token",
+                        "connectCommand":{"action":"restart"}
+                    })
+                    .to_string()
+                    .into(),
+                ))
+                .await
+                .unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"settings":{"connect":{"watchdog":"off"}}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
+            let Message::Text(text) = socket.next().await.unwrap().unwrap() else {
+                panic!("expected command result frame");
+            };
+            let _ = frame_tx.send(serde_json::from_str::<serde_json::Value>(&text).unwrap());
+        });
+
+        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
+        let (watchdog_tx, mut watchdog_rx) =
+            tokio::sync::watch::channel(super::WatchdogMode::Restart);
+        let (commands_tx, mut commands_rx) = tokio::sync::mpsc::unbounded_channel();
+        let config = LinkConfig {
+            link_url: format!("ws://127.0.0.1:{port}"),
+            device_token: "paired-device-token".into(),
+            version: "0.1.0".into(),
+            os: "linux".into(),
+            obs_port: None,
+            obs_password: String::new(),
+            use_dashboard_obs_settings: false,
+            state_tx,
+            telemetry_tx,
+            effective_obs_tx: tokio::sync::watch::channel(None).0,
+            commands: commands_tx,
+        };
+        let relay_config = config.clone();
+        let relay = tokio::spawn(async move {
+            let mut state_rx = state_rx;
+            super::connect_once(&relay_config, &mut state_rx, &watchdog_tx).await
+        });
+
+        let command = tokio::time::timeout(Duration::from_secs(5), commands_rx.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(command.action, super::ObsAction::Restart);
+        tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(*watchdog_rx.borrow_and_update(), super::WatchdogMode::Off);
+        command.reply.send(Ok(())).unwrap();
+
+        let frame = tokio::time::timeout(Duration::from_secs(5), frame_rx)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            frame,
+            json!({"token":"command-token","connectCommandResult":{"ok":true}})
+        );
+        server.await.unwrap();
+        relay.abort();
+        let _ = relay.await;
     }
 
     #[tokio::test]
@@ -1053,6 +1224,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
+                    commands: tokio::sync::mpsc::unbounded_channel().0,
                 },
                 state_rx,
                 watchdog_tx,
@@ -1101,6 +1273,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
+                commands: tokio::sync::mpsc::unbounded_channel().0,
             },
             state_rx,
             watchdog_tx,
@@ -1156,6 +1329,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx,
+                commands: tokio::sync::mpsc::unbounded_channel().0,
             },
             state_rx,
             watchdog_tx,

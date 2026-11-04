@@ -1,11 +1,17 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
 use connect_core::{
     AppConfig, ConfigStore, HostPlatform, PairingClient, Setup,
     config::validate_obs_config_for_platform,
     credentials::TokenStore,
     pairing::ConnectOs,
-    relay::{LinkConfig, ObsTelemetry, PcObsState, WatchdogMode, run_link, stop_active_streams},
+    relay::{
+        LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState, WatchdogMode, run_link,
+        stop_active_streams,
+    },
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
         read_obs_websocket_config, same_obs_identity,
@@ -24,13 +30,14 @@ use tauri::{
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
-use tokio::sync::watch;
+use tokio::sync::{mpsc, watch};
 
 struct LinkSession {
     state: watch::Sender<PcObsState>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
     task: tauri::async_runtime::JoinHandle<()>,
     monitor: tauri::async_runtime::JoinHandle<()>,
+    command_consumer: tauri::async_runtime::JoinHandle<()>,
 }
 
 struct AppState {
@@ -40,6 +47,7 @@ struct AppState {
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
+    obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
 }
 
@@ -402,55 +410,96 @@ fn open_verification_url(
 }
 
 #[tauri::command]
-fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    let obs_state = {
-        let mut supervisor = state
-            .supervisor
-            .lock()
-            .map_err(|_| "supervisor lock poisoned")?;
-        supervisor
-            .start(&setup, false, None)
-            .map_err(|error| error.to_string())?;
-        supervisor.state(&setup)
-    };
-    set_link_state(state.inner(), setup.id, obs_state);
+async fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Start).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
 async fn stop_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    stop_setup_streams(&setup, state.inner()).await;
-    let obs_state = {
-        let mut supervisor = state
-            .supervisor
-            .lock()
-            .map_err(|_| "supervisor lock poisoned")?;
-        supervisor.stop(&setup).map_err(|error| error.to_string())?;
-        supervisor.state(&setup)
-    };
-    set_link_state(state.inner(), setup.id, obs_state);
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Stop).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
 async fn restart_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    stop_setup_streams(&setup, state.inner()).await;
-    let mut supervisor = state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?;
-    if supervisor.state(&setup) != connect_core::relay::PcObsState::NotRunning {
-        supervisor.stop(&setup).map_err(|error| error.to_string())?;
-    }
-    supervisor
-        .start(&setup, false, None)
-        .map_err(|error| error.to_string())?;
-    drop(supervisor);
-    set_link_state(state.inner(), setup.id, PcObsState::Starting);
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Restart).await?;
     Ok(get_state(state))
+}
+
+struct ObsActionGuard<'a> {
+    running: &'a Mutex<HashSet<uuid::Uuid>>,
+    setup_id: uuid::Uuid,
+}
+
+impl Drop for ObsActionGuard<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut running) = self.running.lock() {
+            running.remove(&self.setup_id);
+        }
+    }
+}
+
+fn begin_obs_action(
+    running: &Mutex<HashSet<uuid::Uuid>>,
+    setup_id: uuid::Uuid,
+) -> Result<ObsActionGuard<'_>, String> {
+    let mut actions = running.lock().map_err(|_| "OBS action lock poisoned")?;
+    if !actions.insert(setup_id) {
+        return Err("Another OBS action is still running".into());
+    }
+    Ok(ObsActionGuard { running, setup_id })
+}
+
+async fn run_obs_action(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+    action: ObsAction,
+) -> Result<(), String> {
+    let _action_guard = begin_obs_action(&state.obs_actions_running, setup_id)?;
+    let setup = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .cloned()
+        .ok_or_else(|| "setup not found".to_string())?;
+
+    if matches!(action, ObsAction::Stop | ObsAction::Restart) {
+        stop_setup_streams(&setup, state).await;
+    }
+    let process_state = {
+        let mut supervisor = state
+            .supervisor
+            .lock()
+            .map_err(|_| "supervisor lock poisoned")?;
+        match action {
+            ObsAction::Start => {
+                supervisor
+                    .start(&setup, false, None)
+                    .map_err(|error| error.to_string())?;
+            }
+            ObsAction::Stop => {
+                supervisor.stop(&setup).map_err(|error| error.to_string())?;
+            }
+            ObsAction::Restart => {
+                if supervisor.state(&setup) != PcObsState::NotRunning {
+                    supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                }
+                supervisor
+                    .start(&setup, false, None)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+        supervisor.state(&setup)
+    };
+    set_link_state(state, setup_id, process_state);
+    Ok(())
 }
 
 async fn stop_setup_streams(setup: &Setup, state: &AppState) {
@@ -549,6 +598,7 @@ fn unpair_setup(setup_id: String, state: State<'_, AppState>) -> Result<UiState,
     {
         session.task.abort();
         session.monitor.abort();
+        session.command_consumer.abort();
     }
     let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
     if let Some(setup) = config.setups.iter_mut().find(|setup| setup.id == id) {
@@ -667,6 +717,7 @@ fn start_link_session(
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
+    let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
     let link_config = LinkConfig {
         link_url: pairing.link_url.clone(),
         device_token: token,
@@ -678,6 +729,7 @@ fn start_link_session(
         state_tx: state_tx.clone(),
         telemetry_tx,
         effective_obs_tx,
+        commands: command_tx,
     };
     let mut sessions = state
         .link_sessions
@@ -686,6 +738,7 @@ fn start_link_session(
     if let Some(previous) = sessions.remove(&setup.id) {
         previous.task.abort();
         previous.monitor.abort();
+        previous.command_consumer.abort();
     }
     let app_handle = app.clone();
     let task = tauri::async_runtime::spawn(async move {
@@ -823,6 +876,24 @@ fn start_link_session(
             }
         }
     });
+    let command_app = app.clone();
+    let command_setup_id = setup.id;
+    let command_consumer = tauri::async_runtime::spawn(async move {
+        while let Some(command) = command_rx.recv().await {
+            let result = run_obs_action(
+                command_app.state::<AppState>().inner(),
+                command_setup_id,
+                command.action,
+            )
+            .await;
+            let _ = command.reply.send(result);
+            let _ = command_app.emit(
+                "connect-state-changed",
+                get_state(command_app.state::<AppState>()),
+            );
+            let _ = refresh_tray_menu(&command_app);
+        }
+    });
     sessions.insert(
         setup.id,
         LinkSession {
@@ -830,6 +901,7 @@ fn start_link_session(
             effective_obs: effective_obs_rx,
             task,
             monitor,
+            command_consumer,
         },
     );
     drop(sessions);
@@ -966,6 +1038,7 @@ fn main() {
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         })
         .setup(|app| {
@@ -1097,6 +1170,19 @@ mod tests {
     }
 
     #[test]
+    fn obs_actions_are_exclusive_per_setup() {
+        let running = Mutex::new(HashSet::new());
+        let setup_id = uuid::Uuid::new_v4();
+        let action = begin_obs_action(&running, setup_id).unwrap();
+        assert!(matches!(
+            begin_obs_action(&running, setup_id),
+            Err(error) if error == "Another OBS action is still running"
+        ));
+        drop(action);
+        assert!(begin_obs_action(&running, setup_id).is_ok());
+    }
+
+    #[test]
     fn tray_setup_labels_use_setup_ids_and_human_readable_states() {
         let mut setup = Setup::new("Smoke test".into());
         setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
@@ -1112,6 +1198,7 @@ mod tests {
             tokens: TokenStore::new(Default::default()),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
 

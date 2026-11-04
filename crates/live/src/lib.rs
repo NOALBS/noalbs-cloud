@@ -165,6 +165,33 @@ pub fn obs_request_subject(switcher_id: Uuid) -> String {
     format!("obslink.{switcher_id}.request")
 }
 
+pub fn connect_request_subject(switcher_id: Uuid) -> String {
+    format!("connect.{switcher_id}.request")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectObsCommandCode {
+    Offline,
+    Unsupported,
+    Refused,
+    Timeout,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectObsCommandRequest {
+    pub action: db::connect::ConnectObsAction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectObsCommandReply {
+    pub ok: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ConnectObsCommandCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
 /// Options for a service's NATS connection, with its user and password when it
 /// has one (production NATS gives each service its own, allowed only its subjects).
 pub fn connect_options(user: Option<&str>, password: Option<&str>) -> async_nats::ConnectOptions {
@@ -636,6 +663,10 @@ pub enum EventDetail {
         mode: Watchdog,
         by: Option<String>,
     },
+    ConnectObsCommand {
+        action: db::connect::ConnectObsAction,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
@@ -713,8 +744,9 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        BelaboxChange, ConnectAccess, EventDetail, ObsFrames, PcObsState, SwitchReason,
-        SwitcherStatus, Watchdog,
+        BelaboxChange, ConnectAccess, ConnectObsCommandCode, ConnectObsCommandReply,
+        ConnectObsCommandRequest, EventDetail, ObsFrames, PcObsState, SwitchReason, SwitcherStatus,
+        Watchdog, connect_request_subject,
     };
 
     #[test]
@@ -888,6 +920,10 @@ mod tests {
                 mode: Watchdog::RestartResume,
                 by: Some("kate".into()),
             },
+            EventDetail::ConnectObsCommand {
+                action: db::connect::ConnectObsAction::Restart,
+                by: Some("kate".into()),
+            },
         ];
 
         for event in events {
@@ -915,6 +951,56 @@ mod tests {
             serde_json::to_string(&PcObsState::NotResponding).unwrap(),
             "\"not_responding\""
         );
+    }
+
+    #[test]
+    fn connect_obs_command_payloads_use_the_wire_shape() {
+        let request = ConnectObsCommandRequest {
+            action: db::connect::ConnectObsAction::Restart,
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            serde_json::json!({"action": "restart"})
+        );
+        assert_eq!(
+            serde_json::to_value(ConnectObsCommandReply {
+                ok: true,
+                code: None,
+                error: None,
+            })
+            .unwrap(),
+            serde_json::json!({"ok": true})
+        );
+        assert_eq!(
+            serde_json::from_value::<ConnectObsCommandRequest>(
+                serde_json::json!({"action": "restart"})
+            )
+            .unwrap(),
+            request
+        );
+        assert_eq!(
+            connect_request_subject(Uuid::nil()),
+            format!("connect.{}.request", Uuid::nil())
+        );
+        for code in [
+            ConnectObsCommandCode::Offline,
+            ConnectObsCommandCode::Unsupported,
+            ConnectObsCommandCode::Refused,
+            ConnectObsCommandCode::Timeout,
+        ] {
+            let reply = ConnectObsCommandReply {
+                ok: false,
+                code: Some(code),
+                error: Some("failure".into()),
+            };
+            assert_eq!(
+                serde_json::from_value::<ConnectObsCommandReply>(
+                    serde_json::to_value(&reply).unwrap()
+                )
+                .unwrap(),
+                reply
+            );
+        }
     }
 }
 

@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use chrono::{Duration, Utc};
-use db::connect::{ConnectAccess, Watchdog};
+use db::connect::{ConnectAccess, ConnectObsAction, Watchdog};
 use live::EventDetail;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -41,6 +41,7 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(revoke_device))
         .routes(routes!(set_permissions))
         .routes(routes!(set_watchdog))
+        .routes(routes!(connect_obs_command))
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, ToSchema)]
@@ -451,12 +452,7 @@ async fn set_watchdog(
 ) -> ApiResult<Json<SwitcherDto>> {
     let access = authorized.into_access();
     let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
-    if !screenshots::connect_allowed(access.switcher.connect_obs_control, viewer) {
-        return Err(ApiError::forbidden(
-            "connect_forbidden",
-            "Your role cannot control OBS through Connect",
-        ));
-    }
+    require_connect_obs_control(access.switcher.connect_obs_control, viewer)?;
     if access.switcher.connect_watchdog == request.mode {
         return Ok(Json(access.switcher.into()));
     }
@@ -484,9 +480,123 @@ async fn set_watchdog(
     Ok(Json(switcher.into()))
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ConnectObsCommand {
+    pub action: ConnectObsAction,
+}
+
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = ConnectObsCommand,
+    responses(
+        (status = NO_CONTENT),
+        (status = FORBIDDEN, description = "`connect_forbidden`", body = ErrorBody),
+        (status = CONFLICT, description = "`connect_offline`, `connect_unsupported`, or `connect_refused`", body = ErrorBody),
+        (status = GATEWAY_TIMEOUT, description = "`connect_timeout`", body = ErrorBody),
+    ))]
+async fn connect_obs_command(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Json(request): Json<ConnectObsCommand>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    if !screenshots::connect_allowed(access.switcher.connect_obs_control, viewer) {
+        return Err(ApiError::forbidden(
+            "connect_forbidden",
+            "Your role cannot control OBS through Connect",
+        ));
+    }
+
+    let by = access.workspace.display_name(&state).await?;
+    let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
+        action: request.action,
+    })
+    .map_err(|_| ApiError::internal())?;
+    let response = telemetry::nats::request_with_timeout(
+        &state.nats,
+        live::connect_request_subject(access.switcher.id),
+        payload,
+        std::time::Duration::from_secs(35),
+    )
+    .await
+    .map_err(|error| connect_request_error(error.kind()))?;
+    let reply: live::ConnectObsCommandReply =
+        serde_json::from_slice(&response.payload).map_err(|_| ApiError::internal())?;
+    if !reply.ok {
+        return Err(connect_command_failure(reply));
+    }
+
+    live::record_event(
+        &state.db,
+        &state.nats,
+        access.switcher.id,
+        EventDetail::ConnectObsCommand {
+            action: request.action,
+            by: Some(by),
+        },
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn connect_offline() -> ApiError {
+    ApiError::conflict(
+        "connect_offline",
+        "No Connect computer is online for this switcher",
+    )
+}
+
+fn require_connect_obs_control(level: ConnectAccess, viewer: screenshots::Viewer) -> ApiResult<()> {
+    if screenshots::connect_allowed(level, viewer) {
+        Ok(())
+    } else {
+        Err(ApiError::forbidden(
+            "connect_forbidden",
+            "Your role cannot control OBS through Connect",
+        ))
+    }
+}
+
+fn connect_request_error(kind: async_nats::RequestErrorKind) -> ApiError {
+    match kind {
+        async_nats::RequestErrorKind::NoResponders => connect_offline(),
+        async_nats::RequestErrorKind::TimedOut => connect_timeout(),
+        _ => ApiError::internal(),
+    }
+}
+
+fn connect_timeout() -> ApiError {
+    ApiError::gateway_timeout("connect_timeout", "Connect did not respond in time")
+}
+
+fn connect_command_failure(reply: live::ConnectObsCommandReply) -> ApiError {
+    match reply.code {
+        Some(live::ConnectObsCommandCode::Offline) => connect_offline(),
+        Some(live::ConnectObsCommandCode::Unsupported) => ApiError::conflict(
+            "connect_unsupported",
+            reply.error.unwrap_or_else(|| {
+                "Update NOALBS Cloud Connect to control OBS from the dashboard".into()
+            }),
+        ),
+        Some(live::ConnectObsCommandCode::Refused) => ApiError::conflict(
+            "connect_refused",
+            reply
+                .error
+                .unwrap_or_else(|| "Connect couldn't run the command".into()),
+        ),
+        Some(live::ConnectObsCommandCode::Timeout) => connect_timeout(),
+        None => ApiError::internal(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::ConnectOs;
+    use super::{
+        ConnectOs, connect_command_failure, connect_request_error, require_connect_obs_control,
+    };
+    use crate::screenshots::Viewer;
+    use db::connect::ConnectAccess;
 
     #[test]
     fn operating_system_values_are_snake_case() {
@@ -494,5 +604,31 @@ mod tests {
             serde_json::to_string(&ConnectOs::Macos).unwrap(),
             "\"macos\""
         );
+    }
+
+    #[test]
+    fn member_is_forbidden_when_only_owners_may_control_connect() {
+        let error =
+            require_connect_obs_control(ConnectAccess::Owners, Viewer::Operator).unwrap_err();
+        assert_eq!(error.status(), axum::http::StatusCode::FORBIDDEN);
+        assert_eq!(error.code(), "connect_forbidden");
+    }
+
+    #[test]
+    fn no_responders_maps_to_offline_conflict() {
+        let error = connect_request_error(async_nats::RequestErrorKind::NoResponders);
+        assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
+        assert_eq!(error.code(), "connect_offline");
+    }
+
+    #[test]
+    fn explicit_offline_reply_maps_to_offline_conflict() {
+        let error = connect_command_failure(live::ConnectObsCommandReply {
+            ok: false,
+            code: Some(live::ConnectObsCommandCode::Offline),
+            error: Some("offline".into()),
+        });
+        assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
+        assert_eq!(error.code(), "connect_offline");
     }
 }

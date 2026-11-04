@@ -43,6 +43,7 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.
@@ -231,6 +232,10 @@ enum Control {
     AudioWanted,
     /// A reconnect request, optionally limited to one Connect device.
     Reconnect { device_id: Option<Uuid> },
+    ConnectCommand {
+        payload: Vec<u8>,
+        reply: async_nats::Subject,
+    },
 }
 
 enum Flow {
@@ -277,6 +282,39 @@ fn should_refresh_device_name(renamed_device_id: Uuid, session_device_id: Option
     Some(renamed_device_id) == session_device_id
 }
 
+fn connect_command_failure(
+    is_connect: bool,
+    supports_control: bool,
+) -> Option<(live::ConnectObsCommandCode, &'static str)> {
+    if !is_connect {
+        Some((
+            live::ConnectObsCommandCode::Offline,
+            "This switcher connects through the browser source, which can't control OBS",
+        ))
+    } else if !supports_control {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to control OBS from the dashboard",
+        ))
+    } else {
+        None
+    }
+}
+
+fn expired_connect_commands(
+    pending: &mut HashMap<String, PendingConnectCommand>,
+) -> Vec<async_nats::Subject> {
+    let tokens = pending
+        .iter()
+        .filter(|(_, command)| command.sent.elapsed() >= CONNECT_COMMAND_TIMEOUT)
+        .map(|(token, _)| token.clone())
+        .collect::<Vec<_>>();
+    tokens
+        .into_iter()
+        .filter_map(|token| pending.remove(&token).map(|command| command.reply))
+        .collect()
+}
+
 /// A browser source that identified as a switcher.
 struct Session {
     switcher_id: Uuid,
@@ -286,6 +324,8 @@ struct Session {
     /// The OBS settings last sent, to notice changes.
     obs_settings: (i32, Option<Vec<u8>>),
     is_connect: bool,
+    connect_capabilities: Vec<String>,
+    pending_connect_commands: HashMap<String, PendingConnectCommand>,
     status: StatusHandle,
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
@@ -301,6 +341,11 @@ struct Session {
     /// The BELABOX Cloud link, for switchers with a remote key (not while paused).
     belabox: Option<belabox::Link>,
     audio: audio::Meters,
+}
+
+struct PendingConnectCommand {
+    reply: async_nats::Subject,
+    sent: Instant,
 }
 
 struct RunningSwitcher {
@@ -358,7 +403,7 @@ impl Connection {
                     }
                 }
                 _ = prune.tick() => {
-                    self.prune_requests();
+                    self.prune_requests().await?;
                     self.resubscribe_audio().await?;
                 }
                 _ = &mut identify_deadline, if self.session.is_none() => {
@@ -458,9 +503,27 @@ impl Connection {
     }
 
     /// Drops requests the browser source never answered (e.g. OBS went away).
-    fn prune_requests(&mut self) {
+    async fn prune_requests(&mut self) -> Result<()> {
         self.requests
             .retain(|_, pending| pending.sent.elapsed() < REQUEST_TIMEOUT);
+        let expired = if let Some(session) = self.session.as_mut() {
+            expired_connect_commands(&mut session.pending_connect_commands)
+        } else {
+            Vec::new()
+        };
+        for subject in expired {
+            telemetry::nats::publish(
+                &self.shared.nats,
+                subject,
+                serde_json::to_vec(&live::ConnectObsCommandReply {
+                    ok: false,
+                    code: Some(live::ConnectObsCommandCode::Timeout),
+                    error: Some("Connect did not respond in time".into()),
+                })?,
+            )
+            .await?;
+        }
+        Ok(())
     }
 
     async fn handle_message(&mut self, message: &str) -> Result<Flow> {
@@ -476,6 +539,36 @@ impl Connection {
                             pc.obs = obs;
                         }
                     });
+                }
+            }
+            ResponseKind::ConnectCommandResult { ok, error } => {
+                if let Some(token) = response.token
+                    && let Some(pending) = self
+                        .session
+                        .as_mut()
+                        .and_then(|session| session.pending_connect_commands.remove(&token))
+                {
+                    let reply = if ok {
+                        live::ConnectObsCommandReply {
+                            ok: true,
+                            code: None,
+                            error: None,
+                        }
+                    } else {
+                        live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(live::ConnectObsCommandCode::Refused),
+                            error: Some(
+                                error.unwrap_or_else(|| "Connect refused the command".into()),
+                            ),
+                        }
+                    };
+                    telemetry::nats::publish(
+                        &self.shared.nats,
+                        pending.reply,
+                        serde_json::to_vec(&reply)?,
+                    )
+                    .await?;
                 }
             }
             ResponseKind::ObsRawResponse(obs_response) => {
@@ -598,6 +691,11 @@ impl Connection {
                 switcher_id,
                 self.inner_comm.clone(),
             )),
+            crate::spawn(forward_connect_commands(
+                self.shared.nats.clone(),
+                switcher_id,
+                self.control_tx.clone(),
+            )),
             crate::spawn(collect_intents(
                 self.shared.nats.clone(),
                 switcher_id,
@@ -633,6 +731,8 @@ impl Connection {
             device_token_hash: device_hash,
             obs_settings: (switcher.port, switcher.password.clone()),
             is_connect,
+            connect_capabilities: identify.capabilities.clone(),
+            pending_connect_commands: HashMap::new(),
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
@@ -771,6 +871,70 @@ impl Connection {
 
     async fn handle_control(&mut self, control: Control) -> Result<Flow> {
         match control {
+            Control::ConnectCommand { payload, reply } => {
+                let (is_connect, supports_control) = self
+                    .session
+                    .as_ref()
+                    .map(|session| {
+                        (
+                            session.is_connect,
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "obs_control"),
+                        )
+                    })
+                    .unwrap_or_default();
+                let request: live::ConnectObsCommandRequest = match serde_json::from_slice(&payload)
+                {
+                    Ok(request) => request,
+                    Err(_) => {
+                        let body = live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(live::ConnectObsCommandCode::Refused),
+                            error: Some("Invalid OBS command".into()),
+                        };
+                        telemetry::nats::publish(
+                            &self.shared.nats,
+                            reply,
+                            serde_json::to_vec(&body)?,
+                        )
+                        .await?;
+                        return Ok(Flow::Continue);
+                    }
+                };
+                if let Some((code, error)) = connect_command_failure(is_connect, supports_control) {
+                    telemetry::nats::publish(
+                        &self.shared.nats,
+                        reply,
+                        serde_json::to_vec(&live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(code),
+                            error: Some(error.into()),
+                        })?,
+                    )
+                    .await?;
+                    return Ok(Flow::Continue);
+                }
+                let token = Uuid::new_v4().to_string();
+                self.send_request(
+                    RequestKind::ConnectCommand {
+                        action: request.action,
+                    },
+                    Some(token.clone()),
+                )
+                .await?;
+                if let Some(session) = self.session.as_mut() {
+                    session.pending_connect_commands.insert(
+                        token,
+                        PendingConnectCommand {
+                            reply,
+                            sent: Instant::now(),
+                        },
+                    );
+                }
+                Ok(Flow::Continue)
+            }
             Control::TakenOver => {
                 tracing::info!("A newer browser source took over this switcher");
                 self.taken_over = true;
@@ -932,6 +1096,19 @@ impl Connection {
         let Some(mut session) = self.session.take() else {
             return;
         };
+        for (_, pending) in session.pending_connect_commands.drain() {
+            let reply = live::ConnectObsCommandReply {
+                ok: false,
+                code: Some(live::ConnectObsCommandCode::Offline),
+                error: Some("Connect computer went offline".into()),
+            };
+            if let Ok(payload) = serde_json::to_vec(&reply)
+                && let Err(error) =
+                    telemetry::nats::publish(&self.shared.nats, pending.reply, payload).await
+            {
+                tracing::warn!(%error, "Failed to reply to a pending Connect command");
+            }
+        }
         if let Some(running) = session.switcher.take() {
             running.task.abort();
         }
@@ -1000,6 +1177,38 @@ async fn forward_obs_requests(
             reply: InnerReply::Nats(message.reply),
         };
         if inner_comm.send(request).is_err() {
+            return;
+        }
+    }
+}
+
+async fn forward_connect_commands(
+    nats: async_nats::Client,
+    switcher_id: Uuid,
+    control: mpsc::UnboundedSender<Control>,
+) {
+    let mut requests = match nats
+        .subscribe(live::connect_request_subject(switcher_id))
+        .await
+    {
+        Ok(subscription) => subscription,
+        Err(error) => {
+            tracing::error!(%error, "Couldn't subscribe to Connect OBS commands");
+            return;
+        }
+    };
+
+    while let Some(message) = requests.next().await {
+        let Some(reply) = message.reply else {
+            continue;
+        };
+        if control
+            .send(Control::ConnectCommand {
+                payload: message.payload.to_vec(),
+                reply,
+            })
+            .is_err()
+        {
             return;
         }
     }
@@ -1111,6 +1320,9 @@ enum RequestKind {
     RequestError(RequestError),
     Settings(Settings),
     ObsRawRequest(String),
+    ConnectCommand {
+        action: db::connect::ConnectObsAction,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1157,8 +1369,15 @@ struct Response {
 enum ResponseKind {
     Identify(Identify),
     ObsWsConnected(bool),
-    PcState { obs: PcObsState },
+    PcState {
+        obs: PcObsState,
+    },
     ObsRawResponse(serde_json::Value),
+    ConnectCommandResult {
+        ok: bool,
+        #[serde(default)]
+        error: Option<String>,
+    },
     ObsRawEvent(serde_json::Value),
     Error(String),
 }
@@ -1180,14 +1399,20 @@ struct Identify {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        collections::HashMap,
+        time::{Duration, Instant},
+    };
+
     use live::{PcObsState, PcStatus, SwitcherStatus};
     use serde_json::json;
     use uuid::Uuid;
 
     use super::{
-        ConnectSettings, Identify, ObsSettings, Response, ResponseKind, Settings,
-        parse_config_change, reconnect_device_id, reset_obs_status, set_pc_device_name,
-        should_close_for_reconnect, should_refresh_device_name,
+        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, ObsSettings, PendingConnectCommand,
+        Request, RequestKind, Response, ResponseKind, Settings, connect_command_failure,
+        expired_connect_commands, parse_config_change, reconnect_device_id, reset_obs_status,
+        set_pc_device_name, should_close_for_reconnect, should_refresh_device_name,
     };
 
     #[test]
@@ -1390,5 +1615,68 @@ mod tests {
 
         assert!(!set_pc_device_name(&mut status, "Studio PC"));
         assert_eq!(status, before);
+    }
+
+    #[test]
+    fn browser_source_commands_are_offline_and_old_connects_are_unsupported() {
+        let browser = connect_command_failure(false, false).unwrap();
+        assert_eq!(browser.0, live::ConnectObsCommandCode::Offline);
+        assert_eq!(
+            browser.1,
+            "This switcher connects through the browser source, which can't control OBS"
+        );
+        let old_connect = connect_command_failure(true, false).unwrap();
+        assert_eq!(old_connect.0, live::ConnectObsCommandCode::Unsupported);
+        assert_eq!(
+            old_connect.1,
+            "Update NOALBS Cloud Connect to control OBS from the dashboard"
+        );
+        assert!(connect_command_failure(true, true).is_none());
+    }
+
+    #[test]
+    fn supported_connect_command_uses_the_expected_websocket_shapes() {
+        let request = Request {
+            token: Some("command-token".into()),
+            request: RequestKind::ConnectCommand {
+                action: db::connect::ConnectObsAction::Restart,
+            },
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "token": "command-token",
+                "connectCommand": { "action": "restart" }
+            })
+        );
+        let response: Response = serde_json::from_value(json!({
+            "token": "command-token",
+            "connectCommandResult": { "ok": false, "error": "OBS is busy" }
+        }))
+        .unwrap();
+        assert_eq!(response.token.as_deref(), Some("command-token"));
+        assert!(matches!(
+            response.response,
+            ResponseKind::ConnectCommandResult {
+                ok: false,
+                error: Some(error)
+            } if error == "OBS is busy"
+        ));
+    }
+
+    #[test]
+    fn pending_connect_commands_expire_after_thirty_seconds() {
+        let mut pending = HashMap::from([(
+            "token".into(),
+            PendingConnectCommand {
+                reply: async_nats::Subject::from("inbox.reply"),
+                sent: Instant::now() - CONNECT_COMMAND_TIMEOUT - Duration::from_secs(1),
+            },
+        )]);
+        assert_eq!(
+            expired_connect_commands(&mut pending),
+            [async_nats::Subject::from("inbox.reply")]
+        );
+        assert!(pending.is_empty());
     }
 }

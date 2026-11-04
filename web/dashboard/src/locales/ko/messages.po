@@ -360,6 +360,11 @@ msgstr "{0} · 목록은 자동으로 새로고침돼요. 다시 찾으려면 �
 msgid "{0} (customer)"
 msgstr "{0} (고객)"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} {verb} OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -904,6 +909,10 @@ msgstr "{team}의 봇"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, other {워크스페이스 #개. 스태프는 다른 워크스페이스와 마찬가지로 지원 액세스로 열어요.}}"
+
+#: src/lib/live-format.ts
+msgid "{verb} OBS through Connect"
+msgstr ""
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -5918,6 +5927,10 @@ msgstr "OBS"
 msgid "OBS already has a source or scene with that name."
 msgstr "OBS에 이미 그 이름의 소스나 장면이 있어요."
 
+#: src/lib/live-format.ts
+msgid "OBS command"
+msgstr ""
+
 #: src/lib/admin.ts
 #: src/lib/connect.ts
 #: src/lib/live-format.ts
@@ -7251,6 +7264,11 @@ msgstr "응답 모드"
 msgid "Request failed ({0})"
 msgstr "요청에 실패했어요 ({0})"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "Restart command sent to Connect"
+msgstr ""
+
+#: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr ""
@@ -7259,9 +7277,22 @@ msgstr ""
 msgid "Restart OBS and go live again"
 msgstr ""
 
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Restart OBS on {0}?"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Restart OBS?"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
 msgstr "소스가 활성화되면 재생 다시 시작"
+
+#: src/lib/live-format.ts
+msgid "restarted"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -8173,6 +8204,10 @@ msgstr "방송과 함께 녹화를 시작하고 중지해요."
 msgid "Start BELABOX with the OBS stream"
 msgstr "OBS 방송과 함께 BELABOX 시작"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "Start command sent to Connect"
+msgstr ""
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Start hotspot"
 msgstr "핫스팟 시작"
@@ -8180,6 +8215,11 @@ msgstr "핫스팟 시작"
 #: src/components/moblin-settings.tsx
 msgid "Start Moblin with the OBS stream"
 msgstr "OBS 방송과 함께 Moblin 시작"
+
+#: src/components/connect-settings.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Start OBS"
+msgstr ""
 
 #: src/components/live/quick-actions.tsx
 msgid "Start stream"
@@ -8197,6 +8237,10 @@ msgstr "방송을 시작할까요?"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Start, end & raids"
 msgstr "시작, 종료 및 레이드"
+
+#: src/lib/live-format.ts
+msgid "started"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Started a checkout"
@@ -8285,6 +8329,10 @@ msgstr "BELABOX 중지"
 msgid "Stop BELABOX with the OBS stream"
 msgstr "OBS 방송과 함께 BELABOX 중지"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "Stop command sent to Connect"
+msgstr ""
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Stop hotspot"
 msgstr "핫스팟 중지"
@@ -8301,6 +8349,19 @@ msgstr "Moblin 중지"
 #: src/components/moblin-settings.tsx
 msgid "Stop Moblin with the OBS stream"
 msgstr "OBS 방송과 함께 Moblin 중지"
+
+#: src/components/connect-settings.tsx
+msgid "Stop OBS"
+msgstr ""
+
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Stop OBS on {0}?"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Stop OBS?"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Stop on the Ending scene"
@@ -8357,6 +8418,10 @@ msgstr "오프라인 시 중지"
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
 msgstr "정지하고 보이면 처음부터 재생"
+
+#: src/lib/live-format.ts
+msgid "stopped"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -9229,6 +9294,10 @@ msgstr "OBS, 스트림 서버, 장면을 연결하는 단계별 체크리스트�
 #: src/routes/_app/$workspace/account.tsx
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "내 스위처의 방송 기록, 통계, 마커, 활동 로그를 한 줄에 JSON 객체 하나로 제공해요. 용량이 클 수 있어요."
+
+#: src/components/connect-settings.tsx
+msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "The streams API of Node Media Server; the application and key are added to it."

@@ -75,6 +75,24 @@ pub async fn request(
         .await
 }
 
+/// `client.request` with the current trace and a per-request timeout.
+pub async fn request_with_timeout(
+    client: &Client,
+    subject: impl ToSubject,
+    payload: impl Into<bytes::Bytes>,
+    timeout: std::time::Duration,
+) -> Result<Message, RequestError> {
+    client
+        .send_request(
+            subject,
+            async_nats::Request::new()
+                .headers(headers())
+                .payload(payload.into())
+                .timeout(Some(timeout)),
+        )
+        .await
+}
+
 /// `client.publish`, with the current trace.
 pub async fn publish(
     client: &Client,

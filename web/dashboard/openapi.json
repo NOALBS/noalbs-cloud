@@ -8077,6 +8077,77 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "connect_obs_command",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectObsCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "description": "`connect_forbidden`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`connect_offline`, `connect_unsupported`, or `connect_refused`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "`connect_timeout`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/pair": {
       "post": {
         "tags": [
@@ -16098,6 +16169,25 @@
           }
         }
       },
+      "ConnectObsAction": {
+        "type": "string",
+        "enum": [
+          "start",
+          "stop",
+          "restart"
+        ]
+      },
+      "ConnectObsCommand": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ConnectObsAction"
+          }
+        }
+      },
       "ConnectOs": {
         "type": "string",
         "enum": [
@@ -18657,6 +18747,38 @@
                 "type": "string",
                 "enum": [
                   "connect_watchdog_changed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "$ref": "#/components/schemas/ConnectObsAction"
+                  },
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_obs_command"
                 ]
               }
             }
