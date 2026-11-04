@@ -591,7 +591,7 @@ impl Supervisor {
     }
 
     pub fn owns_running_process(&mut self, setup: &Setup) -> bool {
-        if let Some(child) = self.children.get_mut(&setup.id) {
+        let child_running = if let Some(child) = self.children.get_mut(&setup.id) {
             if child.is_flatpak {
                 let wrapper_pid = child.child.id();
                 let wrapper_finished = match child.child.try_wait() {
@@ -608,19 +608,26 @@ impl Supervisor {
                     child.process_start_time = start_time;
                 }
                 if let Some((pid, start_time)) = child.flatpak_obs {
-                    return process_start_time(pid) == Some(start_time);
+                    process_start_time(pid) == Some(start_time)
+                } else {
+                    !wrapper_finished
+                        && child.flatpak_wrapper_start_time.is_some_and(|start_time| {
+                            process_start_time(wrapper_pid) == Some(start_time)
+                        })
                 }
-                return !wrapper_finished
-                    && child.flatpak_wrapper_start_time.is_some_and(|start_time| {
-                        process_start_time(wrapper_pid) == Some(start_time)
-                    });
+            } else {
+                child.child.try_wait().is_ok_and(|status| status.is_none())
+                    && process_start_time(child.pid) == Some(child.process_start_time)
             }
-            return child.child.try_wait().is_ok_and(|status| status.is_none())
-                && process_start_time(child.pid) == Some(child.process_start_time);
-        }
-        self.adopted
-            .get(&setup.id)
-            .is_some_and(|(_, pid, start_time)| process_start_time(*pid) == Some(*start_time))
+        } else {
+            false
+        };
+        child_running
+            || self
+                .adopted
+                .get(&setup.id)
+                .is_some_and(|(_, pid, start_time)| process_start_time(*pid) == Some(*start_time))
+            || find_matching_obs_with_start_time(setup).is_some()
     }
 
     pub fn mark_connected(&mut self, setup_id: Uuid, connected: bool) {
@@ -1975,6 +1982,13 @@ mod tests {
             .unwrap();
         let mut supervisor = Supervisor::default();
         let pid = manual_obs.id();
+        for _ in 0..100 {
+            if matching_obs_pids(&setup).len() == 1 {
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(supervisor.owns_running_process(&setup));
         assert_eq!(supervisor.start(&setup, false, None).unwrap(), pid);
         assert_eq!(
             supervisor.state(&setup),
