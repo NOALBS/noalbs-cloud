@@ -82,11 +82,10 @@ pub async fn run_link(
     crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
-        match connect_once(&config, &mut obs_state, &watchdog).await {
-            Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) => {
-                return Err(error);
-            }
-            _ => {}
+        if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) =
+            connect_once(&config, &mut obs_state, &watchdog).await
+        {
+            return Err(error);
         }
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(Duration::from_secs(10));
