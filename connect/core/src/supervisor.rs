@@ -210,6 +210,7 @@ pub struct StartedObs {
     process_start_time: u64,
     multi: bool,
     config_dir: PathBuf,
+    is_flatpak: bool,
 }
 
 pub struct Supervisor {
@@ -256,14 +257,20 @@ impl Supervisor {
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
         if let Some(item) = self.children.get_mut(&setup.id) {
-            match item.child.try_wait() {
-                Ok(None) => return Ok(item.pid),
-                Ok(Some(status)) => {
-                    if process_exited_unexpectedly(setup, item, &status) {
-                        self.crashed_pending.insert(setup.id);
-                    }
+            if item.is_flatpak {
+                if process_start_time(item.pid) == Some(item.process_start_time) {
+                    return Ok(item.pid);
                 }
-                Err(_) => return Err(SupervisorError::Unidentified),
+            } else {
+                match item.child.try_wait() {
+                    Ok(None) => return Ok(item.pid),
+                    Ok(Some(status)) => {
+                        if process_exited_unexpectedly(setup, item, &status) {
+                            self.crashed_pending.insert(setup.id);
+                        }
+                    }
+                    Err(_) => return Err(SupervisorError::Unidentified),
+                }
             }
         }
         self.children.remove(&setup.id);
@@ -338,8 +345,13 @@ impl Supervisor {
             command.env("XDG_CONFIG_HOME", config.parent().unwrap_or(config));
         }
         let child = command.spawn()?;
-        let pid = child.id();
-        let process_start_time = wait_for_process_start_time(pid).unwrap_or_default();
+        let is_flatpak = matches!(setup.obs.install_kind, InstallKind::Flatpak);
+        let (pid, process_start_time) = if is_flatpak {
+            wait_for_flatpak_obs_pid(child.id()).ok_or(SupervisorError::Unidentified)?
+        } else {
+            let pid = child.id();
+            (pid, wait_for_process_start_time(pid).unwrap_or_default())
+        };
         self.children.insert(
             setup.id,
             StartedObs {
@@ -351,6 +363,7 @@ impl Supervisor {
                 process_start_time,
                 multi,
                 config_dir: config_dir(setup),
+                is_flatpak,
             },
         );
         self.connected.remove(&setup.id);
@@ -359,6 +372,26 @@ impl Supervisor {
 
     pub fn state(&mut self, setup: &Setup) -> PcObsState {
         if let Some(child) = self.children.get_mut(&setup.id) {
+            if child.is_flatpak {
+                if process_start_time(child.pid) == Some(child.process_start_time) {
+                    if self.connected.contains(&setup.id) {
+                        return PcObsState::Connected;
+                    }
+                    return if child.started.elapsed() >= self.waiting_for_input_after {
+                        PcObsState::WaitingForInput
+                    } else {
+                        PcObsState::Starting
+                    };
+                }
+                self.children.remove(&setup.id);
+                self.connected.remove(&setup.id);
+                return if has_run_sentinel(setup) {
+                    self.crashed_pending.insert(setup.id);
+                    PcObsState::Crashed
+                } else {
+                    PcObsState::NotRunning
+                };
+            }
             match child.child.try_wait() {
                 Ok(None) => {
                     if self.connected.contains(&setup.id) {
@@ -417,7 +450,9 @@ impl Supervisor {
         }
         let deadline = Instant::now() + self.shutdown_grace;
         loop {
-            let running = if let Some(child) = child.as_mut() {
+            let running = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
+                process_start_time(pid) == Some(expected_start_time)
+            } else if let Some(child) = child.as_mut() {
                 child.try_wait()?.is_none()
             } else {
                 process_is_running(setup, pid, expected_start_time)
@@ -430,7 +465,14 @@ impl Supervisor {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        if let Some(child) = child.as_mut() {
+        if matches!(setup.obs.install_kind, InstallKind::Flatpak)
+            && process_start_time(pid) == Some(expected_start_time)
+        {
+            force_kill(pid);
+            self.crashed_pending.insert(setup.id);
+        } else if let Some(child) = child.as_mut()
+            && !matches!(setup.obs.install_kind, InstallKind::Flatpak)
+        {
             child.kill()?;
             let _ = child.wait()?;
             self.crashed_pending.insert(setup.id);
@@ -498,13 +540,7 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
         .iter()
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
-                process.exe().is_some_and(|exe| {
-                    exe.file_name().is_some_and(|name| name == "flatpak")
-                        && process
-                            .cmd()
-                            .iter()
-                            .any(|arg| arg == "com.obsproject.Studio")
-                })
+                is_flatpak_obs_process(pid.as_u32(), process)
             } else {
                 process.exe().is_some_and(|exe| same_path(exe, &expected))
             };
@@ -560,13 +596,7 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
         .iter()
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
-                process.exe().is_some_and(|exe| {
-                    exe.file_name().is_some_and(|name| name == "flatpak")
-                        && process
-                            .cmd()
-                            .iter()
-                            .any(|argument| argument == "com.obsproject.Studio")
-                })
+                is_flatpak_obs_process(pid.as_u32(), process)
             } else {
                 process.exe().is_some_and(|exe| same_path(exe, &expected))
             };
@@ -600,19 +630,66 @@ fn any_obs_running() -> bool {
         ProcessRefreshKind::everything(),
     );
     system.processes().values().any(|process| {
-        process.exe().is_some_and(|exe| {
-            let name = exe.file_name().unwrap_or_default().to_string_lossy();
-            if cfg!(target_os = "windows") {
-                name.eq_ignore_ascii_case("obs64.exe")
-            } else {
-                name == "obs"
-                    || (name == "flatpak"
-                        && process
-                            .cmd()
-                            .iter()
-                            .any(|arg| arg == "com.obsproject.Studio"))
-            }
+        let name = process.name().to_string_lossy();
+        if cfg!(target_os = "windows") {
+            name.eq_ignore_ascii_case("obs64.exe")
+        } else {
+            name == "obs"
+        }
+    })
+}
+
+fn is_flatpak_obs_process(pid: u32, process: &sysinfo::Process) -> bool {
+    process.name().to_string_lossy() == "obs"
+        && fs::read_to_string(format!("/proc/{pid}/root/.flatpak-info")).is_ok_and(|contents| {
+            contents
+                .lines()
+                .any(|line| line.trim() == "name=com.obsproject.Studio")
         })
+}
+
+fn wait_for_flatpak_obs_pid(wrapper_pid: u32) -> Option<(u32, u64)> {
+    let wrapper_pid = Pid::from_u32(wrapper_pid);
+    let deadline = Instant::now() + std::time::Duration::from_secs(10);
+    let mut system = System::new();
+    loop {
+        system.refresh_processes_specifics(
+            ProcessesToUpdate::All,
+            true,
+            ProcessRefreshKind::everything(),
+        );
+        if let Some(pid) = find_descendant_pid(&system, wrapper_pid, |pid, process| {
+            is_flatpak_obs_process(pid.as_u32(), process)
+        }) && let Some(start_time) = process_start_time(pid.as_u32())
+        {
+            return Some((pid.as_u32(), start_time));
+        }
+        if Instant::now() >= deadline {
+            return None;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}
+
+fn find_descendant_pid(
+    system: &System,
+    ancestor: Pid,
+    mut matches: impl FnMut(Pid, &sysinfo::Process) -> bool,
+) -> Option<Pid> {
+    system.processes().iter().find_map(|(pid, process)| {
+        if !matches(*pid, process) {
+            return None;
+        }
+        let mut parent = process.parent();
+        while let Some(parent_pid) = parent {
+            if parent_pid == ancestor {
+                return Some(*pid);
+            }
+            parent = system
+                .process(parent_pid)
+                .and_then(|process| process.parent());
+        }
+        None
     })
 }
 
@@ -961,6 +1038,39 @@ mod tests {
             fs::metadata(path).unwrap().permissions().mode() & 0o777,
             0o600
         );
+    }
+
+    #[test]
+    fn flatpak_wrapper_descendant_resolution_finds_its_child_process() {
+        let directory = tempdir().unwrap();
+        let script = directory.path().join("fake-wrapper");
+        make_script(
+            &script,
+            "sleep 10 & child=$!; trap 'kill \"$child\"; wait \"$child\"; exit 0' TERM; wait \"$child\"",
+        );
+        let mut wrapper = Command::new(&script).spawn().unwrap();
+        let mut system = sysinfo::System::new();
+        let mut descendant = None;
+        for _ in 0..100 {
+            system.refresh_processes_specifics(
+                sysinfo::ProcessesToUpdate::All,
+                true,
+                sysinfo::ProcessRefreshKind::everything(),
+            );
+            descendant = super::find_descendant_pid(
+                &system,
+                sysinfo::Pid::from_u32(wrapper.id()),
+                |_, process| process.name().to_string_lossy() == "sleep",
+            );
+            if descendant.is_some() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        let descendant = descendant.unwrap();
+        assert_ne!(descendant.as_u32(), wrapper.id());
+        super::request_graceful_close(wrapper.id());
+        let _ = wrapper.wait().unwrap();
     }
 
     #[test]
