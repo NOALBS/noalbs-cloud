@@ -6,6 +6,10 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+# Derive `utoipa::ToSchema` for the source settings the API takes and gives.
+openapi = ["dep:utoipa"]
+
 [dependencies]
 async-nats = { workspace = true }
 async-trait = { workspace = true }
@@ -18,4 +22,5 @@ telemetry = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
+utoipa = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["serde"] }

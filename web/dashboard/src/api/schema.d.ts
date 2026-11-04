@@ -2667,6 +2667,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/existing-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The sources OBS has that can be added to a scene again. */
+        get: operations["existing_sources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/fix": {
         parameters: {
             query?: never;
@@ -2682,6 +2699,51 @@ export interface paths {
          *     after a drop.
          */
         post: operations["fix_feed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/input": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A media, VLC, browser or text source's settings, for editing. Members who manage
+         *     switchers only: what it plays can hold a key.
+         */
+        get: operations["obs_input"];
+        /**
+         * Change a media, VLC, browser or text source's settings and name. Saving makes it
+         *     reload what it plays. Logged in the activity feed (without its URL).
+         *     Members who manage switchers only.
+         */
+        put: operations["edit_source"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a media, VLC, browser or text source to a scene, on top. Logged in the
+         *     activity feed. Members who manage switchers only.
+         */
+        post: operations["create_source"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2722,6 +2784,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a source OBS already has (or a scene) to a scene, on top, like OBS's
+         *     "Add Existing": the same source, so a change to it shows in every scene.
+         *     Logged in the activity feed. Members who manage switchers only.
+         */
+        post: operations["add_existing_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where everything in a scene (or group) is on screen now. */
+        get: operations["scene_layout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove a scene from OBS, with what's on it: OBS deletes the sources no
+         *     other scene uses. Not the scene on air (`scene_on_air`), nor one the
+         *     switcher uses (`scene_in_use`). Logged in the activity feed. Members who
+         *     manage switchers only.
+         */
+        post: operations["remove_scene"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scenes": {
         parameters: {
             query?: never;
@@ -2732,7 +2854,11 @@ export interface paths {
         /** The scenes in the switcher's OBS. */
         get: operations["obs_scenes"];
         put?: never;
-        post?: never;
+        /**
+         * Add an empty scene to OBS. Logged in the activity feed. Members who manage
+         *     switchers only.
+         */
+        post: operations["create_scene"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2793,6 +2919,107 @@ export interface paths {
         put?: never;
         /** Show or hide a source, like `!source`. */
         post: operations["set_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source-kinds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The kinds of source that can be added to the switcher's OBS from here. */
+        get: operations["obs_source_kinds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a source, like OBS's Duplicate: a new source with a copy of its
+         *     settings, filters and placement, which changes on its own. Copied inside
+         *     OBS, so nothing of it is sent here. Scenes and groups aren't copied
+         *     (`not_duplicable`). Logged in the activity feed. Members who manage
+         *     switchers only.
+         */
+        post: operations["duplicate_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a source to another place in its scene or group, like dragging it in
+         *     OBS's Sources dock. Not logged in the activity feed: arranging sends many.
+         */
+        post: operations["move_source"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/placement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Move or size a source on screen: a preset, or an exact box. Logged in the
+         *     activity feed.
+         */
+        put: operations["place_source"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove a source from its scene, as OBS's Sources dock does: OBS deletes it
+         *     once no scene uses it. Groups and what's in them stay (`not_removable`).
+         *     Logged in the activity feed. Members who manage switchers only.
+         */
+        post: operations["remove_source"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3153,6 +3380,13 @@ export interface components {
             /** @description 8–63 characters; leave out for an open network. */
             password?: string | null;
             ssid: string;
+        };
+        AddExistingSource: {
+            enabled?: boolean;
+            /** @description The scene to add it to (not a group). */
+            scene: string;
+            /** @description A source or scene OBS has. */
+            source: string;
         };
         /** @description An add-on that can be bought per unit, on top of (or without) a plan. */
         AddonDto: {
@@ -3553,6 +3787,11 @@ export interface components {
             /** Format: int64 */
             total: number;
         };
+        /**
+         * @description Where on the screen (or in its box) a source sits.
+         * @enum {string}
+         */
+        Anchor: "top_left" | "top" | "top_right" | "left" | "center" | "right" | "bottom_left" | "bottom" | "bottom_right";
         AudioUpdate: {
             inputs: components["schemas"]["InputLevels"][];
             /** @enum {string} */
@@ -3944,6 +4183,30 @@ export interface components {
             /** @description Why, for the workspace's owners and admins: 10–500 characters. */
             reason: string;
         };
+        BrowserSettings: {
+            /** @description CSS added to the page. */
+            css: string;
+            /**
+             * Format: int32
+             * @description A frame rate of its own, 1 to 60; `null` to match OBS's.
+             */
+            fps?: number | null;
+            /** Format: int32 */
+            height: number;
+            /** @description Send the page's audio through OBS (it then shows on the Audio Mixer). */
+            reroute_audio: boolean;
+            /** @description Reload the page when its scene goes on air. */
+            restart_when_active: boolean;
+            /** @description Shut the page down while the source isn't shown. */
+            shutdown: boolean;
+            /** @description The page it shows. Read as `null` when it shows a file on the OBS computer. */
+            url?: string | null;
+            /**
+             * Format: int32
+             * @description 1 to 8192 px.
+             */
+            width: number;
+        };
         BulkAllocation: {
             /**
              * Format: int32
@@ -4332,6 +4595,18 @@ export interface components {
         } & {
             code: string;
         };
+        CreateScene: {
+            name: string;
+        };
+        CreateSource: {
+            /** @description Shown right away (the default), or hidden until someone shows it. */
+            enabled?: boolean;
+            name: string;
+            /** @description The scene to add it to (not a group). */
+            scene: string;
+            /** @description What it plays must be given. */
+            settings: components["schemas"]["SourceSettings"];
+        };
         CreateStreamServer: {
             details?: components["schemas"]["DetailsInput"];
             kind: components["schemas"]["StreamServerKindDto"];
@@ -4366,6 +4641,17 @@ export interface components {
             invite: components["schemas"]["TeamInviteDto"];
             /** @description The secret for the invite link (`/org-invite/{token}`). Not retrievable later. */
             token: string;
+        };
+        /** @description Pixels cut off each side of the source, before it's sized. */
+        Crop: {
+            /** Format: int32 */
+            bottom: number;
+            /** Format: int32 */
+            left: number;
+            /** Format: int32 */
+            right: number;
+            /** Format: int32 */
+            top: number;
         };
         /**
          * @description "Download my data" (GDPR access and portability): everything NOALBS Cloud
@@ -4414,6 +4700,31 @@ export interface components {
             /** @description Any name; the same name signs in as the same user again. */
             username: string;
         };
+        DuplicateSource: {
+            enabled?: boolean;
+            /** Format: int64 */
+            item_id: number;
+            /** @description The copy's name. */
+            name: string;
+            /** @description The source's `parent`, `parent_is_group` and `item_id` from the list. */
+            parent: string;
+            parent_is_group?: boolean;
+            /** @description The scene to put the copy in (not a group). */
+            scene: string;
+        };
+        EditSource: {
+            /** @description Its name now. */
+            name: string;
+            /** @description Its name after; the same to keep it. */
+            new_name: string;
+            /** @description Of the source's kind. A `null` URL or playlist keeps what it plays. */
+            settings: components["schemas"]["SourceSettings"];
+        };
+        /**
+         * @description A kind of source that can be added and edited here.
+         * @enum {string}
+         */
+        EditableKind: "media" | "vlc" | "browser" | "text";
         /** @description Staff opening the workspace without its permission. */
         EmergencyAccessDto: {
             /** @description An owner or admin has marked it as seen. */
@@ -4572,6 +4883,73 @@ export interface components {
             };
             /** @enum {string} */
             kind: "source_toggled";
+        } | {
+            /** @description A scene was added to OBS from the dashboard. */
+            data: {
+                by?: string | null;
+                scene: string;
+            };
+            /** @enum {string} */
+            kind: "scene_created";
+        } | {
+            /** @description A scene was removed from OBS from the dashboard. */
+            data: {
+                by?: string | null;
+                scene: string;
+            };
+            /** @enum {string} */
+            kind: "scene_removed";
+        } | {
+            /** @description A source was added to a scene from the dashboard, new or a copy. */
+            data: {
+                by?: string | null;
+                /** @description The source it's a copy of, if it was duplicated. */
+                copied_from?: string | null;
+                scene: string;
+                source: string;
+            };
+            /** @enum {string} */
+            kind: "source_created";
+        } | {
+            /** @description A source OBS already had was added to another scene from the dashboard. */
+            data: {
+                by?: string | null;
+                scene: string;
+                source: string;
+            };
+            /** @enum {string} */
+            kind: "source_added";
+        } | {
+            /** @description A source was placed (moved or sized on screen) from the dashboard. */
+            data: {
+                by?: string | null;
+                scene: string;
+                source: string;
+            };
+            /** @enum {string} */
+            kind: "source_placed";
+        } | {
+            /** @description A source was removed from a scene from the dashboard. */
+            data: {
+                by?: string | null;
+                scene: string;
+                source: string;
+            };
+            /** @enum {string} */
+            kind: "source_removed";
+        } | {
+            /**
+             * @description A source's settings (or name) were changed from the dashboard. What it
+             *     plays isn't logged: URLs can hold keys.
+             */
+            data: {
+                by?: string | null;
+                /** @description Its name before, if it was renamed. */
+                renamed_from?: string | null;
+                source: string;
+            };
+            /** @enum {string} */
+            kind: "source_edited";
         } | {
             /** @description An input on OBS's Audio Mixer was muted or unmuted. */
             data: {
@@ -4745,11 +5123,26 @@ export interface components {
             /** @enum {string} */
             kind: "moblin_error";
         };
+        ExistingSourceDto: {
+            /** @description The input's kind (e.g. `ffmpeg_source`); `null` for scenes. */
+            input_kind?: string | null;
+            is_scene: boolean;
+            name: string;
+        };
+        ExistingSourcesDto: {
+            /** @description Inputs by name (not the global audio devices), then scenes top first. */
+            sources: components["schemas"]["ExistingSourceDto"][];
+        };
         /**
          * @description How the feed is doing, and so which scene is (or would be) on air.
          * @enum {string}
          */
         FeedState: "live" | "low" | "offline" | "idle";
+        /**
+         * @description How a preset sizes the source.
+         * @enum {string}
+         */
+        Fit: "fit" | "fill" | "stretch" | "original";
         FixedFeed: {
             /** @description The scene that was on air. */
             scene: string;
@@ -4871,6 +5264,41 @@ export interface components {
             /** Format: uuid */
             workspace_id: string;
         };
+        LayoutItemDto: {
+            crop: components["schemas"]["Crop"];
+            enabled: boolean;
+            /** Format: double */
+            height: number;
+            /**
+             * Format: int64
+             * @description The `item_id` of the list.
+             */
+            item_id: number;
+            name: string;
+            /**
+             * Format: double
+             * @description Degrees it's turned; the box is then only roughly where it shows.
+             */
+            rotation: number;
+            /** Format: double */
+            source_height: number;
+            /**
+             * Format: double
+             * @description The source's own size, before crop and scaling; 0 × 0 while OBS doesn't
+             *     know it (nothing playing).
+             */
+            source_width: number;
+            /** Format: double */
+            width: number;
+            /**
+             * Format: double
+             * @description Its box's top left and size, in canvas pixels (inside a group, the
+             *     group's). 0 × 0 when OBS doesn't know its size yet (nothing playing).
+             */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
         LinkPriceRequest: {
             /** @description A recurring price made in the Stripe Dashboard (`price_…`). */
             stripe_price_id: string;
@@ -4976,6 +5404,33 @@ export interface components {
             staff: boolean;
             /** @description The newest "What's new" post the user has seen; newer ones are new to them. */
             whats_new_seen?: string | null;
+        };
+        MediaSettings: {
+            /**
+             * Format: int32
+             * @description Network buffering, 0 to 16 MB.
+             */
+            buffering_mb: number;
+            /** @description Show nothing once playback ends (rather than the last frame). */
+            clear_on_media_end: boolean;
+            /** @description Close the stream while the source isn't shown. */
+            close_when_inactive: boolean;
+            /** @description Decode on the GPU when it can. */
+            hw_decode: boolean;
+            /** @description ffmpeg's input format (e.g. `mpegts`); empty to detect it. */
+            input_format: string;
+            /**
+             * Format: int32
+             * @description Seconds before reconnecting after the stream drops, 1 to 60.
+             */
+            reconnect_delay_sec: number;
+            /** @description Restart playback when the source becomes active. */
+            restart_on_activate: boolean;
+            /**
+             * @description The stream it plays (`srt://…`, `rtmp://…`, …). Read as `null` when it
+             *     plays something else (a file on the OBS computer).
+             */
+            url?: string | null;
         };
         /** @description A workspace member and the profile of their most recently used login. */
         MemberDto: {
@@ -5193,6 +5648,18 @@ export interface components {
             amount: number;
             currency: string;
         };
+        MoveSource: {
+            /** Format: int64 */
+            item_id: number;
+            /** @description The source's `parent`, `parent_is_group` and `item_id` from the list. */
+            parent: string;
+            parent_is_group?: boolean;
+            /**
+             * @description Where to, among the items of its scene or group, counted from the top
+             *     (0: drawn over all the others); past the end means the bottom.
+             */
+            position: number;
+        };
         /** @description What all the user's switchers are doing, in all. */
         MyLiveCountsDto: {
             /**
@@ -5386,6 +5853,14 @@ export interface components {
             /** Format: int64 */
             render_total: number;
         };
+        ObsInputDto: {
+            name: string;
+            /**
+             * @description Its URL can hold a key: show it hidden. `null` when it plays a file
+             *     on the OBS computer, which isn't shown here.
+             */
+            settings: components["schemas"]["SourceSettings"];
+        };
         ObsSceneDto: {
             name: string;
             /**
@@ -5429,6 +5904,10 @@ export interface components {
              * @description `null` on OBS versions that don't report source UUIDs.
              */
             uuid?: string | null;
+        };
+        ObsSourceKindsDto: {
+            /** @description What can be added: media and browser sources, VLC if OBS has its plugin. */
+            kinds: components["schemas"]["EditableKind"][];
         };
         ObsSourcesDto: {
             /** @description The scene on air. */
@@ -5624,6 +6103,37 @@ export interface components {
             /** Format: uuid */
             offline?: string | null;
         };
+        PlaceSource: {
+            /** Format: int64 */
+            item_id: number;
+            /** @description The source's `parent`, `parent_is_group` and `item_id` from the list. */
+            parent: string;
+            parent_is_group?: boolean;
+            placement: components["schemas"]["Placement"];
+        };
+        /** @description Where to put a source. */
+        Placement: {
+            anchor: components["schemas"]["Anchor"];
+            fit: components["schemas"]["Fit"];
+            /** Format: int32 */
+            margin_percent: number;
+            /** @enum {string} */
+            mode: "preset";
+            /** Format: int32 */
+            size_percent: number;
+        } | {
+            crop: components["schemas"]["Crop"];
+            /** Format: double */
+            height: number;
+            /** @enum {string} */
+            mode: "exact";
+            /** Format: double */
+            width: number;
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
         /** @description A plan and the limits it gives a workspace. */
         PlanDto: {
             code: string;
@@ -5736,6 +6246,17 @@ export interface components {
         RedirectDto: {
             url: string;
         };
+        RemoveScene: {
+            /** Format: uuid */
+            scene_uuid: string;
+        };
+        RemoveSource: {
+            /** Format: int64 */
+            item_id: number;
+            /** @description The source's `parent`, `parent_is_group` and `item_id` from the list. */
+            parent: string;
+            parent_is_group?: boolean;
+        };
         RenameSwitcher: {
             name: string;
         };
@@ -5758,6 +6279,21 @@ export interface components {
             /** Format: uuid */
             workspace_id?: string | null;
             workspace_name?: string | null;
+        };
+        SavedSourceDto: {
+            /** @description Its name, trimmed. */
+            name: string;
+        };
+        SceneLayoutDto: {
+            /** Format: int32 */
+            canvas_height: number;
+            /**
+             * Format: int32
+             * @description The canvas every scene is laid out on, in pixels.
+             */
+            canvas_width: number;
+            /** @description Top first, like OBS's Sources dock (drawn over the ones after). */
+            items: components["schemas"]["LayoutItemDto"][];
         };
         SceneRef: {
             name: string;
@@ -6036,6 +6572,23 @@ export interface components {
             /** @description Why the slug can't be used, when it can't. */
             message?: string | null;
         };
+        /**
+         * @description A source's settings, by kind. Reading gives every field; when writing, a
+         *     `None` URL or playlist keeps what the source plays.
+         */
+        SourceSettings: (components["schemas"]["MediaSettings"] & {
+            /** @enum {string} */
+            kind: "media";
+        }) | (components["schemas"]["VlcSettings"] & {
+            /** @enum {string} */
+            kind: "vlc";
+        }) | (components["schemas"]["BrowserSettings"] & {
+            /** @enum {string} */
+            kind: "browser";
+        }) | (components["schemas"]["TextSettings"] & {
+            /** @enum {string} */
+            kind: "text";
+        });
         SpeakingBotDto: {
             /** @description The workspace's own bot rather than the shared NOALBS one. */
             custom: boolean;
@@ -6492,6 +7045,26 @@ export interface components {
              */
             stream_server_id?: string | null;
         };
+        /** @description What GDI+ (Windows) and FreeType 2 (Linux, macOS) text sources share. */
+        TextSettings: {
+            bold: boolean;
+            /** @description `#rrggbb`. A FreeType 2 source's gradient is kept unless it's changed. */
+            color: string;
+            /** @description The font, as the OBS computer names it. Empty keeps the font it has. */
+            font_face: string;
+            /**
+             * Format: int32
+             * @description 1 to 1024.
+             */
+            font_size: number;
+            italic: boolean;
+            outline: boolean;
+            /**
+             * @description What it says. Read as `null` while it reads a file on the OBS
+             *     computer; writing text stops that.
+             */
+            text?: string | null;
+        };
         TransferOwnership: {
             /**
              * Format: uuid
@@ -6565,6 +7138,27 @@ export interface components {
         };
         UpdateWorkspace: {
             name: string;
+        };
+        /**
+         * @description What a VLC source does while it isn't shown.
+         * @enum {string}
+         */
+        VlcPlayback: "stop_restart" | "pause_unpause" | "always_play";
+        VlcSettings: {
+            /** @description Start the playlist over at its end. */
+            loop_playlist: boolean;
+            /**
+             * Format: int32
+             * @description Network caching, 100 to 60,000 ms.
+             */
+            network_caching_ms: number;
+            playback: components["schemas"]["VlcPlayback"];
+            /**
+             * @description The streams it plays, in order. Read as `null` when it plays
+             *     something else (files or folders on the OBS computer).
+             */
+            playlist?: string[] | null;
+            shuffle: boolean;
         };
         WhatsNewSeen: {
             /** @description The newest post shown, by its ID (`2026-11-02-scene-picker`). */
@@ -12766,6 +13360,37 @@ export interface operations {
             };
         };
     };
+    existing_sources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExistingSourcesDto"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     fix_feed: {
         parameters: {
             query?: never;
@@ -12785,6 +13410,218 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FixedFeed"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    obs_input: {
+        parameters: {
+            query: {
+                /** @description The source's name. */
+                name: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObsInputDto"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `not_editable`: another kind of source */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    edit_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditSource"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSourceDto"];
+                };
+            };
+            /** @description `invalid_source` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `name_taken`, or `not_editable` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSource"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSourceDto"];
+                };
+            };
+            /** @description `invalid_source` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `name_taken` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             /** @description `obs_error` */
@@ -12893,6 +13730,182 @@ export interface operations {
             };
         };
     };
+    add_existing_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddExistingSource"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSourceDto"];
+                };
+            };
+            /** @description `scene_in_itself` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    scene_layout: {
+        parameters: {
+            query: {
+                /** @description A source's `parent` and `parent_is_group` from the list. */
+                scene: string;
+                group?: boolean;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneLayoutDto"];
+                };
+            };
+            /** @description `obs_error`: no such scene */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    remove_scene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveScene"];
+            };
+        };
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `scene_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `scene_on_air`, or `scene_in_use` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     obs_scenes: {
         parameters: {
             query?: never;
@@ -12911,6 +13924,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ObsScenesDto"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_scene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateScene"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSourceDto"];
+                };
+            };
+            /** @description `invalid_source`: the name */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `name_taken` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             /** @description `obs_offline` */
@@ -13026,6 +14101,300 @@ export interface operations {
             };
             /** @description `source_not_found`: it's gone from that scene */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    obs_source_kinds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObsSourceKindsDto"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    duplicate_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateSource"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSourceDto"];
+                };
+            };
+            /** @description `invalid_source`: the name */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `name_taken`, or `not_duplicable` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    move_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveSource"];
+            };
+        };
+        responses: {
+            /** @description Moved (or already there) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `source_not_found`: it's gone from that scene */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    place_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceSource"];
+            };
+        };
+        responses: {
+            /** @description Placed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_placement` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    remove_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveSource"];
+            };
+        };
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `members_only`: NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `source_not_found`: it's gone from that scene */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `not_removable`: a group, or in one */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

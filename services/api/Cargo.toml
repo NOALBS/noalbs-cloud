@@ -17,7 +17,7 @@ chrono.workspace = true
 common.workspace = true
 config.workspace = true
 db = { workspace = true, features = ["openapi"] }
-obs-actions.workspace = true
+obs-actions = { workspace = true, features = ["openapi"] }
 live = { workspace = true, features = ["openapi"] }
 control = { workspace = true }
 futures-util.workspace = true

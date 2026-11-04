@@ -93,6 +93,45 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         title: event.data.enabled ? t`Showed ${event.data.source}` : t`Hid ${event.data.source}`,
         detail: t`In ${event.data.scene} ${by(event.data.by, t`from the dashboard`)}`,
       };
+    case "scene_created":
+      return {
+        title: t`Added the scene ${event.data.scene}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "scene_removed":
+      return {
+        title: t`Removed the scene ${event.data.scene}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "source_created":
+      return {
+        title: event.data.copied_from
+          ? t`Copied ${event.data.copied_from} as ${event.data.source}`
+          : t`Added ${event.data.source}`,
+        detail: t`To ${event.data.scene} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "source_added":
+      return {
+        title: t`Added ${event.data.source} again`,
+        detail: t`To ${event.data.scene} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "source_placed":
+      return {
+        title: t`Moved ${event.data.source}`,
+        detail: t`In ${event.data.scene} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "source_removed":
+      return {
+        title: t`Removed ${event.data.source}`,
+        detail: t`From ${event.data.scene} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "source_edited":
+      return {
+        title: t`Changed ${event.data.source}`,
+        detail: event.data.renamed_from
+          ? t`Renamed from ${event.data.renamed_from} ${by(event.data.by, t`from the dashboard`)}`
+          : by(event.data.by, t`from the dashboard`),
+      };
     case "input_muted":
       return {
         title: event.data.muted ? t`Muted ${event.data.input}` : t`Unmuted ${event.data.input}`,
