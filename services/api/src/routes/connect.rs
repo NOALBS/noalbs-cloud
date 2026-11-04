@@ -332,7 +332,14 @@ async fn revoke_device(
     }
     state
         .nats
-        .publish(live::reconnect_subject(access.switcher.id), "".into())
+        .publish(
+            live::reconnect_subject(access.switcher.id),
+            serde_json::to_vec(&live::Reconnect {
+                device_id: Some(device_id),
+            })
+            .expect("serializing a reconnect request cannot fail")
+            .into(),
+        )
         .await
         .map_err(|error| {
             tracing::error!(%error, "Couldn't request a Connect device reconnect");

@@ -229,9 +229,8 @@ enum Control {
     TakenOver,
     /// Someone watches the audio levels.
     AudioWanted,
-    /// Staff asked for a fresh connection: close, and the browser source
-    /// reconnects.
-    Reconnect,
+    /// A reconnect request, optionally limited to one Connect device.
+    Reconnect { device_id: Option<Uuid> },
 }
 
 enum Flow {
@@ -244,6 +243,19 @@ fn reset_obs_status(status: &mut SwitcherStatus) {
     *status = SwitcherStatus::connected(auto_switch);
     status.paused = paused;
     status.pc = pc;
+}
+
+fn should_close_for_reconnect(
+    requested_device_id: Option<Uuid>,
+    session_device_id: Option<Uuid>,
+) -> bool {
+    requested_device_id.is_none() || requested_device_id == session_device_id
+}
+
+fn reconnect_device_id(payload: &[u8]) -> Option<Uuid> {
+    serde_json::from_slice::<live::Reconnect>(payload)
+        .unwrap_or(live::Reconnect { device_id: None })
+        .device_id
 }
 
 /// A browser source that identified as a switcher.
@@ -737,9 +749,22 @@ impl Connection {
                 self.refuse(RequestErrorKind::AlreadyConnected).await
             }
             Control::ConfigChanged => self.reload().await,
-            Control::Reconnect => {
-                tracing::info!("Closing so the browser source reconnects (asked by staff)");
-                Ok(Flow::Close)
+            Control::Reconnect { device_id } => {
+                let session_device_id = self.session.as_ref().and_then(|session| session.device_id);
+                if should_close_for_reconnect(device_id, session_device_id) {
+                    if let Some(device_id) = device_id {
+                        tracing::info!(%device_id, "Closing the revoked Connect device connection");
+                    } else {
+                        tracing::info!("Closing so the browser source reconnects (asked by staff)");
+                    }
+                    Ok(Flow::Close)
+                } else {
+                    tracing::debug!(
+                        ?device_id,
+                        "Ignoring reconnect for a different Connect device"
+                    );
+                    Ok(Flow::Continue)
+                }
             }
             Control::AudioWanted => {
                 if let Some(session) = self.session.as_mut() {
@@ -983,7 +1008,9 @@ async fn listen_for_control(
                 }
             }
             Some(_) = audio_demand.next() => Control::AudioWanted,
-            Some(_) = reconnect.next() => Control::Reconnect,
+            Some(message) = reconnect.next() => Control::Reconnect {
+                device_id: reconnect_device_id(&message.payload),
+            },
             else => return,
         };
         if control.send(message).is_err() {
@@ -1073,7 +1100,38 @@ mod tests {
     use serde_json::json;
     use uuid::Uuid;
 
-    use super::{Identify, Response, ResponseKind, reset_obs_status};
+    use super::{
+        Identify, Response, ResponseKind, reconnect_device_id, reset_obs_status,
+        should_close_for_reconnect,
+    };
+
+    #[test]
+    fn reconnects_only_close_the_target_device_session() {
+        let device_id = Uuid::from_u128(1);
+        let other_device_id = Uuid::from_u128(2);
+
+        assert!(should_close_for_reconnect(None, None));
+        assert!(should_close_for_reconnect(None, Some(other_device_id)));
+        assert!(should_close_for_reconnect(Some(device_id), Some(device_id)));
+        assert!(!should_close_for_reconnect(
+            Some(device_id),
+            Some(other_device_id)
+        ));
+        assert!(!should_close_for_reconnect(Some(device_id), None));
+    }
+
+    #[test]
+    fn empty_or_invalid_reconnect_payload_targets_any_session() {
+        assert_eq!(reconnect_device_id(b""), None);
+        assert_eq!(reconnect_device_id(b"not-json"), None);
+
+        let device_id = Uuid::from_u128(1);
+        let payload = serde_json::to_vec(&live::Reconnect {
+            device_id: Some(device_id),
+        })
+        .unwrap();
+        assert_eq!(reconnect_device_id(&payload), Some(device_id));
+    }
 
     #[test]
     fn old_browser_source_identify_messages_still_parse() {
