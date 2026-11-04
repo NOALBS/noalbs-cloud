@@ -667,8 +667,12 @@ impl Supervisor {
         if connected {
             self.connected.insert(setup_id);
         } else {
-            self.connected.remove(&setup_id);
+            self.clear_connected(setup_id);
         }
+    }
+
+    pub fn clear_connected(&mut self, setup_id: Uuid) {
+        self.connected.remove(&setup_id);
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
@@ -1541,6 +1545,35 @@ mod tests {
             supervisor.state(&setup),
             crate::relay::PcObsState::NotRunning
         );
+    }
+
+    #[test]
+    fn clearing_connected_state_falls_back_to_process_state() {
+        let directory = tempdir().unwrap();
+        let script = make_script(
+            &directory.path().join("fake-obs"),
+            "trap 'exit 0' TERM; while :; do sleep 0.05; done",
+        );
+        let setup = make_setup(&script, &directory.path().join("config"));
+        let mut supervisor = Supervisor::with_timing(
+            Duration::from_secs(1),
+            Duration::from_secs(60),
+        );
+
+        supervisor.start(&setup, false, None).unwrap();
+        supervisor.mark_connected(setup.id, true);
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::Connected
+        );
+
+        supervisor.clear_connected(setup.id);
+
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::Starting
+        );
+        supervisor.stop(&setup).unwrap();
     }
 
     fn make_setup(script: &Path, config_dir: &Path) -> Setup {
