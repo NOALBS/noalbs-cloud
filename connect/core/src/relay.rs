@@ -1445,6 +1445,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let (first_setting_tx, first_setting_rx) = tokio::sync::oneshot::channel();
+        let (second_setting_seen_tx, second_setting_seen_rx) = tokio::sync::oneshot::channel();
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
@@ -1467,7 +1468,7 @@ mod tests {
                 ))
                 .await
                 .unwrap();
-            let _ = socket.next().await;
+            second_setting_seen_rx.await.unwrap();
         });
         let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
@@ -1506,6 +1507,7 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(*watchdog_rx.borrow_and_update(), super::WatchdogMode::Off);
+        second_setting_seen_tx.send(()).unwrap();
         link.abort();
         server.await.unwrap();
     }
