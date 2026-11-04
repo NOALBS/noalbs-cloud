@@ -47,6 +47,7 @@ struct SetupSummary {
     paired: bool,
     switcher_id: Option<String>,
     obs_state: String,
+    obs_process_running: bool,
     obs: connect_core::config::ObsLaunchConfig,
     detected_binary: String,
     config_dir: String,
@@ -77,15 +78,8 @@ fn get_state(state: State<'_, AppState>) -> UiState {
         setups: config
             .setups
             .iter()
-            .map(|setup| SetupSummary {
-                id: setup.id.to_string(),
-                name: setup.name.clone(),
-                paired: setup.pairing.is_some(),
-                switcher_id: setup
-                    .pairing
-                    .as_ref()
-                    .map(|pair| pair.switcher_id.to_string()),
-                obs_state: serde_json::to_value(
+            .map(|setup| {
+                let obs_state = serde_json::to_value(
                     sessions
                         .get(&setup.id)
                         .map(|session| *session.state.borrow())
@@ -93,16 +87,28 @@ fn get_state(state: State<'_, AppState>) -> UiState {
                 )
                 .ok()
                 .and_then(|value| value.as_str().map(str::to_owned))
-                .unwrap_or_else(|| "unknown".into()),
-                obs: setup.obs.clone(),
-                detected_binary: setup
-                    .obs
-                    .binary_path
-                    .clone()
-                    .unwrap_or_else(|| detected_obs_binary_for(&setup.obs.install_kind))
-                    .to_string_lossy()
-                    .into_owned(),
-                config_dir: config_dir(setup).to_string_lossy().into_owned(),
+                .unwrap_or_else(|| "unknown".into());
+                let obs_process_running = supervisor.owns_running_process(setup);
+                SetupSummary {
+                    id: setup.id.to_string(),
+                    name: setup.name.clone(),
+                    paired: setup.pairing.is_some(),
+                    switcher_id: setup
+                        .pairing
+                        .as_ref()
+                        .map(|pair| pair.switcher_id.to_string()),
+                    obs_state,
+                    obs_process_running,
+                    obs: setup.obs.clone(),
+                    detected_binary: setup
+                        .obs
+                        .binary_path
+                        .clone()
+                        .unwrap_or_else(|| detected_obs_binary_for(&setup.obs.install_kind))
+                        .to_string_lossy()
+                        .into_owned(),
+                    config_dir: config_dir(setup).to_string_lossy().into_owned(),
+                }
             })
             .collect(),
     }

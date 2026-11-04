@@ -26,6 +26,7 @@ type Setup = {
 	paired: boolean;
 	switcher_id: string | null;
 	obs_state: string;
+	obs_process_running: boolean;
 	obs: ObsConfig;
 	detected_binary: string;
 	config_dir: string;
@@ -552,7 +553,7 @@ function SetupDetail({
 	onCancel: () => void;
 }) {
 	const [obsLabel, obsTone] = obsStatus(setup.obs_state);
-	const running = !["not_running", "crashed"].includes(setup.obs_state);
+	const running = setup.obs_process_running;
 	return (
 		<>
 			<h1>{setup.name}</h1>
