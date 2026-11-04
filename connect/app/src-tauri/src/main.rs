@@ -1736,6 +1736,7 @@ mod tests {
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
@@ -1745,6 +1746,8 @@ mod tests {
         let (_, effective_obs) = watch::channel(None);
         let link_task = tokio::spawn(std::future::pending::<()>());
         let link_task_abort = link_task.abort_handle();
+        let command_consumer = tokio::spawn(std::future::pending::<()>());
+        let command_consumer_abort = command_consumer.abort_handle();
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
@@ -1754,6 +1757,7 @@ mod tests {
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(command_consumer),
             },
         );
 
@@ -1780,6 +1784,7 @@ mod tests {
             Some("verification-url")
         );
         assert!(!link_task_abort.is_finished());
+        assert!(!command_consumer_abort.is_finished());
 
         let session = state
             .link_sessions
@@ -1789,6 +1794,7 @@ mod tests {
             .unwrap();
         session.task.abort();
         session.monitor.abort();
+        session.command_consumer.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
