@@ -3,6 +3,7 @@ pub mod credentials;
 pub mod pairing;
 pub mod relay;
 pub mod supervisor;
+pub mod url_security;
 pub mod watchdog;
 
 pub use config::{AppConfig, AppSettings, ConfigStore, ObsLaunchConfig, Setup};

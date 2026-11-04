@@ -66,6 +66,8 @@ pub enum RelayError {
     NoObsConfig,
     #[error("OBS websocket authentication failed")]
     ObsAuthentication,
+    #[error("{0}")]
+    UnsafeUrl(String),
 }
 
 type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
@@ -75,6 +77,8 @@ pub async fn run_link(
     mut obs_state: watch::Receiver<PcObsState>,
     watchdog: watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
+    crate::url_security::validate_link_url(&config.link_url)
+        .map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
         if let Err(RelayError::InvalidToken) =

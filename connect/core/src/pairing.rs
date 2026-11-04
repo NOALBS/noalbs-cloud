@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::config::Pairing;
+use crate::{config::Pairing, url_security::validate_api_url};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -59,6 +59,8 @@ pub enum PairingError {
     Api { status: StatusCode, message: String },
     #[error("pairing response was invalid: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("{0}")]
+    UnsafeUrl(String),
 }
 
 #[derive(Debug, Clone)]
@@ -68,11 +70,13 @@ pub struct PairingClient {
 }
 
 impl PairingClient {
-    pub fn new(api_url: impl Into<String>) -> Self {
-        Self {
-            api_url: api_url.into().trim_end_matches('/').to_owned(),
+    pub fn new(api_url: impl Into<String>) -> Result<Self, PairingError> {
+        let api_url = api_url.into().trim_end_matches('/').to_owned();
+        validate_api_url(&api_url).map_err(PairingError::UnsafeUrl)?;
+        Ok(Self {
+            api_url,
             client: reqwest::Client::new(),
-        }
+        })
     }
 
     pub async fn create(
@@ -138,6 +142,8 @@ impl PairingClient {
             });
         }
         let claimed: PairingClaimed = response.json().await?;
+        crate::url_security::validate_link_url(&claimed.link_url)
+            .map_err(PairingError::UnsafeUrl)?;
         Ok(PairingResult {
             pairing: Pairing {
                 device_id: claimed.device_id,
@@ -255,7 +261,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}/api", listener.local_addr().unwrap());
         let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
-        let client = PairingClient::new(url);
+        let client = PairingClient::new(url).unwrap();
         let created = client
             .create("Studio PC", ConnectOs::Linux, "0.1.0")
             .await

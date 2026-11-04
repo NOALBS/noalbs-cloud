@@ -204,7 +204,7 @@ async fn create_pairing(
             .ok_or("setup not found")?;
         (config.settings.api_url.clone(), setup.name.clone())
     };
-    let client = PairingClient::new(api_url);
+    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
     let os = if cfg!(target_os = "windows") {
         ConnectOs::Windows
     } else {
@@ -231,7 +231,7 @@ async fn pair_setup(
             .ok_or("setup not found")?;
         (config.settings.api_url.clone(), setup.name.clone())
     };
-    let client = PairingClient::new(api_url);
+    let client = PairingClient::new(api_url).map_err(|error| error.to_string())?;
     let os = if cfg!(target_os = "windows") {
         ConnectOs::Windows
     } else {
