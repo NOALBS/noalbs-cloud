@@ -190,12 +190,30 @@ fn is_portable_obs_for_platform(
     platform: HostPlatform,
 ) -> bool {
     platform == HostPlatform::Windows
-        && windows_obs_install_root(binary_path).is_some_and(|root| {
-            config.portable
-                || WINDOWS_PORTABLE_MARKERS
-                    .iter()
-                    .any(|marker| root.join(marker).is_file())
-        })
+        && (config.portable || windows_obs_has_portable_marker(binary_path))
+}
+
+fn windows_obs_has_portable_marker(binary_path: &Path) -> bool {
+    windows_obs_install_root(binary_path).is_some_and(|root| {
+        WINDOWS_PORTABLE_MARKERS
+            .iter()
+            .any(|marker| root.join(marker).is_file())
+    })
+}
+
+fn command_line_matches_portable_mode(
+    portable: bool,
+    marker_present: bool,
+    platform: HostPlatform,
+    arguments: &[std::ffi::OsString],
+) -> bool {
+    if platform != HostPlatform::Windows || marker_present {
+        return true;
+    }
+    let process_is_portable = arguments
+        .iter()
+        .any(|argument| matches!(argument.to_string_lossy().as_ref(), "--portable" | "-p"));
+    portable == process_is_portable
 }
 
 fn should_launch_multi(
@@ -995,7 +1013,7 @@ pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
     same_obs_identity_for_platform(left, right, HostPlatform::current())
 }
 
-fn same_obs_identity_for_platform(left: &Setup, right: &Setup, platform: HostPlatform) -> bool {
+pub fn same_obs_binary(left: &Setup, right: &Setup) -> bool {
     let binary = |setup: &Setup| {
         resolve_executable(
             setup
@@ -1006,6 +1024,20 @@ fn same_obs_identity_for_platform(left: &Setup, right: &Setup, platform: HostPla
         )
     };
     same_path(&binary(left), &binary(right))
+}
+
+pub fn setup_is_portable_for_platform(setup: &Setup, platform: HostPlatform) -> bool {
+    let binary = setup
+        .obs
+        .binary_path
+        .clone()
+        .unwrap_or_else(|| detected_obs_binary_for(&setup.obs.install_kind));
+    let binary = resolve_executable(&binary);
+    is_portable_obs_for_platform(&setup.obs, &binary, platform)
+}
+
+pub fn same_obs_identity_for_platform(left: &Setup, right: &Setup, platform: HostPlatform) -> bool {
+    same_obs_binary(left, right)
         && config_dir_for_platform(left, platform) == config_dir_for_platform(right, platform)
 }
 
@@ -1111,7 +1143,18 @@ fn process_matches_obs_config(
         || setup.obs.websocket_port.is_some_and(|port| {
             command_has_option(arguments, "--websocket_port", &port.to_string())
         });
-    config_matches && port_matches
+    let expected_binary = setup
+        .obs
+        .binary_path
+        .clone()
+        .unwrap_or_else(|| detected_obs_binary_for(&setup.obs.install_kind));
+    let portable_mode_matches = command_line_matches_portable_mode(
+        setup.obs.portable,
+        windows_obs_has_portable_marker(&resolve_executable(&expected_binary)),
+        platform,
+        arguments,
+    );
+    config_matches && port_matches && portable_mode_matches
 }
 
 fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
@@ -1672,6 +1715,56 @@ mod tests {
             &explicitly_portable,
             &binary,
             HostPlatform::MacOS
+        ));
+    }
+
+    #[test]
+    fn portable_command_line_matching_separates_flag_only_and_normal_setups() {
+        let portable_args = ["obs64.exe", "--portable"].map(std::ffi::OsString::from);
+        let short_portable_args = ["obs64.exe", "-p"].map(std::ffi::OsString::from);
+        let normal_args = ["obs64.exe", "--multi"].map(std::ffi::OsString::from);
+
+        assert!(super::command_line_matches_portable_mode(
+            true,
+            false,
+            HostPlatform::Windows,
+            &portable_args
+        ));
+        assert!(super::command_line_matches_portable_mode(
+            true,
+            false,
+            HostPlatform::Windows,
+            &short_portable_args
+        ));
+        assert!(!super::command_line_matches_portable_mode(
+            true,
+            false,
+            HostPlatform::Windows,
+            &normal_args
+        ));
+        assert!(super::command_line_matches_portable_mode(
+            false,
+            false,
+            HostPlatform::Windows,
+            &normal_args
+        ));
+        assert!(!super::command_line_matches_portable_mode(
+            false,
+            false,
+            HostPlatform::Windows,
+            &portable_args
+        ));
+        assert!(super::command_line_matches_portable_mode(
+            false,
+            true,
+            HostPlatform::Windows,
+            &portable_args
+        ));
+        assert!(super::command_line_matches_portable_mode(
+            true,
+            false,
+            HostPlatform::MacOS,
+            &normal_args
         ));
     }
 
