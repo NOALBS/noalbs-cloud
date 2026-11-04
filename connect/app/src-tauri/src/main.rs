@@ -1328,9 +1328,7 @@ mod tests {
             startup_error: None,
             store,
             tokens,
-            supervisor: Mutex::new(Supervisor::with_shutdown_grace(
-                Duration::from_secs(1),
-            )),
+            supervisor: Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(1))),
             link_sessions: Mutex::new(HashMap::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };

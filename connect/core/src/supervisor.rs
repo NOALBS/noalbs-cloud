@@ -170,15 +170,15 @@ fn config_dir_for_platform(setup: &Setup, platform: HostPlatform) -> PathBuf {
             .unwrap_or_default(),
         HostPlatform::Linux if matches!(setup.obs.install_kind, InstallKind::Flatpak) => {
             directories::BaseDirs::new()
-            .map(|dirs| {
-                dirs.home_dir()
-                    .join(".var/app/com.obsproject.Studio/config/obs-studio")
-            })
-            .unwrap_or_else(|| {
-                dirs_config_home()
-                    .join("..")
-                    .join(".var/app/com.obsproject.Studio/config/obs-studio")
-            })
+                .map(|dirs| {
+                    dirs.home_dir()
+                        .join(".var/app/com.obsproject.Studio/config/obs-studio")
+                })
+                .unwrap_or_else(|| {
+                    dirs_config_home()
+                        .join("..")
+                        .join(".var/app/com.obsproject.Studio/config/obs-studio")
+                })
         }
         HostPlatform::Linux => dirs_config_home().join("obs-studio"),
     }
@@ -530,11 +530,8 @@ impl Supervisor {
         if self.crashed_pending.remove(&setup.id) || has_run_sentinel(setup) {
             prepare_after_crash(setup, another_child_uses_config)?;
         }
-        let portable = is_portable_obs_for_platform(
-            &setup.obs,
-            &executable,
-            HostPlatform::current(),
-        );
+        let portable =
+            is_portable_obs_for_platform(&setup.obs, &executable, HostPlatform::current());
         let another_child_running = self
             .children
             .iter_mut()
@@ -998,18 +995,14 @@ pub fn same_obs_identity(left: &Setup, right: &Setup) -> bool {
     same_obs_identity_for_platform(left, right, HostPlatform::current())
 }
 
-fn same_obs_identity_for_platform(
-    left: &Setup,
-    right: &Setup,
-    platform: HostPlatform,
-) -> bool {
+fn same_obs_identity_for_platform(left: &Setup, right: &Setup, platform: HostPlatform) -> bool {
     let binary = |setup: &Setup| {
         resolve_executable(
             setup
                 .obs
                 .binary_path
                 .as_deref()
-            .unwrap_or(&detected_obs_binary_for(&setup.obs.install_kind)),
+                .unwrap_or(&detected_obs_binary_for(&setup.obs.install_kind)),
         )
     };
     same_path(&binary(left), &binary(right))
@@ -1772,12 +1765,8 @@ mod tests {
     #[test]
     fn portable_installs_are_isolated_and_only_same_install_needs_multi() {
         let directory = tempdir().unwrap();
-        let first_binary = directory
-            .path()
-            .join("first/bin/64bit/obs64.exe");
-        let second_binary = directory
-            .path()
-            .join("second/bin/64bit/obs64.exe");
+        let first_binary = directory.path().join("first/bin/64bit/obs64.exe");
+        let second_binary = directory.path().join("second/bin/64bit/obs64.exe");
         let mut first = Setup::new("First portable OBS".into());
         first.obs.binary_path = Some(first_binary.clone());
         first.obs.portable = true;
@@ -1834,10 +1823,8 @@ mod tests {
             "trap 'exit 0' TERM; while :; do sleep 0.05; done",
         );
         let setup = make_setup(&script, &directory.path().join("config"));
-        let mut supervisor = Supervisor::with_timing(
-            Duration::from_secs(1),
-            Duration::from_secs(60),
-        );
+        let mut supervisor =
+            Supervisor::with_timing(Duration::from_secs(1), Duration::from_secs(60));
 
         supervisor.start(&setup, false, None).unwrap();
         supervisor.mark_connected(setup.id, true);
@@ -1848,10 +1835,7 @@ mod tests {
 
         supervisor.clear_connected(setup.id);
 
-        assert_eq!(
-            supervisor.state(&setup),
-            crate::relay::PcObsState::Starting
-        );
+        assert_eq!(supervisor.state(&setup), crate::relay::PcObsState::Starting);
         supervisor.stop(&setup).unwrap();
     }
 

@@ -438,7 +438,9 @@ mod tests {
 
         assert_eq!(
             validate_obs_config_for_platform(&config, HostPlatform::Windows),
-            Err("Separate OBS settings folders are not supported on Windows. Use a portable copy of OBS instead.")
+            Err(
+                "Separate OBS settings folders are not supported on Windows. Use a portable copy of OBS instead."
+            )
         );
     }
 
