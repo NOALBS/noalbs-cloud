@@ -396,8 +396,10 @@ pub struct StartedObs {
 pub struct Supervisor {
     children: HashMap<Uuid, StartedObs>,
     adopted: HashMap<Uuid, (Setup, u32, u64)>,
+    known_setups: Vec<Setup>,
     connected: HashSet<Uuid>,
     crashed_pending: HashSet<Uuid>,
+    crashed_state: HashSet<Uuid>,
     shutdown_grace: std::time::Duration,
     waiting_for_input_after: std::time::Duration,
     flatpak_resolution_timeout: Duration,
@@ -416,8 +418,10 @@ impl Supervisor {
         Self {
             children: HashMap::new(),
             adopted: HashMap::new(),
+            known_setups: Vec::new(),
             connected: HashSet::new(),
             crashed_pending: HashSet::new(),
+            crashed_state: HashSet::new(),
             shutdown_grace,
             waiting_for_input_after: std::time::Duration::from_secs(60),
             flatpak_resolution_timeout: Duration::from_secs(10),
@@ -436,12 +440,22 @@ impl Supervisor {
         }
     }
 
+    pub fn set_known_setups(&mut self, setups: &[Setup]) {
+        self.known_setups = setups.to_vec();
+    }
+
+    fn matching_obs_pids(&self, setup: &Setup) -> Vec<Pid> {
+        matching_obs_pids_for_setups(setup, &self.known_setups)
+    }
+
     pub fn start(
         &mut self,
         setup: &Setup,
         resume: bool,
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
+        let crash_cleanup_pending = self.crashed_pending.contains(&setup.id);
+        self.crashed_state.remove(&setup.id);
         if !self.allow_config_dir_override {
             validate_obs_config_for_platform(&setup.obs, HostPlatform::current())
                 .map_err(SupervisorError::UnsupportedPlatformConfig)?;
@@ -509,7 +523,7 @@ impl Supervisor {
             .adopted
             .iter()
             .any(|(id, (other, _, _))| *id != setup.id && same_process_identity(setup, other));
-        let existing = matching_obs_pids(setup);
+        let existing = self.matching_obs_pids(setup);
         if !sibling_identity {
             if existing.len() == 1 {
                 let pid = existing[0].as_u32();
@@ -545,7 +559,11 @@ impl Supervisor {
                 && child.config_dir == config_dir(setup)
                 && started_obs_is_running(child)
         });
-        if self.crashed_pending.remove(&setup.id) || has_run_sentinel(setup) {
+        if crash_cleanup_pending
+            || self.crashed_pending.remove(&setup.id)
+            || has_run_sentinel(setup)
+        {
+            self.crashed_pending.remove(&setup.id);
             prepare_after_crash(setup, another_child_uses_config)?;
         }
         let portable =
@@ -635,6 +653,12 @@ impl Supervisor {
     }
 
     pub fn state(&mut self, setup: &Setup) -> PcObsState {
+        if self.crashed_state.contains(&setup.id) {
+            if self.matching_obs_pids(setup).is_empty() {
+                return PcObsState::Crashed;
+            }
+            self.crashed_state.remove(&setup.id);
+        }
         if self
             .children
             .get(&setup.id)
@@ -686,6 +710,7 @@ impl Supervisor {
             };
             if crashed {
                 self.crashed_pending.insert(setup.id);
+                self.crashed_state.insert(setup.id);
             }
             if remove_child {
                 self.children.remove(&setup.id);
@@ -711,6 +736,7 @@ impl Supervisor {
                     self.connected.remove(&setup.id);
                     if crashed {
                         self.crashed_pending.insert(setup.id);
+                        self.crashed_state.insert(setup.id);
                     }
                     return if crashed {
                         PcObsState::Crashed
@@ -721,7 +747,7 @@ impl Supervisor {
                 Err(_) => return PcObsState::NotResponding,
             }
         }
-        match matching_obs_pids(setup).as_slice() {
+        match self.matching_obs_pids(setup).as_slice() {
             [_] => PcObsState::WaitingForInput,
             [] if executable_obs_pids(setup).is_empty() => PcObsState::NotRunning,
             _ => PcObsState::Unknown,
@@ -765,7 +791,7 @@ impl Supervisor {
                 .adopted
                 .get(&setup.id)
                 .is_some_and(|(_, pid, start_time)| process_start_time(*pid) == Some(*start_time))
-            || find_matching_obs_with_start_time(setup).is_some()
+            || find_matching_obs_with_start_time_for_setups(setup, &self.known_setups).is_some()
     }
 
     pub fn mark_connected(&mut self, setup_id: Uuid, connected: bool) {
@@ -781,6 +807,7 @@ impl Supervisor {
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        self.crashed_state.remove(&setup.id);
         if self
             .children
             .get(&setup.id)
@@ -791,12 +818,14 @@ impl Supervisor {
         let (pid, expected_start_time, mut child) = match self.children.remove(&setup.id) {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
             None => {
-                if matching_obs_pids(setup).is_empty() {
+                if self.matching_obs_pids(setup).is_empty() {
                     self.connected.remove(&setup.id);
                     self.adopted.remove(&setup.id);
                     return Ok(());
                 }
-                let Some((pid, start_time)) = find_matching_obs_with_start_time(setup) else {
+                let Some((pid, start_time)) =
+                    find_matching_obs_with_start_time_for_setups(setup, &self.known_setups)
+                else {
                     return Err(SupervisorError::Unidentified);
                 };
                 (pid.as_u32(), start_time, None)
@@ -813,7 +842,7 @@ impl Supervisor {
             } else if let Some(child) = child.as_mut() {
                 child.try_wait()?.is_none()
             } else {
-                process_is_running(setup, pid, expected_start_time)
+                process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
             };
             if !running {
                 return Ok(());
@@ -834,7 +863,8 @@ impl Supervisor {
             child.kill()?;
             let _ = child.wait()?;
             self.crashed_pending.insert(setup.id);
-        } else if process_is_running(setup, pid, expected_start_time) {
+        } else if process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
+        {
             force_kill(pid);
             self.crashed_pending.insert(setup.id);
         }
@@ -1058,8 +1088,15 @@ fn started_obs_is_running(child: &mut StartedObs) -> bool {
     child.child.try_wait().ok().flatten().is_none()
 }
 
-fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
-    let matches = matching_obs_pids(setup);
+fn find_matching_obs_with_start_time_for_setups(
+    setup: &Setup,
+    setups: &[Setup],
+) -> Option<(Pid, u64)> {
+    let matches = matching_obs_pids_for_setups(setup, setups);
+    find_matching_obs_start_time(matches)
+}
+
+fn find_matching_obs_start_time(matches: Vec<Pid>) -> Option<(Pid, u64)> {
     if matches.len() != 1 {
         return None;
     }
@@ -1068,6 +1105,31 @@ fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
 }
 
 fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
+    matching_obs_pids_for_setups(setup, std::slice::from_ref(setup))
+}
+
+fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
+    let mut known_setups = setups.to_vec();
+    if !known_setups
+        .iter()
+        .any(|candidate| candidate.id == setup.id)
+    {
+        known_setups.push(setup.clone());
+    }
+    let shared_config_ports = known_setups
+        .iter()
+        .filter(|candidate| {
+            candidate.obs.shared_config
+                && same_obs_identity_for_platform(candidate, setup, HostPlatform::current())
+        })
+        .filter_map(|candidate| candidate.obs.websocket_port)
+        .collect::<Vec<_>>();
+    let config_server_port = setup
+        .obs
+        .shared_config
+        .then(|| read_obs_websocket_config(&config_dir(setup)).ok())
+        .flatten()
+        .map(|config| config.server_port);
     let mut system = System::new();
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
@@ -1091,11 +1153,13 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
                 process_executable_matches(process, &expected)
             };
             (executable_matches
-                && process_matches_obs_config(
+                && process_matches_obs_config_with_shared_ports(
                     setup,
                     HostPlatform::current(),
                     process.environ(),
                     process.cmd(),
+                    &shared_config_ports,
+                    config_server_port,
                 ))
             .then_some(*pid)
         })
@@ -1117,11 +1181,32 @@ fn any_obs_running_for_executable(executable: &Path) -> bool {
         .any(|process| process_executable_matches(process, &expected))
 }
 
+#[cfg(test)]
 fn process_matches_obs_config(
     setup: &Setup,
     platform: HostPlatform,
     environ: &[std::ffi::OsString],
     arguments: &[std::ffi::OsString],
+) -> bool {
+    process_matches_obs_config_with_shared_ports(
+        setup,
+        platform,
+        environ,
+        arguments,
+        &setup.obs.websocket_port.into_iter().collect::<Vec<_>>(),
+        read_obs_websocket_config(&config_dir_for_platform(setup, platform))
+            .ok()
+            .map(|config| config.server_port),
+    )
+}
+
+fn process_matches_obs_config_with_shared_ports(
+    setup: &Setup,
+    platform: HostPlatform,
+    environ: &[std::ffi::OsString],
+    arguments: &[std::ffi::OsString],
+    shared_config_ports: &[u16],
+    config_server_port: Option<u16>,
 ) -> bool {
     let config_matches = match platform {
         HostPlatform::Linux => setup.obs.config_dir_override.as_ref().is_none_or(|config| {
@@ -1140,9 +1225,12 @@ fn process_matches_obs_config(
         HostPlatform::MacOS | HostPlatform::Windows => true,
     };
     let port_matches = !setup.obs.shared_config
-        || setup.obs.websocket_port.is_some_and(|port| {
-            command_has_option(arguments, "--websocket_port", &port.to_string())
-        });
+        || shared_config_port_matches(
+            setup.obs.websocket_port,
+            shared_config_ports,
+            config_server_port,
+            arguments,
+        );
     let expected_binary = setup
         .obs
         .binary_path
@@ -1155,6 +1243,31 @@ fn process_matches_obs_config(
         arguments,
     );
     config_matches && port_matches && portable_mode_matches
+}
+
+fn shared_config_port_matches(
+    setup_port: Option<u16>,
+    shared_config_ports: &[u16],
+    config_server_port: Option<u16>,
+    arguments: &[std::ffi::OsString],
+) -> bool {
+    let has_port_argument = arguments
+        .iter()
+        .any(|argument| argument.to_string_lossy() == "--websocket_port");
+    if has_port_argument {
+        return setup_port.is_some_and(|port| {
+            command_has_option(arguments, "--websocket_port", &port.to_string())
+        });
+    }
+    let Some(config_server_port) = config_server_port else {
+        return false;
+    };
+    setup_port == Some(config_server_port)
+        && shared_config_ports
+            .iter()
+            .filter(|port| **port == config_server_port)
+            .count()
+            == 1
 }
 
 fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
@@ -1398,8 +1511,13 @@ fn wait_for_process_start_time(pid: u32) -> Option<u64> {
     None
 }
 
-fn process_is_running(setup: &Setup, pid: u32, start_time: u64) -> bool {
-    matching_obs_pids(setup)
+fn process_is_running_for_setups(
+    setup: &Setup,
+    pid: u32,
+    start_time: u64,
+    setups: &[Setup],
+) -> bool {
+    matching_obs_pids_for_setups(setup, setups)
         .iter()
         .any(|candidate| candidate.as_u32() == pid && process_start_time(pid) == Some(start_time))
 }
@@ -1658,7 +1776,7 @@ mod tests {
         macos_obs_config_dir, prepare_after_crash, process_start_time,
         same_obs_identity_for_platform, should_launch_multi,
     };
-    use super::{SupervisorError, find_matching_obs_with_start_time, matching_obs_pids};
+    use super::{SupervisorError, find_matching_obs_with_start_time_for_setups, matching_obs_pids};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
     #[test]
@@ -2473,7 +2591,8 @@ int main(int argc, char **argv) {
         }
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0].as_u32(), process.id());
-        let (_, start_time) = find_matching_obs_with_start_time(&setup_x).unwrap();
+        let (_, start_time) =
+            find_matching_obs_with_start_time_for_setups(&setup_x, &[setup_x.clone()]).unwrap();
         assert_eq!(process_start_time(process.id()), Some(start_time));
         assert!(matching_obs_pids(&setup_y).is_empty());
 
@@ -2502,6 +2621,38 @@ int main(int argc, char **argv) {
             HostPlatform::Windows,
             &[],
             &other_port
+        ));
+    }
+
+    #[test]
+    fn shared_config_without_a_port_argument_matches_only_a_unique_config_port() {
+        let no_port_argument = ["obs64.exe"].map(std::ffi::OsString::from);
+        let configured_ports = [4456, 4457];
+        assert!(super::shared_config_port_matches(
+            Some(4456),
+            &configured_ports,
+            Some(4456),
+            &no_port_argument
+        ));
+        assert!(!super::shared_config_port_matches(
+            Some(4456),
+            &[4456, 4456],
+            Some(4456),
+            &no_port_argument
+        ));
+        assert!(!super::shared_config_port_matches(
+            Some(4457),
+            &configured_ports,
+            Some(4456),
+            &no_port_argument
+        ));
+
+        let explicit_port = ["obs64.exe", "--websocket_port", "4457"].map(std::ffi::OsString::from);
+        assert!(super::shared_config_port_matches(
+            Some(4457),
+            &[4456, 4457],
+            Some(4456),
+            &explicit_port
         ));
     }
 
@@ -3024,6 +3175,7 @@ int main(int argc, char **argv) {
             thread::sleep(Duration::from_millis(10));
         }
         assert_eq!(crash_state, crate::relay::PcObsState::Crashed);
+        assert_eq!(supervisor.state(&setup), crate::relay::PcObsState::Crashed);
         let action = crate::watchdog::Watchdog::default().decide(
             Duration::ZERO,
             crate::relay::PcObsState::Crashed,
@@ -3037,6 +3189,7 @@ int main(int argc, char **argv) {
         );
         fs::remove_file(&args).unwrap();
         supervisor.start(&setup, false, None).unwrap();
+        assert_ne!(supervisor.state(&setup), crate::relay::PcObsState::Crashed);
         wait_for_path(&args);
         assert!(
             !fs::read_to_string(args)

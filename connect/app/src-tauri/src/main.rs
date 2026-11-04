@@ -95,6 +95,7 @@ fn build_ui_state(state: &AppState) -> UiState {
         )
     };
     let mut supervisor = state.supervisor.lock().expect("supervisor lock");
+    supervisor.set_known_setups(&setups);
     let sessions = state.link_sessions.lock().expect("link session lock");
     UiState {
         platform: HostPlatform::current().as_str().to_owned(),
@@ -164,6 +165,7 @@ fn save_setup(
         name.trim().to_owned()
     };
     updated_setup.obs = obs;
+    clear_unsupported_config_dir_override(&mut updated_setup.obs, HostPlatform::current());
     validate_setup_identity(&config.setups, &updated_setup)?;
     config.setups[index] = updated_setup.clone();
     state
@@ -219,6 +221,27 @@ fn validate_setup_identity_for_platform(
         }
     }
     Ok(())
+}
+
+fn clear_unsupported_config_dir_override(
+    obs: &mut connect_core::config::ObsLaunchConfig,
+    platform: HostPlatform,
+) -> bool {
+    if obs.config_dir_override.is_some() && validate_obs_config_for_platform(obs, platform).is_err()
+    {
+        obs.config_dir_override = None;
+        true
+    } else {
+        false
+    }
+}
+
+fn remove_unsupported_config_dir_overrides(config: &mut AppConfig, platform: HostPlatform) -> bool {
+    let mut removed = false;
+    for setup in &mut config.setups {
+        removed |= clear_unsupported_config_dir_override(&mut setup.obs, platform);
+    }
+    removed
 }
 
 #[tauri::command]
@@ -625,6 +648,35 @@ fn unpair_setup(
     Ok(get_state(state))
 }
 
+#[tauri::command]
+fn remove_setup(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    remove_setup_state(&state, id)?;
+    let _ = app.emit("connect-state-changed", build_ui_state(&state));
+    let _ = refresh_tray_menu(&app);
+    Ok(get_state(state))
+}
+
+fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<(), String> {
+    {
+        let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+        if !config.setups.iter().any(|setup| setup.id == setup_id) {
+            return Err("setup not found".into());
+        }
+    }
+    clear_pairing_state(state, setup_id, true)?;
+    if let Ok(mut pending) = state.pending_verification_urls.lock() {
+        pending.remove(&setup_id);
+    }
+    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    config.setups.retain(|setup| setup.id != setup_id);
+    state.store.save(&config).map_err(|error| error.to_string())
+}
+
 fn clear_pairing_state(
     state: &AppState,
     setup_id: uuid::Uuid,
@@ -759,6 +811,7 @@ fn obs_state_label(state: PcObsState) -> &'static str {
 fn tray_setup_labels(state: &AppState) -> Vec<(String, String)> {
     let setups = state.config.lock().expect("app config lock").setups.clone();
     let mut supervisor = state.supervisor.lock().expect("supervisor lock");
+    supervisor.set_known_setups(&setups);
     let sessions = state.link_sessions.lock().expect("link session lock");
     setups
         .iter()
@@ -1131,7 +1184,21 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
 
 fn main() {
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
-    let (config, startup_error) = store.load_or_backup();
+    let (mut config, mut startup_error) = store.load_or_backup();
+    if remove_unsupported_config_dir_overrides(&mut config, HostPlatform::current()) {
+        let mut notice =
+            "The separate settings folder isn't supported here and was removed.".to_owned();
+        if let Err(error) = store.save(&config) {
+            notice.push_str(&format!(
+                " The updated configuration could not be saved: {error}"
+            ));
+        }
+        startup_error = Some(
+            startup_error
+                .map(|error| format!("{error}\n{notice}"))
+                .unwrap_or(notice),
+        );
+    }
     let tokens = TokenStore::default_store().expect("token store path");
     let autostart_builder = tauri_plugin_autostart::Builder::new().args(["--minimized"]);
     #[cfg(target_os = "macos")]
@@ -1193,6 +1260,11 @@ fn main() {
                 let _ = app.autolaunch().enable();
             }
             let setups = state.config.lock().expect("app config lock").setups.clone();
+            state
+                .supervisor
+                .lock()
+                .expect("supervisor lock")
+                .set_known_setups(&setups);
             for setup in setups {
                 if setup.obs.start_obs_with_connect {
                     let _ = state
@@ -1220,7 +1292,8 @@ fn main() {
             stop_obs,
             restart_obs,
             enable_websocket,
-            unpair_setup
+            unpair_setup,
+            remove_setup
         ])
         .run(tauri::generate_context!())
         .expect("failed to run NOALBS Cloud Connect");
@@ -1278,6 +1351,48 @@ mod tests {
         );
 
         std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn unsupported_config_dir_overrides_are_removed_only_on_rejecting_platforms() {
+        let mut setup = Setup::new("Legacy setup".into());
+        setup.obs.config_dir_override = Some(std::path::PathBuf::from("/legacy/obs-settings"));
+        let mut second_setup = Setup::new("Another legacy setup".into());
+        second_setup.obs.config_dir_override =
+            Some(std::path::PathBuf::from("/legacy/other-obs-settings"));
+        let mut config = AppConfig {
+            setups: vec![setup, second_setup],
+            ..Default::default()
+        };
+
+        assert!(remove_unsupported_config_dir_overrides(
+            &mut config,
+            HostPlatform::Windows
+        ));
+        assert!(
+            config
+                .setups
+                .iter()
+                .all(|setup| setup.obs.config_dir_override.is_none())
+        );
+        assert!(!remove_unsupported_config_dir_overrides(
+            &mut config,
+            HostPlatform::Windows
+        ));
+
+        for setup in &mut config.setups {
+            setup.obs.config_dir_override = Some(std::path::PathBuf::from("/legacy/obs-settings"));
+        }
+        assert!(!remove_unsupported_config_dir_overrides(
+            &mut config,
+            HostPlatform::Linux
+        ));
+        assert!(
+            config
+                .setups
+                .iter()
+                .all(|setup| setup.obs.config_dir_override.is_some())
+        );
     }
 
     #[test]
@@ -1434,6 +1549,62 @@ mod tests {
         assert_eq!(ui_state.setups[0].obs_state, "not_running");
         assert!(!link_task_abort.is_finished());
         link_task_abort.abort();
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn removing_setup_deletes_pairing_session_and_token() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&test_dir).unwrap();
+        let mut setup = Setup::new("Removed setup".into());
+        setup.pairing = Some(connect_core::config::Pairing {
+            device_id: uuid::Uuid::new_v4(),
+            switcher_id: uuid::Uuid::new_v4(),
+            link_url: "ws://127.0.0.1:11000/link".into(),
+        });
+        let setup_id = setup.id;
+        let store = ConfigStore::new(test_dir.join("config.json"));
+        let tokens = TokenStore::new(test_dir.clone());
+        tokens.set(setup_id, "removed-token").unwrap();
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: store.clone(),
+            tokens: tokens.clone(),
+            supervisor: Mutex::new(Supervisor::default()),
+            link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+        };
+        let (state_tx, _) = watch::channel(PcObsState::Starting);
+        let (_, effective_obs) = watch::channel(None);
+        state.link_sessions.lock().unwrap().insert(
+            setup_id,
+            LinkSession {
+                state: state_tx,
+                effective_obs,
+                task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+            },
+        );
+
+        remove_setup_state(&state, setup_id).unwrap();
+
+        assert!(state.config.lock().unwrap().setups.is_empty());
+        assert!(state.link_sessions.lock().unwrap().is_empty());
+        assert_eq!(tokens.get(setup_id).unwrap(), None);
+        assert!(store.load().unwrap().setups.is_empty());
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
