@@ -16,6 +16,7 @@ tauri-plugin-autostart = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tokio.workspace = true
+tracing.workspace = true
 uuid.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]

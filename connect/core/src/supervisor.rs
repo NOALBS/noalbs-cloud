@@ -1194,7 +1194,7 @@ fn any_obs_running_for_executable(executable: &Path) -> bool {
         .any(|process| process_executable_matches(process, &expected))
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 fn process_matches_obs_config(
     setup: &Setup,
     platform: HostPlatform,
