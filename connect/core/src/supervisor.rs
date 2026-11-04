@@ -139,9 +139,9 @@ pub fn config_dir(setup: &Setup) -> PathBuf {
     }
     #[cfg(target_os = "macos")]
     {
-        return directories::BaseDirs::new()
+        directories::BaseDirs::new()
             .map(|dirs| macos_obs_config_dir(dirs.home_dir()))
-            .unwrap_or_default();
+            .unwrap_or_default()
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -1152,12 +1152,10 @@ fn request_graceful_close(pid: u32) {
 #[cfg(target_os = "macos")]
 fn request_graceful_close(pid: u32) {
     use objc2_app_kit::NSRunningApplication;
-    unsafe {
-        if let Some(application) =
-            NSRunningApplication::runningApplicationWithProcessIdentifier(pid as i32)
-        {
-            application.terminate();
-        }
+    if let Some(application) =
+        NSRunningApplication::runningApplicationWithProcessIdentifier(pid as i32)
+    {
+        application.terminate();
     }
 }
 
@@ -1254,7 +1252,12 @@ fn copy_latest_crash_report(setup: &Setup) -> Result<(), SupervisorError> {
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    fs::copy(&latest, destination.join(file_name))?;
+    let copied = destination.join(file_name);
+    fs::copy(&latest, &copied)?;
+    fs::File::options()
+        .write(true)
+        .open(&copied)?
+        .set_modified(std::time::SystemTime::now())?;
 
     let mut saved = fs::read_dir(&destination)?
         .flatten()
@@ -1427,10 +1430,12 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        StartedObs, Supervisor, SupervisorError, copy_latest_crash_report,
-        find_matching_obs_with_start_time, is_obs_process_name, launch_arguments,
-        macos_obs_binary_candidates, macos_obs_config_dir, matching_obs_pids, prepare_after_crash,
-        process_start_time, resolve_executable,
+        StartedObs, Supervisor, copy_latest_crash_report, is_obs_process_name, launch_arguments,
+        macos_obs_binary_candidates, macos_obs_config_dir, prepare_after_crash, process_start_time,
+    };
+    #[cfg(target_os = "linux")]
+    use super::{
+        SupervisorError, find_matching_obs_with_start_time, matching_obs_pids, resolve_executable,
     };
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
@@ -1466,6 +1471,7 @@ mod tests {
         setup
     }
 
+    #[cfg(target_os = "linux")]
     fn make_manual_setup(binary: &Path, config_dir: &Path) -> Setup {
         let mut setup = Setup::new("Manual OBS".into());
         setup.obs.install_kind = InstallKind::CustomBinary;
@@ -1617,6 +1623,7 @@ mod tests {
         let _ = wrapper.wait().unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn unresolved_flatpak_stop_only_signals_obs_named_descendants() {
         let directory = tempdir().unwrap();
@@ -1744,6 +1751,7 @@ mod tests {
         assert_ne!(wrapper_start_time, 0);
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn start_replaces_a_flatpak_wrapper_after_its_resolved_obs_exits() {
         let directory = tempdir().unwrap();
@@ -1817,6 +1825,7 @@ mod tests {
         assert!(!supervisor.has_child(setup.id));
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn shared_config_process_matching_uses_its_websocket_port() {
         let directory = tempdir().unwrap();
@@ -1890,6 +1899,7 @@ mod tests {
         )));
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn watchdog_restart_uses_the_current_binary_version_for_launch_flags() {
         let directory = tempdir().unwrap();
@@ -1917,6 +1927,7 @@ mod tests {
         assert!(disables_shutdown_check);
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn clean_stop_removes_sentinel_and_unconnected_child_times_out() {
         let directory = tempdir().unwrap();
@@ -1960,6 +1971,7 @@ mod tests {
         );
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn force_kill_cleans_stale_sentinel_before_next_start() {
         let directory = tempdir().unwrap();
@@ -2003,6 +2015,7 @@ mod tests {
         supervisor.stop(&setup).unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn same_identity_setups_start_separate_processes_and_stop_isolated() {
         let directory = tempdir().unwrap();
@@ -2054,6 +2067,7 @@ mod tests {
         supervisor.stop(&setup_b).unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn hand_started_obs_matches_executable_and_xdg_config() {
         let directory = tempdir().unwrap();
@@ -2085,6 +2099,7 @@ mod tests {
         assert!(!manual_obs.wait().unwrap().success());
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn ambiguous_hand_started_obs_is_reported_and_never_controlled() {
         let directory = tempdir().unwrap();
@@ -2128,6 +2143,7 @@ mod tests {
         let _ = second.wait().unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn another_setup_using_the_same_config_keeps_existing_sentinels() {
         let directory = tempdir().unwrap();
@@ -2164,6 +2180,7 @@ mod tests {
         supervisor.stop(&setup_b).unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     fn make_crash_then_run_script(script: &Path, config_dir: &Path, args_path: &Path) {
         let sentinel = config_dir.join(".sentinel");
         let count = config_dir.join("starts");
@@ -2182,6 +2199,7 @@ mod tests {
         );
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn crash_restart_uses_restart_mode_without_streaming() {
         let directory = tempdir().unwrap();
@@ -2224,6 +2242,7 @@ mod tests {
         supervisor.stop(&setup).unwrap();
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn restart_resume_passes_the_tracked_scene_only_for_active_streams() {
         let directory = tempdir().unwrap();
