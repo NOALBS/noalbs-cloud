@@ -663,18 +663,34 @@ fn remove_setup(
 
 fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<(), String> {
     {
-        let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+        let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
         if !config.setups.iter().any(|setup| setup.id == setup_id) {
             return Err("setup not found".into());
         }
+        let mut updated_config = config.clone();
+        updated_config.setups.retain(|setup| setup.id != setup_id);
+        state
+            .store
+            .save(&updated_config)
+            .map_err(|error| error.to_string())?;
+        *config = updated_config;
     }
-    clear_pairing_state(state, setup_id, true)?;
+    let token_result = state
+        .tokens
+        .delete(setup_id)
+        .map_err(|error| error.to_string());
     if let Ok(mut pending) = state.pending_verification_urls.lock() {
         pending.remove(&setup_id);
     }
-    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
-    config.setups.retain(|setup| setup.id != setup_id);
-    state.store.save(&config).map_err(|error| error.to_string())
+    remove_link_session(state, setup_id, true)?;
+    let forget_result = state
+        .supervisor
+        .lock()
+        .map_err(|_| "supervisor lock poisoned".to_owned())
+        .map(|mut supervisor| supervisor.forget(setup_id));
+    forget_result?;
+    token_result?;
+    Ok(())
 }
 
 fn clear_pairing_state(
@@ -1605,6 +1621,87 @@ mod tests {
         assert!(state.link_sessions.lock().unwrap().is_empty());
         assert_eq!(tokens.get(setup_id).unwrap(), None);
         assert!(store.load().unwrap().setups.is_empty());
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn failed_setup_removal_keeps_config_token_and_link_session() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&test_dir).unwrap();
+        let blocked_parent = test_dir.join("not-a-directory");
+        std::fs::write(&blocked_parent, "blocker").unwrap();
+        let mut setup = Setup::new("Kept setup".into());
+        setup.pairing = Some(connect_core::config::Pairing {
+            device_id: uuid::Uuid::new_v4(),
+            switcher_id: uuid::Uuid::new_v4(),
+            link_url: "ws://127.0.0.1:11000/link".into(),
+        });
+        let setup_id = setup.id;
+        let tokens = TokenStore::new(test_dir.clone());
+        tokens.set(setup_id, "kept-token").unwrap();
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: ConfigStore::new(blocked_parent.join("config.json")),
+            tokens: tokens.clone(),
+            supervisor: Mutex::new(Supervisor::default()),
+            link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
+            pending_verification_urls: Mutex::new(HashMap::from([(
+                setup_id,
+                "verification-url".into(),
+            )])),
+        };
+        let (state_tx, _) = watch::channel(PcObsState::Starting);
+        let (_, effective_obs) = watch::channel(None);
+        let link_task = tokio::spawn(std::future::pending::<()>());
+        let link_task_abort = link_task.abort_handle();
+        let command_consumer = tokio::spawn(std::future::pending::<()>());
+        let command_consumer_abort = command_consumer.abort_handle();
+        state.link_sessions.lock().unwrap().insert(
+            setup_id,
+            LinkSession {
+                state: state_tx,
+                effective_obs,
+                task: tauri::async_runtime::JoinHandle::Tokio(link_task),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(command_consumer),
+            },
+        );
+
+        assert!(remove_setup_state(&state, setup_id).is_err());
+
+        assert_eq!(state.config.lock().unwrap().setups[0].id, setup_id);
+        assert!(state.config.lock().unwrap().setups[0].pairing.is_some());
+        assert_eq!(tokens.get(setup_id).unwrap().as_deref(), Some("kept-token"));
+        assert!(state.link_sessions.lock().unwrap().contains_key(&setup_id));
+        assert_eq!(
+            state
+                .pending_verification_urls
+                .lock()
+                .unwrap()
+                .get(&setup_id)
+                .map(String::as_str),
+            Some("verification-url")
+        );
+        assert!(!link_task_abort.is_finished());
+        assert!(!command_consumer_abort.is_finished());
+
+        let session = state
+            .link_sessions
+            .lock()
+            .unwrap()
+            .remove(&setup_id)
+            .unwrap();
+        session.task.abort();
+        session.monitor.abort();
+        session.command_consumer.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 

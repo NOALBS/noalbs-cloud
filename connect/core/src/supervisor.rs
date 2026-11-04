@@ -806,6 +806,14 @@ impl Supervisor {
         self.connected.remove(&setup_id);
     }
 
+    pub fn forget(&mut self, setup_id: Uuid) {
+        self.children.remove(&setup_id);
+        self.adopted.remove(&setup_id);
+        self.crashed_pending.remove(&setup_id);
+        self.crashed_state.remove(&setup_id);
+        self.connected.remove(&setup_id);
+    }
+
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
         self.crashed_state.remove(&setup.id);
         if self
@@ -1251,9 +1259,7 @@ fn shared_config_port_matches(
     config_server_port: Option<u16>,
     arguments: &[std::ffi::OsString],
 ) -> bool {
-    let has_port_argument = arguments
-        .iter()
-        .any(|argument| argument.to_string_lossy() == "--websocket_port");
+    let has_port_argument = command_has_option_name(arguments, "--websocket_port");
     if has_port_argument {
         return setup_port.is_some_and(|port| {
             command_has_option(arguments, "--websocket_port", &port.to_string())
@@ -1301,12 +1307,23 @@ fn is_nix_wrapped_binary(exe: &Path, expected: &Path) -> bool {
 }
 
 fn command_has_option(arguments: &[std::ffi::OsString], option: &str, value: &str) -> bool {
-    arguments
-        .windows(2)
-        .any(|pair| pair[0].to_string_lossy() == option && pair[1].to_string_lossy() == value)
-        || arguments
-            .iter()
-            .any(|argument| argument.to_string_lossy() == format!("{option}={value}"))
+    let option_with_equals = format!("{option}=");
+    arguments.iter().enumerate().any(|(index, argument)| {
+        let argument = argument.to_string_lossy();
+        argument.strip_prefix(&option_with_equals) == Some(value)
+            || (argument == option
+                && arguments
+                    .get(index + 1)
+                    .is_some_and(|next| next.to_string_lossy() == value))
+    })
+}
+
+fn command_has_option_name(arguments: &[std::ffi::OsString], option: &str) -> bool {
+    let option_with_equals = format!("{option}=");
+    arguments.iter().any(|argument| {
+        let argument = argument.to_string_lossy();
+        argument == option || argument.starts_with(&option_with_equals)
+    })
 }
 
 fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
@@ -2654,6 +2671,97 @@ int main(int argc, char **argv) {
             Some(4456),
             &explicit_port
         ));
+
+        let equals_port = ["obs64.exe", "--websocket_port=4457"].map(std::ffi::OsString::from);
+        assert!(super::command_has_option(
+            &equals_port,
+            "--websocket_port",
+            "4457"
+        ));
+        assert!(!super::command_has_option(
+            &equals_port,
+            "--websocket_port",
+            "4456"
+        ));
+        assert!(super::shared_config_port_matches(
+            Some(4457),
+            &[4456, 4457],
+            Some(4456),
+            &equals_port
+        ));
+        assert!(!super::shared_config_port_matches(
+            Some(4456),
+            &[4456],
+            Some(4456),
+            &equals_port
+        ));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn forgetting_setup_allows_replacement_to_adopt_its_running_process() {
+        let directory = tempdir().unwrap();
+        let xdg_config = directory.path().join("xdg");
+        let config_dir = xdg_config.join("obs-studio");
+        let binary = resolve_executable(Path::new("sleep"));
+        let mut manual_obs = Command::new(&binary)
+            .arg("30")
+            .env("XDG_CONFIG_HOME", &xdg_config)
+            .spawn()
+            .unwrap();
+        let pid = manual_obs.id();
+        let start_time = (0..100)
+            .find_map(|_| {
+                let start_time = process_start_time(pid);
+                if start_time.is_none() {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                start_time
+            })
+            .expect("OBS process start time");
+        let setup = make_manual_setup(&binary, &config_dir);
+        let mut replacement = setup.clone();
+        replacement.id = uuid::Uuid::new_v4();
+        let mut supervisor = Supervisor::with_shutdown_grace(Duration::from_millis(100));
+        let placeholder_child = Command::new("true").spawn().unwrap();
+        let placeholder_pid = placeholder_child.id();
+        supervisor.children.insert(
+            setup.id,
+            StartedObs {
+                setup_id: setup.id,
+                setup: setup.clone(),
+                pid: placeholder_pid,
+                child: placeholder_child,
+                started: Instant::now(),
+                process_start_time: process_start_time(placeholder_pid).unwrap_or_default(),
+                multi: false,
+                config_dir: config_dir.clone(),
+                is_flatpak: false,
+                flatpak_wrapper_start_time: None,
+                flatpak_obs: None,
+            },
+        );
+        supervisor
+            .adopted
+            .insert(setup.id, (setup.clone(), pid, start_time));
+        supervisor.connected.insert(setup.id);
+        supervisor.crashed_pending.insert(setup.id);
+        supervisor.crashed_state.insert(setup.id);
+
+        supervisor.forget(setup.id);
+
+        assert!(!supervisor.has_child(setup.id));
+        assert!(!supervisor.adopted.contains_key(&setup.id));
+        assert!(!supervisor.connected.contains(&setup.id));
+        assert!(!supervisor.crashed_pending.contains(&setup.id));
+        assert!(!supervisor.crashed_state.contains(&setup.id));
+        assert_eq!(process_start_time(pid), Some(start_time));
+        assert_eq!(supervisor.start(&replacement, false, None).unwrap(), pid);
+        assert!(supervisor.adopted.contains_key(&replacement.id));
+        assert!(!supervisor.has_child(replacement.id));
+
+        supervisor.stop(&replacement).unwrap();
+        assert!(!manual_obs.wait().unwrap().success());
     }
 
     #[test]
