@@ -117,7 +117,8 @@ async fn create_pairing(
         verification_url: format!("{}/connect?code={user_code}", state.dashboard_url),
         user_code,
         expires_in: PAIRING_LIFETIME_SECONDS as u32,
-        interval: 5,
+        // Polls share the sign-in limit (one per 6 s refill), so stay below it.
+        interval: 10,
     }))
 }
 
