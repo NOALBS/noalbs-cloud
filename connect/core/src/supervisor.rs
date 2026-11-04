@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     env, fs,
+    io::Write,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     time::Instant,
@@ -60,9 +61,26 @@ pub fn enable_obs_websocket(config_dir: &Path) -> Result<String, SupervisorError
     config["server_password"] = Value::String(password.clone());
     let bytes = serde_json::to_vec_pretty(&config)
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
-    let temp = path.with_extension("json.tmp");
-    std::fs::write(&temp, bytes)?;
-    std::fs::rename(temp, path)?;
+    let temp = path.with_file_name(format!("config.json.tmp-{}", Uuid::new_v4()));
+    let write_result = (|| {
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options.open(&temp)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(&temp, &path)?;
+        Ok::<(), std::io::Error>(())
+    })();
+    if write_result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    write_result?;
     Ok(password)
 }
 
