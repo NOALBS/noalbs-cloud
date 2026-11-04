@@ -97,7 +97,15 @@ pub fn enable_obs_websocket_on_port(
     config["auth_required"] = Value::Bool(true);
     config["first_load"] = Value::Bool(false);
     config["server_password"] = Value::String(password.clone());
-    config["server_port"] = Value::from(websocket_port.unwrap_or(4455));
+    let port = websocket_port.unwrap_or_else(|| {
+        config
+            .get("server_port")
+            .and_then(Value::as_u64)
+            .and_then(|port| u16::try_from(port).ok())
+            .filter(|port| *port != 0)
+            .unwrap_or(4455)
+    });
+    config["server_port"] = Value::from(port);
     let bytes = serde_json::to_vec_pretty(&config)
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
     let temp = path.with_file_name(format!("config.json.tmp-{}", Uuid::new_v4()));
@@ -1038,6 +1046,24 @@ mod tests {
             fs::metadata(path).unwrap().permissions().mode() & 0o777,
             0o600
         );
+    }
+
+    #[test]
+    fn enabling_websocket_preserves_a_valid_existing_port_without_an_override() {
+        let directory = tempdir().unwrap();
+        let config_dir = directory.path().join("obs-studio");
+        let path = config_dir.join("plugin_config/obs-websocket/config.json");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, r#"{"server_port":4459}"#).unwrap();
+
+        super::enable_obs_websocket_on_port(&config_dir, None).unwrap();
+        let config: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(config["server_port"], 4459);
+
+        fs::write(&path, r#"{"server_port":"invalid"}"#).unwrap();
+        super::enable_obs_websocket_on_port(&config_dir, None).unwrap();
+        let config: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(config["server_port"], 4455);
     }
 
     #[test]
