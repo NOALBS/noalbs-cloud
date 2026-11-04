@@ -245,6 +245,17 @@ fn reset_obs_status(status: &mut SwitcherStatus) {
     status.pc = pc;
 }
 
+fn set_pc_device_name(status: &mut SwitcherStatus, name: &str) -> bool {
+    let Some(pc) = &mut status.pc else {
+        return false;
+    };
+    if pc.device_name.as_deref() == Some(name) {
+        return false;
+    }
+    pc.device_name = Some(name.to_owned());
+    true
+}
+
 fn should_close_for_reconnect(
     requested_device_id: Option<Uuid>,
     session_device_id: Option<Uuid>,
@@ -784,17 +795,22 @@ impl Connection {
             return Ok(Flow::Continue);
         };
         let switcher_id = session.switcher_id;
-        let switcher = if let Some(token_hash) = session.device_token_hash.as_deref() {
-            db::connect::by_token_hash(&self.shared.db, token_hash)
+        let (switcher, device) = if let Some(token_hash) = session.device_token_hash.as_deref() {
+            match db::connect::by_token_hash(&self.shared.db, token_hash)
                 .await?
                 .filter(|(device, switcher)| {
                     Some(device.id) == session.device_id && switcher.id == switcher_id
-                })
-                .map(|(_, switcher)| switcher)
+                }) {
+                Some((device, switcher)) => (Some(switcher), Some(device)),
+                None => (None, None),
+            }
         } else {
-            db::switchers::get(&self.shared.db, switcher_id)
-                .await?
-                .filter(|switcher| switcher.connect_token_hash == session.token_hash)
+            (
+                db::switchers::get(&self.shared.db, switcher_id)
+                    .await?
+                    .filter(|switcher| switcher.connect_token_hash == session.token_hash),
+                None,
+            )
         };
 
         // Deleted or revoked, or its link was replaced: this session no longer works.
@@ -802,6 +818,12 @@ impl Connection {
             tracing::info!(%switcher_id, "Switcher deleted or its link replaced; disconnecting");
             return self.refuse(RequestErrorKind::AuthenticationFailed).await;
         };
+
+        if let Some(device) = device {
+            session.status.update(|status| {
+                set_pc_device_name(status, &device.name);
+            });
+        }
 
         let obs_settings = (switcher.port, switcher.password.clone());
         if obs_settings != session.obs_settings {
@@ -1102,7 +1124,7 @@ mod tests {
 
     use super::{
         Identify, Response, ResponseKind, reconnect_device_id, reset_obs_status,
-        should_close_for_reconnect,
+        set_pc_device_name, should_close_for_reconnect,
     };
 
     #[test]
@@ -1198,5 +1220,46 @@ mod tests {
                 obs_version: Some("31.0".into()),
             })
         );
+    }
+
+    #[test]
+    fn set_pc_device_name_updates_the_connect_status() {
+        let mut status = SwitcherStatus::connected(true);
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Old PC name".into()),
+            obs: PcObsState::Unknown,
+            obs_version: None,
+        });
+
+        assert!(set_pc_device_name(&mut status, "New PC name"));
+        assert_eq!(
+            status.pc.as_ref().and_then(|pc| pc.device_name.as_deref()),
+            Some("New PC name")
+        );
+    }
+
+    #[test]
+    fn set_pc_device_name_returns_false_when_the_name_is_unchanged() {
+        let mut status = SwitcherStatus::connected(true);
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Studio PC".into()),
+            obs: PcObsState::Unknown,
+            obs_version: None,
+        });
+        let before = status.clone();
+
+        assert!(!set_pc_device_name(&mut status, "Studio PC"));
+        assert_eq!(status, before);
+    }
+
+    #[test]
+    fn set_pc_device_name_is_a_noop_without_a_connect_pc() {
+        let mut status = SwitcherStatus::connected(true);
+        let before = status.clone();
+
+        assert!(!set_pc_device_name(&mut status, "Studio PC"));
+        assert_eq!(status, before);
     }
 }

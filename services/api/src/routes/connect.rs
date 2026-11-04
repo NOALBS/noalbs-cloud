@@ -308,6 +308,14 @@ async fn rename_device(
     let device = db::connect::rename(&state.db, access.switcher.id, device_id, &request.name)
         .await?
         .ok_or_else(|| ApiError::not_found("Connect device not found"))?;
+    state
+        .nats
+        .publish(live::config_subject(access.switcher.id), "".into())
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "Couldn't announce the Connect device rename");
+            ApiError::internal()
+        })?;
     Ok(Json(device.into()))
 }
 
