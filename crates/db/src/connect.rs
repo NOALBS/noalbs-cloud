@@ -45,6 +45,7 @@ pub struct Pairing {
     pub expires_at: DateTime<Utc>,
     pub switcher_id: Option<Uuid>,
     pub confirmed_by: Option<Uuid>,
+    pub confirmed_by_name: Option<String>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -65,7 +66,10 @@ pub struct ConnectDevice {
 pub enum Claim {
     Expired,
     Pending,
-    Claimed(ConnectDevice),
+    Claimed {
+        device: ConnectDevice,
+        confirmed_by_name: Option<String>,
+    },
 }
 
 pub fn normalize_user_code(code: &str) -> Option<String> {
@@ -138,6 +142,7 @@ pub async fn confirm_pairing(
     user_code: &str,
     switcher_id: Uuid,
     user_id: Uuid,
+    confirmed_by_name: &str,
 ) -> Result<bool> {
     let Some(user_code) = normalize_user_code(user_code) else {
         return Ok(false);
@@ -145,13 +150,14 @@ pub async fn confirm_pairing(
     let result = sqlx::query(
         "
         UPDATE connect_pairings
-        SET switcher_id = $2, confirmed_by = $3
+        SET switcher_id = $2, confirmed_by = $3, confirmed_by_name = $4
         WHERE user_code = $1 AND expires_at > now() AND switcher_id IS NULL
         ",
     )
     .bind(user_code)
     .bind(switcher_id)
     .bind(user_id)
+    .bind(confirmed_by_name)
     .execute(pool)
     .await?;
     Ok(result.rows_affected() > 0)
@@ -199,7 +205,10 @@ pub async fn claim_pairing(
         .execute(&mut *tx)
         .await?;
     tx.commit().await?;
-    Ok(Claim::Claimed(device))
+    Ok(Claim::Claimed {
+        device,
+        confirmed_by_name: pairing.confirmed_by_name,
+    })
 }
 
 #[tracing::instrument(skip(pool))]

@@ -42,11 +42,21 @@ async fn claim_is_pending_until_confirmed_and_then_creates_device(pool: PgPool) 
         Claim::Pending
     ));
     assert!(
-        connect::confirm_pairing(&pool, "abcd-2345", switcher_id, user_id)
+        connect::confirm_pairing(&pool, "abcd-2345", switcher_id, user_id, "Workspace Owner")
             .await
             .unwrap()
     );
-    let Claim::Claimed(device) = connect::claim_pairing(&pool, "device-ABCD2345", "token-hash")
+    let event_count: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM switcher_events WHERE switcher_id = $1")
+            .bind(switcher_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(event_count, 0);
+    let Claim::Claimed {
+        device,
+        confirmed_by_name,
+    } = connect::claim_pairing(&pool, "device-ABCD2345", "token-hash")
         .await
         .unwrap()
     else {
@@ -55,6 +65,7 @@ async fn claim_is_pending_until_confirmed_and_then_creates_device(pool: PgPool) 
     assert_eq!(device.switcher_id, switcher_id);
     assert_eq!(device.name, "Studio PC");
     assert_eq!(device.created_by, Some(user_id));
+    assert_eq!(confirmed_by_name.as_deref(), Some("Workspace Owner"));
     assert!(matches!(
         connect::claim_pairing(&pool, "device-ABCD2345", "another-hash")
             .await
@@ -69,9 +80,15 @@ async fn confirmed_pairing_survives_confirmer_deletion(pool: PgPool) {
     let confirmer = users::create(&pool).await.unwrap();
     create_pairing(&pool, "RSTU6789", Utc::now() + Duration::minutes(10)).await;
     assert!(
-        connect::confirm_pairing(&pool, "RSTU-6789", switcher_id, confirmer.id)
-            .await
-            .unwrap()
+        connect::confirm_pairing(
+            &pool,
+            "RSTU-6789",
+            switcher_id,
+            confirmer.id,
+            "Former member"
+        )
+        .await
+        .unwrap()
     );
 
     sqlx::query("DELETE FROM users WHERE id = $1")
@@ -80,7 +97,10 @@ async fn confirmed_pairing_survives_confirmer_deletion(pool: PgPool) {
         .await
         .unwrap();
 
-    let Claim::Claimed(device) = connect::claim_pairing(&pool, "device-RSTU6789", "device-token")
+    let Claim::Claimed {
+        device,
+        confirmed_by_name,
+    } = connect::claim_pairing(&pool, "device-RSTU6789", "device-token")
         .await
         .unwrap()
     else {
@@ -88,6 +108,7 @@ async fn confirmed_pairing_survives_confirmer_deletion(pool: PgPool) {
     };
     assert_eq!(device.switcher_id, switcher_id);
     assert_eq!(device.created_by, None);
+    assert_eq!(confirmed_by_name.as_deref(), Some("Former member"));
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
@@ -111,13 +132,14 @@ async fn revoke_is_scoped_to_its_switcher(pool: PgPool) {
         .unwrap();
     create_pairing(&pool, "JKLM2345", Utc::now() + Duration::minutes(10)).await;
     assert!(
-        connect::confirm_pairing(&pool, "JKLM-2345", switcher_id, user_id)
+        connect::confirm_pairing(&pool, "JKLM-2345", switcher_id, user_id, "Workspace Owner")
             .await
             .unwrap()
     );
-    let Claim::Claimed(device) = connect::claim_pairing(&pool, "device-JKLM2345", "revoke-token")
-        .await
-        .unwrap()
+    let Claim::Claimed { device, .. } =
+        connect::claim_pairing(&pool, "device-JKLM2345", "revoke-token")
+            .await
+            .unwrap()
     else {
         panic!("confirmed pairing should be claimed");
     };
@@ -143,12 +165,13 @@ async fn revoke_is_scoped_to_its_switcher(pool: PgPool) {
 async fn revoked_device_is_not_found_by_token(pool: PgPool) {
     let (user_id, _, switcher_id) = fixture(&pool).await;
     create_pairing(&pool, "NPQR6789", Utc::now() + Duration::minutes(10)).await;
-    connect::confirm_pairing(&pool, "NPQR6789", switcher_id, user_id)
+    connect::confirm_pairing(&pool, "NPQR6789", switcher_id, user_id, "Workspace Owner")
         .await
         .unwrap();
-    let Claim::Claimed(device) = connect::claim_pairing(&pool, "device-NPQR6789", "revoked-token")
-        .await
-        .unwrap()
+    let Claim::Claimed { device, .. } =
+        connect::claim_pairing(&pool, "device-NPQR6789", "revoked-token")
+            .await
+            .unwrap()
     else {
         panic!("confirmed pairing should be claimed");
     };

@@ -163,12 +163,34 @@ async fn poll_pairing(
             "authorization_pending",
             "Waiting for pairing confirmation",
         )),
-        db::connect::Claim::Claimed(device) => Ok(Json(PairingClaimed {
-            device_id: device.id,
-            device_token,
-            switcher_id: device.switcher_id,
-            link_url: state.links.link_url(),
-        })),
+        db::connect::Claim::Claimed {
+            device,
+            confirmed_by_name,
+        } => {
+            if let Err(error) = live::record_event(
+                &state.db,
+                &state.nats,
+                device.switcher_id,
+                EventDetail::ConnectDevicePaired {
+                    name: device.name.clone(),
+                    by: confirmed_by_name,
+                },
+            )
+            .await
+            {
+                tracing::warn!(
+                    %error,
+                    switcher_id = %device.switcher_id,
+                    "Failed to record a Connect device pairing"
+                );
+            }
+            Ok(Json(PairingClaimed {
+                device_id: device.id,
+                device_token,
+                switcher_id: device.switcher_id,
+                link_url: state.links.link_url(),
+            }))
+        }
     }
 }
 
@@ -221,14 +243,13 @@ async fn confirm_pairing(
 ) -> ApiResult<StatusCode> {
     let access = authorized.into_access();
     access.workspace.members_only()?;
-    let pairing = db::connect::pairing_by_user_code(&state.db, &request.user_code)
-        .await?
-        .ok_or_else(|| ApiError::not_found("Pairing code not found or already confirmed"))?;
+    let by = access.workspace.display_name(&state).await?;
     let confirmed = db::connect::confirm_pairing(
         &state.db,
         &request.user_code,
         access.switcher.id,
         access.workspace.user.id(),
+        &by,
     )
     .await?;
     if !confirmed {
@@ -236,17 +257,6 @@ async fn confirm_pairing(
             "Pairing code not found or already confirmed",
         ));
     }
-    let by = access.workspace.display_name(&state).await?;
-    live::record_event(
-        &state.db,
-        &state.nats,
-        access.switcher.id,
-        EventDetail::ConnectDevicePaired {
-            name: pairing.name,
-            by: Some(by),
-        },
-    )
-    .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
