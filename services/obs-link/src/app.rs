@@ -223,8 +223,8 @@ pub enum InnerReply {
 
 /// News for a connection from NATS.
 enum Control {
-    /// The API saved settings for this switcher.
-    ConfigChanged,
+    /// The API saved settings or renamed a Connect device for this switcher.
+    ConfigChanged(live::ConfigChange),
     /// Another connection identified for the same switcher.
     TakenOver,
     /// Someone watches the audio levels.
@@ -267,6 +267,14 @@ fn reconnect_device_id(payload: &[u8]) -> Option<Uuid> {
     serde_json::from_slice::<live::Reconnect>(payload)
         .unwrap_or(live::Reconnect { device_id: None })
         .device_id
+}
+
+fn parse_config_change(payload: &[u8]) -> live::ConfigChange {
+    serde_json::from_slice(payload).unwrap_or_default()
+}
+
+fn should_refresh_device_name(renamed_device_id: Uuid, session_device_id: Option<Uuid>) -> bool {
+    Some(renamed_device_id) == session_device_id
 }
 
 /// A browser source that identified as a switcher.
@@ -759,7 +767,17 @@ impl Connection {
                 self.taken_over = true;
                 self.refuse(RequestErrorKind::AlreadyConnected).await
             }
-            Control::ConfigChanged => self.reload().await,
+            Control::ConfigChanged(change) => match change.renamed_device_id {
+                Some(device_id) => {
+                    let session_device_id =
+                        self.session.as_ref().and_then(|session| session.device_id);
+                    if should_refresh_device_name(device_id, session_device_id) {
+                        self.refresh_device_name().await?;
+                    }
+                    Ok(Flow::Continue)
+                }
+                None => self.reload().await,
+            },
             Control::Reconnect { device_id } => {
                 let session_device_id = self.session.as_ref().and_then(|session| session.device_id);
                 if should_close_for_reconnect(device_id, session_device_id) {
@@ -873,6 +891,28 @@ impl Connection {
         }
 
         Ok(Flow::Continue)
+    }
+
+    async fn refresh_device_name(&self) -> Result<()> {
+        let Some(session) = self.session.as_ref() else {
+            return Ok(());
+        };
+        let Some(token_hash) = session.device_token_hash.as_deref() else {
+            return Ok(());
+        };
+        let Some((device, switcher)) =
+            db::connect::by_token_hash(&self.shared.db, token_hash).await?
+        else {
+            return Ok(());
+        };
+        if Some(device.id) != session.device_id || switcher.id != session.switcher_id {
+            return Ok(());
+        }
+
+        session.status.update(|status| {
+            set_pc_device_name(status, &device.name);
+        });
+        Ok(())
     }
 
     async fn cleanup(&mut self) {
@@ -1022,7 +1062,9 @@ async fn listen_for_control(
 
     loop {
         let message = tokio::select! {
-            Some(_) = config.next() => Control::ConfigChanged,
+            Some(message) = config.next() => {
+                Control::ConfigChanged(parse_config_change(&message.payload))
+            }
             Some(message) = takeover.next() => {
                 match serde_json::from_slice::<Takeover>(&message.payload) {
                     Ok(other) if other.connection_id != connection_id => Control::TakenOver,
@@ -1123,8 +1165,9 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        Identify, Response, ResponseKind, reconnect_device_id, reset_obs_status,
-        set_pc_device_name, should_close_for_reconnect,
+        Identify, Response, ResponseKind, parse_config_change, reconnect_device_id,
+        reset_obs_status, set_pc_device_name, should_close_for_reconnect,
+        should_refresh_device_name,
     };
 
     #[test]
@@ -1140,6 +1183,44 @@ mod tests {
             Some(other_device_id)
         ));
         assert!(!should_close_for_reconnect(Some(device_id), None));
+    }
+
+    #[test]
+    fn empty_or_invalid_config_payload_means_settings_changed() {
+        assert_eq!(parse_config_change(b""), live::ConfigChange::default());
+        assert_eq!(
+            parse_config_change(b"not-json"),
+            live::ConfigChange::default()
+        );
+    }
+
+    #[test]
+    fn config_change_payload_identifies_a_renamed_device() {
+        let device_id = Uuid::from_u128(1);
+        let payload = serde_json::to_vec(&live::ConfigChange {
+            renamed_device_id: Some(device_id),
+        })
+        .unwrap();
+
+        assert_eq!(
+            parse_config_change(&payload),
+            live::ConfigChange {
+                renamed_device_id: Some(device_id),
+            }
+        );
+    }
+
+    #[test]
+    fn only_the_matching_connect_device_is_refreshed() {
+        let device_id = Uuid::from_u128(1);
+        let other_device_id = Uuid::from_u128(2);
+
+        assert!(should_refresh_device_name(device_id, Some(device_id)));
+        assert!(!should_refresh_device_name(
+            device_id,
+            Some(other_device_id)
+        ));
+        assert!(!should_refresh_device_name(device_id, None));
     }
 
     #[test]

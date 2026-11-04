@@ -701,6 +701,13 @@ pub struct Reconnect {
     pub device_id: Option<Uuid>,
 }
 
+/// An empty or unparsable payload means settings changed.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConfigChange {
+    #[serde(default)]
+    pub renamed_device_id: Option<Uuid>,
+}
+
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;

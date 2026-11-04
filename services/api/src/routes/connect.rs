@@ -310,7 +310,14 @@ async fn rename_device(
         .ok_or_else(|| ApiError::not_found("Connect device not found"))?;
     state
         .nats
-        .publish(live::config_subject(access.switcher.id), "".into())
+        .publish(
+            live::config_subject(access.switcher.id),
+            serde_json::to_vec(&live::ConfigChange {
+                renamed_device_id: Some(device.id),
+            })
+            .expect("serializing a config change cannot fail")
+            .into(),
+        )
         .await
         .map_err(|error| {
             tracing::error!(%error, "Couldn't announce the Connect device rename");
