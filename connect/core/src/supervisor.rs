@@ -36,6 +36,8 @@ pub enum SupervisorError {
     WebsocketDisabled,
     #[error("OBS process is not identified; refusing to control it")]
     Unidentified,
+    #[error("OBS did not exit after being force-closed")]
+    DidNotExit,
     #[error("{0}")]
     UnsupportedPlatformConfig(&'static str),
 }
@@ -883,19 +885,19 @@ impl Supervisor {
         Ok(())
     }
 
-    fn reap_child_after_kill(mut child: std::process::Child) -> Result<bool, SupervisorError> {
+    fn reap_child_after_kill(mut child: std::process::Child) -> Result<(), SupervisorError> {
         child.kill()?;
         let deadline = Instant::now() + Duration::from_secs(5);
         while child.try_wait()?.is_none() && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(100));
         }
         if child.try_wait()?.is_some() {
-            Ok(true)
+            Ok(())
         } else {
             std::thread::spawn(move || {
                 let _ = child.wait();
             });
-            Ok(false)
+            Err(SupervisorError::DidNotExit)
         }
     }
 
@@ -1814,6 +1816,14 @@ mod tests {
     };
     use super::{SupervisorError, find_matching_obs_with_start_time_for_setups, matching_obs_pids};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
+
+    #[test]
+    fn force_closed_process_that_does_not_exit_has_an_error() {
+        assert_eq!(
+            SupervisorError::DidNotExit.to_string(),
+            "OBS did not exit after being force-closed"
+        );
+    }
 
     #[test]
     fn macos_discovery_candidates_and_config_path_are_platform_specific() {
