@@ -241,6 +241,7 @@ impl Setup {
 pub struct AppConfig {
     pub settings: AppSettings,
     pub setups: Vec<Setup>,
+    pub pending_token_deletions: Vec<uuid::Uuid>,
 }
 
 #[derive(Debug, Clone)]
@@ -336,11 +337,14 @@ mod tests {
         let store = ConfigStore::new(dir.path().join("noalbs-connect/config.json"));
         let mut config = AppConfig::default();
         config.setups.push(Setup::new("Studio".into()));
+        let pending_token_deletion = uuid::Uuid::new_v4();
+        config.pending_token_deletions.push(pending_token_deletion);
         store.save(&config).unwrap();
         let loaded = store.load().unwrap();
         assert!(loaded.settings.start_at_login);
         assert_eq!(loaded.setups[0].name, "Studio");
         assert!(!loaded.setups[0].obs.start_obs_with_connect);
+        assert_eq!(loaded.pending_token_deletions, [pending_token_deletion]);
     }
 
     #[test]
