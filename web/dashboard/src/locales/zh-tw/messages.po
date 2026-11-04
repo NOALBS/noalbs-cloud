@@ -652,6 +652,14 @@ msgstr "{0} 個工作區"
 msgid "{0}–{1}"
 msgstr "{0}–{1}"
 
+#. placeholder {0}: Math.round(box.x)
+#. placeholder {1}: Math.round(box.y)
+#. placeholder {2}: Math.round(box.width)
+#. placeholder {3}: Math.round(box.height)
+#: src/components/live/placement-canvas.tsx
+msgid "{0}, {1}, {2} by {3}"
+msgstr ""
+
 #. placeholder {0}: addon.code
 #. placeholder {1}: addon.quantity
 #. placeholder {2}: formatDate(addon.held_until ?? "")
@@ -801,6 +809,10 @@ msgstr "{name} 已移除"
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "{name} was removed"
 msgstr "{name} 已移除"
+
+#: src/components/live/placement-canvas.tsx
+msgid "{name}: drag to move, pull a corner to resize, or use the arrow keys"
+msgstr ""
 
 #. placeholder {0}: roleLabels()[role]
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -986,9 +998,23 @@ msgstr "24 小時"
 msgid "7 days"
 msgstr "7 天"
 
+#. placeholder {0}: canvas.width
+#. placeholder {1}: canvas.height
+#: src/components/live/source-position.tsx
+msgid "A box in pixels on the {0}×{1} screen, from its top left. The source fits inside it, keeping its shape."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "A browser source in OBS links it to this switcher, with no ports to open."
 msgstr "透過 OBS 中的瀏覽器來源連結到這個切換器，不必開放任何連接埠。"
+
+#: src/lib/api-messages.ts
+msgid "A browser source is 1 to 8192 pixels wide and high."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "A browser source's frame rate is 1 to 60."
+msgstr ""
 
 #. placeholder {0}: firstSwitcher.name
 #: src/components/app-shell.tsx
@@ -1008,6 +1034,14 @@ msgid "a deleted user"
 msgstr "已刪除的使用者"
 
 #: src/lib/api-messages.ts
+msgid "A font's name is at most 128 characters."
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "A full-screen box has none."
+msgstr ""
+
+#: src/lib/api-messages.ts
 msgid "A limit is out of range"
 msgstr "有限制值超出範圍"
 
@@ -1023,6 +1057,10 @@ msgstr "有 Moblin 嘗試使用錯誤的密碼。請檢查它遠端控制設定�
 #: src/components/admin/products.tsx
 msgid "A new price is created in Stripe for new subscriptions.{0}"
 msgstr "新訂閱會使用在 Stripe 中建立的新價格。{0}"
+
+#: src/components/live/source-editor.tsx
+msgid "A new source with a copy of its settings, filters and placement. Changing one doesn’t change the other."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "A notice has to end after it starts"
@@ -1045,6 +1083,10 @@ msgstr "{0} 方案的付款失敗。請更新信用卡以保留方案。"
 msgid "A payment for this workspace failed. Update the card under Manage billing before handing it over."
 msgstr "這個工作區的付款失敗。移交前請先在「管理帳務」更新信用卡。"
 
+#: src/lib/api-messages.ts
+msgid "A scene can't be added to itself."
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "A subscription ends straight away, without a refund."
 msgstr "訂閱會立即終止，不予退款。"
@@ -1060,6 +1102,14 @@ msgstr "切換器會將一台 OBS 連接到你的串流伺服器。大多數實�
 #: src/lib/api-messages.ts
 msgid "A switcher with this name already exists here"
 msgstr "這裡已有同名的切換器"
+
+#: src/lib/api-messages.ts
+msgid "A text source says at most 10,000 characters."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "A VLC source plays 1 to 50 URLs."
+msgstr ""
 
 #: src/components/orgs/client-dialog.tsx
 msgid "A whole number from 0 to {MAX_ALLOCATION}, or empty."
@@ -1164,6 +1214,10 @@ msgstr "在你一直開著的場景中新增 <0>Browser</0> 來源（不必顯�
 msgid "Add a network by name…"
 msgstr "依名稱新增網路…"
 
+#: src/components/live/source-editor.tsx
+msgid "Add a source"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 #: src/routes/_app/add-server.tsx
@@ -1186,10 +1240,19 @@ msgstr "新增標記"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "新增一個來連接你的 OBS。設定只要幾分鐘。"
 
+#: src/components/live/scene-grid.tsx
+msgid "Add scene"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/add-server.tsx
 msgid "Add server"
 msgstr "新增伺服器"
+
+#: src/components/live/source-editor.tsx
+#: src/components/live/source-list.tsx
+msgid "Add source"
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/components/create-switcher-dialog.tsx
@@ -1204,6 +1267,10 @@ msgstr "新增你的編碼器推流的目標伺服器，例如 BELABOX Cloud 或
 #: src/routes/integrate-stream-server.tsx
 msgid "Add to NOALBS Cloud"
 msgstr "新增至 NOALBS Cloud"
+
+#: src/components/live/source-editor.tsx
+msgid "Add URL"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Add-on created"
@@ -1222,10 +1289,23 @@ msgstr "加購項目"
 msgid "Add-ons sold"
 msgstr "已售出的加購項目"
 
+#. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
 #: src/hooks/use-create-stream-server.ts
+#: src/lib/live-format.ts
 msgid "Added {0}"
 msgstr "已新增 {0}"
+
+#. placeholder {0}: event.data.source
+#: src/lib/live-format.ts
+msgid "Added {0} again"
+msgstr ""
+
+#. placeholder {0}: added.name
+#. placeholder {0}: created.name
+#: src/components/live/source-editor.tsx
+msgid "Added {0} to {sceneName}"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Added a stream server"
@@ -1234,6 +1314,13 @@ msgstr "新增了一台串流伺服器"
 #: src/lib/support.ts
 msgid "Added a switcher"
 msgstr "新增了一個切換器"
+
+#. placeholder {0}: created.name
+#. placeholder {0}: event.data.scene
+#: src/components/live/scene-grid.tsx
+#: src/lib/live-format.ts
+msgid "Added the scene {0}"
+msgstr ""
 
 #: src/components/create-switcher-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -1414,6 +1501,14 @@ msgstr "永久免費"
 msgid "An admin of this workspace can add one."
 msgstr "這個工作區的管理員可以新增。"
 
+#: src/components/live/scene-grid.tsx
+msgid "An empty scene in OBS. Add sources to it from the Sources card."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "An srt://, rtmp://, rist://, udp:// or https:// address."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Announce raids"
 msgstr "宣布揪團"
@@ -1487,6 +1582,14 @@ msgstr "套用"
 msgid "Applying…"
 msgstr "套用中…"
 
+#: src/components/live/source-position.tsx
+msgid "As large as fits, keeping its shape."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "As the OBS computer names it, e.g. Arial. Empty keeps the font it has."
+msgstr ""
+
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -1515,6 +1618,10 @@ msgstr "時間 {0}，{1}"
 #: src/routes/_app/add-server.tsx
 msgid "at <0>{host}</0>"
 msgstr "位於 <0>{host}</0>"
+
+#: src/components/live/source-position.tsx
+msgid "At 100% it fills the screen wherever it’s pinned. Make it smaller to put it in a corner or on an edge."
+msgstr ""
 
 #: src/components/moblin-settings.tsx
 msgid "At least {MOBLIN_MIN_PASSWORD} characters"
@@ -1628,6 +1735,10 @@ msgstr "返回 NOALBS"
 #: src/routes/login.tsx
 msgid "Back to the site"
 msgstr "返回網站"
+
+#: src/components/live/source-editor.tsx
+msgid "Backup SRT"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Bad checks in a row before leaving LIVE; one check per second."
@@ -1831,6 +1942,10 @@ msgstr "位元率觸發值"
 msgid "Bitrate triggers must be between 1 and 100,000 kbps."
 msgstr "位元率觸發值必須介於 1 到 100,000 kbps 之間。"
 
+#: src/components/live/source-editor.tsx
+msgid "Bold"
+msgstr ""
+
 #: src/components/live/moblin-card.tsx
 msgid "Bonding"
 msgstr "Bonding"
@@ -1842,6 +1957,18 @@ msgstr "機器人"
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Bot language"
 msgstr "機器人語言"
+
+#: src/components/live/source-position.tsx
+msgid "Bottom"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Bottom left"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Bottom right"
+msgstr ""
 
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -1857,6 +1984,7 @@ msgstr "BRB / 離線"
 msgid "BRB SCENE"
 msgstr "BRB 場景"
 
+#: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Browser source"
 msgstr "瀏覽器來源"
@@ -1930,6 +2058,8 @@ msgstr "無法移除：{blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/live/scene-grid.tsx
+#: src/components/live/source-list.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -1960,6 +2090,10 @@ msgstr "已取消。方案維持有效至週期結束。"
 msgid "Catch a struggling uplink before the bitrate drops. Only SRT servers report RTT."
 msgstr "在位元率下降之前先發現上行連線不穩。只有 SRT 伺服器會回報 RTT。"
 
+#: src/components/live/source-position.tsx
+msgid "Center"
+msgstr ""
+
 #: src/components/support-access.tsx
 msgid "Change"
 msgstr "變更"
@@ -1975,6 +2109,11 @@ msgstr "變更價格"
 #: src/routes/_app/invite.$token.tsx
 msgid "Change the plan or billing"
 msgstr "變更方案或帳務"
+
+#. placeholder {0}: event.data.source
+#: src/lib/live-format.ts
+msgid "Changed {0}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Changed {subject}"
@@ -2066,6 +2205,18 @@ msgstr "變更了切換觸發值"
 msgid "Changes"
 msgstr "變更"
 
+#: src/components/live/source-list.tsx
+msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others, or edit media, VLC, browser and text sources."
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "Changes here are made in OBS, on stream. Move sources up to show them over the others."
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Changes here are made in OBS. The scene on air, and the scenes the switcher switches to, can’t be removed."
+msgstr ""
+
 #: src/components/belabox/settings-dialog.tsx
 msgid "Changes here go straight to the BELABOX and can’t be undone from NOALBS. If something breaks, for example it can’t get online anymore, use the <0>official BELABOX remote</0> (with your secret URL) or the BELABOX’s local UI to fix it."
 msgstr "在這裡做的變更會直接傳送到 BELABOX，且無法從 NOALBS 復原。如果出了問題，例如裝置無法再連上網路，請使用<0>官方 BELABOX 遠端控制</0>（搭配你的秘密 URL）或 BELABOX 的本機介面修復。"
@@ -2109,6 +2260,10 @@ msgstr "Twitch、Kick 和 YouTube 上的聊天室指令"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Chat notification"
 msgstr "聊天室通知"
+
+#: src/components/live/source-editor.tsx
+msgid "Chat overlay"
+msgstr ""
 
 #: src/routes/_app/admin/status.tsx
 msgid "Chat service"
@@ -2194,9 +2349,17 @@ msgstr "{0} 的客戶"
 msgid "Close"
 msgstr "關閉"
 
+#: src/components/live/source-editor.tsx
+msgid "Close the stream while it isn’t shown"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "代碼"
+
+#: src/components/live/source-editor.tsx
+msgid "Color"
+msgstr ""
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -2394,6 +2557,10 @@ msgstr "繼續"
 msgid "Continue with {0}"
 msgstr "使用 {0} 繼續"
 
+#: src/components/live/source-editor.tsx
+msgid "Control its audio from OBS’s Audio Mixer"
+msgstr ""
+
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
 msgstr "控制了 BELABOX"
@@ -2411,6 +2578,15 @@ msgstr "控制項"
 #: src/components/history/raw-explorer.tsx
 msgid "Copied"
 msgstr "已複製"
+
+#. placeholder {0}: event.data.copied_from
+#. placeholder {0}: source.name
+#. placeholder {1}: copy.name
+#. placeholder {1}: event.data.source
+#: src/components/live/source-editor.tsx
+#: src/lib/live-format.ts
+msgid "Copied {0} as {1}"
+msgstr ""
 
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
@@ -2496,6 +2672,10 @@ msgstr "自動切換開啟且 BRB 場景播出時開始計時；訊號恢復後�
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Counts while streaming with the Ending scene on air, even with auto switch off; leaving it starts it over."
 msgstr "實況中且結尾場景播出時開始計時，即使自動切換已關閉也一樣；離開該場景後會重新計時。"
+
+#: src/components/live/source-position.tsx
+msgid "Covers the box, keeping its shape; the edges are cut off."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2607,6 +2787,26 @@ msgstr "嚴重"
 msgid "Critical notices can’t be hidden."
 msgstr "嚴重公告無法隱藏。"
 
+#: src/components/live/source-position.tsx
+msgid "Crop bottom"
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "Crop is at most 16384 pixels a side."
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Crop left"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Crop right"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Crop top"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Currency"
 msgstr "貨幣"
@@ -2618,6 +2818,14 @@ msgstr "目前方案"
 #: src/lib/billing.ts
 msgid "Currently unavailable"
 msgstr "目前無法購買"
+
+#: src/components/live/source-editor.tsx
+msgid "Custom CSS"
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "Custom CSS is at most 20,000 characters."
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Customer"
@@ -2892,6 +3100,10 @@ msgstr "下載我的資料"
 msgid "Download stream history"
 msgstr "下載實況歷史紀錄"
 
+#: src/components/live/source-position.tsx
+msgid "Drag"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
 msgstr "在圖表上拖曳即可放大"
@@ -2899,6 +3111,19 @@ msgstr "在圖表上拖曳即可放大"
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
 msgstr "遺失影格"
+
+#: src/components/live/source-editor.tsx
+msgid "Duplicate"
+msgstr ""
+
+#. placeholder {0}: source.name
+#: src/components/live/source-editor.tsx
+msgid "Duplicate {0}"
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "Duplicate…"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Duration"
@@ -2912,6 +3137,8 @@ msgstr "每位終端客戶使用 Twitch、Kick 或 YouTube 登入後，會以管
 msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink."
 msgstr "每台伺服器都可覆寫 LIVE、LOW 和 BRB 場景，例如為備援上行連線使用不同的疊加層。"
 
+#: src/components/live/scene-grid.tsx
+#: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
 msgstr "編輯"
@@ -2925,9 +3152,17 @@ msgstr "編輯"
 msgid "Edit {0}"
 msgstr "編輯 {0}"
 
+#: src/components/live/source-editor.tsx
+msgid "Edit {name}"
+msgstr ""
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "編輯公告"
+
+#: src/components/live/source-list.tsx
+msgid "Edit…"
+msgstr ""
 
 #: src/routes/_app/admin/audit.tsx
 msgid "Emergency"
@@ -2957,6 +3192,10 @@ msgstr "未經你許可的緊急存取"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Emergency access…"
 msgstr "緊急存取…"
+
+#: src/components/live/source-editor.tsx
+msgid "Empty to detect it, or e.g. mpegts."
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Enable"
@@ -3060,9 +3299,17 @@ msgstr "結束時間（留空 = 直到手動結束）"
 msgid "ends {0}"
 msgstr "{0} 結束"
 
+#: src/lib/api-messages.ts
+msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
+msgstr ""
+
 #: src/lib/belabox.ts
 msgid "Enter the APN"
 msgstr "請輸入 APN"
+
+#: src/lib/api-messages.ts
+msgid "Enter the full http:// or https:// address of the page. Files on the OBS computer can only be picked in OBS."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Enter the full http:// or https:// address of the stats page"
@@ -3083,6 +3330,10 @@ msgstr "請輸入伺服器位址"
 #: src/lib/api-messages.ts
 msgid "Enter the username that goes with the password"
 msgstr "請輸入與密碼對應的使用者名稱"
+
+#: src/lib/api-messages.ts
+msgid "Enter what the source plays."
+msgstr ""
 
 #: src/lib/belabox.ts
 msgid "Enter your stream ID"
@@ -3154,6 +3405,18 @@ msgstr "其中所有內容都會永久刪除：切換器、實況歷史紀錄、
 msgid "Everything is in the part after the <0>#</0>, which browsers never send to a server, so stats URLs and keys stay out of our logs. Encode the values (<1>encodeURIComponent</1>)."
 msgstr "所有內容都在 <0>#</0> 後面的部分，瀏覽器不會將這部分傳送給伺服器，因此統計資料 URL 和金鑰不會出現在我們的日誌中。請將值編碼（<1>encodeURIComponent</1>）。"
 
+#: src/components/live/source-position.tsx
+msgid "Exact"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Exactly the box, out of shape if need be."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Existing source"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
 msgstr "到期時間"
@@ -3178,6 +3441,10 @@ msgstr "較少"
 msgid "Fields"
 msgstr "欄位"
 
+#: src/components/live/source-position.tsx
+msgid "Fill"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "尋找欄位"
@@ -3186,6 +3453,10 @@ msgstr "尋找欄位"
 #: src/components/settings-hub.tsx
 msgid "Finish setup"
 msgstr "完成設定"
+
+#: src/components/live/source-position.tsx
+msgid "Fit"
+msgstr ""
 
 #: src/components/live/quick-actions.tsx
 msgid "Fix feed"
@@ -3199,6 +3470,14 @@ msgstr "請修正標示的欄位後再儲存。"
 #: src/lib/support.ts
 msgid "Fixed the feed"
 msgstr "修復了訊號"
+
+#: src/components/live/source-editor.tsx
+msgid "Font"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Font size"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
@@ -3232,6 +3511,10 @@ msgstr "忘記 {ssid}"
 msgid "Forget network"
 msgstr "忘記網路"
 
+#: src/components/live/source-editor.tsx
+msgid "Frame rate"
+msgstr ""
+
 #: src/components/live/obs-stats-popover.tsx
 msgid "Free disk"
 msgstr "硬碟可用空間"
@@ -3239,6 +3522,12 @@ msgstr "硬碟可用空間"
 #: src/components/admin/products.tsx
 msgid "Free is where workspaces land without a subscription."
 msgstr "Free 是工作區沒有訂閱時的預設方案。"
+
+#. placeholder {0}: event.data.scene
+#. placeholder {1}: by(event.data.by, t`from the dashboard`)
+#: src/lib/live-format.ts
+msgid "From {0} {1}"
+msgstr ""
 
 #. placeholder {0}: channel.links.length
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -3265,6 +3554,10 @@ msgstr "溫度升高"
 msgid "Give it a name of up to 60 characters."
 msgstr "請取一個最多 60 個字元的名稱。"
 
+#: src/lib/api-messages.ts
+msgid "Give the source a name of up to 256 characters."
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 msgid "Global"
 msgstr "全域"
@@ -3288,9 +3581,18 @@ msgstr "前往我的工作區"
 msgid "Go to scenes"
 msgstr "前往場景"
 
+#: src/lib/api-messages.ts
+msgid "Groups, and what's in them, can only be removed in OBS."
+msgstr ""
+
 #: src/components/live/moblin-card.tsx
 msgid "Heat"
 msgstr "溫度"
+
+#: src/components/live/source-editor.tsx
+#: src/components/live/source-position.tsx
+msgid "Height"
+msgstr ""
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -3505,6 +3807,10 @@ msgstr "超過 30 天未活動"
 msgid "Info"
 msgstr "資訊"
 
+#: src/components/live/source-editor.tsx
+msgid "Input format"
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
 msgstr "執行個體"
@@ -3516,6 +3822,10 @@ msgstr "即時恢復"
 #: src/components/live/belabox-card.tsx
 msgid "Interface name"
 msgstr "介面名稱"
+
+#: src/components/live/scene-grid.tsx
+msgid "Intermission"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Internal server error"
@@ -3593,6 +3903,15 @@ msgstr "邀請會過期，如果無法使用，請索取新的邀請。"
 msgid "It disappears from this list. The audit log keeps that it existed."
 msgstr "它會從這個清單中消失。稽核紀錄會保留它曾存在的紀錄。"
 
+#. placeholder {0}: source.parent
+#: src/components/live/source-position.tsx
+msgid "It isn’t in {0} anymore."
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "It isn’t right on the scene on air, so the preview wouldn’t line up: the box is drawn without it."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "It isn't sold with that billing period"
 msgstr "此項目不提供該計費週期"
@@ -3601,13 +3920,62 @@ msgstr "此項目不提供該計費週期"
 msgid "It left BELABOX Cloud"
 msgstr "已離開 BELABOX Cloud"
 
+#: src/components/live/source-editor.tsx
+msgid "It plays a file from the OBS computer. Files can only be picked in OBS, and it’s kept unless you replace it with a URL."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "It plays files from the OBS computer. They can only be picked in OBS, and they’re kept unless you replace them with URLs."
+msgstr ""
+
 #: src/lib/live-format.ts
 msgid "It reached BELABOX Cloud"
 msgstr "已連上 BELABOX Cloud"
 
+#: src/components/live/source-editor.tsx
+msgid "It shows the text of a file on the OBS computer. Files can only be picked in OBS, and it keeps reading it unless you type text instead."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "It’s added on top of the scene in OBS, so it shows over the others."
+msgstr ""
+
+#. placeholder {0}: source.parent
+#: src/components/live/source-position.tsx
+msgid "It’s in the group {0}: positions are measured from the group, so they’re only exact if the group fills the screen."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "It's in use now. Reload and try again."
 msgstr "目前正在使用中。請重新載入後再試一次。"
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s on air: switch to another scene first."
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "It’s removed from this scene in OBS right away, on stream. The scene itself and what’s in it stay."
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "It’s turned in OBS, so the box is only roughly where it shows."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Italic"
+msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Its chat stops controlling this switcher, and the bot leaves the channel."
@@ -3624,6 +3992,10 @@ msgstr "連線會關閉，瀏覽器來源會在一兩秒內重新連線。會顯
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "Its own admins manage the rest. Make the first invite here and send them the link."
 msgstr "其餘由它自己的管理員管理。請在這裡建立第一個邀請，並把連結傳給對方。"
+
+#: src/components/live/source-position.tsx
+msgid "Its own size."
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -3718,6 +4090,14 @@ msgstr "保留 {0}"
 msgid "Keep it"
 msgstr "保留"
 
+#: src/components/live/source-position.tsx
+msgid "Keep its shape when resizing"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Keep playing"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "Keep recording"
 msgstr "繼續錄影"
@@ -3759,6 +4139,7 @@ msgstr "Kick 目前無法使用"
 msgid "Kick profile lookup failed"
 msgstr "Kick 個人資料查詢失敗"
 
+#: src/components/live/source-editor.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Kind"
 msgstr "類型"
@@ -3840,6 +4221,10 @@ msgstr "要離開團隊嗎？"
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "Leave workspace"
 msgstr "離開工作區"
+
+#: src/components/live/source-position.tsx
+msgid "Left"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Let everyone in chat use commands like !bitrate."
@@ -3995,6 +4380,10 @@ msgstr "載入更早的內容"
 msgid "Load older streams"
 msgstr "載入更早的實況"
 
+#: src/components/live/source-editor.tsx
+msgid "Loading its settings from OBS…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4064,6 +4453,10 @@ msgstr "瀏覽行為每頁每小時記錄一次，變更則每次都會記錄。
 #: src/lib/api-messages.ts
 msgid "Looking YouTube channels up needs an API key"
 msgstr "查詢 YouTube 頻道需要 API 金鑰"
+
+#: src/components/live/source-editor.tsx
+msgid "Loop the playlist"
+msgstr ""
 
 #: src/lib/obs-preview.ts
 msgid "Low"
@@ -4183,6 +4576,10 @@ msgstr "由 {0} 管理"
 msgid "Managed workspace"
 msgstr "受管理的工作區"
 
+#: src/components/live/source-position.tsx
+msgid "Margin from the edges (% of the screen’s height)"
+msgstr ""
+
 #: src/components/support-access.tsx
 msgid "Mark as seen"
 msgstr "標記為已讀"
@@ -4240,6 +4637,10 @@ msgstr "以正在接收影像且優先順序最高的伺服器為準。將 LOW �
 #: src/components/live/obs-stats-popover.tsx
 msgid "Measuring…"
 msgstr "測量中…"
+
+#: src/components/live/source-editor.tsx
+msgid "Media source"
+msgstr ""
 
 #: src/lib/obs-preview.ts
 msgid "Medium"
@@ -4485,11 +4886,22 @@ msgstr "月繳"
 msgid "More"
 msgstr "更多"
 
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
+msgid "More for {0}"
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 msgid "More latency survives worse connections, {SRT_LATENCY_MIN} to {SRT_LATENCY_MAX}."
 msgstr "延遲越高越能應付較差的連線，範圍 {SRT_LATENCY_MIN} 到 {SRT_LATENCY_MAX}。"
 
+#: src/components/live/source-fields.tsx
+msgid "More settings"
+msgstr ""
+
 #. placeholder {0}: server.name
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Move {0}"
 msgstr "移動 {0}"
@@ -4501,6 +4913,13 @@ msgstr "改為 Free"
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free?"
 msgstr "要改為 Free 嗎？"
+
+#. placeholder {0}: event.data.source
+#. placeholder {0}: source.name
+#: src/components/live/source-position.tsx
+#: src/lib/live-format.ts
+msgid "Moved {0}"
+msgstr ""
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Moved to {code}"
@@ -4541,6 +4960,8 @@ msgstr "靜音或取消靜音音訊"
 #: src/components/admin/products.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/create-switcher-dialog.tsx
+#: src/components/live/scene-grid.tsx
+#: src/components/live/source-editor.tsx
 #: src/components/orgs/client-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4561,6 +4982,10 @@ msgstr "名稱不得為空"
 #: src/lib/api-messages.ts
 msgid "Name must be at most 60 characters long"
 msgstr "名稱不得超過 60 個字元"
+
+#: src/components/live/source-editor.tsx
+msgid "Name of the copy"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
@@ -4610,6 +5035,22 @@ msgstr "需要秘密 URL"
 #: src/components/live/obs-stats-popover.tsx
 msgid "Network"
 msgstr "網路"
+
+#: src/components/live/source-editor.tsx
+msgid "Network buffering (MB)"
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "Network buffering is 0 to 16 MB."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Network caching (ms)"
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "Network caching is 100 to 60,000 ms."
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Network name"
@@ -4682,6 +5123,14 @@ msgstr "新密碼"
 #: src/components/admin/products.tsx
 msgid "New plan"
 msgstr "新增方案"
+
+#: src/components/live/scene-grid.tsx
+msgid "New scene"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "New source"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "New subscriptions can’t choose it anymore. People already paying keep it until they cancel."
@@ -5034,6 +5483,18 @@ msgstr "NOALBS 支援團隊在未經你許可的情況下開啟了這個工作�
 msgid "NOALBS support opened this workspace without your permission ({level}): “{reason}”."
 msgstr "NOALBS 支援團隊在未經你許可的情況下開啟了這個工作區（{level}）：「{reason}」。"
 
+#: src/lib/api-messages.ts
+msgid "NOALBS switches to this scene when the bitrate is low. Pick another LOW scene on the Scenes page first."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "NOALBS switches to this scene when the feed drops. Pick another BRB scene on the Scenes page first."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "NOALBS switches to this scene when the feed is good. Pick another LIVE scene on the Scenes page first."
+msgstr ""
+
 #: src/lib/obs-preview.ts
 msgid "Nobody"
 msgstr "沒有人"
@@ -5236,6 +5697,10 @@ msgstr "未停權。"
 msgid "Not yet"
 msgstr "尚未"
 
+#: src/components/live/source-position.tsx
+msgid "Nothing changes in OBS until you save."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Nothing happened during this stream."
 msgstr "這場實況期間沒有發生任何事。"
@@ -5244,6 +5709,7 @@ msgstr "這場實況期間沒有發生任何事。"
 msgid "Nothing here"
 msgstr "這裡沒有內容"
 
+#: src/components/live/source-editor.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5323,6 +5789,10 @@ msgstr "現在"
 msgid "OBS"
 msgstr "OBS"
 
+#: src/lib/api-messages.ts
+msgid "OBS already has a source or scene with that name."
+msgstr ""
+
 #: src/lib/admin.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
@@ -5345,6 +5815,10 @@ msgstr "OBS 沒有回傳任何含 UUID 的場景。"
 msgid "OBS didn't answer. Try again in a moment."
 msgstr "OBS 沒有回應。請稍後再試。"
 
+#: src/components/live/source-position.tsx
+msgid "OBS didn’t send a picture: the box is drawn without it."
+msgstr ""
+
 #: src/components/live/obs-preview.tsx
 msgid "OBS didn’t send a picture. Trying again…"
 msgstr "OBS 沒有傳送畫面。正在重試…"
@@ -5357,6 +5831,18 @@ msgstr "OBS 已中斷連線"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS 已中斷連線"
+
+#: src/components/live/source-editor.tsx
+msgid "OBS doesn’t have the VLC plugin"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "OBS doesn’t know its own size yet (it isn’t showing anything), so this can’t be drawn. It still works once it shows something."
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "OBS doesn’t know its size yet (it isn’t showing anything), so the box starts in the middle."
+msgstr ""
 
 #. placeholder {0}: status?.current_scene ? ` (${status.current_scene.name})` : ""
 #: src/components/live/quick-actions.tsx
@@ -5421,6 +5907,10 @@ msgstr "OBS<0>{0}</0>"
 msgid "of stream history kept"
 msgstr "實況歷史紀錄保留天數"
 
+#: src/components/live/source-position.tsx
+msgid "Of the screen"
+msgstr ""
+
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "關閉"
@@ -5430,6 +5920,10 @@ msgstr "關閉"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Off"
 msgstr "關閉"
+
+#: src/components/live/source-position.tsx
+msgid "Off air, the preview is hidden: the box is drawn without it."
+msgstr ""
 
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
@@ -5570,6 +6064,10 @@ msgstr "只能連結高於零的固定費率價格。"
 #: src/components/support/break-glass-dialog.tsx
 msgid "Only for abuse, a legal obligation or a security problem, for one hour. Members, billing and secrets stay off-limits. Its owners and admins see your name, the level and this reason until they mark it as seen, and everything you do is in their log."
 msgstr "僅限濫用、法律義務或安全問題，時限一小時。成員、帳務和機密資料仍無法存取。其擁有者和管理員在標記為已讀之前，都會看到你的名稱、權限等級和這個原因，你的所有操作也會記錄在他們的紀錄中。"
+
+#: src/lib/api-messages.ts
+msgid "Only media, VLC, browser and text sources can be edited here. Change this one in OBS."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Only members of the workspace can do this"
@@ -5763,6 +6261,10 @@ msgstr "組織"
 msgid "ORGANIZATIONS"
 msgstr "組織"
 
+#: src/components/live/source-position.tsx
+msgid "Original"
+msgstr ""
+
 #: src/components/live/moblin-card.tsx
 msgid "Other"
 msgstr "其他"
@@ -5775,9 +6277,17 @@ msgstr "依類型的其他設定：<0>publisher</0>、<1>application</1>、<2>ke
 msgid "Out of range"
 msgstr "超出範圍"
 
+#: src/components/live/source-editor.tsx
+msgid "Outline"
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "Over plan limit"
 msgstr "超過方案上限"
+
+#: src/components/live/source-editor.tsx
+msgid "Overlay links often hold a key: it’s shown hidden."
+msgstr ""
 
 #. placeholder {0}: server.name
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -5804,6 +6314,10 @@ msgstr "自有伺服器"
 msgid "Owner"
 msgstr "擁有者"
 
+#: src/components/live/source-editor.tsx
+msgid "page URL"
+msgstr ""
+
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/obs-connection-form.tsx
@@ -5822,6 +6336,10 @@ msgstr "密碼已儲存。請在 Moblin 中輸入。"
 #: src/components/transfer-ownership.tsx
 msgid "Past invoices keep the email and card ending that were on them."
 msgstr "過去的帳單會保留當時的電子郵件和信用卡末碼。"
+
+#: src/components/live/source-editor.tsx
+msgid "Pause, and resume when shown"
+msgstr ""
 
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -5880,6 +6398,10 @@ msgstr "手機"
 msgid "Pick a codec"
 msgstr "選擇編解碼器"
 
+#: src/lib/api-messages.ts
+msgid "Pick a color."
+msgstr ""
+
 #: src/lib/belabox.ts
 msgid "Pick a network type"
 msgstr "選擇網路類型"
@@ -5903,6 +6425,10 @@ msgstr "選擇中繼伺服器"
 #: src/components/belabox/stream-panel.tsx
 msgid "Pick a server"
 msgstr "選擇伺服器"
+
+#: src/lib/api-messages.ts
+msgid "Pick a size from 5% to 100% of the screen."
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Pick a source"
@@ -5940,6 +6466,10 @@ msgstr "選擇你的 LIVE、LOW 和 BRB 場景"
 #: src/components/live/belabox-card.tsx
 msgid "Pipeline"
 msgstr "管線"
+
+#: src/components/live/source-position.tsx
+msgid "Pixels cut off each side of the source, before it’s sized."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
@@ -5985,6 +6515,10 @@ msgstr "目前無法購買方案"
 msgid "Platform"
 msgstr "平台"
 
+#: src/components/live/source-editor.tsx
+msgid "Playlist"
+msgstr ""
+
 #: src/lib/organizations.ts
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "Pool"
@@ -5994,6 +6528,15 @@ msgstr "額度池"
 #: src/components/obs-connection-form.tsx
 msgid "Port"
 msgstr "連接埠"
+
+#. placeholder {0}: source.name
+#: src/components/live/source-position.tsx
+msgid "Position {0}"
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "Position…"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
@@ -6018,6 +6561,10 @@ msgstr "發布了公告"
 #: src/components/settings-hub.tsx
 msgid "Prefix {0}"
 msgstr "前綴 {0}"
+
+#: src/components/live/source-position.tsx
+msgid "Presets"
+msgstr ""
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview"
@@ -6159,6 +6706,10 @@ msgstr "最近活躍"
 msgid "Reconnect"
 msgstr "重新連線"
 
+#: src/components/live/source-editor.tsx
+msgid "Reconnect delay (s)"
+msgstr ""
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "要重新連線瀏覽器來源嗎？"
@@ -6256,8 +6807,14 @@ msgstr "中繼帳號"
 msgid "Relay server"
 msgstr "中繼伺服器"
 
+#: src/components/live/source-editor.tsx
+msgid "Reload it when its scene goes on air"
+msgstr ""
+
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
+#: src/components/live/scene-grid.tsx
+#: src/components/live/source-list.tsx
 #: src/components/server-details-fields.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -6274,6 +6831,12 @@ msgstr "移除"
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove {0}"
 msgstr "移除 {0}"
+
+#. placeholder {0}: removing?.name
+#. placeholder {1}: removing?.parent
+#: src/components/live/source-list.tsx
+msgid "Remove {0} from {1}?"
+msgstr ""
 
 #. placeholder {0}: channel.display_name
 #: src/components/chat/chat-links.tsx
@@ -6294,6 +6857,11 @@ msgstr "要移除 {name} 嗎？"
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Remove alias {alias}"
 msgstr "移除別名 {alias}"
+
+#. placeholder {0}: source.parent
+#: src/components/live/source-list.tsx
+msgid "Remove from {0}…"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Remove missing"
@@ -6319,6 +6887,16 @@ msgstr "要移除工作人員權限嗎？"
 msgid "Remove the name {label}"
 msgstr "移除名稱 {label}"
 
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+msgid "Remove the scene {0}"
+msgstr ""
+
+#. placeholder {0}: removing?.name
+#: src/components/live/scene-grid.tsx
+msgid "Remove the scene {0}?"
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "Remove their staff access before disabling the account."
 msgstr "停用帳號前，請先移除對方的工作人員權限。"
@@ -6327,10 +6905,22 @@ msgstr "停用帳號前，請先移除對方的工作人員權限。"
 msgid "Remove this notice?"
 msgstr "要移除這則公告嗎？"
 
+#: src/components/live/source-editor.tsx
+msgid "Remove this URL"
+msgstr ""
+
+#. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
+#: src/lib/live-format.ts
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Removed {0}"
 msgstr "已移除 {0}"
+
+#. placeholder {0}: source.name
+#. placeholder {1}: source.parent
+#: src/components/live/source-list.tsx
+msgid "Removed {0} from {1}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -6352,6 +6942,13 @@ msgstr "移除了串流伺服器"
 msgid "Removed server"
 msgstr "已移除伺服器"
 
+#. placeholder {0}: event.data.scene
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+#: src/lib/live-format.ts
+msgid "Removed the scene {0}"
+msgstr ""
+
 #: src/lib/support.ts
 msgid "Removed the workspace’s chat bot"
 msgstr "移除了工作區的聊天機器人"
@@ -6372,6 +6969,12 @@ msgstr "已重新命名"
 #: src/lib/org-audit.ts
 msgid "Renamed {0} to {subject}"
 msgstr "已將 {0} 重新命名為 {subject}"
+
+#. placeholder {0}: event.data.renamed_from
+#. placeholder {1}: by(event.data.by, t`from the dashboard`)
+#: src/lib/live-format.ts
+msgid "Renamed from {0} {1}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "renamed from {previousName}"
@@ -6402,6 +7005,14 @@ msgstr "重新排序了串流伺服器"
 msgid "Replace secret URL"
 msgstr "取代秘密 URL"
 
+#: src/components/live/source-editor.tsx
+msgid "Replace with a URL"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Replace with URLs"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Reply"
 msgstr "回覆"
@@ -6414,6 +7025,10 @@ msgstr "回覆模式"
 #: src/api/client.ts
 msgid "Request failed ({0})"
 msgstr "請求失敗（{0}）"
+
+#: src/components/live/source-editor.tsx
+msgid "Restart playback when the source becomes active"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -6471,6 +7086,10 @@ msgstr "撤銷了邀請"
 #: src/routes/_app/admin/status.tsx
 msgid "Revoked chat grants"
 msgstr "撤銷了聊天室授權"
+
+#: src/components/live/source-position.tsx
+msgid "Right"
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "RIST receiver"
@@ -6548,6 +7167,8 @@ msgstr "操作實況：切換場景、開始和停止、查看統計資料。"
 #: src/components/admin/products.tsx
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/live/belabox-card.tsx
+#: src/components/live/source-editor.tsx
+#: src/components/live/source-position.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -6599,6 +7220,11 @@ msgstr "已儲存 — 貼上即可取代"
 msgid "Saved — type to replace"
 msgstr "已儲存 — 輸入即可取代"
 
+#. placeholder {0}: result.name
+#: src/components/live/source-editor.tsx
+msgid "Saved {0}"
+msgstr ""
+
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
 msgstr "已儲存在這裡，但尚未寫入 BELABOX：從儀表板、聊天室或 OBS 實況啟動時會保留這些設定。從它自己的螢幕啟動則會捨棄。"
@@ -6610,6 +7236,14 @@ msgstr "已儲存。BELABOX 下次啟動時會使用這些設定。"
 #: src/components/server-details-fields.tsx
 msgid "Saved. Type to replace"
 msgstr "已儲存。輸入即可取代"
+
+#: src/components/live/source-editor.tsx
+msgid "Saving changes it in OBS right away, and it reloads what it plays."
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Saving changes it in OBS right away."
+msgstr ""
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
@@ -6649,6 +7283,7 @@ msgid "Scanning…"
 msgstr "掃描中…"
 
 #: src/components/live/moblin-card.tsx
+#: src/components/live/source-editor.tsx
 msgid "Scene"
 msgstr "場景"
 
@@ -6675,6 +7310,10 @@ msgstr "場景切換"
 msgid "Scenes"
 msgstr "場景"
 
+#: src/lib/api-messages.ts
+msgid "Scenes and groups can't be duplicated here."
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "Scenes appear once OBS is connected."
 msgstr "OBS 連接後就會顯示場景。"
@@ -6686,6 +7325,10 @@ msgstr "OBS 中的場景"
 #: src/routes/_app/admin/notices.tsx
 msgid "Scheduled"
 msgstr "已排程"
+
+#: src/components/live/source-editor.tsx
+msgid "Search"
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -6980,6 +7623,14 @@ msgstr "顯示適用於"
 msgid "Show every workspace"
 msgstr "顯示所有工作區"
 
+#: src/components/live/source-editor.tsx
+msgid "Show it right away"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Show nothing when playback ends"
+msgstr ""
+
 #: src/components/support-access.tsx
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
@@ -7031,6 +7682,14 @@ msgstr "訊號重新載入時短暫顯示。"
 #: src/components/admin/products.tsx
 msgid "Shown on the Plan page and in Checkout."
 msgstr "顯示在方案頁面和 Checkout 中。"
+
+#: src/components/live/source-editor.tsx
+msgid "Shuffle"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Shut it down while it isn’t shown"
+msgstr ""
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -7112,6 +7771,7 @@ msgid "Since OBS started"
 msgstr "自 OBS 啟動以來"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/live/source-position.tsx
 msgid "Size"
 msgstr "大小"
 
@@ -7165,6 +7825,10 @@ msgstr "發生錯誤。請再試一次。"
 #: src/routes/_app/workspaces/index.tsx
 msgid "Sort"
 msgstr "排序"
+
+#: src/components/live/source-editor.tsx
+msgid "Source"
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Sources"
@@ -7333,6 +7997,7 @@ msgid "Stats URL"
 msgstr "統計資料 URL"
 
 #: src/components/admin/admin-shell.tsx
+#: src/components/live/source-editor.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Status"
 msgstr "狀態"
@@ -7436,6 +8101,10 @@ msgstr "停止使用"
 msgid "Stop when offline"
 msgstr "離線時停止"
 
+#: src/components/live/source-editor.tsx
+msgid "Stop, and restart when shown"
+msgstr ""
+
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Stream"
@@ -7503,6 +8172,14 @@ msgstr "實況狀態"
 msgid "Stream stopped"
 msgstr "實況已停止"
 
+#: src/components/live/source-editor.tsx
+msgid "stream URL"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "Stream URL"
+msgstr ""
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "STREAMING"
@@ -7519,6 +8196,10 @@ msgstr "使用 Moblin 實況嗎？可在實況頁面查看它的位元率、Bond
 #: src/lib/organizations.ts
 msgid "Streams"
 msgstr "實況"
+
+#: src/components/live/source-position.tsx
+msgid "Stretch"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Stripe"
@@ -7650,6 +8331,10 @@ msgstr "切換場景、開始和停止實況"
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Switch to {0}"
 msgstr "切換到 {0}"
+
+#: src/lib/api-messages.ts
+msgid "Switch to another scene first: the scene on air can't be removed."
+msgstr ""
 
 #: src/components/app-shell.tsx
 msgid "Switch to another workspace, create one or join one."
@@ -7839,6 +8524,10 @@ msgstr "再次測試"
 msgid "Tested a stream server"
 msgstr "測試了串流伺服器"
 
+#: src/components/live/source-editor.tsx
+msgid "Text"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
 msgstr "謝謝！你的付款已完成。"
@@ -7895,6 +8584,10 @@ msgstr "該價格屬於另一個 Stripe 產品。"
 #: src/lib/api-messages.ts
 msgid "That price is archived in Stripe."
 msgstr "該價格已在 Stripe 中封存。"
+
+#: src/lib/api-messages.ts
+msgid "That scene isn't in OBS anymore. Reload the list."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "That source isn't in the scene anymore. Reload the list."
@@ -8011,6 +8704,10 @@ msgstr "BELABOX 會停止傳送，串流伺服器將失去訊號。"
 msgid "the bot’s access was taken away"
 msgstr "機器人的存取權已被撤銷"
 
+#: src/lib/api-messages.ts
+msgid "The box is 1 to 16384 pixels wide and high, within 16384 pixels of the screen."
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "The BRB bitrate must be lower than the LOW bitrate."
 msgstr "BRB 位元率必須低於 LOW 位元率。"
@@ -8057,6 +8754,10 @@ msgid "the feed changed"
 msgstr "訊號已變更"
 
 #: src/lib/api-messages.ts
+msgid "The font size is 1 to 1024."
+msgstr ""
+
+#: src/lib/api-messages.ts
 msgid "The Free plan has no price."
 msgstr "Free 方案沒有價格。"
 
@@ -8068,6 +8769,10 @@ msgstr "Free 方案是工作區沒有訂閱時的預設方案，會持續提供�
 msgid "The hotspot’s settings were changed outside the BELABOX software. Saving here resets them."
 msgstr "熱點設定已在 BELABOX 軟體之外被變更。在這裡儲存會重設這些設定。"
 
+#: src/lib/api-messages.ts
+msgid "The input format is letters, digits and underscores only, like mpegts."
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 msgid "The key your server gives you for this stream."
 msgstr "伺服器為這個串流提供給你的金鑰。"
@@ -8075,6 +8780,10 @@ msgstr "伺服器為這個串流提供給你的金鑰。"
 #: src/routes/integrate-stream-server.tsx
 msgid "The link"
 msgstr "連結"
+
+#: src/lib/api-messages.ts
+msgid "The margin is 0% to 25% of the screen."
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "The MediaMTX API address of your stream's path. Enable the API in mediamtx.yml."
@@ -8189,6 +8898,10 @@ msgstr "價格必須大於零。"
 msgid "The range is empty or outside the stream."
 msgstr "範圍為空或超出實況範圍。"
 
+#: src/lib/api-messages.ts
+msgid "The reconnect delay is 1 to 60 seconds."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "The recording pauses on any scene not picked here and resumes when you come back to one that is. Leave it empty to record on every scene. If you resume it yourself on another scene, it keeps recording until the next scene change."
 msgstr "在未選取的場景上錄影會暫停，回到已選取的場景時會恢復。留空則在所有場景錄影。如果你在其他場景手動恢復錄影，會持續錄影到下次切換場景為止。"
@@ -8269,6 +8982,11 @@ msgstr "訂閱已設定為終止。請先恢復訂閱。"
 #: src/lib/api-messages.ts
 msgid "The switcher isn't streaming. Markers go on the running stream."
 msgstr "切換器未在實況中。標記只能加在進行中的實況。"
+
+#. placeholder {0}: role[1]
+#: src/components/live/scene-grid.tsx
+msgid "The switcher uses it ({0}): pick another on the Scenes page first."
+msgstr ""
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "The team isn't counted."
@@ -8426,6 +9144,22 @@ msgstr "這是 <0>{0}</0> 的客戶工作區，由其擁有，並從其切換器
 msgid "This is the only account you sign in with. Connect another one first."
 msgstr "這是你唯一的登入帳號。請先連接其他帳號。"
 
+#: src/lib/api-messages.ts
+msgid "This is the switcher's Ending scene. Pick another one on the Scenes page first."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "This is the switcher's Privacy scene. Pick another one on the Scenes page first."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "This is the switcher's Refresh scene. Pick another one on the Scenes page first."
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "This is the switcher's Starting scene. Pick another one on the Scenes page first."
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "This kind has no other settings."
 msgstr "這個類型沒有其他設定。"
@@ -8441,6 +9175,14 @@ msgstr "這位成員已是工作區擁有者"
 #: src/lib/api-messages.ts
 msgid "This OAuth account is already linked to another user"
 msgstr "這個 OAuth 帳號已連結到其他使用者"
+
+#: src/components/live/source-editor.tsx
+msgid "This OBS doesn’t have it"
+msgstr ""
+
+#: src/lib/api-messages.ts
+msgid "This OBS doesn't have that kind of source."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "This OBS version doesn't report scene IDs. Update OBS to do this from here."
@@ -8534,9 +9276,27 @@ msgstr "時間從實況開始起算。可用實況頁面的「新增標記」按
 msgid "Tip: add a second server as a backup uplink so NOALBS can fail over."
 msgstr "提示：新增第二台伺服器作為備援上行連線，讓 NOALBS 可以容錯移轉。"
 
+#. placeholder {0}: event.data.scene
+#. placeholder {1}: by(event.data.by, t`from the dashboard`)
+#: src/lib/live-format.ts
+msgid "To {0} {1}"
+msgstr ""
+
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
 msgstr "權杖"
+
+#: src/components/live/source-position.tsx
+msgid "Top"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Top left"
+msgstr ""
+
+#: src/components/live/source-position.tsx
+msgid "Top right"
+msgstr ""
 
 #: src/components/transfer-ownership.tsx
 msgid "Transfer ownership"
@@ -8629,11 +9389,19 @@ msgstr "Twitch 沒有回傳使用者資料"
 msgid "Type <0>{phrase}</0> to confirm"
 msgstr "輸入 <0>{phrase}</0> 以確認"
 
+#: src/components/live/source-editor.tsx
+msgid "Type text instead"
+msgstr ""
+
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/stream-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 msgid "Unchanged"
 msgstr "未變更"
+
+#: src/components/live/source-position.tsx
+msgid "Undo changes"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Unit"
@@ -8743,6 +9511,7 @@ msgstr "升級至 {0}"
 msgid "Upgrade to {0}?"
 msgstr "要升級至 {0} 嗎？"
 
+#: src/components/live/source-editor.tsx
 #: src/components/slug-field.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/welcome.tsx
@@ -8762,6 +9531,10 @@ msgstr "使用 {0}"
 msgid "Use 2–30 lowercase letters, digits and dashes."
 msgstr "請使用 2 到 30 個小寫字母、數字和連字號。"
 
+#: src/components/live/source-editor.tsx
+msgid "Use a frame rate of its own"
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 msgid "Use a stream ID instead"
 msgstr "改用串流 ID"
@@ -8777,6 +9550,10 @@ msgstr "使用預設值"
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Use different scenes while this server is the one in use."
 msgstr "這台伺服器使用中時，改用不同的場景。"
+
+#: src/components/live/source-editor.tsx
+msgid "Use hardware decoding when available"
+msgstr ""
 
 #: src/components/moblin-settings.tsx
 msgid "Use my own password"
@@ -8861,6 +9638,14 @@ msgstr "僅檢視"
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "VIPs"
 msgstr "VIP"
+
+#: src/components/live/source-editor.tsx
+msgid "VLC video source"
+msgstr ""
+
+#: src/components/live/source-editor.tsx
+msgid "VLC video sources need OBS’s VLC plugin and VLC installed."
+msgstr ""
 
 #. placeholder {0}: input.name
 #: src/components/live/audio-mixer.tsx
@@ -9007,6 +9792,18 @@ msgstr "OBS 停止實況時（從 OBS、儀表板、!stop 或揪團），BELABOX
 msgid "When the OBS stream stops (from OBS, the dashboard, !stop or a raid), Moblin stops too. Leave off to keep it running."
 msgstr "OBS 停止實況時（從 OBS、儀表板、!stop 或揪團），Moblin 也會停止。保持關閉則讓它繼續運作。"
 
+#: src/components/live/source-position.tsx
+msgid "Where"
+msgstr ""
+
+#. placeholder {0}: Math.round(box.x)
+#. placeholder {1}: Math.round(box.y)
+#. placeholder {2}: Math.round(box.width)
+#. placeholder {3}: Math.round(box.height)
+#: src/components/live/placement-canvas.tsx
+msgid "Where {name} would be: {0}, {1}, {2} by {3}"
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 msgid "Where the BELABOX sends the stream."
 msgstr "BELABOX 傳送實況的目的地。"
@@ -9022,6 +9819,10 @@ msgstr "你的編碼器傳送影像的目的地。NOALBS 會使用清單中第�
 #: src/components/live/moblin-card.tsx
 msgid "Which of Moblin’s bonding connections it uses, and which it prefers."
 msgstr "Moblin 使用哪些綁定連線，以及優先使用哪些。"
+
+#: src/components/live/source-editor.tsx
+msgid "While it isn’t shown"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
@@ -9055,6 +9856,11 @@ msgstr "未開台時誰看得到"
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Whole stream"
 msgstr "整場實況"
+
+#: src/components/live/source-editor.tsx
+#: src/components/live/source-position.tsx
+msgid "Width"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "WiFi"
@@ -9155,6 +9961,10 @@ msgstr "實況收尾。"
 msgid "Wrong WiFi password"
 msgstr "WiFi 密碼錯誤"
 
+#: src/components/live/source-position.tsx
+msgid "X"
+msgstr ""
+
 #: src/lib/stream-server-kinds.ts
 msgid "Xiu media server"
 msgstr "Xiu 媒體伺服器"
@@ -9162,6 +9972,10 @@ msgstr "Xiu 媒體伺服器"
 #: src/lib/stream-server-kinds.ts
 msgid "Xiu's query_stream API."
 msgstr "Xiu 的 query_stream API。"
+
+#: src/components/live/source-position.tsx
+msgid "Y"
+msgstr ""
 
 #: src/lib/billing.ts
 #: src/routes/_app/$workspace/settings/plan.tsx

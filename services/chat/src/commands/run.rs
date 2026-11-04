@@ -106,6 +106,18 @@ fn failure(error: control::Error) -> Msg {
         control::Error::SourceNotFound
         | control::Error::InputNotFound
         | control::Error::InvalidVolume => Msg::Failed,
+        // Sources are added and edited from the dashboard only.
+        control::Error::NotEditable
+        | control::Error::KindUnavailable
+        | control::Error::InvalidSource(_)
+        | control::Error::NameTaken
+        | control::Error::NotRemovable
+        | control::Error::NotDuplicable
+        | control::Error::SceneInItself
+        | control::Error::InvalidPlacement(_)
+        | control::Error::SceneNotFound
+        | control::Error::SceneOnAir
+        | control::Error::SceneInUse(_) => Msg::Failed,
         // Checked before running BELABOX commands; the key was removed meanwhile.
         control::Error::BelaboxNotSetUp => Msg::Failed,
         control::Error::BelaboxUnreachable => Msg::BelaboxUnreachable,

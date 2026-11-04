@@ -18,7 +18,14 @@ use live::{
     BelaboxStatus, EventDetail, Intent, IntentAction, MoblinAction, MoblinCommand, MoblinReply,
     MoblinStatus, SwitcherStatus,
 };
-use obs_actions::{ObsClient, audio::AudioInput, sources::SourceItem};
+use obs_actions::{
+    ObsClient,
+    audio::AudioInput,
+    inputs::{self, EditableKind, InputDetails, Removal, SourceSettings},
+    placement::{self, Layout, Placement},
+    reuse::{Duplication, ExistingSource},
+    sources::SourceItem,
+};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
@@ -58,6 +65,28 @@ pub enum Error {
     NoSceneIds,
     #[error("that source isn't in the scene anymore")]
     SourceNotFound,
+    #[error("only media, VLC, browser and text sources can be edited here")]
+    NotEditable,
+    #[error("OBS doesn't have that kind of source")]
+    KindUnavailable,
+    #[error(transparent)]
+    InvalidSource(inputs::Invalid),
+    #[error("a source or scene already has that name")]
+    NameTaken,
+    #[error("groups, and what's in them, can only be removed in OBS")]
+    NotRemovable,
+    #[error("scenes and groups can't be duplicated here")]
+    NotDuplicable,
+    #[error("a scene can't be added to itself")]
+    SceneInItself,
+    #[error(transparent)]
+    InvalidPlacement(placement::Invalid),
+    #[error("that scene isn't in OBS anymore")]
+    SceneNotFound,
+    #[error("the scene on air can't be removed")]
+    SceneOnAir,
+    #[error("the switcher uses that scene as its {0} scene")]
+    SceneInUse(SceneRole),
     #[error("the volume must be between -100 and 26 dB")]
     InvalidVolume,
     #[error("OBS has no such input with audio (anymore)")]
@@ -449,6 +478,317 @@ impl Control {
         Ok(item.source_name)
     }
 
+    /// The kinds of source this OBS can add from the dashboard (VLC needs OBS's
+    /// VLC plugin). Allowed while paused: it only reads.
+    pub async fn source_kinds(&self, switcher_id: Uuid) -> Result<Vec<EditableKind>> {
+        let obs = self.connected_obs(switcher_id).await?;
+        Ok(obs.editable_kinds().await?)
+    }
+
+    /// A source's settings, for editing; [`Error::NotEditable`] unless it's a
+    /// media, VLC, browser or text source. Allowed while paused: it only reads.
+    pub async fn source_details(&self, switcher_id: Uuid, name: &str) -> Result<InputDetails> {
+        let obs = self.connected_obs(switcher_id).await?;
+        obs.input_details(name)
+            .await
+            .map_err(source_error)?
+            .ok_or(Error::NotEditable)
+    }
+
+    /// Adds a source to `scene` and logs it in the activity feed. Returns its
+    /// (trimmed) name.
+    pub async fn create_source(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        name: &str,
+        settings: &SourceSettings,
+        enabled: bool,
+        by: &str,
+    ) -> Result<String> {
+        let name = inputs::clean_name(name).map_err(Error::InvalidSource)?;
+        settings.check(true).map_err(Error::InvalidSource)?;
+        let obs = self.controllable_obs(switcher_id).await?;
+        let created = obs
+            .create_input(scene, name, settings, enabled)
+            .await
+            .map_err(source_error)?
+            .ok_or(Error::KindUnavailable)?;
+        // It's there already; a wrong spot can be fixed with Position.
+        let placement = settings.kind().default_placement();
+        if let Err(error) = obs
+            .place_item(scene, created.scene_item_id, &placement)
+            .await
+        {
+            tracing::warn!(%error, %switcher_id, "Couldn't place a new source");
+        }
+
+        let detail = EventDetail::SourceCreated {
+            source: name.to_owned(),
+            scene: scene.to_owned(),
+            copied_from: None,
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a new source");
+        }
+        Ok(name.to_owned())
+    }
+
+    /// Changes a media, VLC, browser or text source's settings (a `None` URL keeps
+    /// what it plays) and renames it to `new_name` if that differs, then logs it.
+    /// Returns its name now.
+    pub async fn edit_source(
+        &self,
+        switcher_id: Uuid,
+        name: &str,
+        new_name: &str,
+        settings: &SourceSettings,
+        by: &str,
+    ) -> Result<String> {
+        let new_name = inputs::clean_name(new_name).map_err(Error::InvalidSource)?;
+        settings.check(false).map_err(Error::InvalidSource)?;
+        let obs = self.controllable_obs(switcher_id).await?;
+        let updated = obs
+            .update_input(name, settings)
+            .await
+            .map_err(source_error)?;
+        if !updated {
+            return Err(Error::NotEditable);
+        }
+        let renamed = new_name != name;
+        if renamed {
+            obs.rename_input(name, new_name)
+                .await
+                .map_err(source_error)?;
+        }
+
+        let detail = EventDetail::SourceEdited {
+            source: new_name.to_owned(),
+            renamed_from: renamed.then(|| name.to_owned()),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a source change");
+        }
+        Ok(new_name.to_owned())
+    }
+
+    /// The sources OBS has that can be added to a scene (see
+    /// [`ObsClient::existing_sources`]). Allowed while paused: it only reads.
+    pub async fn existing_sources(&self, switcher_id: Uuid) -> Result<Vec<ExistingSource>> {
+        let obs = self.connected_obs(switcher_id).await?;
+        Ok(obs.existing_sources().await?)
+    }
+
+    /// Adds source `source` OBS already has (an input or a scene) to `scene`,
+    /// on top, and logs it: the same source, so changes show in both.
+    pub async fn add_existing_source(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        source: &str,
+        enabled: bool,
+        by: &str,
+    ) -> Result<()> {
+        if scene == source {
+            return Err(Error::SceneInItself);
+        }
+        let obs = self.controllable_obs(switcher_id).await?;
+        obs.add_existing(scene, source, enabled)
+            .await
+            .map_err(source_error)?;
+
+        let detail = EventDetail::SourceAdded {
+            source: source.to_owned(),
+            scene: scene.to_owned(),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log an added source");
+        }
+        Ok(())
+    }
+
+    /// Copies item `item_id` of `from` (a group when `from_group`) into scene
+    /// `to` as `name` (see [`ObsClient::duplicate_input`]) and logs it.
+    /// Returns the copy's (trimmed) name.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn duplicate_source(
+        &self,
+        switcher_id: Uuid,
+        from: &str,
+        from_group: bool,
+        item_id: i64,
+        name: &str,
+        to: &str,
+        enabled: bool,
+        by: &str,
+    ) -> Result<String> {
+        let name = inputs::clean_name(name).map_err(Error::InvalidSource)?;
+        let obs = self.controllable_obs(switcher_id).await?;
+        let source = match obs
+            .duplicate_input(from, from_group, item_id, name, to, enabled)
+            .await
+            .map_err(source_error)?
+        {
+            Duplication::Copied(source) => source,
+            Duplication::Gone => return Err(Error::SourceNotFound),
+            Duplication::NotAnInput => return Err(Error::NotDuplicable),
+        };
+
+        let detail = EventDetail::SourceCreated {
+            source: name.to_owned(),
+            scene: to.to_owned(),
+            copied_from: Some(source),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a duplicated source");
+        }
+        Ok(name.to_owned())
+    }
+
+    /// Where everything in `scene` (a group when `group`) is on screen now,
+    /// top first. Allowed while paused: it only reads.
+    pub async fn scene_layout(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        group: bool,
+    ) -> Result<Layout> {
+        let obs = self.connected_obs(switcher_id).await?;
+        Ok(obs.layout(scene, group).await?)
+    }
+
+    /// Puts item `item_id` of `scene` (a group when `group`) where `placement`
+    /// says and logs it. Returns the source's name.
+    pub async fn place_source(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        group: bool,
+        item_id: i64,
+        placement: &Placement,
+        by: &str,
+    ) -> Result<String> {
+        placement.check().map_err(Error::InvalidPlacement)?;
+        let obs = self.controllable_obs(switcher_id).await?;
+        let source = obs
+            .place(scene, group, item_id, placement)
+            .await?
+            .ok_or(Error::SourceNotFound)?;
+
+        let detail = EventDetail::SourcePlaced {
+            source: source.clone(),
+            scene: scene.to_owned(),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a placed source");
+        }
+        Ok(source)
+    }
+
+    /// Removes item `item_id` from `scene` (a group when `group`: refused, like
+    /// groups themselves, see [`ObsClient::remove_scene_item`]) and logs it.
+    /// Returns the source's name.
+    pub async fn remove_source(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        group: bool,
+        item_id: i64,
+        by: &str,
+    ) -> Result<String> {
+        if group {
+            return Err(Error::NotRemovable);
+        }
+        let obs = self.controllable_obs(switcher_id).await?;
+        let source = match obs.remove_scene_item(scene, item_id).await? {
+            Removal::Removed(source) => source,
+            Removal::Group => return Err(Error::NotRemovable),
+            Removal::Gone => return Err(Error::SourceNotFound),
+        };
+
+        let detail = EventDetail::SourceRemoved {
+            source: source.clone(),
+            scene: scene.to_owned(),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a removed source");
+        }
+        Ok(source)
+    }
+
+    /// Moves item `item_id` of `scene` (a group when `group`) to `position`
+    /// in OBS's Sources dock, counted from the top. Not logged: arranging
+    /// takes many.
+    pub async fn move_source(
+        &self,
+        switcher_id: Uuid,
+        scene: &str,
+        group: bool,
+        item_id: i64,
+        position: usize,
+    ) -> Result<()> {
+        let obs = self.controllable_obs(switcher_id).await?;
+        obs.move_scene_item(scene, group, item_id, position)
+            .await?
+            .ok_or(Error::SourceNotFound)?;
+        Ok(())
+    }
+
+    /// Adds an empty scene to OBS and logs it. Returns its (trimmed) name.
+    pub async fn create_scene(&self, switcher_id: Uuid, name: &str, by: &str) -> Result<String> {
+        let name = inputs::clean_name(name).map_err(Error::InvalidSource)?;
+        let obs = self.controllable_obs(switcher_id).await?;
+        obs.create_scene(name).await.map_err(source_error)?;
+
+        let detail = EventDetail::SceneCreated {
+            scene: name.to_owned(),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a new scene");
+        }
+        Ok(name.to_owned())
+    }
+
+    /// Removes scene `uuid` from OBS, and what's on it, and logs it. Refused
+    /// for the scene on air and for the scenes the switcher switches to (it
+    /// would stop working): another one is picked first. Returns its name.
+    pub async fn remove_scene(&self, switcher_id: Uuid, uuid: Uuid, by: &str) -> Result<String> {
+        let switcher = db::switchers::get(&self.db, switcher_id)
+            .await?
+            .ok_or(Error::SceneNotFound)?;
+        if let Some(role) = SceneRole::of(&switcher, uuid) {
+            return Err(Error::SceneInUse(role));
+        }
+        let obs = self.controllable_obs(switcher_id).await?;
+        let list = obs.scene_list().await?;
+        if list.current_program_scene_uuid == Some(uuid) {
+            return Err(Error::SceneOnAir);
+        }
+        let name = list
+            .scenes
+            .into_iter()
+            .find(|scene| scene.scene_uuid == Some(uuid))
+            .ok_or(Error::SceneNotFound)?
+            .scene_name;
+        obs.remove_scene(&name).await?;
+
+        let detail = EventDetail::SceneRemoved {
+            scene: name.clone(),
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a removed scene");
+        }
+        Ok(name)
+    }
+
     /// The scene on air and what OBS's Audio Mixer shows for it (see
     /// [`ObsClient::audio_mixer`]). Allowed while paused: it only reads.
     pub async fn audio(&self, switcher_id: Uuid) -> Result<(String, Vec<AudioInput>)> {
@@ -552,6 +892,59 @@ fn input_error(error: obs_actions::Error) -> Error {
             code: 600 | 602 | 604,
             ..
         } => Error::InputNotFound,
+        error => error.into(),
+    }
+}
+
+/// What the switcher uses a scene for (switching to it, or for a button).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SceneRole {
+    Live,
+    Low,
+    Offline,
+    Starting,
+    Ending,
+    Privacy,
+    Refresh,
+}
+
+impl SceneRole {
+    /// The role `switcher` gives scene `uuid`, if any.
+    pub fn of(switcher: &db::switchers::Switcher, uuid: Uuid) -> Option<Self> {
+        [
+            (switcher.scene_live, Self::Live),
+            (switcher.scene_low, Self::Low),
+            (switcher.scene_offline, Self::Offline),
+            (switcher.scene_starting, Self::Starting),
+            (switcher.scene_ending, Self::Ending),
+            (switcher.scene_privacy, Self::Privacy),
+            (switcher.scene_refresh, Self::Refresh),
+        ]
+        .into_iter()
+        .find_map(|(scene, role)| (scene == Some(uuid)).then_some(role))
+    }
+}
+
+impl std::fmt::Display for SceneRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Live => "LIVE",
+            Self::Low => "LOW",
+            Self::Offline => "BRB",
+            Self::Starting => "Starting",
+            Self::Ending => "Ending",
+            Self::Privacy => "Privacy",
+            Self::Refresh => "Refresh",
+        })
+    }
+}
+
+/// A source request's error: OBS refusing a name it doesn't know means the
+/// source is gone; one it already has, that the name is taken.
+fn source_error(error: obs_actions::Error) -> Error {
+    match error {
+        obs_actions::Error::ObsResponseError { code: 600, .. } => Error::SourceNotFound,
+        error if inputs::is_name_taken(&error) => Error::NameTaken,
         error => error.into(),
     }
 }

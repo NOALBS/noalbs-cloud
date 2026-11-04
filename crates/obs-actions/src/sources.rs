@@ -95,6 +95,19 @@ impl<CT: ClientTransport> ObsClient<CT> {
         })
     }
 
+    /// Adds an empty scene. OBS refuses a name a scene or source has.
+    pub async fn create_scene(&self, name: &str) -> Result<()> {
+        self.command(RequestKind::CreateScene { scene_name: name })
+            .await
+    }
+
+    /// Removes a scene and what's on it: OBS deletes the sources no other
+    /// scene uses.
+    pub async fn remove_scene(&self, name: &str) -> Result<()> {
+        self.command(RequestKind::RemoveScene { scene_name: name })
+            .await
+    }
+
     /// Shows (`true`) or hides an item of a scene or group.
     pub async fn set_scene_item_enabled(
         &self,
@@ -170,6 +183,26 @@ mod tests {
             obs.asked(&["GetGroupSceneItemList"]).len(),
             1,
             "each scene is read once"
+        );
+    }
+
+    #[tokio::test]
+    async fn scenes_are_created_and_removed_by_name() {
+        let obs = client(obs);
+        obs.create_scene("Intermission").await.unwrap();
+        obs.remove_scene("Intermission").await.unwrap();
+        assert_eq!(
+            obs.asked(&["CreateScene", "RemoveScene"]),
+            [
+                (
+                    "CreateScene".to_owned(),
+                    json!({ "sceneName": "Intermission" })
+                ),
+                (
+                    "RemoveScene".to_owned(),
+                    json!({ "sceneName": "Intermission" })
+                ),
+            ]
         );
     }
 

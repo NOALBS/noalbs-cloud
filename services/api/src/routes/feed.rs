@@ -20,7 +20,11 @@ use axum::{
 use db::workspaces::WorkspaceRoleEnum;
 use futures_util::{Stream, StreamExt, stream};
 use live::{BelaboxRefusal, EventDetail, MoblinRefusal, SwitcherEvent};
-use obs_actions::{ObsClient, SceneSource};
+use obs_actions::{
+    ObsClient, SceneSource,
+    inputs::{EditableKind, Invalid, SourceSettings},
+    placement::{self, Crop, Placement},
+};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -28,7 +32,9 @@ use uuid::Uuid;
 
 use crate::{
     app::ApiState,
-    permissions::{SwitcherAuthorized, SwitcherControl, SwitcherView, Via, user_display_name},
+    permissions::{
+        SwitcherAuthorized, SwitcherControl, SwitcherManage, SwitcherView, Via, user_display_name,
+    },
     routes::{ApiError, ApiResult, ErrorBody},
     screenshots::{self, Announce, Viewer},
 };
@@ -40,6 +46,18 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(obs_scenes))
         .routes(routes!(obs_sources))
         .routes(routes!(set_source))
+        .routes(routes!(move_source))
+        .routes(routes!(remove_source))
+        .routes(routes!(existing_sources))
+        .routes(routes!(add_existing_source))
+        .routes(routes!(duplicate_source))
+        .routes(routes!(scene_layout))
+        .routes(routes!(create_scene))
+        .routes(routes!(remove_scene))
+        .routes(routes!(place_source))
+        .routes(routes!(obs_source_kinds))
+        .routes(routes!(obs_input, edit_source))
+        .routes(routes!(create_source))
         .routes(routes!(obs_audio))
         .routes(routes!(set_input_muted))
         .routes(routes!(set_input_volume))
@@ -291,6 +309,55 @@ pub fn control_error(error: control::Error) -> ApiError {
             StatusCode::NOT_FOUND,
             "source_not_found",
             "That source isn't in the scene anymore. Reload the list.",
+        ),
+        control::Error::NotEditable => ApiError::new(
+            StatusCode::CONFLICT,
+            "not_editable",
+            "Only media, VLC, browser and text sources can be edited here. Change this one in OBS.",
+        ),
+        control::Error::KindUnavailable => ApiError::new(
+            StatusCode::CONFLICT,
+            "kind_unavailable",
+            "This OBS doesn't have that kind of source.",
+        ),
+        control::Error::InvalidSource(invalid) => {
+            ApiError::bad_request("invalid_source", invalid_source_message(invalid))
+        }
+        control::Error::NotRemovable => ApiError::new(
+            StatusCode::CONFLICT,
+            "not_removable",
+            "Groups, and what's in them, can only be removed in OBS.",
+        ),
+        control::Error::NotDuplicable => ApiError::new(
+            StatusCode::CONFLICT,
+            "not_duplicable",
+            "Scenes and groups can't be duplicated here.",
+        ),
+        control::Error::InvalidPlacement(invalid) => {
+            ApiError::bad_request("invalid_placement", invalid_placement_message(invalid))
+        }
+        control::Error::SceneNotFound => ApiError::new(
+            StatusCode::NOT_FOUND,
+            "scene_not_found",
+            "That scene isn't in OBS anymore. Reload the list.",
+        ),
+        control::Error::SceneOnAir => ApiError::new(
+            StatusCode::CONFLICT,
+            "scene_on_air",
+            "Switch to another scene first: the scene on air can't be removed.",
+        ),
+        control::Error::SceneInUse(role) => ApiError::new(
+            StatusCode::CONFLICT,
+            "scene_in_use",
+            scene_in_use_message(role),
+        ),
+        control::Error::SceneInItself => {
+            ApiError::bad_request("scene_in_itself", "A scene can't be added to itself.")
+        }
+        control::Error::NameTaken => ApiError::new(
+            StatusCode::CONFLICT,
+            "name_taken",
+            "OBS already has a source or scene with that name.",
         ),
         control::Error::InputNotFound => ApiError::new(
             StatusCode::NOT_FOUND,
@@ -635,6 +702,677 @@ async fn set_source(
         .map_err(control_error)?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct MoveSource {
+    /// The source's `parent`, `parent_is_group` and `item_id` from the list.
+    pub parent: String,
+    #[serde(default)]
+    pub parent_is_group: bool,
+    pub item_id: i64,
+    /// Where to, among the items of its scene or group, counted from the top
+    /// (0: drawn over all the others); past the end means the bottom.
+    pub position: usize,
+}
+
+/// Move a source to another place in its scene or group, like dragging it in
+/// OBS's Sources dock. Not logged in the activity feed: arranging sends many.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/move", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = MoveSource,
+    responses(
+        (status = NO_CONTENT, description = "Moved (or already there)"),
+        (status = NOT_FOUND, description = "`source_not_found`: it's gone from that scene", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn move_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherControl>,
+    Json(request): Json<MoveSource>,
+) -> ApiResult<StatusCode> {
+    state
+        .control()
+        .move_source(
+            authorized.into_access().switcher.id,
+            &request.parent,
+            request.parent_is_group,
+            request.item_id,
+            request.position,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RemoveSource {
+    /// The source's `parent`, `parent_is_group` and `item_id` from the list.
+    pub parent: String,
+    #[serde(default)]
+    pub parent_is_group: bool,
+    pub item_id: i64,
+}
+
+/// Remove a source from its scene, as OBS's Sources dock does: OBS deletes it
+/// once no scene uses it. Groups and what's in them stay (`not_removable`).
+/// Logged in the activity feed. Members who manage switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/remove", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = RemoveSource,
+    responses(
+        (status = NO_CONTENT, description = "Removed"),
+        (status = NOT_FOUND, description = "`source_not_found`: it's gone from that scene", body = ErrorBody),
+        (status = CONFLICT, description = "`not_removable`: a group, or in one", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn remove_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<RemoveSource>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    state
+        .control()
+        .remove_source(
+            access.switcher.id,
+            &request.parent,
+            request.parent_is_group,
+            request.item_id,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ExistingSourceDto {
+    pub name: String,
+    /// The input's kind (e.g. `ffmpeg_source`); `null` for scenes.
+    pub input_kind: Option<String>,
+    pub is_scene: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ExistingSourcesDto {
+    /// Inputs by name (not the global audio devices), then scenes top first.
+    pub sources: Vec<ExistingSourceDto>,
+}
+
+/// The sources OBS has that can be added to a scene again.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/existing-sources", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses(
+        (status = OK, body = ExistingSourcesDto),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+    ))]
+async fn existing_sources(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+) -> ApiResult<Json<ExistingSourcesDto>> {
+    let sources = state
+        .control()
+        .existing_sources(authorized.into_access().switcher.id)
+        .await
+        .map_err(control_error)?;
+    Ok(Json(ExistingSourcesDto {
+        sources: sources
+            .into_iter()
+            .map(|source| ExistingSourceDto {
+                name: source.name,
+                input_kind: source.input_kind,
+                is_scene: source.is_scene,
+            })
+            .collect(),
+    }))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct AddExistingSource {
+    /// The scene to add it to (not a group).
+    pub scene: String,
+    /// A source or scene OBS has.
+    pub source: String,
+    #[serde(default = "shown")]
+    pub enabled: bool,
+}
+
+/// Add a source OBS already has (or a scene) to a scene, on top, like OBS's
+/// "Add Existing": the same source, so a change to it shows in every scene.
+/// Logged in the activity feed. Members who manage switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-items", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = AddExistingSource,
+    responses(
+        (status = CREATED, body = SavedSourceDto),
+        (status = BAD_REQUEST, description = "`scene_in_itself`", body = ErrorBody),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn add_existing_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<AddExistingSource>,
+) -> ApiResult<(StatusCode, Json<SavedSourceDto>)> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    state
+        .control()
+        .add_existing_source(
+            access.switcher.id,
+            &request.scene,
+            &request.source,
+            request.enabled,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok((
+        StatusCode::CREATED,
+        Json(SavedSourceDto {
+            name: request.source,
+        }),
+    ))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct DuplicateSource {
+    /// The source's `parent`, `parent_is_group` and `item_id` from the list.
+    pub parent: String,
+    #[serde(default)]
+    pub parent_is_group: bool,
+    pub item_id: i64,
+    /// The copy's name.
+    pub name: String,
+    /// The scene to put the copy in (not a group).
+    pub scene: String,
+    #[serde(default = "shown")]
+    pub enabled: bool,
+}
+
+/// Duplicate a source, like OBS's Duplicate: a new source with a copy of its
+/// settings, filters and placement, which changes on its own. Copied inside
+/// OBS, so nothing of it is sent here. Scenes and groups aren't copied
+/// (`not_duplicable`). Logged in the activity feed. Members who manage
+/// switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/duplicate", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = DuplicateSource,
+    responses(
+        (status = CREATED, body = SavedSourceDto),
+        (status = BAD_REQUEST, description = "`invalid_source`: the name", body = ErrorBody),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = CONFLICT, description = "`name_taken`, or `not_duplicable`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn duplicate_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<DuplicateSource>,
+) -> ApiResult<(StatusCode, Json<SavedSourceDto>)> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    let name = state
+        .control()
+        .duplicate_source(
+            access.switcher.id,
+            &request.parent,
+            request.parent_is_group,
+            request.item_id,
+            &request.name,
+            &request.scene,
+            request.enabled,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok((StatusCode::CREATED, Json(SavedSourceDto { name })))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct LayoutQuery {
+    /// A source's `parent` and `parent_is_group` from the list.
+    pub scene: String,
+    #[serde(default)]
+    pub group: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LayoutItemDto {
+    /// The `item_id` of the list.
+    pub item_id: i64,
+    pub name: String,
+    pub enabled: bool,
+    /// Its box's top left and size, in canvas pixels (inside a group, the
+    /// group's). 0 × 0 when OBS doesn't know its size yet (nothing playing).
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+    pub crop: Crop,
+    /// The source's own size, before crop and scaling; 0 × 0 while OBS doesn't
+    /// know it (nothing playing).
+    pub source_width: f64,
+    pub source_height: f64,
+    /// Degrees it's turned; the box is then only roughly where it shows.
+    pub rotation: f64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SceneLayoutDto {
+    /// The canvas every scene is laid out on, in pixels.
+    pub canvas_width: u32,
+    pub canvas_height: u32,
+    /// Top first, like OBS's Sources dock (drawn over the ones after).
+    pub items: Vec<LayoutItemDto>,
+}
+
+/// Where everything in a scene (or group) is on screen now.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-layout", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), LayoutQuery),
+    responses(
+        (status = OK, body = SceneLayoutDto),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`: no such scene", body = ErrorBody),
+    ))]
+async fn scene_layout(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Query(query): Query<LayoutQuery>,
+) -> ApiResult<Json<SceneLayoutDto>> {
+    let layout = state
+        .control()
+        .scene_layout(
+            authorized.into_access().switcher.id,
+            &query.scene,
+            query.group,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok(Json(SceneLayoutDto {
+        canvas_width: layout.canvas.0,
+        canvas_height: layout.canvas.1,
+        items: layout
+            .items
+            .into_iter()
+            .map(|item| LayoutItemDto {
+                item_id: item.item_id,
+                name: item.name,
+                enabled: item.enabled,
+                x: item.placement.x,
+                y: item.placement.y,
+                width: item.placement.width,
+                height: item.placement.height,
+                source_width: item.placement.source_width,
+                source_height: item.placement.source_height,
+                crop: item.placement.crop,
+                rotation: item.placement.rotation,
+            })
+            .collect(),
+    }))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PlaceSource {
+    /// The source's `parent`, `parent_is_group` and `item_id` from the list.
+    pub parent: String,
+    #[serde(default)]
+    pub parent_is_group: bool,
+    pub item_id: i64,
+    pub placement: Placement,
+}
+
+/// Move or size a source on screen: a preset, or an exact box. Logged in the
+/// activity feed.
+#[utoipa::path(put, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/placement", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = PlaceSource,
+    responses(
+        (status = NO_CONTENT, description = "Placed"),
+        (status = BAD_REQUEST, description = "`invalid_placement`", body = ErrorBody),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn place_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherControl>,
+    Json(request): Json<PlaceSource>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let by = access.workspace.display_name(&state).await?;
+    state
+        .control()
+        .place_source(
+            access.switcher.id,
+            &request.parent,
+            request.parent_is_group,
+            request.item_id,
+            &request.placement,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// What's wrong with a placement, said to the person who set it.
+fn invalid_placement_message(invalid: placement::Invalid) -> &'static str {
+    match invalid {
+        placement::Invalid::Size => "Pick a size from 5% to 100% of the screen.",
+        placement::Invalid::Margin => "The margin is 0% to 25% of the screen.",
+        placement::Invalid::Box => {
+            "The box is 1 to 16384 pixels wide and high, within 16384 pixels of the screen."
+        }
+        placement::Invalid::Crop => "Crop is at most 16384 pixels a side.",
+    }
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateScene {
+    pub name: String,
+}
+
+/// Add an empty scene to OBS. Logged in the activity feed. Members who manage
+/// switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scenes", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = CreateScene,
+    responses(
+        (status = CREATED, body = SavedSourceDto),
+        (status = BAD_REQUEST, description = "`invalid_source`: the name", body = ErrorBody),
+        (status = CONFLICT, description = "`name_taken`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+    ))]
+async fn create_scene(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<CreateScene>,
+) -> ApiResult<(StatusCode, Json<SavedSourceDto>)> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    let name = state
+        .control()
+        .create_scene(access.switcher.id, &request.name, &by)
+        .await
+        .map_err(control_error)?;
+    Ok((StatusCode::CREATED, Json(SavedSourceDto { name })))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RemoveScene {
+    pub scene_uuid: Uuid,
+}
+
+/// Remove a scene from OBS, with what's on it: OBS deletes the sources no
+/// other scene uses. Not the scene on air (`scene_on_air`), nor one the
+/// switcher uses (`scene_in_use`). Logged in the activity feed. Members who
+/// manage switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene/remove", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = RemoveScene,
+    responses(
+        (status = NO_CONTENT, description = "Removed"),
+        (status = NOT_FOUND, description = "`scene_not_found`", body = ErrorBody),
+        (status = CONFLICT, description = "`scene_on_air`, or `scene_in_use`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+    ))]
+async fn remove_scene(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<RemoveScene>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    state
+        .control()
+        .remove_scene(access.switcher.id, request.scene_uuid, &by)
+        .await
+        .map_err(control_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Why a scene can't be removed: the switcher uses it.
+fn scene_in_use_message(role: control::SceneRole) -> &'static str {
+    use control::SceneRole::*;
+    match role {
+        Live => {
+            "NOALBS switches to this scene when the feed is good. Pick another LIVE scene on the Scenes page first."
+        }
+        Low => {
+            "NOALBS switches to this scene when the bitrate is low. Pick another LOW scene on the Scenes page first."
+        }
+        Offline => {
+            "NOALBS switches to this scene when the feed drops. Pick another BRB scene on the Scenes page first."
+        }
+        Starting => {
+            "This is the switcher's Starting scene. Pick another one on the Scenes page first."
+        }
+        Ending => "This is the switcher's Ending scene. Pick another one on the Scenes page first.",
+        Privacy => {
+            "This is the switcher's Privacy scene. Pick another one on the Scenes page first."
+        }
+        Refresh => {
+            "This is the switcher's Refresh scene. Pick another one on the Scenes page first."
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ObsSourceKindsDto {
+    /// What can be added: media and browser sources, VLC if OBS has its plugin.
+    pub kinds: Vec<EditableKind>,
+}
+
+/// The kinds of source that can be added to the switcher's OBS from here.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source-kinds", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses(
+        (status = OK, body = ObsSourceKindsDto),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+    ))]
+async fn obs_source_kinds(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+) -> ApiResult<Json<ObsSourceKindsDto>> {
+    let kinds = state
+        .control()
+        .source_kinds(authorized.into_access().switcher.id)
+        .await
+        .map_err(control_error)?;
+    Ok(Json(ObsSourceKindsDto { kinds }))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct InputQuery {
+    /// The source's name.
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ObsInputDto {
+    pub name: String,
+    /// Its URL can hold a key: show it hidden. `null` when it plays a file
+    /// on the OBS computer, which isn't shown here.
+    pub settings: SourceSettings,
+}
+
+/// A media, VLC, browser or text source's settings, for editing. Members who manage
+/// switchers only: what it plays can hold a key.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/input", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), InputQuery),
+    responses(
+        (status = OK, body = ObsInputDto),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = CONFLICT, description = "`not_editable`: another kind of source", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+    ))]
+async fn obs_input(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Query(query): Query<InputQuery>,
+) -> ApiResult<Json<ObsInputDto>> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let details = state
+        .control()
+        .source_details(access.switcher.id, &query.name)
+        .await
+        .map_err(control_error)?;
+    Ok(Json(ObsInputDto {
+        name: details.name,
+        settings: details.settings,
+    }))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateSource {
+    /// The scene to add it to (not a group).
+    pub scene: String,
+    pub name: String,
+    /// What it plays must be given.
+    pub settings: SourceSettings,
+    /// Shown right away (the default), or hidden until someone shows it.
+    #[serde(default = "shown")]
+    pub enabled: bool,
+}
+
+fn shown() -> bool {
+    true
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct EditSource {
+    /// Its name now.
+    pub name: String,
+    /// Its name after; the same to keep it.
+    pub new_name: String,
+    /// Of the source's kind. A `null` URL or playlist keeps what it plays.
+    pub settings: SourceSettings,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SavedSourceDto {
+    /// Its name, trimmed.
+    pub name: String,
+}
+
+/// Add a media, VLC, browser or text source to a scene, on top. Logged in the
+/// activity feed. Members who manage switchers only.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/inputs", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = CreateSource,
+    responses(
+        (status = CREATED, body = SavedSourceDto),
+        (status = BAD_REQUEST, description = "`invalid_source`", body = ErrorBody),
+        (status = CONFLICT, description = "`name_taken`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn create_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<CreateSource>,
+) -> ApiResult<(StatusCode, Json<SavedSourceDto>)> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    let name = state
+        .control()
+        .create_source(
+            access.switcher.id,
+            &request.scene,
+            &request.name,
+            &request.settings,
+            request.enabled,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok((StatusCode::CREATED, Json(SavedSourceDto { name })))
+}
+
+/// Change a media, VLC, browser or text source's settings and name. Saving makes it
+/// reload what it plays. Logged in the activity feed (without its URL).
+/// Members who manage switchers only.
+#[utoipa::path(put, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/input", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = EditSource,
+    responses(
+        (status = OK, body = SavedSourceDto),
+        (status = BAD_REQUEST, description = "`invalid_source`", body = ErrorBody),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = CONFLICT, description = "`name_taken`, or `not_editable`", body = ErrorBody),
+        (status = FORBIDDEN, description = "`members_only`: NOALBS support", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn edit_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherManage>,
+    Json(request): Json<EditSource>,
+) -> ApiResult<Json<SavedSourceDto>> {
+    let access = authorized.into_access();
+    access.workspace.members_only()?;
+    let by = access.workspace.display_name(&state).await?;
+    let name = state
+        .control()
+        .edit_source(
+            access.switcher.id,
+            &request.name,
+            &request.new_name,
+            &request.settings,
+            &by,
+        )
+        .await
+        .map_err(control_error)?;
+    Ok(Json(SavedSourceDto { name }))
+}
+
+/// What's wrong with a source, said to the person who made it.
+fn invalid_source_message(invalid: Invalid) -> &'static str {
+    match invalid {
+        Invalid::Name => "Give the source a name of up to 256 characters.",
+        Invalid::MissingUrl => "Enter what the source plays.",
+        Invalid::StreamUrl => {
+            "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
+        }
+        Invalid::WebUrl => {
+            "Enter the full http:// or https:// address of the page. Files on the OBS computer can only be picked in OBS."
+        }
+        Invalid::Playlist => "A VLC source plays 1 to 50 URLs.",
+        Invalid::Buffering => "Network buffering is 0 to 16 MB.",
+        Invalid::ReconnectDelay => "The reconnect delay is 1 to 60 seconds.",
+        Invalid::InputFormat => {
+            "The input format is letters, digits and underscores only, like mpegts."
+        }
+        Invalid::NetworkCaching => "Network caching is 100 to 60,000 ms.",
+        Invalid::BrowserSize => "A browser source is 1 to 8192 pixels wide and high.",
+        Invalid::BrowserFps => "A browser source's frame rate is 1 to 60.",
+        Invalid::Css => "Custom CSS is at most 20,000 characters.",
+        Invalid::Text => "A text source says at most 10,000 characters.",
+        Invalid::FontFace => "A font's name is at most 128 characters.",
+        Invalid::FontSize => "The font size is 1 to 1024.",
+        Invalid::Color => "Pick a color.",
+    }
 }
 
 #[derive(Debug, Serialize, ToSchema)]

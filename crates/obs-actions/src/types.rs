@@ -292,6 +292,88 @@ pub struct GetMediaInputStatus {
 pub struct GetInputSettings {
     /// Only what differs from the kind's defaults.
     pub input_settings: serde_json::Value,
+    /// The input's kind (e.g. `ffmpeg_source`).
+    #[serde(default)]
+    pub input_kind: String,
+}
+
+/// `GetInputDefaultSettings`' answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetInputDefaultSettings {
+    pub default_input_settings: serde_json::Value,
+}
+
+/// `GetInputKindList`'s answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetInputKindList {
+    pub input_kinds: Vec<String>,
+}
+
+/// `GetVideoSettings`' answer (the parts used here).
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetVideoSettings {
+    /// The canvas every scene is laid out on, in pixels.
+    pub base_width: u32,
+    pub base_height: u32,
+}
+
+/// `GetInputList`'s answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetInputList {
+    pub inputs: Vec<InputListItem>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InputListItem {
+    pub input_name: String,
+    #[serde(default)]
+    pub input_kind: String,
+}
+
+/// `CreateSceneItem`'s answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSceneItem {
+    pub scene_item_id: i64,
+}
+
+/// `GetSceneItemTransform`'s answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSceneItemTransform {
+    pub scene_item_transform: serde_json::Value,
+}
+
+/// `GetSourceFilterList`'s answer, in the order they apply.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSourceFilterList {
+    pub filters: Vec<SourceFilter>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceFilter {
+    pub filter_name: String,
+    pub filter_kind: String,
+    #[serde(default)]
+    pub filter_settings: serde_json::Value,
+    pub filter_enabled: bool,
+}
+
+/// `CreateInput`'s answer.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateInput {
+    /// Not sent by OBS versions before 30.
+    #[serde(default)]
+    pub input_uuid: Option<uuid::Uuid>,
+    pub scene_item_id: i64,
 }
 
 impl<'de> Deserialize<'de> for ObsMessage {
@@ -402,6 +484,92 @@ pub enum RequestKind<'a> {
         scene_name: &'a str,
         scene_item_id: i64,
         scene_item_enabled: bool,
+    },
+    /// Every input (not scenes or groups).
+    GetInputList,
+    /// A new, empty scene, at the top of OBS's Scenes dock.
+    CreateScene {
+        #[serde(rename = "sceneName")]
+        scene_name: &'a str,
+    },
+    /// Removes a scene and its items; OBS deletes the sources no other scene uses.
+    RemoveScene {
+        #[serde(rename = "sceneName")]
+        scene_name: &'a str,
+    },
+    /// The canvas size (and output size, frame rate).
+    GetVideoSettings,
+    /// Adds an existing source (an input or a scene) to a scene, not a group.
+    #[serde(rename_all = "camelCase")]
+    CreateSceneItem {
+        scene_name: &'a str,
+        source_name: &'a str,
+        scene_item_enabled: bool,
+    },
+    #[serde(rename_all = "camelCase")]
+    GetSceneItemTransform {
+        scene_name: &'a str,
+        scene_item_id: i64,
+    },
+    #[serde(rename_all = "camelCase")]
+    SetSceneItemTransform {
+        scene_name: &'a str,
+        scene_item_id: i64,
+        scene_item_transform: serde_json::Value,
+    },
+    GetSourceFilterList {
+        #[serde(rename = "sourceName")]
+        source_name: &'a str,
+    },
+    #[serde(rename_all = "camelCase")]
+    CreateSourceFilter {
+        source_name: &'a str,
+        filter_name: &'a str,
+        filter_kind: &'a str,
+        filter_settings: serde_json::Value,
+    },
+    #[serde(rename_all = "camelCase")]
+    SetSourceFilterEnabled {
+        source_name: &'a str,
+        filter_name: &'a str,
+        filter_enabled: bool,
+    },
+    /// Removes an item from a scene (not a group: OBS can't). OBS deletes
+    /// the source too once no scene uses it.
+    #[serde(rename_all = "camelCase")]
+    RemoveSceneItem {
+        scene_name: &'a str,
+        scene_item_id: i64,
+    },
+    /// Moves an item within its scene or group: 0 is the bottom of OBS's
+    /// Sources dock.
+    #[serde(rename_all = "camelCase")]
+    SetSceneItemIndex {
+        scene_name: &'a str,
+        scene_item_id: i64,
+        scene_item_index: usize,
+    },
+    /// The input kinds this OBS has (plugins add some, like `vlc_source`).
+    GetInputKindList {
+        unversioned: bool,
+    },
+    /// A new input, added to `scene_name` (a scene, not a group) as an item.
+    #[serde(rename_all = "camelCase")]
+    CreateInput {
+        scene_name: &'a str,
+        input_name: &'a str,
+        input_kind: &'a str,
+        input_settings: serde_json::Value,
+        scene_item_enabled: bool,
+    },
+    #[serde(rename_all = "camelCase")]
+    SetInputName {
+        input_name: &'a str,
+        new_input_name: &'a str,
+    },
+    #[serde(rename_all = "camelCase")]
+    GetInputDefaultSettings {
+        input_kind: &'a str,
     },
     GetSpecialInputs,
     GetInputMute {

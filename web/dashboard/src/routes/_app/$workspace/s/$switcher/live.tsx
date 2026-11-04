@@ -336,12 +336,14 @@ function LivePage() {
             scenes={switcher.scenes}
             currentUuid={status?.current_scene?.uuid}
             canControl={canControl && !paused}
+            canManage={can(actor, "switcher.manage") && !paused && !isSupport(actor)}
             obsConnected={Boolean(status?.obs_connected)}
           />
           <SourceList
             path={path}
             scene={status?.current_scene?.uuid ?? status?.current_scene?.name ?? null}
             canControl={canControl && !paused}
+            canEditSources={can(actor, "switcher.manage") && !paused && !isSupport(actor)}
             obsConnected={Boolean(status?.obs_connected)}
           />
           <AudioMixer

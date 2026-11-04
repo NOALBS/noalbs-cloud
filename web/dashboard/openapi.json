@@ -9086,6 +9086,56 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/existing-sources": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "The sources OBS has that can be added to a scene again.",
+        "operationId": "existing_sources",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExistingSourcesDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/fix": {
       "post": {
         "tags": [
@@ -9120,6 +9170,303 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FixedFeed"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/input": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "A media, VLC, browser or text source's settings, for editing. Members who manage\nswitchers only: what it plays can hold a key.",
+        "operationId": "obs_input",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The source's name.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObsInputDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`not_editable`: another kind of source",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Change a media, VLC, browser or text source's settings and name. Saving makes it\nreload what it plays. Logged in the activity feed (without its URL).\nMembers who manage switchers only.",
+        "operationId": "edit_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSourceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_source`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`name_taken`, or `not_editable`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/inputs": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Add a media, VLC, browser or text source to a scene, on top. Logged in the\nactivity feed. Members who manage switchers only.",
+        "operationId": "create_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSourceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_source`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`name_taken`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -9275,6 +9622,267 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-items": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Add a source OBS already has (or a scene) to a scene, on top, like OBS's\n\"Add Existing\": the same source, so a change to it shows in every scene.\nLogged in the activity feed. Members who manage switchers only.",
+        "operationId": "add_existing_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddExistingSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSourceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`scene_in_itself`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene-layout": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Where everything in a scene (or group) is on screen now.",
+        "operationId": "scene_layout",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "scene",
+            "in": "query",
+            "description": "A source's `parent` and `parent_is_group` from the list.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneLayoutDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`: no such scene",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene/remove": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Remove a scene from OBS, with what's on it: OBS deletes the sources no\nother scene uses. Not the scene on air (`scene_on_air`), nor one the\nswitcher uses (`scene_in_use`). Logged in the activity feed. Members who\nmanage switchers only.",
+        "operationId": "remove_scene",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveScene"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`scene_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`scene_on_air`, or `scene_in_use`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scenes": {
       "get": {
         "tags": [
@@ -9308,6 +9916,94 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ObsScenesDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Add an empty scene to OBS. Logged in the activity feed. Members who manage\nswitchers only.",
+        "operationId": "create_scene",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScene"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSourceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_source`: the name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`name_taken`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -9515,6 +10211,418 @@
           },
           "404": {
             "description": "`source_not_found`: it's gone from that scene",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source-kinds": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "The kinds of source that can be added to the switcher's OBS from here.",
+        "operationId": "obs_source_kinds",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObsSourceKindsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/duplicate": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Duplicate a source, like OBS's Duplicate: a new source with a copy of its\nsettings, filters and placement, which changes on its own. Copied inside\nOBS, so nothing of it is sent here. Scenes and groups aren't copied\n(`not_duplicable`). Logged in the activity feed. Members who manage\nswitchers only.",
+        "operationId": "duplicate_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSourceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_source`: the name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`name_taken`, or `not_duplicable`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/move": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Move a source to another place in its scene or group, like dragging it in\nOBS's Sources dock. Not logged in the activity feed: arranging sends many.",
+        "operationId": "move_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Moved (or already there)"
+          },
+          "404": {
+            "description": "`source_not_found`: it's gone from that scene",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/placement": {
+      "put": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Move or size a source on screen: a preset, or an exact box. Logged in the\nactivity feed.",
+        "operationId": "place_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Placed"
+          },
+          "400": {
+            "description": "`invalid_placement`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/remove": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Remove a source from its scene, as OBS's Sources dock does: OBS deletes it\nonce no scene uses it. Groups and what's in them stay (`not_removable`).\nLogged in the activity feed. Members who manage switchers only.",
+        "operationId": "remove_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "403": {
+            "description": "`members_only`: NOALBS support",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`source_not_found`: it's gone from that scene",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`not_removable`: a group, or in one",
             "content": {
               "application/json": {
                 "schema": {
@@ -10985,6 +12093,26 @@
           }
         }
       },
+      "AddExistingSource": {
+        "type": "object",
+        "required": [
+          "scene",
+          "source"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "scene": {
+            "type": "string",
+            "description": "The scene to add it to (not a group)."
+          },
+          "source": {
+            "type": "string",
+            "description": "A source or scene OBS has."
+          }
+        }
+      },
       "AddonDto": {
         "type": "object",
         "description": "An add-on that can be bought per unit, on top of (or without) a plan.",
@@ -12270,6 +13398,21 @@
           }
         }
       },
+      "Anchor": {
+        "type": "string",
+        "description": "Where on the screen (or in its box) a source sits.",
+        "enum": [
+          "top_left",
+          "top",
+          "top_right",
+          "left",
+          "center",
+          "right",
+          "bottom_left",
+          "bottom",
+          "bottom_right"
+        ]
+      },
       "AudioUpdate": {
         "oneOf": [
           {
@@ -13457,6 +14600,62 @@
           "reason": {
             "type": "string",
             "description": "Why, for the workspace's owners and admins: 10–500 characters."
+          }
+        }
+      },
+      "BrowserSettings": {
+        "type": "object",
+        "required": [
+          "width",
+          "height",
+          "css",
+          "shutdown",
+          "restart_when_active",
+          "reroute_audio"
+        ],
+        "properties": {
+          "css": {
+            "type": "string",
+            "description": "CSS added to the page."
+          },
+          "fps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "A frame rate of its own, 1 to 60; `null` to match OBS's.",
+            "minimum": 0
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "reroute_audio": {
+            "type": "boolean",
+            "description": "Send the page's audio through OBS (it then shows on the Audio Mixer)."
+          },
+          "restart_when_active": {
+            "type": "boolean",
+            "description": "Reload the page when its scene goes on air."
+          },
+          "shutdown": {
+            "type": "boolean",
+            "description": "Shut the page down while the source isn't shown."
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The page it shows. Read as `null` when it shows a file on the OBS computer."
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 to 8192 px.",
+            "minimum": 0
           }
         }
       },
@@ -14662,6 +15861,42 @@
           }
         ]
       },
+      "CreateScene": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateSource": {
+        "type": "object",
+        "required": [
+          "scene",
+          "name",
+          "settings"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Shown right away (the default), or hidden until someone shows it."
+          },
+          "name": {
+            "type": "string"
+          },
+          "scene": {
+            "type": "string",
+            "description": "The scene to add it to (not a group)."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SourceSettings",
+            "description": "What it plays must be given."
+          }
+        }
+      },
       "CreateStreamServer": {
         "type": "object",
         "required": [
@@ -14773,6 +16008,38 @@
           "token": {
             "type": "string",
             "description": "The secret for the invite link (`/org-invite/{token}`). Not retrievable later."
+          }
+        }
+      },
+      "Crop": {
+        "type": "object",
+        "description": "Pixels cut off each side of the source, before it's sized.",
+        "required": [
+          "left",
+          "right",
+          "top",
+          "bottom"
+        ],
+        "properties": {
+          "bottom": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "left": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "right": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "top": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
@@ -14917,6 +16184,71 @@
             "description": "Any name; the same name signs in as the same user again."
           }
         }
+      },
+      "DuplicateSource": {
+        "type": "object",
+        "required": [
+          "parent",
+          "item_id",
+          "name",
+          "scene"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "item_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "description": "The copy's name."
+          },
+          "parent": {
+            "type": "string",
+            "description": "The source's `parent`, `parent_is_group` and `item_id` from the list."
+          },
+          "parent_is_group": {
+            "type": "boolean"
+          },
+          "scene": {
+            "type": "string",
+            "description": "The scene to put the copy in (not a group)."
+          }
+        }
+      },
+      "EditSource": {
+        "type": "object",
+        "required": [
+          "name",
+          "new_name",
+          "settings"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name now."
+          },
+          "new_name": {
+            "type": "string",
+            "description": "Its name after; the same to keep it."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SourceSettings",
+            "description": "Of the source's kind. A `null` URL or playlist keeps what it plays."
+          }
+        }
+      },
+      "EditableKind": {
+        "type": "string",
+        "description": "A kind of source that can be added and edited here.",
+        "enum": [
+          "media",
+          "vlc",
+          "browser",
+          "text"
+        ]
       },
       "EmergencyAccessDto": {
         "type": "object",
@@ -15494,6 +16826,274 @@
                 "type": "string",
                 "enum": [
                   "source_toggled"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A scene was added to OBS from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A scene was added to OBS from the dashboard.",
+                "required": [
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scene": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "scene_created"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A scene was removed from OBS from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A scene was removed from OBS from the dashboard.",
+                "required": [
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scene": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "scene_removed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A source was added to a scene from the dashboard, new or a copy.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A source was added to a scene from the dashboard, new or a copy.",
+                "required": [
+                  "source",
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "copied_from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The source it's a copy of, if it was duplicated."
+                  },
+                  "scene": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "source_created"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A source OBS already had was added to another scene from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A source OBS already had was added to another scene from the dashboard.",
+                "required": [
+                  "source",
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scene": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "source_added"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A source was placed (moved or sized on screen) from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A source was placed (moved or sized on screen) from the dashboard.",
+                "required": [
+                  "source",
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scene": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "source_placed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A source was removed from a scene from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A source was removed from a scene from the dashboard.",
+                "required": [
+                  "source",
+                  "scene"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scene": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "source_removed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A source's settings (or name) were changed from the dashboard. What it\nplays isn't logged: URLs can hold keys.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "A source's settings (or name) were changed from the dashboard. What it\nplays isn't logged: URLs can hold keys.",
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "renamed_from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name before, if it was renamed."
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "source_edited"
                 ]
               }
             }
@@ -16234,6 +17834,43 @@
         ],
         "description": "What happened, with the details the activity feed shows."
       },
+      "ExistingSourceDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "is_scene"
+        ],
+        "properties": {
+          "input_kind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The input's kind (e.g. `ffmpeg_source`); `null` for scenes."
+          },
+          "is_scene": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ExistingSourcesDto": {
+        "type": "object",
+        "required": [
+          "sources"
+        ],
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExistingSourceDto"
+            },
+            "description": "Inputs by name (not the global audio devices), then scenes top first."
+          }
+        }
+      },
       "FeedState": {
         "type": "string",
         "description": "How the feed is doing, and so which scene is (or would be) on air.",
@@ -16242,6 +17879,16 @@
           "low",
           "offline",
           "idle"
+        ]
+      },
+      "Fit": {
+        "type": "string",
+        "description": "How a preset sizes the source.",
+        "enum": [
+          "fit",
+          "fill",
+          "stretch",
+          "original"
         ]
       },
       "FixedFeed": {
@@ -16585,6 +18232,69 @@
           }
         }
       },
+      "LayoutItemDto": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "name",
+          "enabled",
+          "x",
+          "y",
+          "width",
+          "height",
+          "crop",
+          "source_width",
+          "source_height",
+          "rotation"
+        ],
+        "properties": {
+          "crop": {
+            "$ref": "#/components/schemas/Crop"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "height": {
+            "type": "number",
+            "format": "double"
+          },
+          "item_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `item_id` of the list."
+          },
+          "name": {
+            "type": "string"
+          },
+          "rotation": {
+            "type": "number",
+            "format": "double",
+            "description": "Degrees it's turned; the box is then only roughly where it shows."
+          },
+          "source_height": {
+            "type": "number",
+            "format": "double"
+          },
+          "source_width": {
+            "type": "number",
+            "format": "double",
+            "description": "The source's own size, before crop and scaling; 0 × 0 while OBS doesn't\nknow it (nothing playing)."
+          },
+          "width": {
+            "type": "number",
+            "format": "double"
+          },
+          "x": {
+            "type": "number",
+            "format": "double",
+            "description": "Its box's top left and size, in canvas pixels (inside a group, the\ngroup's). 0 × 0 when OBS doesn't know its size yet (nothing playing)."
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "LinkPriceRequest": {
         "type": "object",
         "required": [
@@ -16862,6 +18572,59 @@
               "null"
             ],
             "description": "The newest \"What's new\" post the user has seen; newer ones are new to them."
+          }
+        }
+      },
+      "MediaSettings": {
+        "type": "object",
+        "required": [
+          "input_format",
+          "buffering_mb",
+          "reconnect_delay_sec",
+          "hw_decode",
+          "restart_on_activate",
+          "close_when_inactive",
+          "clear_on_media_end"
+        ],
+        "properties": {
+          "buffering_mb": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Network buffering, 0 to 16 MB.",
+            "minimum": 0
+          },
+          "clear_on_media_end": {
+            "type": "boolean",
+            "description": "Show nothing once playback ends (rather than the last frame)."
+          },
+          "close_when_inactive": {
+            "type": "boolean",
+            "description": "Close the stream while the source isn't shown."
+          },
+          "hw_decode": {
+            "type": "boolean",
+            "description": "Decode on the GPU when it can."
+          },
+          "input_format": {
+            "type": "string",
+            "description": "ffmpeg's input format (e.g. `mpegts`); empty to detect it."
+          },
+          "reconnect_delay_sec": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds before reconnecting after the stream drops, 1 to 60.",
+            "minimum": 0
+          },
+          "restart_on_activate": {
+            "type": "boolean",
+            "description": "Restart playback when the source becomes active."
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The stream it plays (`srt://…`, `rtmp://…`, …). Read as `null` when it\nplays something else (a file on the OBS computer)."
           }
         }
       },
@@ -17308,6 +19071,32 @@
           },
           "currency": {
             "type": "string"
+          }
+        }
+      },
+      "MoveSource": {
+        "type": "object",
+        "required": [
+          "parent",
+          "item_id",
+          "position"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parent": {
+            "type": "string",
+            "description": "The source's `parent`, `parent_is_group` and `item_id` from the list."
+          },
+          "parent_is_group": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Where to, among the items of its scene or group, counted from the top\n(0: drawn over all the others); past the end means the bottom.",
+            "minimum": 0
           }
         }
       },
@@ -17781,6 +19570,22 @@
           }
         }
       },
+      "ObsInputDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "settings"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SourceSettings",
+            "description": "Its URL can hold a key: show it hidden. `null` when it plays a file\non the OBS computer, which isn't shown here."
+          }
+        }
+      },
       "ObsSceneDto": {
         "type": "object",
         "required": [
@@ -17886,6 +19691,21 @@
             ],
             "format": "uuid",
             "description": "`null` on OBS versions that don't report source UUIDs."
+          }
+        }
+      },
+      "ObsSourceKindsDto": {
+        "type": "object",
+        "required": [
+          "kinds"
+        ],
+        "properties": {
+          "kinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EditableKind"
+            },
+            "description": "What can be added: media and browser sources, VLC if OBS has its plugin."
           }
         }
       },
@@ -18343,6 +20163,109 @@
           }
         }
       },
+      "PlaceSource": {
+        "type": "object",
+        "required": [
+          "parent",
+          "item_id",
+          "placement"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parent": {
+            "type": "string",
+            "description": "The source's `parent`, `parent_is_group` and `item_id` from the list."
+          },
+          "parent_is_group": {
+            "type": "boolean"
+          },
+          "placement": {
+            "$ref": "#/components/schemas/Placement"
+          }
+        }
+      },
+      "Placement": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A box `size_percent` of the screen (100: all of it), pinned to\n`anchor`, `margin_percent` of the screen's height in from its edges\n(none for a full-screen box; `Original` ignores the size but not the margin). The source is sized to the box by `fit`. Its crop stays.",
+            "required": [
+              "fit",
+              "anchor",
+              "size_percent",
+              "margin_percent",
+              "mode"
+            ],
+            "properties": {
+              "anchor": {
+                "$ref": "#/components/schemas/Anchor"
+              },
+              "fit": {
+                "$ref": "#/components/schemas/Fit"
+              },
+              "margin_percent": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "preset"
+                ]
+              },
+              "size_percent": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A box at `x`, `y` (its top left), `width` × `height` canvas pixels; the\nsource fits inside it, keeping its shape, after `crop`.",
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height",
+              "crop",
+              "mode"
+            ],
+            "properties": {
+              "crop": {
+                "$ref": "#/components/schemas/Crop"
+              },
+              "height": {
+                "type": "number",
+                "format": "double"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "exact"
+                ]
+              },
+              "width": {
+                "type": "number",
+                "format": "double"
+              },
+              "x": {
+                "type": "number",
+                "format": "double"
+              },
+              "y": {
+                "type": "number",
+                "format": "double"
+              }
+            }
+          }
+        ],
+        "description": "Where to put a source."
+      },
       "PlanDto": {
         "type": "object",
         "description": "A plan and the limits it gives a workspace.",
@@ -18607,6 +20530,38 @@
           }
         }
       },
+      "RemoveScene": {
+        "type": "object",
+        "required": [
+          "scene_uuid"
+        ],
+        "properties": {
+          "scene_uuid": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "RemoveSource": {
+        "type": "object",
+        "required": [
+          "parent",
+          "item_id"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parent": {
+            "type": "string",
+            "description": "The source's `parent`, `parent_is_group` and `item_id` from the list."
+          },
+          "parent_is_group": {
+            "type": "boolean"
+          }
+        }
+      },
       "RenameSwitcher": {
         "type": "object",
         "required": [
@@ -18675,6 +20630,46 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "SavedSourceDto": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name, trimmed."
+          }
+        }
+      },
+      "SceneLayoutDto": {
+        "type": "object",
+        "required": [
+          "canvas_width",
+          "canvas_height",
+          "items"
+        ],
+        "properties": {
+          "canvas_height": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "canvas_width": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The canvas every scene is laid out on, in pixels.",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutItemDto"
+            },
+            "description": "Top first, like OBS's Sources dock (drawn over the ones after)."
           }
         }
       },
@@ -19418,6 +21413,95 @@
             "description": "Why the slug can't be used, when it can't."
           }
         }
+      },
+      "SourceSettings": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaSettings"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "media"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VlcSettings"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "vlc"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrowserSettings"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "browser"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextSettings"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "text"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "description": "A source's settings, by kind. Reading gives every field; when writing, a\n`None` URL or playlist keeps what the source plays."
       },
       "SpeakingBotDto": {
         "type": "object",
@@ -20752,6 +22836,50 @@
           }
         }
       },
+      "TextSettings": {
+        "type": "object",
+        "description": "What GDI+ (Windows) and FreeType 2 (Linux, macOS) text sources share.",
+        "required": [
+          "font_face",
+          "font_size",
+          "bold",
+          "italic",
+          "color",
+          "outline"
+        ],
+        "properties": {
+          "bold": {
+            "type": "boolean"
+          },
+          "color": {
+            "type": "string",
+            "description": "`#rrggbb`. A FreeType 2 source's gradient is kept unless it's changed."
+          },
+          "font_face": {
+            "type": "string",
+            "description": "The font, as the OBS computer names it. Empty keeps the font it has."
+          },
+          "font_size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 to 1024.",
+            "minimum": 0
+          },
+          "italic": {
+            "type": "boolean"
+          },
+          "outline": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What it says. Read as `null` while it reads a file on the OBS\ncomputer; writing text stops that."
+          }
+        }
+      },
       "TransferOwnership": {
         "type": "object",
         "required": [
@@ -20955,6 +23083,52 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "VlcPlayback": {
+        "type": "string",
+        "description": "What a VLC source does while it isn't shown.",
+        "enum": [
+          "stop_restart",
+          "pause_unpause",
+          "always_play"
+        ]
+      },
+      "VlcSettings": {
+        "type": "object",
+        "required": [
+          "loop_playlist",
+          "shuffle",
+          "playback",
+          "network_caching_ms"
+        ],
+        "properties": {
+          "loop_playlist": {
+            "type": "boolean",
+            "description": "Start the playlist over at its end."
+          },
+          "network_caching_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Network caching, 100 to 60,000 ms.",
+            "minimum": 0
+          },
+          "playback": {
+            "$ref": "#/components/schemas/VlcPlayback"
+          },
+          "playlist": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The streams it plays, in order. Read as `null` when it plays\nsomething else (files or folders on the OBS computer)."
+          },
+          "shuffle": {
+            "type": "boolean"
           }
         }
       },

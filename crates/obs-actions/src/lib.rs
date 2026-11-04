@@ -12,6 +12,9 @@ pub mod error;
 #[cfg(test)]
 mod fake;
 pub mod fix;
+pub mod inputs;
+pub mod placement;
+pub mod reuse;
 pub mod sources;
 pub mod types;
 pub use error::Error;

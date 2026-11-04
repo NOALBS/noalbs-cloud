@@ -446,6 +446,51 @@ pub enum EventDetail {
         enabled: bool,
         by: Option<String>,
     },
+    /// A scene was added to OBS from the dashboard.
+    SceneCreated {
+        scene: String,
+        by: Option<String>,
+    },
+    /// A scene was removed from OBS from the dashboard.
+    SceneRemoved {
+        scene: String,
+        by: Option<String>,
+    },
+    /// A source was added to a scene from the dashboard, new or a copy.
+    SourceCreated {
+        source: String,
+        scene: String,
+        /// The source it's a copy of, if it was duplicated.
+        #[serde(default)]
+        copied_from: Option<String>,
+        by: Option<String>,
+    },
+    /// A source OBS already had was added to another scene from the dashboard.
+    SourceAdded {
+        source: String,
+        scene: String,
+        by: Option<String>,
+    },
+    /// A source was placed (moved or sized on screen) from the dashboard.
+    SourcePlaced {
+        source: String,
+        scene: String,
+        by: Option<String>,
+    },
+    /// A source was removed from a scene from the dashboard.
+    SourceRemoved {
+        source: String,
+        scene: String,
+        by: Option<String>,
+    },
+    /// A source's settings (or name) were changed from the dashboard. What it
+    /// plays isn't logged: URLs can hold keys.
+    SourceEdited {
+        source: String,
+        /// Its name before, if it was renamed.
+        renamed_from: Option<String>,
+        by: Option<String>,
+    },
     /// An input on OBS's Audio Mixer was muted or unmuted.
     InputMuted {
         input: String,
@@ -664,10 +709,50 @@ mod tests {
                 offset_seconds: 3725,
                 by: Some("mod_kate (Twitch chat)".into()),
             },
+            EventDetail::SceneCreated {
+                scene: "Intermission".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::SceneRemoved {
+                scene: "Old BRB".into(),
+                by: Some("kate".into()),
+            },
             EventDetail::SourceToggled {
                 source: "Camera".into(),
                 scene: "LIVE".into(),
                 enabled: false,
+                by: Some("kate".into()),
+            },
+            EventDetail::SourceCreated {
+                source: "Backup SRT".into(),
+                scene: "LIVE".into(),
+                copied_from: None,
+                by: Some("kate".into()),
+            },
+            EventDetail::SourceCreated {
+                source: "Backup SRT 2".into(),
+                scene: "LOW".into(),
+                copied_from: Some("Backup SRT".into()),
+                by: Some("kate".into()),
+            },
+            EventDetail::SourceAdded {
+                source: "Chat".into(),
+                scene: "BRB".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::SourcePlaced {
+                source: "Chat".into(),
+                scene: "LIVE".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::SourceRemoved {
+                source: "Intro".into(),
+                scene: "LIVE".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::SourceEdited {
+                source: "Backup SRT".into(),
+                renamed_from: Some("SRT 2".into()),
                 by: Some("kate".into()),
             },
             EventDetail::InputMuted {

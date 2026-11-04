@@ -17,6 +17,7 @@ export function SecretUrlInput({
   label,
   mask = maskUrl,
   readOnly = false,
+  startRevealed = false,
 }: {
   id: string;
   /** What it is, lower case, for the show/hide buttons: "stats URL". */
@@ -28,8 +29,10 @@ export function SecretUrlInput({
   placeholder?: string;
   /** Can be shown and copied, not edited (NOALBS support with a view-only grant). */
   readOnly?: boolean;
+  /** Start shown: a URL being typed in for the first time. */
+  startRevealed?: boolean;
 }) {
-  const [revealed, setRevealed] = useState(false);
+  const [revealed, setRevealed] = useState(startRevealed);
   const input = useRef<HTMLInputElement>(null);
   // Nothing to hide while it's empty (e.g. cleared to paste a new one).
   const hidden = !revealed && value !== "";

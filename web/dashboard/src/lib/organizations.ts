@@ -281,7 +281,7 @@ export const activityPresets = () =>
       value: "controls",
       label: t`Controls`,
       kinds:
-        "auto_switch_changed,preview_off_air_changed,feed_fixed,marker_created,source_toggled,input_muted",
+        "auto_switch_changed,preview_off_air_changed,feed_fixed,marker_created,source_toggled,scene_created,scene_removed,source_created,source_added,source_edited,source_placed,source_removed,input_muted",
     },
   ] as const;
 

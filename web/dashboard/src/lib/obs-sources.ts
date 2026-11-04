@@ -79,7 +79,11 @@ const KINDS: [SourceKind, (kind: string) => boolean][] = [
 export function sourceKind(source: ObsSource): SourceKind {
   if (source.is_group) return "group";
   if (source.is_scene) return "scene";
-  const kind = source.input_kind ?? "";
+  return inputKind(source.input_kind ?? "");
+}
+
+/** What an input of OBS kind `kind` is, for its icon. */
+export function inputKind(kind: string): SourceKind {
   return KINDS.find(([, test]) => test(kind))?.[0] ?? "other";
 }
 
@@ -131,4 +135,100 @@ export function keptSections(sections: SourceSection[], removed: Set<string>): S
       items: section.items.filter(({ source }) => !removed.has(sceneKey(source))),
     }))
     .filter((section) => section.items.length > 0);
+}
+
+export type EditableKind = "media" | "vlc" | "browser" | "text";
+
+/** Whether a source can be edited from the dashboard, and as what. */
+export function editableKind(source: ObsSource): EditableKind | null {
+  switch (source.input_kind) {
+    case "ffmpeg_source":
+      return "media";
+    case "vlc_source":
+      return "vlc";
+    case "browser_source":
+      return "browser";
+    default:
+      // Text (GDI+) on Windows, Text (FreeType 2) elsewhere, in any version.
+      return /^(text_gdiplus|text_ft2_source)(_v\d+)?$/.test(source.input_kind ?? "")
+        ? "text"
+        : null;
+  }
+}
+
+/** Where a source's block (it, and the items of a nested scene or group) ends in the list. */
+function blockEnd(sources: ObsSource[], start: number): number {
+  const depth = sources[start]?.depth ?? 0;
+  let end = start + 1;
+  while (end < sources.length && (sources[end]?.depth ?? 0) > depth) end++;
+  return end;
+}
+
+/**
+ * The list with one source moved to `position` among the items of its scene
+ * or group (counted from the top; what's in a nested scene or group moves
+ * with it), for optimistic updates. Unchanged when it's there already.
+ */
+export function withMovedTo(list: ObsSources, key: string, position: number): ObsSources {
+  const sources = list.sources;
+  const moving = sources.find((source) => sourceKey(source) === key);
+  if (!moving) return list;
+  // Its siblings' blocks (each with what's in it), which sit one after another.
+  const blocks: [number, number][] = [];
+  sources.forEach((source, index) => {
+    if (
+      source.depth === moving.depth &&
+      source.parent === moving.parent &&
+      source.parent_is_group === moving.parent_is_group
+    ) {
+      blocks.push([index, blockEnd(sources, index)]);
+    }
+  });
+  const from = blocks.findIndex(([start]) => sources[start] === moving);
+  const to = Math.min(Math.max(position, 0), blocks.length - 1);
+  if (from === to) return list;
+  const reordered = [...blocks];
+  const [block] = reordered.splice(from, 1);
+  if (block) reordered.splice(to, 0, block);
+  const first = blocks[0]?.[0] ?? 0;
+  const last = blocks.at(-1)?.[1] ?? first;
+  return {
+    ...list,
+    sources: [
+      ...sources.slice(0, first),
+      ...reordered.flatMap(([start, end]) => sources.slice(start, end)),
+      ...sources.slice(last),
+    ],
+  };
+}
+
+/** The list without one source (and what's in it, for a nested scene), for optimistic updates. */
+export function withRemoved(list: ObsSources, key: string): ObsSources {
+  const index = list.sources.findIndex((source) => sourceKey(source) === key);
+  if (index < 0) return list;
+  const end = blockEnd(list.sources, index);
+  return { ...list, sources: [...list.sources.slice(0, index), ...list.sources.slice(end)] };
+}
+
+/** Whether a source can be removed from the dashboard: not a group, nor in one. */
+export function removable(source: ObsSource): boolean {
+  return !source.is_group && !source.parent_is_group;
+}
+
+/** Whether a source can be duplicated from the dashboard: an input, not a scene or group. */
+export function duplicable(source: ObsSource): boolean {
+  return !source.is_scene && !source.is_group;
+}
+
+/**
+ * A name for a copy of `name`, like OBS's: "Cam" → "Cam 2", "Cam 2" → "Cam 3",
+ * skipping names already `taken`.
+ */
+export function copyName(name: string, taken: Iterable<string>): string {
+  const used = new Set(taken);
+  const match = /^(.*?) (\d+)$/.exec(name);
+  const base = match?.[1] ?? name;
+  let number = match ? Number(match[2]) + 1 : 2;
+  while (used.has(`${base} ${number}`)) number++;
+  return `${base} ${number}`;
 }
