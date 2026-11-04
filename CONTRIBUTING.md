@@ -82,6 +82,10 @@ The URL variables are needed when pairing with the local stack; otherwise Connec
 Untick “start when my computer starts” while developing, since the autostart entry runs without
 these variables.
 
+OBS settings folder overrides are supported on Linux only. macOS and Windows use OBS's shared
+settings folder; multiple setups on those platforms need shared config enabled and a distinct
+WebSocket port for each setup.
+
 ### Settings
 
 Each service reads an optional `config.toml` from the directory you start it in (gitignored), then

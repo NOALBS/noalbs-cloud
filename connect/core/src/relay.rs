@@ -80,6 +80,8 @@ pub enum RelayError {
     Json(#[from] serde_json::Error),
     #[error("device token was rejected; pair again")]
     InvalidToken,
+    #[error("another connection took over this switcher")]
+    TakenOver,
     #[error("OBS websocket is not configured")]
     NoObsConfig,
     #[error("OBS websocket authentication failed")]
@@ -98,10 +100,10 @@ pub async fn run_link(
     crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
-        if let Err(RelayError::InvalidToken) =
+        if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) =
             connect_once(&config, &mut obs_state, &watchdog).await
         {
-            return Err(RelayError::InvalidToken);
+            return Err(error);
         }
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(Duration::from_secs(10));
@@ -216,6 +218,7 @@ async fn connect_once(
     };
     let _ = config.telemetry_tx.send(telemetry.clone());
     let mut identified = false;
+    let mut request_error_kind = None;
     loop {
         tokio::select! {
             _ = obs_retry.tick(), if obs.is_none() && obs_port.is_some() => {
@@ -304,8 +307,14 @@ async fn connect_once(
                 let message = message?;
                 let Message::Text(text) = message else { continue; };
                 let value: Value = serde_json::from_str(&text)?;
+                if let Some(kind) = value.pointer("/requestError/kind").and_then(Value::as_str) {
+                    request_error_kind = Some(kind.to_owned());
+                }
                 if value.get("identifyAck").or_else(|| value.get("identify_ack")).and_then(Value::as_bool) == Some(false) {
-                    return Err(RelayError::InvalidToken);
+                    return Err(match request_error_kind.as_deref() {
+                        Some("ALREADY_CONNECTED") => RelayError::TakenOver,
+                        _ => RelayError::InvalidToken,
+                    });
                 }
                 if let Some(mode) = value.get("settings").and_then(|v| v.get("connect"))
                     .and_then(|v| v.get("watchdog")).and_then(Value::as_str)
@@ -1281,6 +1290,71 @@ mod tests {
         .await;
         server.await.unwrap();
         assert!(matches!(result, Err(RelayError::InvalidToken)));
+    }
+
+    async fn run_link_with_identify_rejection(kind: &'static str) -> Result<(), RelayError> {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut socket = accept_async(stream).await.unwrap();
+            let _identify = socket.next().await.unwrap().unwrap();
+            let _state = socket.next().await.unwrap().unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"requestError":{"kind":kind}}).to_string().into(),
+                ))
+                .await
+                .unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"identifyAck":false}).to_string().into(),
+                ))
+                .await
+                .unwrap();
+        });
+        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
+        let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
+        let result = tokio::time::timeout(
+            Duration::from_secs(2),
+            run_link(
+                LinkConfig {
+                    link_url: format!("ws://127.0.0.1:{port}"),
+                    device_token: "rejected".into(),
+                    version: "0.1.0".into(),
+                    os: "linux".into(),
+                    obs_port: None,
+                    obs_password: String::new(),
+                    use_dashboard_obs_settings: false,
+                    state_tx,
+                    telemetry_tx,
+                    effective_obs_tx: tokio::sync::watch::channel(None).0,
+                },
+                state_rx,
+                watchdog_tx,
+            ),
+        )
+        .await
+        .expect("identify rejection should stop reconnecting");
+        server.await.unwrap();
+        result
+    }
+
+    #[tokio::test]
+    async fn authentication_failed_identify_ack_is_invalid_token() {
+        assert!(matches!(
+            run_link_with_identify_rejection("AUTHENTICATION_FAILED").await,
+            Err(RelayError::InvalidToken)
+        ));
+    }
+
+    #[tokio::test]
+    async fn already_connected_identify_ack_is_taken_over_without_reconnecting() {
+        assert!(matches!(
+            run_link_with_identify_rejection("ALREADY_CONNECTED").await,
+            Err(RelayError::TakenOver)
+        ));
     }
 
     #[tokio::test]

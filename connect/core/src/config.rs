@@ -154,9 +154,11 @@ pub fn validate_obs_config_for_platform(
     config: &ObsLaunchConfig,
     platform: HostPlatform,
 ) -> Result<(), &'static str> {
-    if platform == HostPlatform::MacOS && config.config_dir_override.is_some() {
+    if matches!(platform, HostPlatform::MacOS | HostPlatform::Windows)
+        && config.config_dir_override.is_some()
+    {
         return Err(
-            "OBS settings folder overrides are not supported on macOS. Use shared config with a distinct websocket port for multiple setups.",
+            "OBS settings folder overrides are not supported on macOS or Windows. Use shared config with a distinct websocket port for multiple setups.",
         );
     }
     if platform != HostPlatform::Linux && matches!(config.install_kind, InstallKind::Flatpak) {
@@ -368,17 +370,23 @@ mod tests {
     }
 
     #[test]
-    fn macos_rejects_config_dir_overrides_and_flatpak() {
+    fn macos_and_windows_reject_config_dir_overrides_and_flatpak() {
         let mut config = ObsLaunchConfig {
             config_dir_override: Some("custom".into()),
             ..Default::default()
         };
-        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_err());
+        for platform in [HostPlatform::MacOS, HostPlatform::Windows] {
+            assert!(validate_obs_config_for_platform(&config, platform).is_err());
+        }
         config.config_dir_override = None;
         config.install_kind = super::InstallKind::Flatpak;
-        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_err());
+        for platform in [HostPlatform::MacOS, HostPlatform::Windows] {
+            assert!(validate_obs_config_for_platform(&config, platform).is_err());
+        }
         config.install_kind = super::InstallKind::Native;
-        assert!(validate_obs_config_for_platform(&config, HostPlatform::MacOS).is_ok());
+        for platform in [HostPlatform::MacOS, HostPlatform::Windows] {
+            assert!(validate_obs_config_for_platform(&config, platform).is_ok());
+        }
         assert!(
             validate_obs_config_for_platform(&ObsLaunchConfig::default(), HostPlatform::Linux)
                 .is_ok()

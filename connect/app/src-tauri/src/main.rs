@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use std::{
     collections::{HashMap, HashSet},
     sync::Mutex,
@@ -615,10 +617,18 @@ fn clear_pairing_state(
         .save(&config)
         .map_err(|error| error.to_string())?;
     drop(config);
+    remove_link_session(state, setup_id, abort_link_task)
+}
+
+fn remove_link_session(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+    abort_link_task: bool,
+) -> Result<(), String> {
     let session = state
         .link_sessions
         .lock()
-        .map_err(|_| "link session lock poisoned")?
+        .map_err(|_| "link session lock poisoned".to_owned())?
         .remove(&setup_id);
     if let Some(session) = session {
         if abort_link_task {
@@ -628,6 +638,24 @@ fn clear_pairing_state(
         session.command_consumer.abort();
     }
     Ok(())
+}
+
+fn finish_taken_over_session(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
+    let state = app.state::<AppState>();
+    if let Err(error) = remove_link_session(&state, setup_id, false) {
+        let _ = app.emit("connect-error", error);
+        return;
+    }
+    let _ = app.emit("connect-state-changed", build_ui_state(&state));
+    let _ = refresh_tray_menu(app);
+    let _ = app.emit(
+        "connect-error",
+        "Another computer or browser source took over this switcher. Restart NOALBS Cloud Connect to connect again.",
+    );
+}
+
+fn relay_error_requires_pairing_cleanup(error: &connect_core::relay::RelayError) -> bool {
+    matches!(error, connect_core::relay::RelayError::InvalidToken)
 }
 
 fn forget_rejected_pairing(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
@@ -784,8 +812,11 @@ fn start_link_session(
         }
         match run_link(link_config, state_rx, watchdog_tx).await {
             Ok(()) => {}
-            Err(connect_core::relay::RelayError::InvalidToken) => {
+            Err(error) if relay_error_requires_pairing_cleanup(&error) => {
                 forget_rejected_pairing(&app_handle, link_setup_id);
+            }
+            Err(connect_core::relay::RelayError::TakenOver) => {
+                finish_taken_over_session(&app_handle, link_setup_id);
             }
             Err(error) => {
                 let _ = app_handle.emit("connect-error", error.to_string());
@@ -1162,6 +1193,16 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn taken_over_relay_error_does_not_forget_pairing() {
+        assert!(!relay_error_requires_pairing_cleanup(
+            &connect_core::relay::RelayError::TakenOver
+        ));
+        assert!(relay_error_requires_pairing_cleanup(
+            &connect_core::relay::RelayError::InvalidToken
+        ));
+    }
 
     #[test]
     fn watchdog_restart_uses_the_latest_setup_version() {
