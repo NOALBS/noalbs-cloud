@@ -616,11 +616,16 @@ fn select_crash_report_file(
     files: &[ObsLogFile],
     obs_start_time: Option<std::time::SystemTime>,
 ) -> Option<&ObsLogFile> {
-    let minimum_modified_at = obs_start_time?.checked_sub(Duration::from_secs(2))?;
     files
         .iter()
         .filter_map(|file| Some((file, file.modified_at?)))
-        .filter(|(_, modified_at)| *modified_at >= minimum_modified_at)
+        .filter(|(_, modified_at)| {
+            obs_start_time.is_none_or(|start_time| {
+                start_time
+                    .checked_sub(Duration::from_secs(2))
+                    .is_some_and(|minimum_modified_at| *modified_at >= minimum_modified_at)
+            })
+        })
         .max_by_key(|(_, modified_at)| *modified_at)
         .map(|(file, _)| file)
 }
@@ -1519,7 +1524,7 @@ mod tests {
         fresh.set_modified(start - Duration::from_secs(1)).unwrap();
         let files = vec![
             ObsLogFile {
-                path: stale_path,
+                path: stale_path.clone(),
                 modified_at: Some(start - Duration::from_secs(3)),
             },
             ObsLogFile {
@@ -1533,6 +1538,10 @@ mod tests {
             fresh_path
         );
         assert!(select_crash_report_file(&files[..1], Some(start)).is_none());
+        assert_eq!(
+            select_crash_report_file(&files[..1], None).unwrap().path,
+            stale_path
+        );
         std::fs::remove_dir_all(directory).unwrap();
     }
 
