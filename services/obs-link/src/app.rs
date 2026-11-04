@@ -48,6 +48,7 @@ const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"))
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
+const MAX_DECOMPRESSED_LOG_BYTES: u64 = 32 * 1024 * 1024;
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.
@@ -337,17 +338,29 @@ fn allow_unsolicited_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -
 
 fn decode_log_upload(upload: &live::ConnectLogUpload) -> Result<Vec<u8>> {
     if upload.content_gzip_base64.len() > 3 * 1024 * 1024 {
-        return Err(Error::SwitcherGone);
+        return Err(Error::InvalidLogUpload("too large"));
     }
     let compressed = STANDARD
         .decode(&upload.content_gzip_base64)
-        .map_err(|_| Error::SwitcherGone)?;
-    let mut decoder = GzDecoder::new(compressed.as_slice());
+        .map_err(|_| Error::InvalidLogUpload("bad base64"))?;
     let mut content = Vec::new();
-    decoder
+    GzDecoder::new(compressed.as_slice())
+        .take(MAX_DECOMPRESSED_LOG_BYTES + 1)
         .read_to_end(&mut content)
-        .map_err(|_| Error::SwitcherGone)?;
+        .map_err(|_| Error::InvalidLogUpload("bad gzip"))?;
+    if content.len() as u64 > MAX_DECOMPRESSED_LOG_BYTES {
+        return Err(Error::InvalidLogUpload("decompressed too large"));
+    }
     Ok(content)
+}
+
+fn invalid_log_upload_reply(reason: &'static str) -> live::ConnectObsCommandReply {
+    live::ConnectObsCommandReply {
+        ok: false,
+        code: Some(live::ConnectObsCommandCode::Refused),
+        error: Some(format!("Invalid log upload: {reason}")),
+        log_id: None,
+    }
 }
 
 /// A browser source that identified as a switcher.
@@ -636,16 +649,22 @@ impl Connection {
                         .and_then(|session| session.pending_connect_commands.remove(&token))
                 {
                     let reply = if ok {
-                        let log_id = if let Some(upload) = log {
-                            Some(self.store_log_upload(upload, false).await?)
-                        } else {
-                            None
+                        let upload_result = match log {
+                            Some(upload) => self.store_log_upload(upload, false).await.map(Some),
+                            None => Ok(None),
                         };
-                        live::ConnectObsCommandReply {
-                            ok: true,
-                            code: None,
-                            error: None,
-                            log_id,
+                        match upload_result {
+                            Ok(log_id) => live::ConnectObsCommandReply {
+                                ok: true,
+                                code: None,
+                                error: None,
+                                log_id,
+                            },
+                            Err(Error::InvalidLogUpload(reason)) => {
+                                tracing::warn!(reason, "Connect returned an invalid log upload");
+                                invalid_log_upload_reply(reason)
+                            }
+                            Err(error) => return Err(error),
                         }
                     } else {
                         live::ConnectObsCommandReply {
@@ -1527,11 +1546,12 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, ObsSettings, PendingConnectCommand,
-        Request, RequestKind, Response, ResponseKind, Settings, UNSOLICITED_LOG_UPLOADS_PER_HOUR,
-        allow_unsolicited_log_upload, connect_command_failure, decode_log_upload,
-        expired_connect_commands, parse_config_change, reconnect_device_id, reset_obs_status,
-        set_pc_device_name, should_close_for_reconnect, should_refresh_device_name,
+        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES,
+        ObsSettings, PendingConnectCommand, Request, RequestKind, Response, ResponseKind, Settings,
+        UNSOLICITED_LOG_UPLOADS_PER_HOUR, allow_unsolicited_log_upload, connect_command_failure,
+        decode_log_upload, expired_connect_commands, invalid_log_upload_reply, parse_config_change,
+        reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
+        should_refresh_device_name,
     };
 
     #[test]
@@ -1794,14 +1814,67 @@ mod tests {
     fn connect_log_upload_is_decoded_before_storage() {
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(b"OBS log header\n").unwrap();
-        let upload = live::ConnectLogUpload {
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(decode_log_upload(&upload).unwrap(), b"OBS log header\n");
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_oversized_base64() {
+        let upload = connect_log_upload("A".repeat(3 * 1024 * 1024 + 1));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: too large"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_base64() {
+        let upload = connect_log_upload("not base64!".into());
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad base64"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_gzip() {
+        let upload = connect_log_upload(STANDARD.encode(b"not a gzip stream"));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad gzip"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_excessive_decompressed_content() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize + 1])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: decompressed too large"
+        );
+    }
+
+    #[test]
+    fn invalid_log_upload_reply_refuses_the_requested_upload() {
+        let reply = invalid_log_upload_reply("bad gzip");
+        assert!(!reply.ok);
+        assert_eq!(reply.code, Some(live::ConnectObsCommandCode::Refused));
+        assert_eq!(reply.error.as_deref(), Some("Invalid log upload: bad gzip"));
+        assert_eq!(reply.log_id, None);
+    }
+
+    fn connect_log_upload(content_gzip_base64: String) -> live::ConnectLogUpload {
+        live::ConnectLogUpload {
             kind: db::connect_logs::ConnectLogKind::ObsLog,
             file_name: "latest.txt".into(),
             modified_at: None,
             truncated: false,
-            content_gzip_base64: STANDARD.encode(encoder.finish().unwrap()),
-        };
-        assert_eq!(decode_log_upload(&upload).unwrap(), b"OBS log header\n");
+            content_gzip_base64,
+        }
     }
 
     #[test]
