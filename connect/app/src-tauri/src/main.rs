@@ -7,8 +7,7 @@ use connect_core::{
     relay::{LinkConfig, ObsTelemetry, PcObsState, WatchdogMode, run_link, stop_active_streams},
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
-        enable_obs_websocket, read_obs_websocket_config,
-        same_obs_identity,
+        enable_obs_websocket, read_obs_websocket_config, same_obs_identity,
     },
     watchdog::{Watchdog, WatchdogAction},
 };

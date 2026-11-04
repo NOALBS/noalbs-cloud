@@ -243,7 +243,8 @@ impl Supervisor {
             if existing.len() == 1 {
                 let pid = existing[0].as_u32();
                 if let Some(start_time) = process_start_time(pid) {
-                    self.adopted.insert(setup.id, (setup.clone(), pid, start_time));
+                    self.adopted
+                        .insert(setup.id, (setup.clone(), pid, start_time));
                 }
                 return Ok(pid);
             }

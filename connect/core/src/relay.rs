@@ -77,8 +77,7 @@ pub async fn run_link(
     mut obs_state: watch::Receiver<PcObsState>,
     watchdog: watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
-    crate::url_security::validate_link_url(&config.link_url)
-        .map_err(RelayError::UnsafeUrl)?;
+    crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
         if let Err(RelayError::InvalidToken) =
@@ -949,8 +948,7 @@ mod tests {
             let Message::Text(stream_request) = socket.next().await.unwrap().unwrap() else {
                 panic!("GetStreamStatus request expected");
             };
-            let stream_request: serde_json::Value =
-                serde_json::from_str(&stream_request).unwrap();
+            let stream_request: serde_json::Value = serde_json::from_str(&stream_request).unwrap();
             assert_eq!(
                 stream_request.pointer("/d/requestType").unwrap(),
                 "GetStreamStatus"
