@@ -4,7 +4,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use serde::{Deserialize, Serialize};
@@ -219,6 +219,7 @@ pub struct StartedObs {
     multi: bool,
     config_dir: PathBuf,
     is_flatpak: bool,
+    flatpak_obs: Option<(u32, u64)>,
 }
 
 pub struct Supervisor {
@@ -266,8 +267,26 @@ impl Supervisor {
     ) -> Result<u32, SupervisorError> {
         if let Some(item) = self.children.get_mut(&setup.id) {
             if item.is_flatpak {
-                if process_start_time(item.pid) == Some(item.process_start_time) {
-                    return Ok(item.pid);
+                let wrapper_pid = item.child.id();
+                let wrapper_finished = item.child.try_wait()?.is_some();
+                if item.flatpak_obs.is_none()
+                    && !wrapper_finished
+                    && let Some((pid, start_time)) = find_flatpak_obs_pid(wrapper_pid)
+                {
+                    item.flatpak_obs = Some((pid, start_time));
+                    item.pid = pid;
+                    item.process_start_time = start_time;
+                }
+                if let Some((pid, start_time)) = item.flatpak_obs
+                    && process_start_time(pid) == Some(start_time)
+                {
+                    return Ok(pid);
+                }
+                if !wrapper_finished {
+                    return Ok(wrapper_pid);
+                }
+                if has_run_sentinel(setup) {
+                    self.crashed_pending.insert(setup.id);
                 }
             } else {
                 match item.child.try_wait() {
@@ -287,7 +306,7 @@ impl Supervisor {
         let sibling_identity = self.children.iter_mut().any(|(id, child)| {
             *id != setup.id
                 && same_process_identity(setup, &child.setup)
-                && child.child.try_wait().ok().flatten().is_none()
+                && started_obs_is_running(child)
         }) || self
             .adopted
             .iter()
@@ -314,16 +333,16 @@ impl Supervisor {
         let another_child_uses_config = self.children.iter_mut().any(|(id, child)| {
             *id != setup.id
                 && child.config_dir == config_dir(setup)
-                && child.child.try_wait().ok().flatten().is_none()
+                && started_obs_is_running(child)
         });
         if self.crashed_pending.remove(&setup.id) || has_run_sentinel(setup) {
             prepare_after_crash(setup, another_child_uses_config)?;
         }
         let multi = any_obs_running()
-            || self.children.iter_mut().any(|(id, child)| {
-                *id != setup.id && child.child.try_wait().ok().flatten().is_none()
-            });
-        let args = launch_arguments(&setup.obs, multi, resume, last_scene);
+            || self
+                .children
+                .iter_mut()
+                .any(|(id, child)| *id != setup.id && started_obs_is_running(child));
         let mut command = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
             let mut cmd = Command::new("flatpak");
             cmd.arg("run");
@@ -354,12 +373,15 @@ impl Supervisor {
         }
         let child = command.spawn()?;
         let is_flatpak = matches!(setup.obs.install_kind, InstallKind::Flatpak);
-        let (pid, process_start_time) = if is_flatpak {
-            wait_for_flatpak_obs_pid(child.id()).ok_or(SupervisorError::Unidentified)?
+        let flatpak_obs = if is_flatpak {
+            wait_for_flatpak_obs_pid(child.id())
         } else {
+            None
+        };
+        let (pid, process_start_time) = flatpak_obs.unwrap_or_else(|| {
             let pid = child.id();
             (pid, wait_for_process_start_time(pid).unwrap_or_default())
-        };
+        });
         self.children.insert(
             setup.id,
             StartedObs {
@@ -372,6 +394,7 @@ impl Supervisor {
                 multi,
                 config_dir: config_dir(setup),
                 is_flatpak,
+                flatpak_obs,
             },
         );
         self.connected.remove(&setup.id);
@@ -379,27 +402,65 @@ impl Supervisor {
     }
 
     pub fn state(&mut self, setup: &Setup) -> PcObsState {
-        if let Some(child) = self.children.get_mut(&setup.id) {
-            if child.is_flatpak {
-                if process_start_time(child.pid) == Some(child.process_start_time) {
+        if self
+            .children
+            .get(&setup.id)
+            .is_some_and(|child| child.is_flatpak)
+        {
+            let mut remove_child = false;
+            let mut crashed = false;
+            let state = {
+                let child = self
+                    .children
+                    .get_mut(&setup.id)
+                    .expect("Flatpak child exists");
+                let wrapper_finished = match child.child.try_wait() {
+                    Ok(status) => status.is_some(),
+                    Err(_) => return PcObsState::NotResponding,
+                };
+                if child.flatpak_obs.is_none()
+                    && !wrapper_finished
+                    && let Some((pid, start_time)) = find_flatpak_obs_pid(child.child.id())
+                {
+                    child.flatpak_obs = Some((pid, start_time));
+                    child.pid = pid;
+                    child.process_start_time = start_time;
+                }
+                let obs_running = child
+                    .flatpak_obs
+                    .is_some_and(|(pid, start_time)| process_start_time(pid) == Some(start_time));
+                if obs_running {
                     if self.connected.contains(&setup.id) {
-                        return PcObsState::Connected;
-                    }
-                    return if child.started.elapsed() >= self.waiting_for_input_after {
+                        PcObsState::Connected
+                    } else if child.started.elapsed() >= self.waiting_for_input_after {
                         PcObsState::WaitingForInput
                     } else {
                         PcObsState::Starting
-                    };
+                    }
+                } else if child.flatpak_obs.is_some() || wrapper_finished {
+                    remove_child = wrapper_finished;
+                    crashed = has_run_sentinel(setup);
+                    if crashed {
+                        PcObsState::Crashed
+                    } else {
+                        PcObsState::NotRunning
+                    }
+                } else if child.started.elapsed() >= self.waiting_for_input_after {
+                    PcObsState::WaitingForInput
+                } else {
+                    PcObsState::Starting
                 }
+            };
+            if crashed {
+                self.crashed_pending.insert(setup.id);
+            }
+            if remove_child {
                 self.children.remove(&setup.id);
                 self.connected.remove(&setup.id);
-                return if has_run_sentinel(setup) {
-                    self.crashed_pending.insert(setup.id);
-                    PcObsState::Crashed
-                } else {
-                    PcObsState::NotRunning
-                };
             }
+            return state;
+        }
+        if let Some(child) = self.children.get_mut(&setup.id) {
             match child.child.try_wait() {
                 Ok(None) => {
                     if self.connected.contains(&setup.id) {
@@ -443,6 +504,13 @@ impl Supervisor {
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        if self
+            .children
+            .get(&setup.id)
+            .is_some_and(|child| child.is_flatpak && child.flatpak_obs.is_none())
+        {
+            return self.stop_flatpak_unresolved(setup);
+        }
         let (pid, expected_start_time, mut child) = match self.children.remove(&setup.id) {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
             None => {
@@ -492,6 +560,57 @@ impl Supervisor {
         Ok(())
     }
 
+    fn stop_flatpak_unresolved(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        self.connected.remove(&setup.id);
+        let Some(item) = self.children.get_mut(&setup.id) else {
+            return Err(SupervisorError::Unidentified);
+        };
+        let wrapper_pid = item.child.id();
+        let descendants = descendant_processes(wrapper_pid);
+        for &(pid, start_time) in &descendants {
+            if process_start_time(pid) == Some(start_time) {
+                request_graceful_close(pid);
+            }
+        }
+        if item.child.try_wait()?.is_none() {
+            request_graceful_close(wrapper_pid);
+        }
+        let deadline = Instant::now() + self.shutdown_grace;
+        loop {
+            let wrapper_running = item.child.try_wait()?.is_none();
+            let descendant_running = descendants
+                .iter()
+                .any(|(pid, start_time)| process_start_time(*pid) == Some(*start_time));
+            if !wrapper_running && !descendant_running {
+                break;
+            }
+            if Instant::now() >= deadline {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        for &(pid, start_time) in &descendants {
+            if process_start_time(pid) == Some(start_time) {
+                force_kill(pid);
+            }
+        }
+        if item.child.try_wait()?.is_none() {
+            let _ = item.child.kill();
+            let _ = item.child.wait()?;
+        }
+        let reap_deadline = Instant::now() + self.shutdown_grace;
+        while descendants
+            .iter()
+            .any(|(pid, start_time)| process_start_time(*pid) == Some(*start_time))
+            && Instant::now() < reap_deadline
+        {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        self.children.remove(&setup.id);
+        self.adopted.remove(&setup.id);
+        Ok(())
+    }
+
     pub fn has_child(&self, setup_id: Uuid) -> bool {
         self.children.contains_key(&setup_id)
     }
@@ -519,6 +638,17 @@ fn same_process_identity(left: &Setup, right: &Setup) -> bool {
     same_obs_identity(left, right)
         && (!(left.obs.shared_config && right.obs.shared_config)
             || left.obs.websocket_port == right.obs.websocket_port)
+}
+
+fn started_obs_is_running(child: &mut StartedObs) -> bool {
+    if child.is_flatpak
+        && child
+            .flatpak_obs
+            .is_some_and(|(pid, start_time)| process_start_time(pid) == Some(start_time))
+    {
+        return true;
+    }
+    child.child.try_wait().ok().flatten().is_none()
 }
 
 fn find_matching_obs_with_start_time(setup: &Setup) -> Option<(Pid, u64)> {
@@ -657,26 +787,37 @@ fn is_flatpak_obs_process(pid: u32, process: &sysinfo::Process) -> bool {
 }
 
 fn wait_for_flatpak_obs_pid(wrapper_pid: u32) -> Option<(u32, u64)> {
-    let wrapper_pid = Pid::from_u32(wrapper_pid);
-    let deadline = Instant::now() + std::time::Duration::from_secs(10);
-    let mut system = System::new();
+    wait_for_flatpak_obs_pid_with_timeout(wrapper_pid, Duration::from_secs(10))
+}
+
+fn wait_for_flatpak_obs_pid_with_timeout(
+    wrapper_pid: u32,
+    timeout: Duration,
+) -> Option<(u32, u64)> {
+    let deadline = Instant::now() + timeout;
     loop {
-        system.refresh_processes_specifics(
-            ProcessesToUpdate::All,
-            true,
-            ProcessRefreshKind::everything(),
-        );
-        if let Some(pid) = find_descendant_pid(&system, wrapper_pid, |pid, process| {
-            is_flatpak_obs_process(pid.as_u32(), process)
-        }) && let Some(start_time) = process_start_time(pid.as_u32())
-        {
-            return Some((pid.as_u32(), start_time));
+        if let Some(obs) = find_flatpak_obs_pid(wrapper_pid) {
+            return Some(obs);
         }
         if Instant::now() >= deadline {
             return None;
         }
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(Duration::from_millis(100));
     }
+}
+
+fn find_flatpak_obs_pid(wrapper_pid: u32) -> Option<(u32, u64)> {
+    let wrapper_pid = Pid::from_u32(wrapper_pid);
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything(),
+    );
+    let pid = find_descendant_pid(&system, wrapper_pid, |pid, process| {
+        is_flatpak_obs_process(pid.as_u32(), process)
+    })?;
+    Some((pid.as_u32(), process_start_time(pid.as_u32())?))
 }
 
 fn find_descendant_pid(
@@ -685,20 +826,39 @@ fn find_descendant_pid(
     mut matches: impl FnMut(Pid, &sysinfo::Process) -> bool,
 ) -> Option<Pid> {
     system.processes().iter().find_map(|(pid, process)| {
-        if !matches(*pid, process) {
-            return None;
-        }
-        let mut parent = process.parent();
-        while let Some(parent_pid) = parent {
-            if parent_pid == ancestor {
-                return Some(*pid);
-            }
-            parent = system
-                .process(parent_pid)
-                .and_then(|process| process.parent());
-        }
-        None
+        (matches(*pid, process) && is_process_descendant(system, *pid, ancestor)).then_some(*pid)
     })
+}
+
+fn descendant_processes(wrapper_pid: u32) -> Vec<(u32, u64)> {
+    let ancestor = Pid::from_u32(wrapper_pid);
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything(),
+    );
+    system
+        .processes()
+        .iter()
+        .filter_map(|(pid, process)| {
+            is_process_descendant(&system, *pid, ancestor)
+                .then_some((pid.as_u32(), process.start_time()))
+        })
+        .collect()
+}
+
+fn is_process_descendant(system: &System, pid: Pid, ancestor: Pid) -> bool {
+    let mut parent = system.process(pid).and_then(|process| process.parent());
+    while let Some(parent_pid) = parent {
+        if parent_pid == ancestor {
+            return true;
+        }
+        parent = system
+            .process(parent_pid)
+            .and_then(|process| process.parent());
+    }
+    false
 }
 
 #[cfg(unix)]
@@ -952,15 +1112,15 @@ mod tests {
         path::Path,
         process::Command,
         thread,
-        time::{Duration, UNIX_EPOCH},
+        time::{Duration, Instant, UNIX_EPOCH},
     };
 
     use tempfile::tempdir;
 
     use super::{
-        Supervisor, SupervisorError, copy_latest_crash_report, find_matching_obs_with_start_time,
-        launch_arguments, matching_obs_pids, prepare_after_crash, process_start_time,
-        resolve_executable,
+        StartedObs, Supervisor, SupervisorError, copy_latest_crash_report,
+        find_matching_obs_with_start_time, launch_arguments, matching_obs_pids,
+        prepare_after_crash, process_start_time, resolve_executable,
     };
     use crate::config::{InstallKind, ObsLaunchConfig, Setup};
 
@@ -976,6 +1136,13 @@ mod tests {
         let mut setup = Setup::new("Manual OBS".into());
         setup.obs.install_kind = InstallKind::CustomBinary;
         setup.obs.binary_path = Some(binary.to_owned());
+        setup.obs.config_dir_override = Some(config_dir.to_owned());
+        setup
+    }
+
+    fn make_flatpak_setup(config_dir: &Path) -> Setup {
+        let mut setup = Setup::new("Flatpak OBS".into());
+        setup.obs.install_kind = InstallKind::Flatpak;
         setup.obs.config_dir_override = Some(config_dir.to_owned());
         setup
     }
@@ -1097,6 +1264,64 @@ mod tests {
         assert_ne!(descendant.as_u32(), wrapper.id());
         super::request_graceful_close(wrapper.id());
         let _ = wrapper.wait().unwrap();
+    }
+
+    #[test]
+    fn unresolved_flatpak_launch_stays_tracked_and_stop_kills_its_process_tree() {
+        let directory = tempdir().unwrap();
+        let script = directory.path().join("fake-flatpak-wrapper");
+        let child_pid_path = directory.path().join("child-pid");
+        make_script(
+            &script,
+            &format!(
+                "sleep 30 & child=$!; printf '%s' \"$child\" > '{}'; wait \"$child\"",
+                child_pid_path.display()
+            ),
+        );
+        let wrapper = Command::new(&script).spawn().unwrap();
+        let wrapper_pid = wrapper.id();
+        wait_for_path(&child_pid_path);
+        let descendant_pid: u32 = fs::read_to_string(&child_pid_path)
+            .unwrap()
+            .parse()
+            .unwrap();
+        let wrapper_start_time = process_start_time(wrapper_pid).unwrap();
+        assert!(
+            super::wait_for_flatpak_obs_pid_with_timeout(wrapper_pid, Duration::from_millis(20))
+                .is_none()
+        );
+
+        let setup = make_flatpak_setup(&directory.path().join("config"));
+        let mut supervisor =
+            Supervisor::with_timing(Duration::from_secs(1), Duration::from_millis(300));
+        supervisor.children.insert(
+            setup.id,
+            StartedObs {
+                setup_id: setup.id,
+                setup: setup.clone(),
+                pid: wrapper_pid,
+                child: wrapper,
+                started: Instant::now(),
+                process_start_time: wrapper_start_time,
+                multi: false,
+                config_dir: super::config_dir(&setup),
+                is_flatpak: true,
+                flatpak_obs: None,
+            },
+        );
+
+        assert_eq!(supervisor.state(&setup), crate::relay::PcObsState::Starting);
+        assert_eq!(supervisor.start(&setup, false, None).unwrap(), wrapper_pid);
+        thread::sleep(Duration::from_millis(320));
+        assert_eq!(
+            supervisor.state(&setup),
+            crate::relay::PcObsState::WaitingForInput
+        );
+        supervisor.stop(&setup).unwrap();
+
+        assert!(!supervisor.has_child(setup.id));
+        assert_eq!(process_start_time(wrapper_pid), None);
+        assert_eq!(process_start_time(descendant_pid), None);
     }
 
     #[test]
