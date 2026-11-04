@@ -410,13 +410,15 @@ fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, St
 async fn stop_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
     let setup = find_setup(&state, &setup_id)?;
     stop_setup_streams(&setup, state.inner()).await;
-    state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?
-        .stop(&setup)
-        .map_err(|error| error.to_string())?;
-    set_link_state(state.inner(), setup.id, PcObsState::NotRunning);
+    let obs_state = {
+        let mut supervisor = state
+            .supervisor
+            .lock()
+            .map_err(|_| "supervisor lock poisoned")?;
+        supervisor.stop(&setup).map_err(|error| error.to_string())?;
+        supervisor.state(&setup)
+    };
+    set_link_state(state.inner(), setup.id, obs_state);
     Ok(get_state(state))
 }
 
@@ -568,6 +570,18 @@ fn set_link_state(state: &AppState, id: uuid::Uuid, next: PcObsState) {
     }
 }
 
+fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState) -> bool {
+    process_state == PcObsState::NotRunning
+        && matches!(
+            link_state,
+            PcObsState::Unknown
+                | PcObsState::Starting
+                | PcObsState::Connected
+                | PcObsState::NotResponding
+                | PcObsState::WaitingForInput
+        )
+}
+
 fn start_link_session(
     app: &tauri::AppHandle,
     state: &AppState,
@@ -650,9 +664,7 @@ fn start_link_session(
                     {
                         let _ = monitor_state_tx.send(PcObsState::WaitingForInput);
                     }
-                    if process_state == PcObsState::NotRunning
-                        && state == PcObsState::NotResponding
-                    {
+                    if should_publish_not_running(process_state, state) {
                         let _ = monitor_state_tx.send(PcObsState::NotRunning);
                     }
                     let incident = if process_state == PcObsState::Crashed {
@@ -941,4 +953,25 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("failed to run NOALBS Cloud Connect");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn process_exit_corrects_stale_starting_state_without_overwriting_disabled() {
+        assert!(should_publish_not_running(
+            PcObsState::NotRunning,
+            PcObsState::Starting
+        ));
+        assert!(!should_publish_not_running(
+            PcObsState::NotRunning,
+            PcObsState::WebsocketDisabled
+        ));
+        assert!(!should_publish_not_running(
+            PcObsState::Starting,
+            PcObsState::Starting
+        ));
+    }
 }
