@@ -723,6 +723,7 @@ dependencies = [
  "objc2-app-kit",
  "plist",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "sha2 0.11.1",

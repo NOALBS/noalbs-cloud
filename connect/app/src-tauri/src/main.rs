@@ -1928,6 +1928,7 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
 }
 
 fn main() {
+    connect_core::install_crypto_provider();
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
     let (mut config, startup_error) = store.load_or_backup();
     let config_loaded_without_recovery_error = startup_error.is_none();
