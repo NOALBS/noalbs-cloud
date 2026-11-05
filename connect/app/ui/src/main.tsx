@@ -248,13 +248,7 @@ function App() {
 			const updated = await invoke<State>("save_setup", {
 				setupId: editing.id,
 				name: editing.name,
-				obs: {
-					...editing.obs,
-					config_dir_override:
-						state?.platform === "linux"
-							? editing.obs.config_dir_override
-							: null,
-				},
+				obs: editing.obs,
 			});
 			setEditing(null);
 			return updated;
@@ -1011,11 +1005,7 @@ function SetupForm({
 			>
 				<input
 					disabled={platform === "macos" || platform === "windows"}
-					value={
-						platform === "linux"
-							? (obs.config_dir_override ?? setup.config_dir)
-							: ""
-					}
+					value={obs.config_dir_override ?? setup.config_dir}
 					onChange={(event) =>
 						onObsChange(
 							"config_dir_override",

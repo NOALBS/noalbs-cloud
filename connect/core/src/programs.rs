@@ -1,13 +1,15 @@
 use std::{
     io,
     process::{Command, Stdio},
+    time::Duration,
 };
 
 use common::programs::{Program, ProgramStatus};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::supervisor::{self, Supervisor, SupervisorError};
+use crate::relay::PcObsState;
+use crate::supervisor::{self, SupervisorError};
 
 #[derive(Debug, Error)]
 pub enum ProgramError {
@@ -38,6 +40,34 @@ pub enum ObsLifecycleAction {
     Stop,
 }
 
+pub fn obs_is_running(state: &PcObsState) -> bool {
+    matches!(
+        state,
+        PcObsState::Starting
+            | PcObsState::Connected
+            | PcObsState::NotResponding
+            | PcObsState::WaitingForInput
+            | PcObsState::SafeMode
+    )
+}
+
+pub fn lifecycle_for_transition(
+    previous: Option<bool>,
+    current: &PcObsState,
+    watchdog_restarts: bool,
+) -> Option<ObsLifecycleAction> {
+    if *current == PcObsState::Unknown {
+        return None;
+    }
+    let running = obs_is_running(current);
+    match (previous, running) {
+        (None, true) | (Some(false), true) => Some(ObsLifecycleAction::Start),
+        (Some(true), false) if *current == PcObsState::Crashed && watchdog_restarts => None,
+        (Some(true), false) => Some(ObsLifecycleAction::Stop),
+        _ => None,
+    }
+}
+
 pub fn validate(program: &Program) -> Result<(), &'static str> {
     let name_len = program.name.chars().count();
     if name_len == 0 || name_len > 64 {
@@ -64,25 +94,32 @@ pub fn validate(program: &Program) -> Result<(), &'static str> {
 }
 
 pub fn status(programs: &[Program]) -> Vec<ProgramStatus> {
+    let system = supervisor::process_snapshot();
+    status_with(programs, &system)
+}
+
+pub fn status_with(programs: &[Program], system: &sysinfo::System) -> Vec<ProgramStatus> {
     programs
         .iter()
         .cloned()
         .map(|program| ProgramStatus {
-            running: is_running(&program),
+            running: is_running_with(&program, system),
             program,
         })
         .collect()
 }
 
 pub fn is_running(program: &Program) -> bool {
+    let system = supervisor::process_snapshot();
+    is_running_with(program, &system)
+}
+
+fn is_running_with(program: &Program, system: &sysinfo::System) -> bool {
     let Ok(expected) = program.path.canonicalize() else {
         return false;
     };
-    let system = supervisor::process_snapshot();
-    supervisor::non_thread_processes(&system).any(|(_, process)| {
-        process
-            .exe()
-            .is_some_and(|exe| supervisor::same_path(exe, &expected))
+    supervisor::non_thread_processes(system).any(|(_, process)| {
+        supervisor::process_executable_matches(process, &program.path, &expected)
     })
 }
 
@@ -106,6 +143,7 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x00000008 | 0x08000000);
     }
+    supervisor::apply_child_env(&mut command);
     let mut child = command.spawn()?;
     std::thread::spawn(move || {
         let _ = child.wait();
@@ -113,7 +151,7 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
     Ok(())
 }
 
-pub fn stop(program: &Program, supervisor: &Supervisor) -> Result<(), ProgramError> {
+pub fn stop(program: &Program, shutdown_grace: Duration) -> Result<(), ProgramError> {
     let Ok(expected) = program.path.canonicalize() else {
         return Ok(());
     };
@@ -122,12 +160,12 @@ pub fn stop(program: &Program, supervisor: &Supervisor) -> Result<(), ProgramErr
         .filter_map(|(pid, process)| {
             process
                 .exe()
-                .is_some_and(|exe| supervisor::same_path(exe, &expected))
+                .is_some_and(|exe| supervisor::process_path_matches(exe, &program.path, &expected))
                 .then_some(pid.as_u32())
         })
         .collect::<Vec<_>>();
     for pid in pids {
-        supervisor::terminate_process(pid, supervisor.shutdown_grace())?;
+        supervisor::terminate_process(pid, shutdown_grace)?;
     }
     Ok(())
 }
@@ -259,6 +297,49 @@ mod tests {
     }
 
     #[test]
+    fn lifecycle_for_transition_handles_obs_state_changes() {
+        let cases = [
+            (
+                None,
+                PcObsState::Connected,
+                false,
+                Some(ObsLifecycleAction::Start),
+            ),
+            (None, PcObsState::NotRunning, false, None),
+            (
+                Some(false),
+                PcObsState::WaitingForInput,
+                false,
+                Some(ObsLifecycleAction::Start),
+            ),
+            (Some(true), PcObsState::NotResponding, false, None),
+            (
+                Some(true),
+                PcObsState::NotRunning,
+                false,
+                Some(ObsLifecycleAction::Stop),
+            ),
+            (Some(true), PcObsState::Crashed, true, None),
+            (
+                Some(true),
+                PcObsState::Crashed,
+                false,
+                Some(ObsLifecycleAction::Stop),
+            ),
+            (Some(false), PcObsState::NotRunning, false, None),
+            (None, PcObsState::Unknown, false, None),
+        ];
+
+        for (previous, current, watchdog_restarts, expected) in cases {
+            assert_eq!(
+                lifecycle_for_transition(previous, &current, watchdog_restarts),
+                expected,
+                "previous={previous:?}, current={current:?}, watchdog_restarts={watchdog_restarts}"
+            );
+        }
+    }
+
+    #[test]
     fn dashboard_edits_can_be_refused_per_setup() {
         assert!(require_dashboard_edits_allowed(true).is_ok());
         assert_eq!(
@@ -332,8 +413,26 @@ mod tests {
         assert!(is_running(&program));
         assert!(matches!(start(&program), Err(ProgramError::AlreadyRunning)));
 
-        let supervisor = Supervisor::default();
-        stop(&program, &supervisor).unwrap();
+        stop(&program, Duration::from_secs(1)).unwrap();
+        assert!(!is_running(&program));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stop_terminates_copied_sleep_with_short_grace() {
+        let (dir, program) = copied_sleep();
+        start(&program).unwrap();
+        for _ in 0..50 {
+            if is_running(&program) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(is_running(&program));
+
+        stop(&program, Duration::from_millis(100)).unwrap();
+
         assert!(!is_running(&program));
         fs::remove_dir_all(dir).unwrap();
     }
