@@ -1,5 +1,5 @@
 ---
-title: "NOALBS Cloud Connect: control OBS on your PC from the dashboard"
+title: NOALBS Cloud Connect: control OBS on your PC from the dashboard
 summary: A new, optional desktop app for Windows, macOS and Linux. Start, stop and restart OBS from the dashboard, restart it after a crash, read your OBS logs and start programs like Streamer.bot.
 image: images/2026-11-05-noalbs-cloud-connect.webp
 image_alt: The NOALBS Cloud Connect card in switcher settings with a paired Windows PC that is online with OBS connected and Start, Stop and Restart OBS buttons, next to the uploaded crash report and OBS log and Streamer.bot running under Programs
