@@ -300,9 +300,9 @@ pub fn for_obs_action(programs: &[Program], action: ObsLifecycleAction) -> Vec<&
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     #[cfg(unix)]
-    use std::{fs, time::Duration};
+    use std::time::Duration;
+    use std::{fs, path::PathBuf};
 
     use super::*;
     fn program(path: PathBuf) -> Program {
