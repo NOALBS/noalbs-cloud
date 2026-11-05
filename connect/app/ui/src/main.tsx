@@ -44,6 +44,15 @@ type Program = {
 	added_from_dashboard_by: string | null;
 };
 type ProgramStatus = { program: Program; running: boolean };
+type UpdateState = {
+	supported: boolean;
+	bundle: string | null;
+	current_version: string;
+	checking: boolean;
+	available: string | null;
+	installing: boolean;
+	error: string | null;
+};
 type State = {
 	platform: string;
 	start_at_login: boolean;
@@ -52,6 +61,7 @@ type State = {
 	startup_error: string | null;
 	first_run: boolean;
 	setups: Setup[];
+	update: UpdateState;
 };
 type Pairing = {
 	device_code: string;
@@ -188,6 +198,11 @@ function App() {
 				setPairing(null);
 				setPairingSetupId(null);
 			}),
+			listen<UpdateState>("connect-update-changed", (event) =>
+				setState((current) =>
+					current ? { ...current, update: event.payload } : current,
+				),
+			),
 			listen<string>("connect-error", (event) => setError(event.payload)),
 		];
 		return () => {
@@ -289,6 +304,21 @@ function App() {
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 			}),
 		);
+	}
+
+	async function runUpdateCommand(
+		command: "check_for_update" | "install_update" | "open_release_notes",
+		args?: Record<string, string>,
+	) {
+		try {
+			applyState(await invoke<State>(command, args));
+		} catch (e) {
+			setState((current) =>
+				current
+					? { ...current, update: { ...current.update, error: String(e) } }
+					: current,
+			);
+		}
 	}
 
 	const setupAction = (
@@ -470,6 +500,82 @@ function App() {
 											While Connect is closed, the watchdog and dashboard
 											controls don't work.
 										</p>
+									)}
+								</div>
+							</section>
+							<h2>Updates</h2>
+							<section className="group">
+								<div className="group-body">
+									<Row label="Version">
+										Version {state.update.current_version}
+									</Row>
+									<Row label="Status">
+										{!state.update.supported
+											? "Updates aren't available in this build"
+											: state.update.error
+												? state.update.error
+												: state.update.checking
+													? "Checking…"
+													: state.update.available
+														? `Version ${state.update.available} is available`
+														: "Up to date"}
+									</Row>
+									{state.update.supported && (
+										<div className="buttons">
+											<button
+												type="button"
+												disabled={
+													state.update.checking || state.update.installing
+												}
+												onClick={() =>
+													void runUpdateCommand("check_for_update")
+												}
+											>
+												Check for updates
+											</button>
+											{state.update.available && (
+												<>
+													<button
+														type="button"
+														className="primary"
+														disabled={
+															state.update.checking || state.update.installing
+														}
+														onClick={() =>
+															void runUpdateCommand("install_update")
+														}
+													>
+														Install and restart
+													</button>
+													<button
+														type="button"
+														disabled={state.update.installing}
+														onClick={() =>
+															void runUpdateCommand("open_release_notes", {
+																version: state.update.available ?? "",
+															})
+														}
+													>
+														What's new
+													</button>
+												</>
+											)}
+										</div>
+									)}
+									{state.update.supported && state.update.available && (
+										<>
+											<p className="hint">
+												OBS and your programs keep running. Connect reconnects
+												to NOALBS Cloud after it restarts.
+											</p>
+											{(state.update.bundle === "deb" ||
+												state.update.bundle === "rpm") && (
+												<p className="hint">
+													You'll be asked for your password to install the
+													update.
+												</p>
+											)}
+										</>
 									)}
 								</div>
 							</section>

@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod updates;
+
 use std::{
     collections::{HashMap, HashSet},
     sync::Mutex,
@@ -55,6 +57,7 @@ struct AppState {
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
     obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
+    updates: updates::UpdateManager,
 }
 
 #[derive(Clone, Serialize)]
@@ -73,7 +76,7 @@ struct SetupSummary {
 }
 
 #[derive(Clone, Serialize)]
-struct UiState {
+pub(crate) struct UiState {
     platform: String,
     start_at_login: bool,
     api_url: String,
@@ -81,6 +84,7 @@ struct UiState {
     startup_error: Option<String>,
     first_run: bool,
     setups: Vec<SetupSummary>,
+    update: updates::UpdateState,
 }
 
 #[tauri::command]
@@ -109,6 +113,7 @@ fn build_ui_state(state: &AppState) -> UiState {
         dashboard_url,
         startup_error: state.startup_error.clone(),
         first_run: setups.is_empty(),
+        update: state.updates.snapshot(),
         setups: setups
             .iter()
             .map(|setup| {
@@ -1728,6 +1733,7 @@ fn main() {
         }))
         .plugin(autostart_builder.build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             config: Mutex::new(config),
             startup_error,
@@ -1737,6 +1743,7 @@ fn main() {
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         })
         .setup(|app| {
             let has_tray = tray_available();
@@ -1768,6 +1775,12 @@ fn main() {
                 }
             }
             let state = app.state::<AppState>();
+            state
+                .updates
+                .initialize(app.package_info().version.to_string());
+            if state.updates.snapshot().supported {
+                updates::start_background_checks(app.handle().clone());
+            }
             let start_at_login = {
                 let config = state.config.lock().expect("app config lock");
                 config.settings.start_at_login
@@ -1814,7 +1827,10 @@ fn main() {
             remove_program,
             start_program,
             stop_program,
-            set_allow_dashboard_program_edits
+            set_allow_dashboard_program_edits,
+            updates::check_for_update,
+            updates::install_update,
+            updates::open_release_notes
         ])
         .run(tauri::generate_context!())
         .expect("failed to run NOALBS Cloud Connect");
@@ -2049,6 +2065,7 @@ mod tests {
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
 
         assert_eq!(
@@ -2150,6 +2167,7 @@ mod tests {
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2212,6 +2230,7 @@ mod tests {
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2279,6 +2298,7 @@ mod tests {
                 setup_id,
                 "verification-url".into(),
             )])),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2375,6 +2395,7 @@ mod tests {
                 setup_id,
                 "verification-url".into(),
             )])),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2463,6 +2484,7 @@ mod tests {
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         {
             let mut supervisor = state.supervisor.lock().unwrap();
