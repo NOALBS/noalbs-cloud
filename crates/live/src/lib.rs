@@ -190,6 +190,20 @@ pub struct ConnectObsCommandReply {
     pub code: Option<ConnectObsCommandCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectLogUpload {
+    pub kind: db::connect_logs::ConnectLogKind,
+    pub file_name: String,
+    #[serde(default)]
+    pub modified_at: Option<DateTime<Utc>>,
+    pub truncated: bool,
+    pub content_gzip_base64: String,
 }
 
 /// Options for a service's NATS connection, with its user and password when it
@@ -667,6 +681,11 @@ pub enum EventDetail {
         action: db::connect::ConnectObsAction,
         by: Option<String>,
     },
+    ConnectLogUploaded {
+        kind: db::connect_logs::ConnectLogKind,
+        log_id: Uuid,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
@@ -924,6 +943,11 @@ mod tests {
                 action: db::connect::ConnectObsAction::Restart,
                 by: Some("kate".into()),
             },
+            EventDetail::ConnectLogUploaded {
+                kind: db::connect_logs::ConnectLogKind::ObsLog,
+                log_id: Uuid::nil(),
+                by: None,
+            },
         ];
 
         for event in events {
@@ -967,6 +991,7 @@ mod tests {
                 ok: true,
                 code: None,
                 error: None,
+                log_id: None,
             })
             .unwrap(),
             serde_json::json!({"ok": true})
@@ -992,6 +1017,7 @@ mod tests {
                 ok: false,
                 code: Some(code),
                 error: Some("failure".into()),
+                log_id: None,
             };
             assert_eq!(
                 serde_json::from_value::<ConnectObsCommandReply>(

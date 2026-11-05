@@ -80,6 +80,11 @@ export function canControlConnect(level: ConnectAccess, actor: Actor): boolean {
   );
 }
 
+/** Connect-log visibility follows the switcher's dedicated log access setting. */
+export function canViewConnectLogs(level: ConnectAccess, actor: Actor): boolean {
+  return canControlConnect(level, actor);
+}
+
 export function connectObsActionAvailability(state: PcObsState | undefined) {
   return {
     visible: state !== undefined,

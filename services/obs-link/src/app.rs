@@ -6,18 +6,21 @@
 //! While OBS is connected, the switcher task runs (see [`crate::switcher`]).
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     sync::{Arc, atomic::AtomicBool},
     time::{Duration, Instant},
 };
 
 use async_nats::jetstream;
-use common::{crypto::DataKey, shutdown};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use common::{MAX_CONNECT_LOG_RAW_BYTES, crypto::DataKey, shutdown};
+use flate2::read::GzDecoder;
 use futures_util::{SinkExt, StreamExt};
 use live::{EventDetail, PcObsState, PcStatus, SwitcherStatus, Takeover};
 use obs_actions::types::{Event, ObsMessage, ObsRequest, Reidentify};
 use opentelemetry::KeyValue;
 use serde::{Deserialize, Serialize};
+use std::io::Read;
 use tokio::{
     net,
     sync::{mpsc, oneshot},
@@ -44,6 +47,9 @@ const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"))
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
+const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
+const REQUESTED_LOG_UPLOADS_PER_HOUR: usize = 30;
+const MAX_DECOMPRESSED_LOG_BYTES: u64 = MAX_CONNECT_LOG_RAW_BYTES;
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.
@@ -285,13 +291,20 @@ fn should_refresh_device_name(renamed_device_id: Uuid, session_device_id: Option
 fn connect_command_failure(
     is_connect: bool,
     supports_control: bool,
+    supports_logs: bool,
+    action: db::connect::ConnectObsAction,
 ) -> Option<(live::ConnectObsCommandCode, &'static str)> {
     if !is_connect {
         Some((
             live::ConnectObsCommandCode::Offline,
             "This switcher connects through the browser source, which can't control OBS",
         ))
-    } else if !supports_control {
+    } else if action == db::connect::ConnectObsAction::UploadLog && !supports_logs {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to upload OBS logs",
+        ))
+    } else if action != db::connect::ConnectObsAction::UploadLog && !supports_control {
         Some((
             live::ConnectObsCommandCode::Unsupported,
             "Update NOALBS Cloud Connect to control OBS from the dashboard",
@@ -315,6 +328,51 @@ fn expired_connect_commands(
         .collect()
 }
 
+fn allow_unsolicited_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -> bool {
+    uploads.retain(|uploaded| now.saturating_duration_since(*uploaded) < Duration::from_secs(3600));
+    if uploads.len() >= UNSOLICITED_LOG_UPLOADS_PER_HOUR {
+        return false;
+    }
+    uploads.push_back(now);
+    true
+}
+
+fn allow_requested_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -> bool {
+    uploads.retain(|uploaded| now.saturating_duration_since(*uploaded) < Duration::from_secs(3600));
+    if uploads.len() >= REQUESTED_LOG_UPLOADS_PER_HOUR {
+        return false;
+    }
+    uploads.push_back(now);
+    true
+}
+
+fn decode_log_upload(upload: &live::ConnectLogUpload) -> Result<Vec<u8>> {
+    if upload.content_gzip_base64.len() > 3 * 1024 * 1024 {
+        return Err(Error::InvalidLogUpload("too large"));
+    }
+    let compressed = STANDARD
+        .decode(&upload.content_gzip_base64)
+        .map_err(|_| Error::InvalidLogUpload("bad base64"))?;
+    let mut content = Vec::new();
+    GzDecoder::new(compressed.as_slice())
+        .take(MAX_DECOMPRESSED_LOG_BYTES + 1)
+        .read_to_end(&mut content)
+        .map_err(|_| Error::InvalidLogUpload("bad gzip"))?;
+    if content.len() as u64 > MAX_DECOMPRESSED_LOG_BYTES {
+        return Err(Error::InvalidLogUpload("decompressed too large"));
+    }
+    Ok(content)
+}
+
+fn invalid_log_upload_reply(reason: &'static str) -> live::ConnectObsCommandReply {
+    live::ConnectObsCommandReply {
+        ok: false,
+        code: Some(live::ConnectObsCommandCode::Refused),
+        error: Some(format!("Invalid log upload: {reason}")),
+        log_id: None,
+    }
+}
+
 /// A browser source that identified as a switcher.
 struct Session {
     switcher_id: Uuid,
@@ -326,6 +384,8 @@ struct Session {
     is_connect: bool,
     connect_capabilities: Vec<String>,
     pending_connect_commands: HashMap<String, PendingConnectCommand>,
+    unsolicited_log_uploads: VecDeque<Instant>,
+    requested_log_uploads: VecDeque<Instant>,
     status: StatusHandle,
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
@@ -519,11 +579,62 @@ impl Connection {
                     ok: false,
                     code: Some(live::ConnectObsCommandCode::Timeout),
                     error: Some("Connect did not respond in time".into()),
+                    log_id: None,
                 })?,
             )
             .await?;
         }
         Ok(())
+    }
+
+    async fn store_log_upload(
+        &mut self,
+        upload: live::ConnectLogUpload,
+        unsolicited: bool,
+    ) -> Result<Uuid> {
+        let session = self.session.as_mut().ok_or(Error::SwitcherGone)?;
+        if unsolicited {
+            if !session.is_connect
+                || !session
+                    .connect_capabilities
+                    .iter()
+                    .any(|capability| capability == "obs_logs")
+            {
+                return Err(Error::SwitcherGone);
+            }
+            if !allow_unsolicited_log_upload(&mut session.unsolicited_log_uploads, Instant::now()) {
+                tracing::warn!("Dropping excess unsolicited Connect log upload");
+                return Err(Error::SwitcherGone);
+            }
+        }
+        let switcher_id = session.switcher_id;
+        let device_id = session.device_id;
+        let content = decode_log_upload(&upload)?;
+        let id = db::connect_logs::insert(
+            &self.shared.db,
+            switcher_id,
+            device_id,
+            upload.kind,
+            &upload.file_name,
+            upload.modified_at,
+            upload.truncated,
+            &content,
+        )
+        .await?;
+        if unsolicited {
+            live::record_event(
+                &self.shared.db,
+                &self.shared.nats,
+                switcher_id,
+                EventDetail::ConnectLogUploaded {
+                    kind: upload.kind,
+                    log_id: id,
+                    by: None,
+                },
+            )
+            .await?;
+        }
+        Ok(id)
     }
 
     async fn handle_message(&mut self, message: &str) -> Result<Flow> {
@@ -541,7 +652,7 @@ impl Connection {
                     });
                 }
             }
-            ResponseKind::ConnectCommandResult { ok, error } => {
+            ResponseKind::ConnectCommandResult { ok, error, log } => {
                 if let Some(token) = response.token
                     && let Some(pending) = self
                         .session
@@ -549,10 +660,22 @@ impl Connection {
                         .and_then(|session| session.pending_connect_commands.remove(&token))
                 {
                     let reply = if ok {
-                        live::ConnectObsCommandReply {
-                            ok: true,
-                            code: None,
-                            error: None,
+                        let upload_result = match log {
+                            Some(upload) => self.store_log_upload(upload, false).await.map(Some),
+                            None => Ok(None),
+                        };
+                        match upload_result {
+                            Ok(log_id) => live::ConnectObsCommandReply {
+                                ok: true,
+                                code: None,
+                                error: None,
+                                log_id,
+                            },
+                            Err(Error::InvalidLogUpload(reason)) => {
+                                tracing::warn!(reason, "Connect returned an invalid log upload");
+                                invalid_log_upload_reply(reason)
+                            }
+                            Err(error) => return Err(error),
                         }
                     } else {
                         live::ConnectObsCommandReply {
@@ -561,6 +684,7 @@ impl Connection {
                             error: Some(
                                 error.unwrap_or_else(|| "Connect refused the command".into()),
                             ),
+                            log_id: None,
                         }
                     };
                     telemetry::nats::publish(
@@ -569,6 +693,11 @@ impl Connection {
                         serde_json::to_vec(&reply)?,
                     )
                     .await?;
+                }
+            }
+            ResponseKind::LogUpload(upload) => {
+                if let Err(error) = self.store_log_upload(upload, true).await {
+                    tracing::warn!(%error, "Dropping unsolicited Connect log upload");
                 }
             }
             ResponseKind::ObsRawResponse(obs_response) => {
@@ -733,6 +862,8 @@ impl Connection {
             is_connect,
             connect_capabilities: identify.capabilities.clone(),
             pending_connect_commands: HashMap::new(),
+            unsolicited_log_uploads: VecDeque::new(),
+            requested_log_uploads: VecDeque::new(),
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
@@ -872,7 +1003,7 @@ impl Connection {
     async fn handle_control(&mut self, control: Control) -> Result<Flow> {
         match control {
             Control::ConnectCommand { payload, reply } => {
-                let (is_connect, supports_control) = self
+                let (is_connect, supports_control, supports_logs) = self
                     .session
                     .as_ref()
                     .map(|session| {
@@ -882,6 +1013,10 @@ impl Connection {
                                 .connect_capabilities
                                 .iter()
                                 .any(|value| value == "obs_control"),
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "obs_logs"),
                         )
                     })
                     .unwrap_or_default();
@@ -893,6 +1028,7 @@ impl Connection {
                             ok: false,
                             code: Some(live::ConnectObsCommandCode::Refused),
                             error: Some("Invalid OBS command".into()),
+                            log_id: None,
                         };
                         telemetry::nats::publish(
                             &self.shared.nats,
@@ -903,7 +1039,12 @@ impl Connection {
                         return Ok(Flow::Continue);
                     }
                 };
-                if let Some((code, error)) = connect_command_failure(is_connect, supports_control) {
+                if let Some((code, error)) = connect_command_failure(
+                    is_connect,
+                    supports_control,
+                    supports_logs,
+                    request.action,
+                ) {
                     telemetry::nats::publish(
                         &self.shared.nats,
                         reply,
@@ -911,10 +1052,33 @@ impl Connection {
                             ok: false,
                             code: Some(code),
                             error: Some(error.into()),
+                            log_id: None,
                         })?,
                     )
                     .await?;
                     return Ok(Flow::Continue);
+                }
+                if request.action == db::connect::ConnectObsAction::UploadLog {
+                    let allowed = self.session.as_mut().is_some_and(|session| {
+                        allow_requested_log_upload(
+                            &mut session.requested_log_uploads,
+                            Instant::now(),
+                        )
+                    });
+                    if !allowed {
+                        telemetry::nats::publish(
+                            &self.shared.nats,
+                            reply,
+                            serde_json::to_vec(&live::ConnectObsCommandReply {
+                                ok: false,
+                                code: Some(live::ConnectObsCommandCode::Refused),
+                                error: Some("Too many log requests; try again later".into()),
+                                log_id: None,
+                            })?,
+                        )
+                        .await?;
+                        return Ok(Flow::Continue);
+                    }
                 }
                 let token = Uuid::new_v4().to_string();
                 self.send_request(
@@ -1101,6 +1265,7 @@ impl Connection {
                 ok: false,
                 code: Some(live::ConnectObsCommandCode::Offline),
                 error: Some("Connect computer went offline".into()),
+                log_id: None,
             };
             if let Ok(payload) = serde_json::to_vec(&reply)
                 && let Err(error) =
@@ -1377,7 +1542,10 @@ enum ResponseKind {
         ok: bool,
         #[serde(default)]
         error: Option<String>,
+        #[serde(default)]
+        log: Option<live::ConnectLogUpload>,
     },
+    LogUpload(live::ConnectLogUpload),
     ObsRawEvent(serde_json::Value),
     Error(String),
 }
@@ -1400,19 +1568,25 @@ struct Identify {
 #[cfg(test)]
 mod tests {
     use std::{
-        collections::HashMap,
+        collections::{HashMap, VecDeque},
+        io::Write,
         time::{Duration, Instant},
     };
 
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    use flate2::{Compression, write::GzEncoder};
     use live::{PcObsState, PcStatus, SwitcherStatus};
     use serde_json::json;
     use uuid::Uuid;
 
     use super::{
-        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, ObsSettings, PendingConnectCommand,
-        Request, RequestKind, Response, ResponseKind, Settings, connect_command_failure,
-        expired_connect_commands, parse_config_change, reconnect_device_id, reset_obs_status,
-        set_pc_device_name, should_close_for_reconnect, should_refresh_device_name,
+        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES,
+        ObsSettings, PendingConnectCommand, REQUESTED_LOG_UPLOADS_PER_HOUR, Request, RequestKind,
+        Response, ResponseKind, Settings, UNSOLICITED_LOG_UPLOADS_PER_HOUR,
+        allow_requested_log_upload, allow_unsolicited_log_upload, connect_command_failure,
+        decode_log_upload, expired_connect_commands, invalid_log_upload_reply, parse_config_change,
+        reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
+        should_refresh_device_name,
     };
 
     #[test]
@@ -1619,19 +1793,156 @@ mod tests {
 
     #[test]
     fn browser_source_commands_are_offline_and_old_connects_are_unsupported() {
-        let browser = connect_command_failure(false, false).unwrap();
+        let browser =
+            connect_command_failure(false, false, false, db::connect::ConnectObsAction::Start)
+                .unwrap();
         assert_eq!(browser.0, live::ConnectObsCommandCode::Offline);
         assert_eq!(
             browser.1,
             "This switcher connects through the browser source, which can't control OBS"
         );
-        let old_connect = connect_command_failure(true, false).unwrap();
+        let old_connect =
+            connect_command_failure(true, false, false, db::connect::ConnectObsAction::Start)
+                .unwrap();
         assert_eq!(old_connect.0, live::ConnectObsCommandCode::Unsupported);
         assert_eq!(
             old_connect.1,
             "Update NOALBS Cloud Connect to control OBS from the dashboard"
         );
-        assert!(connect_command_failure(true, true).is_none());
+        assert!(
+            connect_command_failure(true, true, false, db::connect::ConnectObsAction::Restart)
+                .is_none()
+        );
+        assert_eq!(
+            connect_command_failure(true, true, false, db::connect::ConnectObsAction::UploadLog)
+                .unwrap()
+                .0,
+            live::ConnectObsCommandCode::Unsupported
+        );
+        assert!(
+            connect_command_failure(true, false, true, db::connect::ConnectObsAction::UploadLog)
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn unsolicited_log_uploads_are_limited_to_ten_per_hour() {
+        let now = Instant::now();
+        let mut uploads = VecDeque::new();
+        for index in 0..UNSOLICITED_LOG_UPLOADS_PER_HOUR {
+            assert!(allow_unsolicited_log_upload(
+                &mut uploads,
+                now + Duration::from_secs(index as u64)
+            ));
+        }
+        assert!(!allow_unsolicited_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(20)
+        ));
+        assert!(allow_unsolicited_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(3601)
+        ));
+    }
+
+    #[test]
+    fn requested_log_uploads_are_limited_to_thirty_per_hour() {
+        let now = Instant::now();
+        let mut uploads = VecDeque::new();
+        for index in 0..REQUESTED_LOG_UPLOADS_PER_HOUR {
+            assert!(allow_requested_log_upload(
+                &mut uploads,
+                now + Duration::from_secs(index as u64)
+            ));
+        }
+        assert!(!allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(40)
+        ));
+        assert!(allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(3601)
+        ));
+    }
+
+    #[test]
+    fn connect_log_upload_is_decoded_before_storage() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(b"OBS log header\n").unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(decode_log_upload(&upload).unwrap(), b"OBS log header\n");
+    }
+
+    #[test]
+    fn connect_log_upload_accepts_the_shared_raw_limit() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap().len(),
+            MAX_DECOMPRESSED_LOG_BYTES as usize
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_oversized_base64() {
+        let upload = connect_log_upload("A".repeat(3 * 1024 * 1024 + 1));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: too large"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_base64() {
+        let upload = connect_log_upload("not base64!".into());
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad base64"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_gzip() {
+        let upload = connect_log_upload(STANDARD.encode(b"not a gzip stream"));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad gzip"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_excessive_decompressed_content() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize + 1])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: decompressed too large"
+        );
+    }
+
+    #[test]
+    fn invalid_log_upload_reply_refuses_the_requested_upload() {
+        let reply = invalid_log_upload_reply("bad gzip");
+        assert!(!reply.ok);
+        assert_eq!(reply.code, Some(live::ConnectObsCommandCode::Refused));
+        assert_eq!(reply.error.as_deref(), Some("Invalid log upload: bad gzip"));
+        assert_eq!(reply.log_id, None);
+    }
+
+    fn connect_log_upload(content_gzip_base64: String) -> live::ConnectLogUpload {
+        live::ConnectLogUpload {
+            kind: db::connect_logs::ConnectLogKind::ObsLog,
+            file_name: "latest.txt".into(),
+            modified_at: None,
+            truncated: false,
+            content_gzip_base64,
+        }
     }
 
     #[test]
@@ -1659,7 +1970,8 @@ mod tests {
             response.response,
             ResponseKind::ConnectCommandResult {
                 ok: false,
-                error: Some(error)
+                error: Some(error),
+                ..
             } if error == "OBS is busy"
         ));
     }

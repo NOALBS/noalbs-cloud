@@ -40,6 +40,9 @@ pub enum Error {
     #[error("Data encryption key: {0}")]
     Crypto(#[from] common::crypto::CryptoError),
 
+    #[error("Invalid Connect log upload: {0}")]
+    InvalidLogUpload(&'static str),
+
     #[error("The switcher no longer exists")]
     SwitcherGone,
 }

@@ -46,6 +46,7 @@ uuid = "1.24.0"
 axum = "0.8.9"
 axum-extra = { version = "0.12.6", features = ["cookie-private", "cookie-key-expansion"] }
 chrono = "0.4.45"
+flate2 = "1.1.5"
 utoipa = { version = "6.0.0", features = ["axum_extras", "chrono", "uuid"] }
 utoipa-axum = "0.3.0"
 getrandom = "0.4.3"

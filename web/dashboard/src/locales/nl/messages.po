@@ -548,6 +548,11 @@ msgstr "{0} verwijderd"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr ""
 
@@ -627,6 +632,16 @@ msgstr "{0} tot {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} bijgewerkt"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr ""
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2493,6 +2508,10 @@ msgstr "Verbind door in te loggen als het botaccount (niet je eigen) wanneer het
 msgid "Connect computer"
 msgstr ""
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Moblin verbinden"
@@ -2528,6 +2547,14 @@ msgstr ""
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
 msgstr ""
 
 #: src/lib/live-format.ts
@@ -2660,6 +2687,7 @@ msgstr "Moblin bediend"
 msgid "Controls"
 msgstr "Bediening"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2675,6 +2703,7 @@ msgstr "Gekopieerd"
 msgid "Copied {0} as {1}"
 msgstr "{0} gekopieerd als {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2767,6 +2796,14 @@ msgstr "Telt tijdens het streamen met de Einde-scène in beeld, ook als automati
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Vult het kader en houdt de vorm; de randen vallen weg."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2977,6 +3014,7 @@ msgstr "Dagen streamgeschiedenis"
 msgid "Decline"
 msgstr "Weigeren"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3034,6 +3072,10 @@ msgstr "Organisatie verwijderen"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Switcher verwijderen"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3100,6 +3142,10 @@ msgstr "Beschrijving"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Dev-login"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3178,6 +3224,10 @@ msgstr "Klaar"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "Downloaden"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3537,6 +3587,10 @@ msgstr "Velden"
 msgid "Fill"
 msgstr "Vullen"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Zoek een veld"
@@ -3637,6 +3691,10 @@ msgstr "Genereren"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Nieuw Moblin-wachtwoord genereren?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4497,6 +4555,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "Instellingen uit OBS laden…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4506,6 +4572,10 @@ msgstr "Instellingen uit OBS laden…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Laden…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5388,6 +5458,10 @@ msgstr "geen instantie"
 msgid "No instance has followed YouTube chats yet."
 msgstr "Nog geen instantie heeft YouTube-chats gevolgd."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "Niet meer gekoppeld"
@@ -6036,6 +6110,14 @@ msgstr "OBS is niet verbonden. Controleer of OBS open is met de browserbron acti
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS is niet verbonden. Open OBS met de NOALBS-browserbron actief om de statistieken te zien."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7282,6 +7364,10 @@ msgstr "Antwoordmodus"
 msgid "Request failed ({0})"
 msgstr "Verzoek mislukt ({0})"
 
+#: src/lib/live-format.ts
+msgid "Requested an OBS log through Connect"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7933,6 +8019,10 @@ msgstr "Niets tonen als het afspelen klaar is"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "Ouder tonen"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
@@ -9570,6 +9660,10 @@ msgstr "Deze switcher heeft de streamserverlimiet van het abonnement bereikt. Up
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "Deze switcher is gepauzeerd: de workspace heeft meer switchers dan het abonnement omvat."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "Deze URL is al bezet"
@@ -9679,6 +9773,10 @@ msgstr "Geprobeerd ruwe statistieken te zien"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Geprobeerd het Moblin-wachtwoord te zien"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9972,6 +10070,7 @@ msgstr "Gebruik je een BELABOX? Bekijk de modems op de pagina Live, bedien hem v
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Gebruik je je eigen bot? Log in als het botaccount wanneer daarom wordt gevraagd, niet als jezelf."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

@@ -819,6 +819,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "common",
+ "flate2",
  "futures-util",
  "serde",
  "serde_json",
@@ -1929,6 +1930,7 @@ dependencies = [
  "common",
  "config",
  "db",
+ "flate2",
  "futures-util",
  "http-body-util",
  "live",

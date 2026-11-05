@@ -548,6 +548,11 @@ msgstr "{0} rimosso"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr ""
 
@@ -627,6 +632,16 @@ msgstr "{0} fino a {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} aggiornato"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr ""
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr ""
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2493,6 +2508,10 @@ msgstr "Connettiti accedendo con l’account del bot (non il tuo) quando la piat
 msgid "Connect computer"
 msgstr ""
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Connetti Moblin"
@@ -2528,6 +2547,14 @@ msgstr ""
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
 msgstr ""
 
 #: src/lib/live-format.ts
@@ -2660,6 +2687,7 @@ msgstr "Ha controllato Moblin"
 msgid "Controls"
 msgstr "Controlli"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2675,6 +2703,7 @@ msgstr "Copiato"
 msgid "Copied {0} as {1}"
 msgstr "{0} copiata come {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2767,6 +2796,14 @@ msgstr "Conta mentre sei in diretta con la scena Fine in onda, anche con il camb
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Copre il riquadro mantenendo la forma; i bordi vengono tagliati."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2977,6 +3014,7 @@ msgstr "Giorni di cronologia delle dirette"
 msgid "Decline"
 msgstr "Rifiuta"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3034,6 +3072,10 @@ msgstr "Elimina organizzazione"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Elimina switcher"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3100,6 +3142,10 @@ msgstr "Descrizione"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Accesso dev"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3178,6 +3224,10 @@ msgstr "Fatto"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "Scarica"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3537,6 +3587,10 @@ msgstr "Campi"
 msgid "Fill"
 msgstr "Riempi"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Trova un campo"
@@ -3637,6 +3691,10 @@ msgstr "Genera"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Generare una nuova password Moblin?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr ""
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4497,6 +4555,14 @@ msgstr ""
 msgid "Loading its settings from OBS…"
 msgstr "Caricamento delle impostazioni da OBS…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4506,6 +4572,10 @@ msgstr "Caricamento delle impostazioni da OBS…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Caricamento…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5388,6 +5458,10 @@ msgstr "nessuna istanza"
 msgid "No instance has followed YouTube chats yet."
 msgstr "Nessuna istanza ha ancora seguito le chat di YouTube."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "Non più collegato"
@@ -6036,6 +6110,14 @@ msgstr "OBS non è connesso. Controlla che OBS sia aperto con la sorgente browse
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS non è connesso. Apri OBS con la sorgente browser NOALBS attiva per vedere le sue statistiche."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "OBS log uploaded"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7282,6 +7364,10 @@ msgstr "Modalità di risposta"
 msgid "Request failed ({0})"
 msgstr "Richiesta non riuscita ({0})"
 
+#: src/lib/live-format.ts
+msgid "Requested an OBS log through Connect"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7933,6 +8019,10 @@ msgstr "Non mostrare nulla a fine riproduzione"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "Mostra precedenti"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
@@ -9570,6 +9660,10 @@ msgstr "Questo switcher ha raggiunto il limite di server di streaming del piano.
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "Questo switcher è in pausa: il workspace ha più switcher di quelli inclusi nel piano."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "Questo URL è già occupato"
@@ -9679,6 +9773,10 @@ msgstr "Ha provato a vedere le statistiche grezze"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Ha provato a vedere la password Moblin"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr ""
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9972,6 +10070,7 @@ msgstr "Usi un BELABOX? Vedi i suoi modem nella pagina Live, controllalo dalla d
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Usi un tuo bot? Accedi con l’account del bot quando richiesto, non con il tuo."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"

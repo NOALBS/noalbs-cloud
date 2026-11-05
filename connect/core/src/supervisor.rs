@@ -4,7 +4,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize};
@@ -402,6 +402,7 @@ pub struct Supervisor {
     connected: HashSet<Uuid>,
     crashed_pending: HashSet<Uuid>,
     crashed_state: HashSet<Uuid>,
+    crashed_start_times: HashMap<Uuid, u64>,
     shutdown_grace: std::time::Duration,
     waiting_for_input_after: std::time::Duration,
     flatpak_resolution_timeout: Duration,
@@ -424,6 +425,7 @@ impl Supervisor {
             connected: HashSet::new(),
             crashed_pending: HashSet::new(),
             crashed_state: HashSet::new(),
+            crashed_start_times: HashMap::new(),
             shutdown_grace,
             waiting_for_input_after: std::time::Duration::from_secs(60),
             flatpak_resolution_timeout: Duration::from_secs(10),
@@ -446,6 +448,16 @@ impl Supervisor {
         self.known_setups = setups.to_vec();
     }
 
+    pub fn obs_start_time(&self, setup: &Setup) -> Option<SystemTime> {
+        let seconds = self
+            .children
+            .get(&setup.id)
+            .map(|child| child.process_start_time)
+            .or_else(|| self.adopted.get(&setup.id).map(|(_, _, start)| *start))
+            .or_else(|| self.crashed_start_times.get(&setup.id).copied())?;
+        (seconds > 0).then(|| UNIX_EPOCH + Duration::from_secs(seconds))
+    }
+
     fn matching_obs_pids(&self, setup: &Setup) -> Vec<Pid> {
         matching_obs_pids_for_setups(setup, &self.known_setups)
     }
@@ -458,6 +470,7 @@ impl Supervisor {
     ) -> Result<u32, SupervisorError> {
         let crash_cleanup_pending = self.crashed_pending.contains(&setup.id);
         self.crashed_state.remove(&setup.id);
+        self.crashed_start_times.remove(&setup.id);
         if !self.allow_config_dir_override {
             validate_obs_config_for_platform(&setup.obs, HostPlatform::current())
                 .map_err(SupervisorError::UnsupportedPlatformConfig)?;
@@ -713,6 +726,10 @@ impl Supervisor {
             if crashed {
                 self.crashed_pending.insert(setup.id);
                 self.crashed_state.insert(setup.id);
+                if let Some(child) = self.children.get(&setup.id) {
+                    self.crashed_start_times
+                        .insert(setup.id, child.process_start_time);
+                }
             }
             if remove_child {
                 self.children.remove(&setup.id);
@@ -734,6 +751,10 @@ impl Supervisor {
                 }
                 Ok(Some(status)) => {
                     let crashed = process_exited_unexpectedly(setup, child, &status);
+                    if crashed {
+                        self.crashed_start_times
+                            .insert(setup.id, child.process_start_time);
+                    }
                     self.children.remove(&setup.id);
                     self.connected.remove(&setup.id);
                     if crashed {
@@ -823,6 +844,7 @@ impl Supervisor {
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
         self.crashed_state.remove(&setup.id);
+        self.crashed_start_times.remove(&setup.id);
         if self
             .children
             .get(&setup.id)
@@ -871,6 +893,12 @@ impl Supervisor {
             && process_start_time(pid) == Some(expected_start_time)
         {
             force_kill(pid);
+            let reap_deadline = Instant::now() + Duration::from_secs(5);
+            while process_start_time(pid) == Some(expected_start_time)
+                && Instant::now() < reap_deadline
+            {
+                std::thread::sleep(Duration::from_millis(100));
+            }
             self.crashed_pending.insert(setup.id);
         } else if child.is_some() && !matches!(setup.obs.install_kind, InstallKind::Flatpak) {
             let child = child.take().expect("child was checked above");
@@ -879,6 +907,12 @@ impl Supervisor {
         } else if process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
         {
             force_kill(pid);
+            let reap_deadline = Instant::now() + Duration::from_secs(5);
+            while process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
+                && Instant::now() < reap_deadline
+            {
+                std::thread::sleep(Duration::from_millis(100));
+            }
             self.crashed_pending.insert(setup.id);
         }
         self.adopted.remove(&setup.id);

@@ -5,6 +5,7 @@ pub mod billing;
 pub mod chat;
 pub mod chat_commands;
 pub mod connect;
+pub mod connect_logs;
 pub mod error;
 pub mod export;
 pub mod invites;

@@ -104,14 +104,30 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
             start: t`${event.data.by} started OBS through Connect`,
             stop: t`${event.data.by} stopped OBS through Connect`,
             restart: t`${event.data.by} restarted OBS through Connect`,
+            upload_log: t`${event.data.by} requested an OBS log through Connect`,
           }[event.data.action]
         : {
             start: t`Started OBS through Connect`,
             stop: t`Stopped OBS through Connect`,
             restart: t`Restarted OBS through Connect`,
+            upload_log: t`Requested an OBS log through Connect`,
           }[event.data.action];
       return {
         title: t`OBS command`,
+        detail,
+      };
+    }
+    case "connect_log_uploaded": {
+      const detail =
+        event.data.kind === "obs_log"
+          ? event.data.by
+            ? t`${event.data.by} uploaded an OBS log through Connect`
+            : t`Connect uploaded an OBS log`
+          : event.data.by
+            ? t`${event.data.by} uploaded a crash report through Connect`
+            : t`Connect uploaded a crash report`;
+      return {
+        title: t`Connect log upload`,
         detail,
       };
     }

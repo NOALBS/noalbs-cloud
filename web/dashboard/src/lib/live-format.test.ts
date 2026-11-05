@@ -31,6 +31,16 @@ describe("describeEvent", () => {
     ).toEqual({ title: "Revoked Studio PC", detail: "by kate" });
   });
 
+  it("describes Connect log uploads", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_log_uploaded",
+        data: { kind: "obs_log", log_id: "log-1", by: "kate" },
+      }),
+    ).toEqual({ title: "Connect log upload", detail: "kate uploaded an OBS log through Connect" });
+  });
+
   it("describes Connect OBS commands as complete translated sentences", () => {
     for (const action of ["start", "stop", "restart"] as const) {
       expect(

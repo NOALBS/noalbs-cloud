@@ -1,5 +1,6 @@
 use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 
+use crate::logs::ConnectLogUpload;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -49,15 +50,16 @@ pub enum ObsAction {
     Start,
     Stop,
     Restart,
+    UploadLog,
 }
 
 #[derive(Debug)]
 pub struct ObsCommandRequest {
     pub action: ObsAction,
-    pub reply: oneshot::Sender<Result<(), String>>,
+    pub reply: oneshot::Sender<Result<Option<ConnectLogUpload>, String>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct LinkConfig {
     pub link_url: String,
     pub device_token: String,
@@ -70,6 +72,7 @@ pub struct LinkConfig {
     pub telemetry_tx: watch::Sender<ObsTelemetry>,
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
     pub commands: mpsc::UnboundedSender<ObsCommandRequest>,
+    pub unsolicited_uploads: mpsc::UnboundedReceiver<ConnectLogUpload>,
 }
 
 #[derive(Debug, Error)]
@@ -93,7 +96,7 @@ pub enum RelayError {
 type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 pub async fn run_link(
-    config: LinkConfig,
+    mut config: LinkConfig,
     mut obs_state: watch::Receiver<PcObsState>,
     watchdog: watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
@@ -101,7 +104,7 @@ pub async fn run_link(
     let mut backoff = Duration::from_millis(500);
     loop {
         if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) =
-            connect_once(&config, &mut obs_state, &watchdog).await
+            connect_once(&mut config, &mut obs_state, &watchdog).await
         {
             return Err(error);
         }
@@ -111,7 +114,7 @@ pub async fn run_link(
 }
 
 async fn connect_once(
-    config: &LinkConfig,
+    config: &mut LinkConfig,
     obs_state: &mut watch::Receiver<PcObsState>,
     watchdog: &watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
@@ -203,7 +206,10 @@ async fn connect_once(
                 dyn Future<
                         Output = (
                             String,
-                            Result<Result<(), String>, oneshot::error::RecvError>,
+                            Result<
+                                Result<Option<ConnectLogUpload>, String>,
+                                oneshot::error::RecvError,
+                            >,
                         ),
                     > + Send,
             >,
@@ -300,6 +306,15 @@ async fn connect_once(
                 if changed.is_ok() {
                     let current_state = *obs_state.borrow();
                     send_pc_state(&mut upstream, current_state).await?;
+                }
+            }
+            upload = config.unsolicited_uploads.recv(),
+                if !config.unsolicited_uploads.is_closed() =>
+            {
+                if let Some(upload) = upload {
+                    upstream
+                        .send(Message::Text(json!({"logUpload": upload}).to_string().into()))
+                        .await?;
                 }
             }
             message = upstream.next() => {
@@ -403,7 +418,8 @@ async fn connect_once(
             }
             Some((token, result)) = command_replies.next(), if !command_replies.is_empty() => {
                 let response = match result {
-                    Ok(Ok(())) => json!({"ok": true}),
+                    Ok(Ok(Some(log))) => json!({"ok": true, "log": log}),
+                    Ok(Ok(None)) => json!({"ok": true}),
                     Ok(Err(error)) => json!({"ok": false, "error": error}),
                     Err(_) => json!({
                         "ok": false,
@@ -790,7 +806,7 @@ fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
             "token": config.device_token,
             "version": config.version,
             "client": "connect",
-            "capabilities": ["obs_process", "obs_control"],
+            "capabilities": ["obs_process", "obs_control", "obs_logs"],
             "os": config.os,
             "obsVersion": obs_version
         }
@@ -806,9 +822,9 @@ mod tests {
     use tokio_tungstenite::{accept_async, tungstenite::Message};
 
     use super::{
-        Duration, LinkConfig, PcObsState, RelayError, collect_volume_meters, connect_obs,
-        extract_obs_config, get_obs_version, hash_base64, identify_payload, parse_watchdog,
-        run_link, take_volume_meters,
+        ConnectLogUpload, Duration, LinkConfig, PcObsState, RelayError, collect_volume_meters,
+        connect_obs, extract_obs_config, get_obs_version, hash_base64, identify_payload,
+        parse_watchdog, run_link, take_volume_meters,
     };
 
     #[test]
@@ -884,6 +900,7 @@ mod tests {
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
+            unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
         };
         let payload = identify_payload(&config, Some("31.0.0"));
         assert_eq!(
@@ -894,7 +911,7 @@ mod tests {
                     "token":"device-token",
                     "version":"0.1.0",
                     "client":"connect",
-                    "capabilities":["obs_process","obs_control"],
+                    "capabilities":["obs_process","obs_control","obs_logs"],
                     "os":"linux",
                     "obsVersion":"31.0.0"
                 }
@@ -927,7 +944,7 @@ mod tests {
                 .send(Message::Text(
                     json!({
                         "token":"command-token",
-                        "connectCommand":{"action":"restart"}
+                        "connectCommand":{"action":"upload_log"}
                     })
                     .to_string()
                     .into(),
@@ -965,24 +982,34 @@ mod tests {
             telemetry_tx,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             commands: commands_tx,
+            unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
         };
-        let relay_config = config.clone();
         let relay = tokio::spawn(async move {
             let mut state_rx = state_rx;
-            super::connect_once(&relay_config, &mut state_rx, &watchdog_tx).await
+            let mut config = config;
+            super::connect_once(&mut config, &mut state_rx, &watchdog_tx).await
         });
 
         let command = tokio::time::timeout(Duration::from_secs(5), commands_rx.recv())
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(command.action, super::ObsAction::Restart);
+        assert_eq!(command.action, super::ObsAction::UploadLog);
         tokio::time::timeout(Duration::from_secs(5), watchdog_rx.changed())
             .await
             .unwrap()
             .unwrap();
         assert_eq!(*watchdog_rx.borrow_and_update(), super::WatchdogMode::Off);
-        command.reply.send(Ok(())).unwrap();
+        command
+            .reply
+            .send(Ok(Some(ConnectLogUpload {
+                kind: "obs_log".into(),
+                file_name: "latest.txt".into(),
+                modified_at: Some("2026-11-04T12:00:00Z".into()),
+                truncated: false,
+                content_gzip_base64: "H4s=".into(),
+            })))
+            .unwrap();
 
         let frame = tokio::time::timeout(Duration::from_secs(5), frame_rx)
             .await
@@ -990,7 +1017,19 @@ mod tests {
             .unwrap();
         assert_eq!(
             frame,
-            json!({"token":"command-token","connectCommandResult":{"ok":true}})
+            json!({
+                "token":"command-token",
+                "connectCommandResult":{
+                    "ok":true,
+                    "log":{
+                        "kind":"obs_log",
+                        "fileName":"latest.txt",
+                        "modifiedAt":"2026-11-04T12:00:00Z",
+                        "truncated":false,
+                        "contentGzipBase64":"H4s="
+                    }
+                }
+            })
         );
         server.await.unwrap();
         relay.abort();
@@ -1234,6 +1273,7 @@ mod tests {
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
+                    unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 },
                 state_rx,
                 watchdog_tx,
@@ -1283,6 +1323,7 @@ mod tests {
                 telemetry_tx,
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
+                unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             },
             state_rx,
             watchdog_tx,
@@ -1331,6 +1372,7 @@ mod tests {
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
+                    unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 },
                 state_rx,
                 watchdog_tx,
@@ -1405,6 +1447,7 @@ mod tests {
                 telemetry_tx,
                 effective_obs_tx,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
+                unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             },
             state_rx,
             watchdog_tx,

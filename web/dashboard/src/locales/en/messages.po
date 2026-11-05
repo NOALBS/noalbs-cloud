@@ -548,6 +548,11 @@ msgstr "{0} removed"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
+msgid "{0} requested an OBS log through Connect"
+msgstr "{0} requested an OBS log through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
 msgstr "{0} restarted OBS through Connect"
 
@@ -627,6 +632,16 @@ msgstr "{0} until {1}"
 #: src/components/billing/addon-card.tsx
 msgid "{0} updated"
 msgstr "{0} updated"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded a crash report through Connect"
+msgstr "{0} uploaded a crash report through Connect"
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} uploaded an OBS log through Connect"
+msgstr "{0} uploaded an OBS log through Connect"
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -2493,6 +2508,10 @@ msgstr "Connect by signing in as the bot account (not your own) when the platfor
 msgid "Connect computer"
 msgstr "Connect computer"
 
+#: src/lib/live-format.ts
+msgid "Connect log upload"
+msgstr "Connect log upload"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
 msgstr "Connect Moblin"
@@ -2529,6 +2548,14 @@ msgstr "Connect this computer"
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
 msgstr "Connect to this switcher"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded a crash report"
+msgstr "Connect uploaded a crash report"
+
+#: src/lib/live-format.ts
+msgid "Connect uploaded an OBS log"
+msgstr "Connect uploaded an OBS log"
 
 #: src/lib/live-format.ts
 msgid "Connect watchdog changed"
@@ -2660,6 +2687,7 @@ msgstr "Controlled Moblin"
 msgid "Controls"
 msgstr "Controls"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2675,6 +2703,7 @@ msgstr "Copied"
 msgid "Copied {0} as {1}"
 msgstr "Copied {0} as {1}"
 
+#: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
 #: src/components/history/markers-panel.tsx
 #: src/components/history/raw-explorer.tsx
@@ -2767,6 +2796,14 @@ msgstr "Counts while streaming with the Ending scene on air, even with auto swit
 #: src/components/live/source-position.tsx
 msgid "Covers the box, keeping its shape; the edges are cut off."
 msgstr "Covers the box, keeping its shape; the edges are cut off."
+
+#: src/components/connect-settings.tsx
+msgid "Crash report"
+msgstr "Crash report"
+
+#: src/components/connect-settings.tsx
+msgid "Crash reports and OBS logs uploaded by Connect."
+msgstr "Crash reports and OBS logs uploaded by Connect."
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -2977,6 +3014,7 @@ msgstr "Days of stream history"
 msgid "Decline"
 msgstr "Decline"
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3034,6 +3072,10 @@ msgstr "Delete organization"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Delete switcher"
 msgstr "Delete switcher"
+
+#: src/components/connect-settings.tsx
+msgid "Delete this log?"
+msgstr "Delete this log?"
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3100,6 +3142,10 @@ msgstr "Description"
 #: src/routes/login.tsx
 msgid "Dev login"
 msgstr "Dev login"
+
+#: src/components/connect-settings.tsx
+msgid "Device removed"
+msgstr "Device removed"
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3178,6 +3224,10 @@ msgstr "Done"
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download"
 msgstr "Download"
+
+#: src/components/connect-settings.tsx
+msgid "Download .txt"
+msgstr "Download .txt"
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3537,6 +3587,10 @@ msgstr "Fields"
 msgid "Fill"
 msgstr "Fill"
 
+#: src/components/connect-settings.tsx
+msgid "Filter log lines"
+msgstr "Filter log lines"
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Find a field"
@@ -3637,6 +3691,10 @@ msgstr "Generate"
 #: src/components/moblin-settings.tsx
 msgid "Generate a new Moblin password?"
 msgstr "Generate a new Moblin password?"
+
+#: src/components/connect-settings.tsx
+msgid "Get latest OBS log"
+msgstr "Get latest OBS log"
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -4497,6 +4555,14 @@ msgstr "Loading devices…"
 msgid "Loading its settings from OBS…"
 msgstr "Loading its settings from OBS…"
 
+#: src/components/connect-settings.tsx
+msgid "Loading log…"
+msgstr "Loading log…"
+
+#: src/components/connect-settings.tsx
+msgid "Loading logs…"
+msgstr "Loading logs…"
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4506,6 +4572,10 @@ msgstr "Loading its settings from OBS…"
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Loading…"
+
+#: src/components/connect-settings.tsx
+msgid "Logs"
+msgstr "Logs"
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -5388,6 +5458,10 @@ msgstr "no instance"
 msgid "No instance has followed YouTube chats yet."
 msgstr "No instance has followed YouTube chats yet."
 
+#: src/components/connect-settings.tsx
+msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+msgstr "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
+
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
 msgstr "No longer linked"
@@ -6038,6 +6112,14 @@ msgstr "OBS isn't connected. Check that OBS is open with the browser source acti
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
 msgstr "OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats."
+
+#: src/components/connect-settings.tsx
+msgid "OBS log"
+msgstr "OBS log"
+
+#: src/components/connect-settings.tsx
+msgid "OBS log uploaded"
+msgstr "OBS log uploaded"
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
@@ -7284,6 +7366,10 @@ msgstr "Reply mode"
 msgid "Request failed ({0})"
 msgstr "Request failed ({0})"
 
+#: src/lib/live-format.ts
+msgid "Requested an OBS log through Connect"
+msgstr "Requested an OBS log through Connect"
+
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7935,6 +8021,10 @@ msgstr "Show nothing when playback ends"
 #: src/routes/_app/admin/audit.tsx
 msgid "Show older"
 msgstr "Show older"
+
+#: src/components/connect-settings.tsx
+msgid "Show sensitive values"
+msgstr "Show sensitive values"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
@@ -9572,6 +9662,10 @@ msgstr "This switcher has reached its plan's stream server limit. Upgrade the pl
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
 msgstr "This switcher is paused: the workspace has more switchers than its plan includes."
 
+#: src/components/connect-settings.tsx
+msgid "This uploaded log will be permanently deleted."
+msgstr "This uploaded log will be permanently deleted."
+
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
 msgstr "This URL is already taken"
@@ -9681,6 +9775,10 @@ msgstr "Tried to see raw stats"
 #: src/lib/support.ts
 msgid "Tried to see the Moblin password"
 msgstr "Tried to see the Moblin password"
+
+#: src/components/connect-settings.tsx
+msgid "Truncated"
+msgstr "Truncated"
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -9974,6 +10072,7 @@ msgstr "Using a BELABOX? See its modems on the Live page, control it from the da
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "Using your own bot? Sign in as the bot account when asked, not as yourself."
 
+#: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "View"
