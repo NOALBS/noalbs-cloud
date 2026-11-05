@@ -232,8 +232,11 @@ fn set_install_error(app: &AppHandle, error: String) {
 }
 
 #[tauri::command]
-pub(crate) fn open_release_notes(app: AppHandle, version: String) -> crate::UiState {
-    let result = release_notes_url(&version).and_then(|url| crate::open_external_url(&app, &url));
+pub(crate) async fn open_release_notes(app: AppHandle, version: String) -> crate::UiState {
+    let result = match release_notes_url(&version) {
+        Ok(url) => crate::open_external_url(app.clone(), url).await,
+        Err(error) => Err(error),
+    };
     {
         let state = app.state::<crate::AppState>();
         state.updates.update(|current| {

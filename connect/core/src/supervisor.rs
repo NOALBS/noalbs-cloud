@@ -130,7 +130,31 @@ pub fn open_url(url: &str) -> std::io::Result<()> {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    let mut child = command.spawn()?;
+    wait_for_open_command(command.spawn()?, Duration::from_secs(2))
+}
+
+#[cfg(target_os = "linux")]
+fn wait_for_open_command(mut child: Child, timeout: Duration) -> std::io::Result<()> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if let Some(status) = child.try_wait()? {
+            if status.success() {
+                return Ok(());
+            }
+            let status = status
+                .code()
+                .map(|code| code.to_string())
+                .unwrap_or_else(|| status.to_string());
+            return Err(std::io::Error::other(format!(
+                "xdg-open could not open the link (exit status {status}); check that a default browser is set"
+            )));
+        }
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(50).min(remaining));
+    }
     std::thread::spawn(move || {
         let _ = child.wait();
     });
@@ -2103,7 +2127,7 @@ mod tests {
     };
     use super::{SupervisorError, find_matching_obs_with_start_time_for_setups, matching_obs_pids};
     #[cfg(target_os = "linux")]
-    use super::{appimage_env_fixes, resolve_executable};
+    use super::{appimage_env_fixes, resolve_executable, wait_for_open_command};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
     #[cfg(target_os = "linux")]
@@ -2185,6 +2209,36 @@ mod tests {
             ])
             .is_empty()
         );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn open_command_wait_accepts_successful_exit() {
+        let child = Command::new("sh").args(["-c", "exit 0"]).spawn().unwrap();
+        assert!(wait_for_open_command(child, Duration::from_secs(2)).is_ok());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn open_command_wait_reports_unsuccessful_exit() {
+        let child = Command::new("sh").args(["-c", "exit 3"]).spawn().unwrap();
+        let error = wait_for_open_command(child, Duration::from_secs(2)).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::Other);
+        assert!(
+            error
+                .to_string()
+                .contains("xdg-open could not open the link (exit status 3)")
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn open_command_wait_reaps_later_when_command_is_still_running() {
+        let child = Command::new("sleep").arg("5").spawn().unwrap();
+        let timeout = Duration::from_millis(200);
+        let start = Instant::now();
+        assert!(wait_for_open_command(child, timeout).is_ok());
+        assert!(start.elapsed() < Duration::from_secs(2));
     }
 
     #[test]

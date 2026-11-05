@@ -481,7 +481,7 @@ async fn pair_setup(
 }
 
 #[tauri::command]
-fn open_verification_url(
+async fn open_verification_url(
     app: tauri::AppHandle,
     setup_id: String,
     state: State<'_, AppState>,
@@ -494,22 +494,27 @@ fn open_verification_url(
         .get(&id)
         .cloned()
         .ok_or("No active verification URL for this setup")?;
-    let config = state.config.lock().map_err(|_| "config lock poisoned")?;
-    let settings = config.settings.effective();
+    let settings = {
+        let config = state.config.lock().map_err(|_| "config lock poisoned")?;
+        config.settings.effective()
+    };
     validate_verification_url(
         &settings.api_url,
         settings.dashboard_url.as_deref(),
         &verification_url,
     )?;
-    drop(config);
-    open_external_url(&app, &verification_url)
+    open_external_url(app, verification_url).await
 }
 
-pub(crate) fn open_external_url(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
+pub(crate) async fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         let _ = app;
-        connect_core::supervisor::open_url(url).map_err(|error| error.to_string())
+        tauri::async_runtime::spawn_blocking(move || {
+            connect_core::supervisor::open_url(&url).map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| error.to_string())?
     }
     #[cfg(not(target_os = "linux"))]
     {
