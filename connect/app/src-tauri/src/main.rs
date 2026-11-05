@@ -578,14 +578,7 @@ async fn run_obs_action(
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
-            let shutdown_grace = match state.supervisor.lock() {
-                Ok(supervisor) => supervisor.shutdown_grace(),
-                Err(error) => {
-                    tracing::warn!(program = %program.name, %error, "Failed to stop program with OBS");
-                    continue;
-                }
-            };
-            if let Err(error) = programs::stop(program, shutdown_grace) {
+            if let Err(error) = programs::stop(program, programs::PROGRAM_SHUTDOWN_GRACE) {
                 tracing::warn!(program = %program.name, %error, "Failed to stop program with OBS");
             }
         }
@@ -679,12 +672,8 @@ fn run_program_action(
         ObsAction::ProgramStop { id } => {
             let program = programs::find(&setup.programs, id)
                 .ok_or_else(|| "Program not found".to_string())?;
-            let shutdown_grace = state
-                .supervisor
-                .lock()
-                .map_err(|_| "supervisor lock poisoned")?
-                .shutdown_grace();
-            programs::stop(program, shutdown_grace).map_err(|error| error.to_string())?;
+            programs::stop(program, programs::PROGRAM_SHUTDOWN_GRACE)
+                .map_err(|error| error.to_string())?;
         }
         ObsAction::ProgramAdd { mut program } => {
             if dashboard_request {
@@ -752,12 +741,7 @@ fn run_program_action(
                 .cloned()
                 .ok_or_else(|| "Program not found".to_string())?;
             if programs::is_running(&program_to_stop) {
-                let shutdown_grace = state
-                    .supervisor
-                    .lock()
-                    .map_err(|_| "supervisor lock poisoned")?
-                    .shutdown_grace();
-                programs::stop(&program_to_stop, shutdown_grace)
+                programs::stop(&program_to_stop, programs::PROGRAM_SHUTDOWN_GRACE)
                     .map_err(|error| error.to_string())?;
             }
             let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
@@ -1874,17 +1858,6 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
                 let lifecycle_app = app.clone();
                 tauri::async_runtime::spawn_blocking(move || {
                     let lifecycle_state = lifecycle_app.state::<AppState>();
-                    let shutdown_grace = if action == ObsLifecycleAction::Stop {
-                        match lifecycle_state.supervisor.lock() {
-                            Ok(supervisor) => Some(supervisor.shutdown_grace()),
-                            Err(error) => {
-                                tracing::warn!(setup_id = %setup_id, %error, "Failed to stop programs with OBS");
-                                return;
-                            }
-                        }
-                    } else {
-                        None
-                    };
                     for program in selected {
                         let result = match action {
                             ObsLifecycleAction::Start => {
@@ -1899,11 +1872,10 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
                                     }
                                 })
                             }
-                            ObsLifecycleAction::Stop => programs::stop(
-                                &program,
-                                shutdown_grace.expect("stop action has a grace"),
-                            )
-                            .map_err(|error| Some(error.to_string())),
+                            ObsLifecycleAction::Stop => {
+                                programs::stop(&program, programs::PROGRAM_SHUTDOWN_GRACE)
+                                    .map_err(|error| Some(error.to_string()))
+                            }
                         };
                         if let Err(Some(error)) = result {
                             tracing::warn!(program = %program.name, %error, "Failed to run program with OBS");

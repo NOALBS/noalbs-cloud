@@ -173,6 +173,8 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
     Ok(())
 }
 
+pub const PROGRAM_SHUTDOWN_GRACE: Duration = Duration::from_secs(5);
+
 pub fn stop(program: &Program, shutdown_grace: Duration) -> Result<(), ProgramError> {
     let path = resolved_program_path(&program.path, HostPlatform::current());
     let Ok(expected) = path.canonicalize() else {
@@ -568,6 +570,11 @@ mod tests {
         stop(&program, Duration::from_secs(1)).unwrap();
         assert!(!is_running(&program));
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn program_shutdown_grace_is_five_seconds() {
+        assert_eq!(PROGRAM_SHUTDOWN_GRACE, Duration::from_secs(5));
     }
 
     #[cfg(unix)]
