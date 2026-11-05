@@ -1193,22 +1193,14 @@ fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
         .then(|| read_obs_websocket_config(&config_dir(setup)).ok())
         .flatten()
         .map(|config| config.server_port);
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
+    let system = process_snapshot();
     let expected = setup
         .obs
         .binary_path
         .clone()
         .unwrap_or_else(default_obs_binary);
     let expected = resolve_executable(&expected);
-    system
-        .processes()
-        .iter()
-        .filter(|(_, process)| process.thread_kind().is_none())
+    non_thread_processes(&system)
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
@@ -1227,6 +1219,60 @@ fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
             .then_some(*pid)
         })
         .collect()
+}
+
+pub(crate) fn process_snapshot() -> System {
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything().without_tasks(),
+    );
+    system
+}
+
+pub(crate) fn non_thread_processes(
+    system: &System,
+) -> impl Iterator<Item = (&Pid, &sysinfo::Process)> {
+    system
+        .processes()
+        .iter()
+        .filter(|(_, process)| process.thread_kind().is_none())
+}
+
+pub(crate) fn same_path(left: &Path, right: &Path) -> bool {
+    match (left.canonicalize(), right.canonicalize()) {
+        (Ok(left), Ok(right)) => left == right,
+        _ => left == right,
+    }
+}
+
+pub(crate) fn terminate_process(pid: u32, shutdown_grace: Duration) -> Result<(), SupervisorError> {
+    let Some(start_time) = process_start_time(pid) else {
+        return Ok(());
+    };
+    request_graceful_close(pid);
+    let deadline = Instant::now() + shutdown_grace;
+    while process_start_time(pid) == Some(start_time) && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    if process_start_time(pid) == Some(start_time) {
+        force_kill(pid);
+    }
+    let reap_deadline = Instant::now() + Duration::from_secs(5);
+    while process_start_time(pid) == Some(start_time) && Instant::now() < reap_deadline {
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    if process_start_time(pid) == Some(start_time) {
+        return Err(SupervisorError::DidNotExit);
+    }
+    Ok(())
+}
+
+impl Supervisor {
+    pub(crate) fn shutdown_grace(&self) -> Duration {
+        self.shutdown_grace
+    }
 }
 
 fn any_obs_running_for_executable(executable: &Path) -> bool {
@@ -1418,13 +1464,6 @@ fn resolve_executable(path: &Path) -> PathBuf {
         .map(|directory| directory.join(path))
         .find(|candidate| candidate.is_file())
         .unwrap_or_else(|| path.to_owned())
-}
-
-fn same_path(left: &Path, right: &Path) -> bool {
-    match (left.canonicalize(), right.canonicalize()) {
-        (Ok(left), Ok(right)) => left == right,
-        _ => left == right,
-    }
 }
 
 fn any_obs_running() -> bool {

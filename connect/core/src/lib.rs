@@ -2,6 +2,7 @@ pub mod config;
 pub mod credentials;
 pub mod logs;
 pub mod pairing;
+pub mod programs;
 pub mod relay;
 pub mod supervisor;
 pub mod url_security;

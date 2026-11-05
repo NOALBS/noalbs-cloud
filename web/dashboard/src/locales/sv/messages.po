@@ -350,6 +350,13 @@ msgstr "{0} · {1} · Inloggad {2}"
 msgid "{0} · {1}, {2} until {3}"
 msgstr "{0} · {1}, {2} till {3}"
 
+#. placeholder {0}: event.data.program.path
+#. placeholder {1}: JSON.stringify(event.data.program.args)
+#. placeholder {2}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "{0} · Args: {1} · {2}"
+msgstr ""
+
 #. placeholder {0}: device.interface
 #: src/components/belabox/wifi-panel.tsx
 msgid "{0} · the list refreshes by itself; scan to look again."
@@ -1289,6 +1296,10 @@ msgstr "Lägg till markör"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "Lägg till en för att ansluta din OBS. Konfigurationen tar ett par minuter."
 
+#: src/components/connect-settings.tsx
+msgid "Add program"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
 msgstr "Lägg till scen"
@@ -1363,6 +1374,11 @@ msgstr "Lade till en strömserver"
 #: src/lib/support.ts
 msgid "Added a switcher"
 msgstr "Lade till en switcher"
+
+#. placeholder {0}: program.added_from_dashboard_by
+#: src/components/connect-settings.tsx
+msgid "Added from the dashboard by {0}"
+msgstr ""
 
 #. placeholder {0}: created.name
 #. placeholder {0}: event.data.scene
@@ -1630,6 +1646,10 @@ msgstr "Verkställ"
 #: src/components/belabox/modem-panel.tsx
 msgid "Applying…"
 msgstr "Verkställer…"
+
+#: src/components/connect-settings.tsx
+msgid "Arguments (one per line)"
+msgstr ""
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
@@ -2508,6 +2528,10 @@ msgstr "Anslut genom att logga in som botkontot (inte ditt eget) när plattforme
 msgid "Connect computer"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Connect is offline. Programs are shown when the computer is online."
+msgstr ""
+
 #: src/lib/live-format.ts
 msgid "Connect log upload"
 msgstr ""
@@ -3278,6 +3302,7 @@ msgstr "Varje slutkund loggar in med Twitch, Kick eller YouTube och kommer in so
 msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink."
 msgstr "Varje server kan överstyra scenerna LIVE, LOW och BRB, t.ex. med en annan overlay för en reservupplänk."
 
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3300,6 +3325,10 @@ msgstr "Redigera {name}"
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "Redigera meddelande"
+
+#: src/components/connect-settings.tsx
+msgid "Edit program"
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -3681,8 +3710,16 @@ msgid "From {0} switcher(s). Each affected workspace sees it in its support log.
 msgstr "Från {0} switcher(s). Varje berörd arbetsyta ser det i sin supportlogg."
 
 #: src/lib/live-format.ts
+msgid "from Connect"
+msgstr ""
+
+#: src/lib/live-format.ts
 msgid "from the dashboard"
 msgstr "från dashboarden"
+
+#: src/components/connect-settings.tsx
+msgid "Full program path"
+msgstr ""
 
 #: src/components/moblin-settings.tsx
 msgid "Generate"
@@ -4563,6 +4600,10 @@ msgstr ""
 msgid "Loading logs…"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Loading programs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -5152,6 +5193,7 @@ msgstr "Stängde av eller slog på ljud"
 
 #: src/components/admin/products.tsx
 #: src/components/belabox/wifi-panel.tsx
+#: src/components/connect-settings.tsx
 #: src/components/create-switcher-dialog.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-editor.tsx
@@ -5524,6 +5566,10 @@ msgstr "Inget pris än, så sidan Plan visar den som kommer snart"
 #: src/components/admin/products.tsx
 msgid "No price: it’s the free plan."
 msgstr "Inget pris: det är gratisplanen."
+
+#: src/components/connect-settings.tsx
+msgid "No programs have been added yet."
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -6028,9 +6074,10 @@ msgstr "OBS ansluter via webbläsarkällan"
 
 #. placeholder {0}: event.data.obs_control
 #. placeholder {1}: event.data.logs
-#. placeholder {2}: by(event.data.by, t`from the dashboard`)
+#. placeholder {2}: event.data.programs
+#. placeholder {3}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
-msgid "OBS control: {0} · Logs: {1} {2}"
+msgid "OBS control: {0} · Logs: {1} · Programs: {2} {3}"
 msgstr ""
 
 #: src/lib/connect.ts
@@ -6951,6 +6998,44 @@ msgstr "Problem"
 msgid "Products"
 msgstr "Produkter"
 
+#: src/lib/live-format.ts
+msgid "Program added"
+msgstr ""
+
+#. placeholder {0}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "Program details hidden · {0}"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program edited"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Program editing is controlled by the Connect setting on this PC. Turn on “Allow the dashboard to add and edit programs” in Connect and try again."
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "Program removed"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program started"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program stopped"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs managed by the paired Connect computer."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Public commands"
 msgstr "Publika kommandon"
@@ -7141,6 +7226,7 @@ msgstr "Läs in den igen när dess scen går i sändning"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/server-details-fields.tsx
@@ -7198,6 +7284,10 @@ msgstr "Ta bort saknade"
 #: src/components/obs-connection-form.tsx
 msgid "Remove password"
 msgstr "Ta bort lösenord"
+
+#: src/components/connect-settings.tsx
+msgid "Remove program?"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7530,6 +7620,10 @@ msgstr "RTT-skala: LOW vid {0}, BRB vid {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT-utlösare måste vara mellan 1 och 60 000 ms."
 
+#: src/components/connect-settings.tsx
+msgid "Running"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Running a stream server? Put a link on your site that opens NOALBS Cloud with your stats URL filled in. The streamer signs in, picks a workspace and a switcher, and confirms."
 msgstr "Driver du en strömserver? Lägg en länk på din webbplats som öppnar NOALBS Cloud med din statistik-URL ifylld. Streamern loggar in, väljer en arbetsyta och en switcher och bekräftar."
@@ -7549,6 +7643,7 @@ msgstr "Styr strömmen: byta scen, starta och stoppa, se statistik."
 #: src/components/admin/notice-dialog.tsx
 #: src/components/admin/products.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
@@ -7612,6 +7707,10 @@ msgstr "{0} sparad"
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
 msgstr "Sparade här, inte på BELABOX än: den behåller dem när den startar från dashboarden, chatten eller OBS-strömmen. Startar du den från dess egen skärm kasseras de."
+
+#: src/components/connect-settings.tsx
+msgid "Saved program"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved. The BELABOX uses these from its next start."
@@ -8296,6 +8395,7 @@ msgstr "Bara för personal"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "Personal: <0>den här arbetsytan i Admin</0> (ange dess plan, se dess fakturering)."
 
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "Starta"
@@ -8333,6 +8433,10 @@ msgstr "Starta hotspot på {0}"
 #: src/components/live/quick-actions.tsx
 msgid "Start the stream?"
 msgstr "Starta strömmen?"
+
+#: src/components/connect-settings.tsx
+msgid "Start with OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Start, end & raids"
@@ -8416,6 +8520,7 @@ msgid "Stealth on"
 msgstr "Smyg på"
 
 #: src/components/admin/products.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8511,9 +8616,17 @@ msgstr "Sluta använda den"
 msgid "Stop when offline"
 msgstr "Stoppa när offline"
 
+#: src/components/connect-settings.tsx
+msgid "Stop with OBS"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
 msgstr "Stoppa, och starta om när den visas"
+
+#: src/components/connect-settings.tsx
+msgid "Stopped"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Stopped OBS through Connect"
@@ -9636,6 +9749,10 @@ msgstr ""
 msgid "This pipeline has no audio settings."
 msgstr "Den här pipelinen har inga ljudinställningar."
 
+#: src/components/connect-settings.tsx
+msgid "This program will be removed from the paired Connect computer."
+msgstr ""
+
 #: src/components/live/source-list.tsx
 msgid "This scene has no sources."
 msgstr "Den här scenen har inga källor."
@@ -10280,6 +10397,10 @@ msgstr "Medan du är live ser alla i arbetsytan förhandsvisningen på sidan Liv
 #: src/routes/_app/orgs/$organization/chat.tsx
 msgid "Who answers in the chat of your clients’ channels."
 msgstr "Vem som svarar i chatten i dina klienters kanaler."
+
+#: src/components/connect-settings.tsx
+msgid "Who can add, start and stop programs"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Who can see and run this workspace."

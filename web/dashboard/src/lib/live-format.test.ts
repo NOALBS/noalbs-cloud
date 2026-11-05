@@ -53,6 +53,31 @@ describe("describeEvent", () => {
     }
   });
 
+  it("describes Connect program changes with the full command", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_program_command",
+        data: {
+          action: "started",
+          program: {
+            id: "program-1",
+            name: "Streamer.bot",
+            path: "/opt/streamerbot/Streamer.bot",
+            args: ["--profile", "live stream"],
+            start_with_obs: true,
+            stop_with_obs: false,
+            added_from_dashboard_by: "kate",
+          },
+          by: "kate",
+        },
+      }),
+    ).toEqual({
+      title: "Program started: Streamer.bot",
+      detail: '/opt/streamerbot/Streamer.bot · Args: ["--profile","live stream"] · by kate',
+    });
+  });
+
   it("explains automatic switches with their cause", () => {
     const event: SwitcherEvent = {
       ...base,

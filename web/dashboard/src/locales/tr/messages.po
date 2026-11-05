@@ -350,6 +350,13 @@ msgstr "{0} · {1} · Giriş: {2}"
 msgid "{0} · {1}, {2} until {3}"
 msgstr "{0} · {1}, {3} tarihine kadar {2}"
 
+#. placeholder {0}: event.data.program.path
+#. placeholder {1}: JSON.stringify(event.data.program.args)
+#. placeholder {2}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "{0} · Args: {1} · {2}"
+msgstr ""
+
 #. placeholder {0}: device.interface
 #: src/components/belabox/wifi-panel.tsx
 msgid "{0} · the list refreshes by itself; scan to look again."
@@ -1289,6 +1296,10 @@ msgstr "İşaretçi ekle"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "OBS’ini bağlamak için bir tane ekle. Kurulum birkaç dakika sürer."
 
+#: src/components/connect-settings.tsx
+msgid "Add program"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
 msgstr "Sahne ekle"
@@ -1363,6 +1374,11 @@ msgstr "Bir yayın sunucusu ekledi"
 #: src/lib/support.ts
 msgid "Added a switcher"
 msgstr "Bir switcher ekledi"
+
+#. placeholder {0}: program.added_from_dashboard_by
+#: src/components/connect-settings.tsx
+msgid "Added from the dashboard by {0}"
+msgstr ""
 
 #. placeholder {0}: created.name
 #. placeholder {0}: event.data.scene
@@ -1630,6 +1646,10 @@ msgstr "Uygula"
 #: src/components/belabox/modem-panel.tsx
 msgid "Applying…"
 msgstr "Uygulanıyor…"
+
+#: src/components/connect-settings.tsx
+msgid "Arguments (one per line)"
+msgstr ""
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
@@ -2508,6 +2528,10 @@ msgstr "Platform sorduğunda kendi hesabınla değil, bot hesabıyla giriş yapa
 msgid "Connect computer"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Connect is offline. Programs are shown when the computer is online."
+msgstr ""
+
 #: src/lib/live-format.ts
 msgid "Connect log upload"
 msgstr ""
@@ -3278,6 +3302,7 @@ msgstr "Her son müşteri Twitch, Kick veya YouTube ile giriş yapar ve yönetic
 msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink."
 msgstr "Her sunucu LIVE, LOW ve BRB sahnelerini kendine göre değiştirebilir, örneğin yedek bağlantı için farklı bir overlay."
 
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
@@ -3300,6 +3325,10 @@ msgstr "{name} öğesini düzenle"
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "Duyuruyu düzenle"
+
+#: src/components/connect-settings.tsx
+msgid "Edit program"
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -3681,8 +3710,16 @@ msgid "From {0} switcher(s). Each affected workspace sees it in its support log.
 msgstr "{0} switcher’dan. Etkilenen her çalışma alanı bunu destek günlüğünde görür."
 
 #: src/lib/live-format.ts
+msgid "from Connect"
+msgstr ""
+
+#: src/lib/live-format.ts
 msgid "from the dashboard"
 msgstr "panelden"
+
+#: src/components/connect-settings.tsx
+msgid "Full program path"
+msgstr ""
 
 #: src/components/moblin-settings.tsx
 msgid "Generate"
@@ -4563,6 +4600,10 @@ msgstr ""
 msgid "Loading logs…"
 msgstr ""
 
+#: src/components/connect-settings.tsx
+msgid "Loading programs…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -5152,6 +5193,7 @@ msgstr "Sesi kapattı veya açtı"
 
 #: src/components/admin/products.tsx
 #: src/components/belabox/wifi-panel.tsx
+#: src/components/connect-settings.tsx
 #: src/components/create-switcher-dialog.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-editor.tsx
@@ -5524,6 +5566,10 @@ msgstr "Henüz fiyatı yok, bu yüzden Plan sayfasında yakında olarak görün�
 #: src/components/admin/products.tsx
 msgid "No price: it’s the free plan."
 msgstr "Fiyat yok: bu ücretsiz plan."
+
+#: src/components/connect-settings.tsx
+msgid "No programs have been added yet."
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -6028,9 +6074,10 @@ msgstr "OBS tarayıcı kaynağı üzerinden bağlanır"
 
 #. placeholder {0}: event.data.obs_control
 #. placeholder {1}: event.data.logs
-#. placeholder {2}: by(event.data.by, t`from the dashboard`)
+#. placeholder {2}: event.data.programs
+#. placeholder {3}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
-msgid "OBS control: {0} · Logs: {1} {2}"
+msgid "OBS control: {0} · Logs: {1} · Programs: {2} {3}"
 msgstr ""
 
 #: src/lib/connect.ts
@@ -6951,6 +6998,44 @@ msgstr "Sorunlar"
 msgid "Products"
 msgstr "Ürünler"
 
+#: src/lib/live-format.ts
+msgid "Program added"
+msgstr ""
+
+#. placeholder {0}: by(event.data.by, t`from Connect`)
+#: src/lib/live-format.ts
+msgid "Program details hidden · {0}"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program edited"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Program editing is controlled by the Connect setting on this PC. Turn on “Allow the dashboard to add and edit programs” in Connect and try again."
+msgstr ""
+
+#: src/components/connect-settings.tsx
+#: src/lib/live-format.ts
+msgid "Program removed"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program started"
+msgstr ""
+
+#: src/lib/live-format.ts
+msgid "Program stopped"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Programs managed by the paired Connect computer."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Public commands"
 msgstr "Genel komutlar"
@@ -7141,6 +7226,7 @@ msgstr "Sahnesi yayına girdiğinde yeniden yükle"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/server-details-fields.tsx
@@ -7198,6 +7284,10 @@ msgstr "Eksikleri kaldır"
 #: src/components/obs-connection-form.tsx
 msgid "Remove password"
 msgstr "Şifreyi kaldır"
+
+#: src/components/connect-settings.tsx
+msgid "Remove program?"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7530,6 +7620,10 @@ msgstr "RTT ölçeği: LOW {0}, BRB {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT tetikleri 1 ile 60.000 ms arasında olmalı."
 
+#: src/components/connect-settings.tsx
+msgid "Running"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Running a stream server? Put a link on your site that opens NOALBS Cloud with your stats URL filled in. The streamer signs in, picks a workspace and a switcher, and confirms."
 msgstr "Yayın sunucusu mu işletiyorsun? Sitene, NOALBS Cloud’u istatistik URL’n doldurulmuş olarak açan bir bağlantı koy. Yayıncı giriş yapar, bir çalışma alanı ve switcher seçer ve onaylar."
@@ -7549,6 +7643,7 @@ msgstr "Yayını yürütür: sahne değiştirir, başlatır ve durdurur, istatis
 #: src/components/admin/notice-dialog.tsx
 #: src/components/admin/products.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
@@ -7612,6 +7707,10 @@ msgstr "{0} kaydedildi"
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved here, not on the BELABOX yet: it keeps them when it starts from the dashboard, chat or the OBS stream. Starting it from its own screen discards them."
 msgstr "Burada kaydedildi, henüz BELABOX’ta değil: panelden, sohbetten veya OBS yayınıyla başladığında bunları korur. Kendi ekranından başlatmak bunları siler."
+
+#: src/components/connect-settings.tsx
+msgid "Saved program"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved. The BELABOX uses these from its next start."
@@ -8296,6 +8395,7 @@ msgstr "Yalnızca personel"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "Personel: <0>Yönetici bölümünde bu çalışma alanı</0> (planını ayarla, faturalandırmasını gör)."
 
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "Başlat"
@@ -8333,6 +8433,10 @@ msgstr "Hotspot’u başlat: {0}"
 #: src/components/live/quick-actions.tsx
 msgid "Start the stream?"
 msgstr "Yayın başlatılsın mı?"
+
+#: src/components/connect-settings.tsx
+msgid "Start with OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Start, end & raids"
@@ -8416,6 +8520,7 @@ msgid "Stealth on"
 msgstr "Gizli mod açık"
 
 #: src/components/admin/products.tsx
+#: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8511,9 +8616,17 @@ msgstr "Kullanmayı bırak"
 msgid "Stop when offline"
 msgstr "Çevrimdışıyken durdur"
 
+#: src/components/connect-settings.tsx
+msgid "Stop with OBS"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
 msgstr "Durdur ve gösterildiğinde yeniden başlat"
+
+#: src/components/connect-settings.tsx
+msgid "Stopped"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Stopped OBS through Connect"
@@ -9636,6 +9749,10 @@ msgstr ""
 msgid "This pipeline has no audio settings."
 msgstr "Bu pipeline’ın ses ayarı yok."
 
+#: src/components/connect-settings.tsx
+msgid "This program will be removed from the paired Connect computer."
+msgstr ""
+
 #: src/components/live/source-list.tsx
 msgid "This scene has no sources."
 msgstr "Bu sahnede kaynak yok."
@@ -10280,6 +10397,10 @@ msgstr "Yayındayken çalışma alanındaki herkes önizlemeyi Canlı sayfasınd
 #: src/routes/_app/orgs/$organization/chat.tsx
 msgid "Who answers in the chat of your clients’ channels."
 msgstr "Müşterilerinin kanallarının sohbetinde kim yanıt verir."
+
+#: src/components/connect-settings.tsx
+msgid "Who can add, start and stop programs"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Who can see and run this workspace."

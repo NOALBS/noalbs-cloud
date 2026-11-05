@@ -523,10 +523,13 @@ dependencies = [
  "config",
  "getrandom 0.4.3",
  "serde",
+ "serde_json",
  "sha2 0.11.1",
  "thiserror",
  "tokio",
  "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]
@@ -1749,6 +1752,7 @@ version = "0.1.0"
 dependencies = [
  "async-nats",
  "chrono",
+ "common",
  "db",
  "serde",
  "serde_json",

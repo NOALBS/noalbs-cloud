@@ -34,6 +34,7 @@ use std::time::Duration;
 
 use async_nats::jetstream::{self, kv, stream};
 use chrono::{DateTime, Utc};
+use common::programs::ConnectCommandAction;
 use db::connect::{ConnectAccess, Watchdog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -178,9 +179,52 @@ pub enum ConnectObsCommandCode {
     Timeout,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConnectObsCommandRequest {
-    pub action: db::connect::ConnectObsAction,
+    #[serde(flatten)]
+    pub action: ConnectCommandAction,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectProgramAction {
+    Added,
+    Edited,
+    Removed,
+    Started,
+    Stopped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectProgramEventProgram {
+    pub id: Uuid,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start_with_obs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stop_with_obs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub added_from_dashboard_by: Option<String>,
+}
+
+impl From<common::programs::Program> for ConnectProgramEventProgram {
+    fn from(program: common::programs::Program) -> Self {
+        Self {
+            id: program.id,
+            name: program.name,
+            path: Some(program.path.to_string_lossy().into_owned()),
+            args: program.args,
+            start_with_obs: Some(program.start_with_obs),
+            stop_with_obs: Some(program.stop_with_obs),
+            added_from_dashboard_by: program.added_from_dashboard_by,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -339,6 +383,8 @@ pub struct PcStatus {
     pub obs: PcObsState,
     #[serde(default)]
     pub obs_version: Option<String>,
+    #[serde(default)]
+    pub programs: Vec<common::programs::ProgramStatus>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -671,6 +717,7 @@ pub enum EventDetail {
     ConnectPermissionsChanged {
         obs_control: ConnectAccess,
         logs: ConnectAccess,
+        programs: ConnectAccess,
         by: Option<String>,
     },
     ConnectWatchdogChanged {
@@ -686,9 +733,24 @@ pub enum EventDetail {
         log_id: Uuid,
         by: Option<String>,
     },
+    ConnectProgramCommand {
+        action: ConnectProgramAction,
+        program: ConnectProgramEventProgram,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
+    pub fn redact_program_details(&mut self) {
+        if let Self::ConnectProgramCommand { program, .. } = self {
+            program.path = None;
+            program.args.clear();
+            program.start_with_obs = None;
+            program.stop_with_obs = None;
+            program.added_from_dashboard_by = None;
+        }
+    }
+
     /// Splits into the `kind` and `data` columns of `switcher_events`.
     pub fn into_parts(self) -> (String, serde_json::Value) {
         let mut value = serde_json::to_value(self).expect("events serialize");
@@ -764,8 +826,8 @@ mod tests {
 
     use super::{
         BelaboxChange, ConnectAccess, ConnectObsCommandCode, ConnectObsCommandReply,
-        ConnectObsCommandRequest, EventDetail, ObsFrames, PcObsState, SwitchReason, SwitcherStatus,
-        Watchdog, connect_request_subject,
+        ConnectObsCommandRequest, ConnectProgramAction, ConnectProgramEventProgram, EventDetail,
+        ObsFrames, PcObsState, SwitchReason, SwitcherStatus, Watchdog, connect_request_subject,
     };
 
     #[test]
@@ -933,6 +995,7 @@ mod tests {
             EventDetail::ConnectPermissionsChanged {
                 obs_control: ConnectAccess::Admins,
                 logs: ConnectAccess::Owners,
+                programs: ConnectAccess::Owners,
                 by: Some("kate".into()),
             },
             EventDetail::ConnectWatchdogChanged {
@@ -964,6 +1027,30 @@ mod tests {
     }
 
     #[test]
+    fn program_event_redaction_keeps_the_name_and_actor_only() {
+        let mut event = EventDetail::ConnectProgramCommand {
+            action: ConnectProgramAction::Started,
+            program: ConnectProgramEventProgram {
+                id: Uuid::nil(),
+                name: "Streamer.bot".into(),
+                path: Some("/home/user/Streamer.bot".into()),
+                args: vec!["--key".into(), "secret".into()],
+                start_with_obs: Some(true),
+                stop_with_obs: Some(true),
+                added_from_dashboard_by: Some("Kate".into()),
+            },
+            by: Some("Kate (Web)".into()),
+        };
+        event.redact_program_details();
+        let value = serde_json::to_value(event).unwrap();
+        assert_eq!(value["data"]["program"]["name"], "Streamer.bot");
+        assert!(value["data"]["program"].get("path").is_none());
+        assert_eq!(value["data"]["program"]["args"], serde_json::json!([]));
+        assert!(value["data"]["program"].get("start_with_obs").is_none());
+        assert_eq!(value["data"]["by"], "Kate (Web)");
+    }
+
+    #[test]
     fn connect_pc_status_is_optional_and_has_snake_case_states() {
         let status = SwitcherStatus::connected(false);
         let value = serde_json::to_value(&status).unwrap();
@@ -980,10 +1067,10 @@ mod tests {
     #[test]
     fn connect_obs_command_payloads_use_the_wire_shape() {
         let request = ConnectObsCommandRequest {
-            action: db::connect::ConnectObsAction::Restart,
+            action: common::programs::ConnectCommandAction::Restart,
         };
         assert_eq!(
-            serde_json::to_value(request).unwrap(),
+            serde_json::to_value(&request).unwrap(),
             serde_json::json!({"action": "restart"})
         );
         assert_eq!(

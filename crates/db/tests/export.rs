@@ -631,6 +631,102 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
+    let fixture = fixture(&pool).await;
+    let operator = users::create(&pool).await.unwrap().id;
+    let client_workspace: Uuid =
+        sqlx::query_scalar("SELECT workspace_id FROM switchers WHERE id = $1")
+            .bind(fixture.client)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    workspaces::add_member(
+        &pool,
+        client_workspace,
+        operator,
+        WorkspaceRoleEnum::Operator,
+    )
+    .await
+    .unwrap();
+    sqlx::query("UPDATE switchers SET connect_programs = 'owners' WHERE id IN ($1, $2)")
+        .bind(fixture.backpack)
+        .bind(fixture.client)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let data = json!({
+        "action": "added",
+        "program": {
+            "id": Uuid::new_v4(),
+            "name": "Streamer.bot",
+            "path": "/home/kate/Streamer.bot.exe",
+            "args": ["--secret"],
+            "start_with_obs": false,
+            "stop_with_obs": false,
+            "added_from_dashboard_by": "Kate"
+        },
+        "by": "Kate"
+    });
+    switcher_events::insert(
+        &pool,
+        fixture.backpack,
+        "connect_program_command",
+        data.clone(),
+    )
+    .await
+    .unwrap();
+    switcher_events::insert(&pool, fixture.client, "connect_program_command", data)
+        .await
+        .unwrap();
+
+    let lines: Vec<String> = export::history(&pool, fixture.kate)
+        .try_collect()
+        .await
+        .unwrap();
+    let events: Vec<Value> = lines
+        .iter()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .filter(|event: &Value| event["kind"] == "connect_program_command")
+        .collect();
+    let owner_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.backpack))
+        .unwrap();
+    assert_eq!(
+        owner_event["data"]["program"]["path"],
+        "/home/kate/Streamer.bot.exe"
+    );
+    assert_eq!(owner_event["data"]["program"]["args"], json!(["--secret"]));
+
+    let admin_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.client))
+        .unwrap();
+    assert!(admin_event["data"]["program"].get("path").is_none());
+    assert_eq!(admin_event["data"]["program"]["args"], json!([]));
+    assert!(
+        admin_event["data"]["program"]
+            .get("added_from_dashboard_by")
+            .is_none()
+    );
+
+    let operator_lines: Vec<String> = export::history(&pool, operator)
+        .try_collect()
+        .await
+        .unwrap();
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("connect_program_command"))
+    );
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("/home/kate/Streamer.bot.exe"))
+    );
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn there_is_nothing_to_export_for_an_unknown_user(pool: PgPool) {
     assert!(
         export::account(&pool, Uuid::new_v4())

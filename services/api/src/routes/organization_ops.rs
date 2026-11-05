@@ -26,7 +26,7 @@ use crate::{
             ensure_not_suspended, limit_below_usage, live_statuses,
         },
     },
-    validate,
+    screenshots, validate,
 };
 
 /// Rows per page of the live overview.
@@ -314,7 +314,17 @@ async fn organization_activity(
                     event: SwitcherEvent {
                         id: row.id,
                         created_at: row.created_at,
-                        detail: EventDetail::from_parts(&row.kind, row.data)?,
+                        detail: {
+                            let mut detail = EventDetail::from_parts(&row.kind, row.data)?;
+                            let can_view_programs = screenshots::connect_allowed(
+                                row.connect_programs,
+                                screenshots::Viewer::Owner,
+                            );
+                            if !can_view_programs {
+                                detail.redact_program_details();
+                            }
+                            detail
+                        },
                     },
                     switcher_id: row.switcher_id,
                     switcher_name: row.switcher_name,

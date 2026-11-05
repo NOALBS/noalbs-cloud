@@ -46,6 +46,213 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(get_connect_log))
         .routes(routes!(upload_connect_log))
         .routes(routes!(delete_connect_log))
+        .routes(routes!(list_connect_programs))
+        .routes(routes!(add_connect_program))
+        .routes(routes!(edit_connect_program))
+        .routes(routes!(delete_connect_program))
+        .routes(routes!(control_connect_program))
+}
+
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses((status = OK, body = [common::programs::ProgramStatus]), (status = FORBIDDEN, body = ErrorBody)))]
+async fn list_connect_programs(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> ApiResult<Json<Vec<common::programs::ProgramStatus>>> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_programs(access.switcher.connect_programs, viewer)?;
+    let programs = state
+        .status_of(access.switcher.id)
+        .await
+        .and_then(|status| status.pc.map(|pc| pc.programs))
+        .unwrap_or_default();
+    Ok(Json(programs))
+}
+
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = common::programs::Program,
+    responses((status = NO_CONTENT), (status = FORBIDDEN, body = ErrorBody), (status = CONFLICT, body = ErrorBody), (status = GATEWAY_TIMEOUT, body = ErrorBody)))]
+async fn add_connect_program(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Json(mut program): Json<common::programs::Program>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_programs(access.switcher.connect_programs, viewer)?;
+    let by = access.workspace.display_name(&state).await?;
+    program.added_from_dashboard_by = Some(by.clone());
+    send_program_action(
+        &state,
+        access.switcher.id,
+        common::programs::ConnectCommandAction::ProgramAdd {
+            program: program.clone(),
+        },
+        Some((live::ConnectProgramAction::Added, program, by)),
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(put, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ("program_id" = Uuid, Path)),
+    request_body = common::programs::Program,
+    responses((status = NO_CONTENT), (status = FORBIDDEN, body = ErrorBody), (status = CONFLICT, body = ErrorBody), (status = GATEWAY_TIMEOUT, body = ErrorBody)))]
+async fn edit_connect_program(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Path((_workspace_id, _switcher_id, program_id)): Path<(Uuid, Uuid, Uuid)>,
+    Json(mut program): Json<common::programs::Program>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_programs(access.switcher.connect_programs, viewer)?;
+    program.id = program_id;
+    let by = access.workspace.display_name(&state).await?;
+    program.added_from_dashboard_by = Some(by.clone());
+    send_program_action(
+        &state,
+        access.switcher.id,
+        common::programs::ConnectCommandAction::ProgramEdit {
+            program: program.clone(),
+        },
+        Some((live::ConnectProgramAction::Edited, program, by)),
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(delete, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ("program_id" = Uuid, Path)),
+    responses((status = NO_CONTENT), (status = FORBIDDEN, body = ErrorBody), (status = CONFLICT, body = ErrorBody), (status = GATEWAY_TIMEOUT, body = ErrorBody)))]
+async fn delete_connect_program(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Path((_workspace_id, _switcher_id, program_id)): Path<(Uuid, Uuid, Uuid)>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_programs(access.switcher.connect_programs, viewer)?;
+    let programs = state
+        .status_of(access.switcher.id)
+        .await
+        .and_then(|status| status.pc.map(|pc| pc.programs));
+    let program = program_for_event(programs, program_id)?;
+    let by = access.workspace.display_name(&state).await?;
+    send_program_action(
+        &state,
+        access.switcher.id,
+        common::programs::ConnectCommandAction::ProgramRemove { id: program_id },
+        program.map(|program| (live::ConnectProgramAction::Removed, program, by)),
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}", tag = "connect",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path), ("program_id" = Uuid, Path), ("action" = String, Path)),
+    responses((status = NO_CONTENT), (status = FORBIDDEN, body = ErrorBody), (status = CONFLICT, body = ErrorBody), (status = GATEWAY_TIMEOUT, body = ErrorBody)))]
+async fn control_connect_program(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Path((_workspace_id, _switcher_id, program_id, action)): Path<(Uuid, Uuid, Uuid, String)>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
+    require_connect_programs(access.switcher.connect_programs, viewer)?;
+    let programs = state
+        .status_of(access.switcher.id)
+        .await
+        .and_then(|status| status.pc.map(|pc| pc.programs));
+    let program = program_for_event(programs, program_id)?;
+    let (command, event) = match action.as_str() {
+        "start" => (
+            common::programs::ConnectCommandAction::ProgramStart { id: program_id },
+            live::ConnectProgramAction::Started,
+        ),
+        "stop" => (
+            common::programs::ConnectCommandAction::ProgramStop { id: program_id },
+            live::ConnectProgramAction::Stopped,
+        ),
+        _ => {
+            return Err(ApiError::bad_request(
+                "invalid_action",
+                "Action must be start or stop",
+            ));
+        }
+    };
+    let by = access.workspace.display_name(&state).await?;
+    send_program_action(
+        &state,
+        access.switcher.id,
+        command,
+        program.map(|program| (event, program, by)),
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn program_for_event(
+    programs: Option<Vec<common::programs::ProgramStatus>>,
+    program_id: Uuid,
+) -> ApiResult<Option<common::programs::Program>> {
+    let Some(programs) = programs else {
+        return Ok(None);
+    };
+    programs
+        .into_iter()
+        .find(|status| status.program.id == program_id)
+        .map(|status| Some(status.program))
+        .ok_or_else(|| {
+            ApiError::conflict(
+                "connect_program_not_found",
+                "The program is not in Connect's current status",
+            )
+        })
+}
+
+async fn send_program_action(
+    state: &ApiState,
+    switcher_id: Uuid,
+    action: common::programs::ConnectCommandAction,
+    event: Option<(
+        live::ConnectProgramAction,
+        common::programs::Program,
+        String,
+    )>,
+) -> ApiResult<()> {
+    let payload = serde_json::to_vec(&live::ConnectObsCommandRequest { action })
+        .map_err(|_| ApiError::internal())?;
+    let response = telemetry::nats::request_with_timeout(
+        &state.nats,
+        live::connect_request_subject(switcher_id),
+        payload,
+        std::time::Duration::from_secs(65),
+    )
+    .await
+    .map_err(|error| connect_request_error(error.kind()))?;
+    let reply: live::ConnectObsCommandReply =
+        serde_json::from_slice(&response.payload).map_err(|_| ApiError::internal())?;
+    if !reply.ok {
+        return Err(connect_command_failure(reply));
+    }
+    if let Some((action, program, by)) = event {
+        live::record_event(
+            &state.db,
+            &state.nats,
+            switcher_id,
+            EventDetail::ConnectProgramCommand {
+                action,
+                program: program.into(),
+                by: Some(by),
+            },
+        )
+        .await?;
+    }
+    Ok(())
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -142,14 +349,14 @@ async fn upload_connect_log(
     require_connect_logs(access.switcher.connect_logs, viewer)?;
     let by = access.workspace.display_name(&state).await?;
     let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
-        action: ConnectObsAction::UploadLog,
+        action: common::programs::ConnectCommandAction::UploadLog,
     })
     .map_err(|_| ApiError::internal())?;
     let response = telemetry::nats::request_with_timeout(
         &state.nats,
         live::connect_request_subject(access.switcher.id),
         payload,
-        std::time::Duration::from_secs(35),
+        std::time::Duration::from_secs(65),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;
@@ -540,6 +747,7 @@ async fn revoke_device(
 pub struct ConnectPermissions {
     pub obs_control: ConnectAccess,
     pub logs: ConnectAccess,
+    pub programs: ConnectAccess,
 }
 
 /// Choose which switcher roles may control OBS or view Connect logs.
@@ -561,6 +769,7 @@ async fn set_permissions(
     }
     if access.switcher.connect_obs_control == request.obs_control
         && access.switcher.connect_logs == request.logs
+        && access.switcher.connect_programs == request.programs
     {
         return Ok(Json(access.switcher.into()));
     }
@@ -569,6 +778,7 @@ async fn set_permissions(
         access.switcher.id,
         request.obs_control,
         request.logs,
+        request.programs,
     )
     .await?;
     let by = access.workspace.display_name(&state).await?;
@@ -579,6 +789,7 @@ async fn set_permissions(
         EventDetail::ConnectPermissionsChanged {
             obs_control: request.obs_control,
             logs: request.logs,
+            programs: request.programs,
             by: Some(by),
         },
     )
@@ -660,7 +871,12 @@ async fn connect_obs_command(
 
     let by = access.workspace.display_name(&state).await?;
     let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
-        action: request.action,
+        action: match request.action {
+            ConnectObsAction::Start => common::programs::ConnectCommandAction::Start,
+            ConnectObsAction::Stop => common::programs::ConnectCommandAction::Stop,
+            ConnectObsAction::Restart => common::programs::ConnectCommandAction::Restart,
+            ConnectObsAction::UploadLog => common::programs::ConnectCommandAction::UploadLog,
+        },
     })
     .map_err(|_| ApiError::internal())?;
     let response = telemetry::nats::request_with_timeout(
@@ -719,6 +935,17 @@ fn require_connect_logs(level: ConnectAccess, viewer: screenshots::Viewer) -> Ap
     }
 }
 
+fn require_connect_programs(level: ConnectAccess, viewer: screenshots::Viewer) -> ApiResult<()> {
+    if screenshots::connect_allowed(level, viewer) {
+        Ok(())
+    } else {
+        Err(ApiError::forbidden(
+            "connect_forbidden_programs",
+            "Your role cannot manage programs through Connect",
+        ))
+    }
+}
+
 fn connect_request_error(kind: async_nats::RequestErrorKind) -> ApiError {
     match kind {
         async_nats::RequestErrorKind::NoResponders => connect_offline(),
@@ -732,6 +959,13 @@ fn connect_timeout() -> ApiError {
 }
 
 fn connect_command_failure(reply: live::ConnectObsCommandReply) -> ApiError {
+    if reply.error.as_deref() == Some("Program not found") {
+        return ApiError::new(
+            axum::http::StatusCode::NOT_FOUND,
+            "connect_program_not_found",
+            "The program is not in Connect's current configuration",
+        );
+    }
     match reply.code {
         Some(live::ConnectObsCommandCode::Offline) => connect_offline(),
         Some(live::ConnectObsCommandCode::Unsupported) => ApiError::conflict(
@@ -754,11 +988,13 @@ fn connect_command_failure(reply: live::ConnectObsCommandReply) -> ApiError {
 #[cfg(test)]
 mod tests {
     use super::{
-        ConnectOs, connect_command_failure, connect_request_error, require_connect_logs,
-        require_connect_obs_control,
+        ConnectOs, connect_command_failure, connect_request_error, program_for_event,
+        require_connect_logs, require_connect_obs_control, require_connect_programs,
     };
     use crate::screenshots::Viewer;
+    use common::programs::ProgramStatus;
     use db::connect::ConnectAccess;
+    use uuid::Uuid;
 
     #[test]
     fn operating_system_values_are_snake_case() {
@@ -785,6 +1021,26 @@ mod tests {
     }
 
     #[test]
+    fn member_is_forbidden_when_only_owners_may_manage_connect_programs() {
+        let error = require_connect_programs(ConnectAccess::Owners, Viewer::Operator).unwrap_err();
+        assert_eq!(error.status(), axum::http::StatusCode::FORBIDDEN);
+        assert_eq!(error.code(), "connect_forbidden_programs");
+    }
+
+    #[test]
+    fn unknown_programs_in_live_status_cannot_become_unlogged_actions() {
+        let error =
+            program_for_event(Some(Vec::<ProgramStatus>::new()), Uuid::new_v4()).unwrap_err();
+        assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
+        assert_eq!(error.code(), "connect_program_not_found");
+    }
+
+    #[test]
+    fn offline_program_status_preserves_request_timeout_behavior() {
+        assert!(program_for_event(None, Uuid::new_v4()).unwrap().is_none());
+    }
+
+    #[test]
     fn no_responders_maps_to_offline_conflict() {
         let error = connect_request_error(async_nats::RequestErrorKind::NoResponders);
         assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
@@ -801,5 +1057,17 @@ mod tests {
         });
         assert_eq!(error.status(), axum::http::StatusCode::CONFLICT);
         assert_eq!(error.code(), "connect_offline");
+    }
+
+    #[test]
+    fn missing_program_reply_maps_to_not_found() {
+        let error = connect_command_failure(live::ConnectObsCommandReply {
+            ok: false,
+            code: Some(live::ConnectObsCommandCode::Refused),
+            error: Some("Program not found".into()),
+            log_id: None,
+        });
+        assert_eq!(error.status(), axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(error.code(), "connect_program_not_found");
     }
 }

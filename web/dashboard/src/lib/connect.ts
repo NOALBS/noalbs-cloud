@@ -85,6 +85,11 @@ export function canViewConnectLogs(level: ConnectAccess, actor: Actor): boolean 
   return canControlConnect(level, actor);
 }
 
+/** Program management follows the switcher's Connect-program access setting. */
+export function canManageConnectPrograms(level: ConnectAccess, actor: Actor): boolean {
+  return canControlConnect(level, actor);
+}
+
 export function connectObsActionAvailability(state: PcObsState | undefined) {
   return {
     visible: state !== undefined,

@@ -8507,6 +8507,340 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "list_connect_programs",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramStatus"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "add_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Program"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}": {
+      "put": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "edit_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Program"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "delete_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "control_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/watchdog": {
       "put": {
         "tags": [
@@ -16579,7 +16913,8 @@
         "type": "object",
         "required": [
           "obs_control",
-          "logs"
+          "logs",
+          "programs"
         ],
         "properties": {
           "logs": {
@@ -16587,6 +16922,65 @@
           },
           "obs_control": {
             "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "programs": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          }
+        }
+      },
+      "ConnectProgramAction": {
+        "type": "string",
+        "enum": [
+          "added",
+          "edited",
+          "removed",
+          "started",
+          "stopped"
+        ]
+      },
+      "ConnectProgramEventProgram": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "added_from_dashboard_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "stop_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         }
       },
@@ -19037,7 +19431,8 @@
                 "type": "object",
                 "required": [
                   "obs_control",
-                  "logs"
+                  "logs",
+                  "programs"
                 ],
                 "properties": {
                   "by": {
@@ -19050,6 +19445,9 @@
                     "$ref": "#/components/schemas/ConnectAccess"
                   },
                   "obs_control": {
+                    "$ref": "#/components/schemas/ConnectAccess"
+                  },
+                  "programs": {
                     "$ref": "#/components/schemas/ConnectAccess"
                   }
                 }
@@ -19159,6 +19557,42 @@
                 "type": "string",
                 "enum": [
                   "connect_log_uploaded"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "action",
+                  "program"
+                ],
+                "properties": {
+                  "action": {
+                    "$ref": "#/components/schemas/ConnectProgramAction"
+                  },
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "program": {
+                    "$ref": "#/components/schemas/ConnectProgramEventProgram"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_program_command"
                 ]
               }
             }
@@ -21616,6 +22050,12 @@
               "string",
               "null"
             ]
+          },
+          "programs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramStatus"
+            }
           }
         }
       },
@@ -21908,6 +22348,62 @@
           "you": {
             "type": "boolean",
             "description": "The one asking."
+          }
+        }
+      },
+      "Program": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "path",
+          "args",
+          "start_with_obs",
+          "stop_with_obs"
+        ],
+        "properties": {
+          "added_from_dashboard_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "start_with_obs": {
+            "type": "boolean"
+          },
+          "stop_with_obs": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProgramStatus": {
+        "type": "object",
+        "required": [
+          "program",
+          "running"
+        ],
+        "properties": {
+          "program": {
+            "$ref": "#/components/schemas/Program"
+          },
+          "running": {
+            "type": "boolean"
           }
         }
       },
@@ -23964,6 +24460,7 @@
           "preview_off_air",
           "connect_obs_control",
           "connect_logs",
+          "connect_programs",
           "connect_watchdog"
         ],
         "properties": {
@@ -23980,6 +24477,9 @@
             "$ref": "#/components/schemas/ConnectAccess"
           },
           "connect_obs_control": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "connect_programs": {
             "$ref": "#/components/schemas/ConnectAccess"
           },
           "connect_watchdog": {

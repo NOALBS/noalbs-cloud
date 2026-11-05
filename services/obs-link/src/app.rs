@@ -292,19 +292,25 @@ fn connect_command_failure(
     is_connect: bool,
     supports_control: bool,
     supports_logs: bool,
-    action: db::connect::ConnectObsAction,
+    supports_programs: bool,
+    action: common::programs::ConnectCommandAction,
 ) -> Option<(live::ConnectObsCommandCode, &'static str)> {
     if !is_connect {
         Some((
             live::ConnectObsCommandCode::Offline,
             "This switcher connects through the browser source, which can't control OBS",
         ))
-    } else if action == db::connect::ConnectObsAction::UploadLog && !supports_logs {
+    } else if action.is_program() && !supports_programs {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to manage programs from the dashboard",
+        ))
+    } else if action.is_log_upload() && !supports_logs {
         Some((
             live::ConnectObsCommandCode::Unsupported,
             "Update NOALBS Cloud Connect to upload OBS logs",
         ))
-    } else if action != db::connect::ConnectObsAction::UploadLog && !supports_control {
+    } else if action.is_obs_control() && !supports_control {
         Some((
             live::ConnectObsCommandCode::Unsupported,
             "Update NOALBS Cloud Connect to control OBS from the dashboard",
@@ -652,6 +658,15 @@ impl Connection {
                     });
                 }
             }
+            ResponseKind::ProgramsState(programs) => {
+                if let Some(session) = self.session.as_ref() {
+                    session.status.update(|status| {
+                        if let Some(pc) = &mut status.pc {
+                            pc.programs = programs;
+                        }
+                    });
+                }
+            }
             ResponseKind::ConnectCommandResult { ok, error, log } => {
                 if let Some(token) = response.token
                     && let Some(pending) = self
@@ -803,6 +818,7 @@ impl Connection {
                 device_name: device.as_ref().map(|device| device.name.clone()),
                 obs: PcObsState::Unknown,
                 obs_version: identify.obs_version.clone(),
+                programs: Vec::new(),
             });
         }
         let status = StatusHandle::new(initial);
@@ -1003,7 +1019,7 @@ impl Connection {
     async fn handle_control(&mut self, control: Control) -> Result<Flow> {
         match control {
             Control::ConnectCommand { payload, reply } => {
-                let (is_connect, supports_control, supports_logs) = self
+                let (is_connect, supports_control, supports_logs, supports_programs) = self
                     .session
                     .as_ref()
                     .map(|session| {
@@ -1017,6 +1033,10 @@ impl Connection {
                                 .connect_capabilities
                                 .iter()
                                 .any(|value| value == "obs_logs"),
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "programs"),
                         )
                     })
                     .unwrap_or_default();
@@ -1043,7 +1063,8 @@ impl Connection {
                     is_connect,
                     supports_control,
                     supports_logs,
-                    request.action,
+                    supports_programs,
+                    request.action.clone(),
                 ) {
                     telemetry::nats::publish(
                         &self.shared.nats,
@@ -1058,7 +1079,7 @@ impl Connection {
                     .await?;
                     return Ok(Flow::Continue);
                 }
-                if request.action == db::connect::ConnectObsAction::UploadLog {
+                if request.action == common::programs::ConnectCommandAction::UploadLog {
                     let allowed = self.session.as_mut().is_some_and(|session| {
                         allow_requested_log_upload(
                             &mut session.requested_log_uploads,
@@ -1082,9 +1103,7 @@ impl Connection {
                 }
                 let token = Uuid::new_v4().to_string();
                 self.send_request(
-                    RequestKind::ConnectCommand {
-                        action: request.action,
-                    },
+                    RequestKind::ConnectCommand(request.action),
                     Some(token.clone()),
                 )
                 .await?;
@@ -1485,9 +1504,7 @@ enum RequestKind {
     RequestError(RequestError),
     Settings(Settings),
     ObsRawRequest(String),
-    ConnectCommand {
-        action: db::connect::ConnectObsAction,
-    },
+    ConnectCommand(common::programs::ConnectCommandAction),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1537,6 +1554,7 @@ enum ResponseKind {
     PcState {
         obs: PcObsState,
     },
+    ProgramsState(Vec<common::programs::ProgramStatus>),
     ObsRawResponse(serde_json::Value),
     ConnectCommandResult {
         ok: bool,
@@ -1588,6 +1606,16 @@ mod tests {
         reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
         should_refresh_device_name,
     };
+
+    #[test]
+    fn programs_state_response_matches_connect_wire_shape() {
+        let response = serde_json::from_value::<Response>(json!({"programsState": []})).unwrap();
+
+        assert!(matches!(
+            response.response,
+            ResponseKind::ProgramsState(programs) if programs.is_empty()
+        ));
+    }
 
     #[test]
     fn browser_settings_wire_shape_is_unchanged_and_connect_gets_watchdog() {
@@ -1733,6 +1761,7 @@ mod tests {
             device_name: Some("Studio PC".into()),
             obs: PcObsState::NotResponding,
             obs_version: Some("31.0".into()),
+            programs: Vec::new(),
         });
 
         reset_obs_status(&mut status);
@@ -1746,6 +1775,7 @@ mod tests {
                 device_name: Some("Studio PC".into()),
                 obs: PcObsState::NotResponding,
                 obs_version: Some("31.0".into()),
+                programs: Vec::new(),
             })
         );
     }
@@ -1758,6 +1788,7 @@ mod tests {
             device_name: Some("Old PC name".into()),
             obs: PcObsState::Unknown,
             obs_version: None,
+            programs: Vec::new(),
         });
 
         assert!(set_pc_device_name(&mut status, "New PC name"));
@@ -1775,6 +1806,7 @@ mod tests {
             device_name: Some("Studio PC".into()),
             obs: PcObsState::Unknown,
             obs_version: None,
+            programs: Vec::new(),
         });
         let before = status.clone();
 
@@ -1793,35 +1825,62 @@ mod tests {
 
     #[test]
     fn browser_source_commands_are_offline_and_old_connects_are_unsupported() {
-        let browser =
-            connect_command_failure(false, false, false, db::connect::ConnectObsAction::Start)
-                .unwrap();
+        use common::programs::ConnectCommandAction as Action;
+
+        let browser = connect_command_failure(false, false, false, false, Action::Start).unwrap();
         assert_eq!(browser.0, live::ConnectObsCommandCode::Offline);
         assert_eq!(
             browser.1,
             "This switcher connects through the browser source, which can't control OBS"
         );
         let old_connect =
-            connect_command_failure(true, false, false, db::connect::ConnectObsAction::Start)
-                .unwrap();
+            connect_command_failure(true, false, false, false, Action::Start).unwrap();
         assert_eq!(old_connect.0, live::ConnectObsCommandCode::Unsupported);
         assert_eq!(
             old_connect.1,
             "Update NOALBS Cloud Connect to control OBS from the dashboard"
         );
-        assert!(
-            connect_command_failure(true, true, false, db::connect::ConnectObsAction::Restart)
-                .is_none()
-        );
+        assert!(connect_command_failure(true, true, false, false, Action::Restart).is_none());
         assert_eq!(
-            connect_command_failure(true, true, false, db::connect::ConnectObsAction::UploadLog)
+            connect_command_failure(true, true, false, false, Action::UploadLog)
                 .unwrap()
                 .0,
             live::ConnectObsCommandCode::Unsupported
         );
+        assert!(connect_command_failure(true, false, true, false, Action::UploadLog).is_none());
+        assert_eq!(
+            connect_command_failure(
+                true,
+                true,
+                true,
+                false,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .unwrap()
+            .0,
+            live::ConnectObsCommandCode::Unsupported
+        );
         assert!(
-            connect_command_failure(true, false, true, db::connect::ConnectObsAction::UploadLog)
-                .is_none()
+            connect_command_failure(
+                true,
+                true,
+                true,
+                true,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .is_none()
+        );
+        assert_eq!(
+            connect_command_failure(
+                false,
+                false,
+                false,
+                true,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .unwrap()
+            .0,
+            live::ConnectObsCommandCode::Offline
         );
     }
 
@@ -1949,9 +2008,7 @@ mod tests {
     fn supported_connect_command_uses_the_expected_websocket_shapes() {
         let request = Request {
             token: Some("command-token".into()),
-            request: RequestKind::ConnectCommand {
-                action: db::connect::ConnectObsAction::Restart,
-            },
+            request: RequestKind::ConnectCommand(common::programs::ConnectCommandAction::Restart),
         };
         assert_eq!(
             serde_json::to_value(request).unwrap(),
@@ -1974,6 +2031,24 @@ mod tests {
                 ..
             } if error == "OBS is busy"
         ));
+    }
+
+    #[test]
+    fn program_connect_command_keeps_its_fields_in_the_wire_shape() {
+        let id = Uuid::nil();
+        let request = Request {
+            token: Some("command-token".into()),
+            request: RequestKind::ConnectCommand(
+                common::programs::ConnectCommandAction::ProgramStart { id },
+            ),
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "token": "command-token",
+                "connectCommand": { "action": "program_start", "id": id }
+            })
+        );
     }
 
     #[test]

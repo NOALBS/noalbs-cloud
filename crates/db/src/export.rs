@@ -819,8 +819,30 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
          ORDER BY stats.stream_id, stats.bucket_at, stats.server_id"
     );
     const EVENTS: &str = concat!(
-        "SELECT (jsonb_build_object('type', 'event') || to_jsonb(events))::text
+        "SELECT (jsonb_build_object('type', 'event') || CASE
+             WHEN events.kind = 'connect_program_command'
+                  AND NOT (
+                      event_members.role = 'owner'
+                      OR (event_members.role = 'admin'
+                          AND event_switchers.connect_programs IN ('admins', 'everyone'))
+                      OR (event_members.role = 'operator'
+                          AND event_switchers.connect_programs = 'everyone')
+                  )
+             THEN jsonb_set(
+                 to_jsonb(events)
+                     #- '{data,program,path}'
+                     #- '{data,program,start_with_obs}'
+                     #- '{data,program,stop_with_obs}'
+                     #- '{data,program,added_from_dashboard_by}',
+                 '{data,program,args}', '[]'::jsonb, true
+             )
+             ELSE to_jsonb(events)
+         END)::text
          FROM switcher_events AS events
+         JOIN switchers AS event_switchers ON event_switchers.id = events.switcher_id
+         JOIN workspace_members AS event_members
+             ON event_members.workspace_id = event_switchers.workspace_id
+             AND event_members.user_id = $1
          WHERE events.switcher_id IN (",
         your_switchers!(),
         ")

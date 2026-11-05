@@ -83,6 +83,7 @@ pub struct Switcher {
     pub preview_off_air: PreviewOffAir,
     pub connect_obs_control: ConnectAccess,
     pub connect_logs: ConnectAccess,
+    pub connect_programs: ConnectAccess,
     pub connect_watchdog: Watchdog,
 
     pub created_at: DateTime<chrono::Utc>,
@@ -270,6 +271,7 @@ pub struct SwitcherSummary {
     /// Over the plan's switcher limit, or the workspace (or its organization) is
     /// suspended (see [`is_paused`]).
     pub paused: bool,
+    pub connect_programs: ConnectAccess,
 }
 
 #[tracing::instrument(skip(pool))]
@@ -291,6 +293,7 @@ pub async fn list_summaries(pool: &PgPool, workspace_id: Uuid) -> Result<Vec<Swi
                 WHERE links.switcher_id = switchers.id AND chat_channels.status = 'revoked')
                 AS revoked_channel_count,
             switchers.created_at,
+            switchers.connect_programs,
             (workspaces.organization_id IS NULL
                 AND row_number() OVER (ORDER BY switchers.created_at, switchers.id)
                     > plans.max_switchers)
@@ -697,11 +700,12 @@ pub async fn set_connect_permissions(
     switcher_id: Uuid,
     obs_control: ConnectAccess,
     logs: ConnectAccess,
+    programs: ConnectAccess,
 ) -> Result<Switcher> {
     let switcher = sqlx::query_as::<_, Switcher>(
         "
         UPDATE switchers
-        SET connect_obs_control = $2, connect_logs = $3
+        SET connect_obs_control = $2, connect_logs = $3, connect_programs = $4
         WHERE id = $1
         RETURNING *
         ",
@@ -709,6 +713,7 @@ pub async fn set_connect_permissions(
     .bind(switcher_id)
     .bind(obs_control)
     .bind(logs)
+    .bind(programs)
     .fetch_one(pool)
     .await?;
     Ok(switcher)

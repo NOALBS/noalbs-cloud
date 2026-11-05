@@ -11,9 +11,10 @@ use connect_core::{
     credentials::TokenStore,
     logs::{ConnectLogUpload, ObsLogFile, encode_log_upload, select_obs_log_file},
     pairing::ConnectOs,
+    programs::{self, ObsLifecycleAction},
     relay::{
-        LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState, WatchdogMode, run_link,
-        stop_active_streams,
+        LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState, WatchdogMode,
+        run_link_with_programs, stop_active_streams,
     },
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
@@ -38,6 +39,7 @@ use tokio::sync::{mpsc, watch};
 
 struct LinkSession {
     state: watch::Sender<PcObsState>,
+    programs: watch::Sender<Vec<common::programs::ProgramStatus>>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
     task: tauri::async_runtime::JoinHandle<()>,
     monitor: tauri::async_runtime::JoinHandle<()>,
@@ -66,6 +68,8 @@ struct SetupSummary {
     obs: connect_core::config::ObsLaunchConfig,
     detected_binary: String,
     config_dir: String,
+    programs: Vec<common::programs::ProgramStatus>,
+    allow_dashboard_program_edits: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -138,6 +142,8 @@ fn build_ui_state(state: &AppState) -> UiState {
                         .to_string_lossy()
                         .into_owned(),
                     config_dir: config_dir(setup).to_string_lossy().into_owned(),
+                    programs: programs::status(&setup.programs),
+                    allow_dashboard_program_edits: setup.allow_dashboard_program_edits,
                 }
             })
             .collect(),
@@ -529,12 +535,21 @@ async fn run_obs_action(
     {
         tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
     }
+    if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
+        for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
+            if let Ok(supervisor) = state.supervisor.lock()
+                && let Err(error) = programs::stop(program, &supervisor)
+            {
+                tracing::warn!(program = %program.name, %error, "Failed to stop program with OBS");
+            }
+        }
+    }
     let process_state = {
         let mut supervisor = state
             .supervisor
             .lock()
             .map_err(|_| "supervisor lock poisoned")?;
-        match action {
+        match &action {
             ObsAction::Start => {
                 supervisor
                     .start(&setup, false, None)
@@ -551,12 +566,279 @@ async fn run_obs_action(
                     .start(&setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
-            ObsAction::UploadLog => return Err("UploadLog is not an OBS process action".into()),
+            ObsAction::UploadLog
+            | ObsAction::ProgramStart { .. }
+            | ObsAction::ProgramStop { .. }
+            | ObsAction::ProgramAdd { .. }
+            | ObsAction::ProgramEdit { .. }
+            | ObsAction::ProgramRemove { .. } => {
+                return Err("This is not an OBS process action".into());
+            }
         }
         supervisor.state(&setup)
     };
     set_link_state(state, setup_id, process_state);
+    if matches!(&action, ObsAction::Start | ObsAction::Restart) {
+        for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Start) {
+            if !programs::is_running(program)
+                && let Err(error) = programs::start(program)
+            {
+                tracing::warn!(program = %program.name, %error, "Failed to start program with OBS");
+            }
+        }
+    }
+    set_link_programs(state, setup_id);
     Ok(())
+}
+
+fn set_link_programs(state: &AppState, setup_id: uuid::Uuid) {
+    let current = state.config.lock().ok().and_then(|config| {
+        config
+            .setups
+            .iter()
+            .find(|setup| setup.id == setup_id)
+            .map(|setup| programs::status(&setup.programs))
+    });
+    if let Some(current) = current
+        && let Ok(sessions) = state.link_sessions.lock()
+        && let Some(session) = sessions.get(&setup_id)
+    {
+        let _ = session.programs.send(current);
+    }
+}
+
+fn run_program_action(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+    action: ObsAction,
+    dashboard_request: bool,
+) -> Result<(), String> {
+    let _action_guard = begin_obs_action(&state.obs_actions_running, setup_id)?;
+    let setup = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .cloned()
+        .ok_or_else(|| "setup not found".to_string())?;
+
+    match action {
+        ObsAction::ProgramStart { id } => {
+            let program = programs::find(&setup.programs, id)
+                .ok_or_else(|| "Program not found".to_string())?;
+            programs::start(program).map_err(|error| error.to_string())?;
+        }
+        ObsAction::ProgramStop { id } => {
+            let program = programs::find(&setup.programs, id)
+                .ok_or_else(|| "Program not found".to_string())?;
+            let supervisor = state
+                .supervisor
+                .lock()
+                .map_err(|_| "supervisor lock poisoned")?;
+            programs::stop(program, &supervisor).map_err(|error| error.to_string())?;
+        }
+        ObsAction::ProgramAdd { mut program } => {
+            if dashboard_request {
+                programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
+                    .map_err(str::to_owned)?;
+            }
+            programs::validate(&program).map_err(str::to_owned)?;
+            let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+            let mut updated_config = config.clone();
+            let index = updated_config
+                .setups
+                .iter()
+                .position(|setup| setup.id == setup_id)
+                .ok_or_else(|| "setup not found".to_string())?;
+            let configured = &mut updated_config.setups[index].programs;
+            if !dashboard_request {
+                program.added_from_dashboard_by = None;
+            }
+            programs::add(configured, program).map_err(str::to_owned)?;
+            state
+                .store
+                .save(&updated_config)
+                .map_err(|error| error.to_string())?;
+            *config = updated_config;
+        }
+        ObsAction::ProgramEdit { mut program } => {
+            if dashboard_request {
+                programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
+                    .map_err(str::to_owned)?;
+            }
+            programs::validate(&program).map_err(str::to_owned)?;
+            let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+            let mut updated_config = config.clone();
+            let index = updated_config
+                .setups
+                .iter()
+                .position(|setup| setup.id == setup_id)
+                .ok_or_else(|| "setup not found".to_string())?;
+            let configured = &mut updated_config.setups[index].programs;
+            let existing = programs::find(configured, program.id)
+                .cloned()
+                .ok_or_else(|| "Program not found".to_string())?;
+            programs::require_stopped_for_path_change(
+                &existing,
+                &program,
+                programs::is_running(&existing),
+            )
+            .map_err(str::to_owned)?;
+            if !dashboard_request {
+                program.added_from_dashboard_by = existing.added_from_dashboard_by.clone();
+            }
+            programs::replace(configured, program).map_err(str::to_owned)?;
+            state
+                .store
+                .save(&updated_config)
+                .map_err(|error| error.to_string())?;
+            *config = updated_config;
+        }
+        ObsAction::ProgramRemove { id } => {
+            if dashboard_request {
+                programs::require_dashboard_edits_allowed(setup.allow_dashboard_program_edits)
+                    .map_err(str::to_owned)?;
+            }
+            let program_to_stop = programs::find(&setup.programs, id)
+                .cloned()
+                .ok_or_else(|| "Program not found".to_string())?;
+            if programs::is_running(&program_to_stop) {
+                let supervisor = state
+                    .supervisor
+                    .lock()
+                    .map_err(|_| "supervisor lock poisoned")?;
+                programs::stop(&program_to_stop, &supervisor).map_err(|error| error.to_string())?;
+            }
+            let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+            let mut updated_config = config.clone();
+            let index = updated_config
+                .setups
+                .iter()
+                .position(|setup| setup.id == setup_id)
+                .ok_or_else(|| "setup not found".to_string())?;
+            updated_config.setups[index]
+                .programs
+                .retain(|program| program.id != id);
+            state
+                .store
+                .save(&updated_config)
+                .map_err(|error| error.to_string())?;
+            *config = updated_config;
+        }
+        _ => return Err("Invalid program action".into()),
+    }
+    set_link_programs(state, setup_id);
+    Ok(())
+}
+
+#[tauri::command]
+fn upsert_program(
+    setup_id: String,
+    program: common::programs::Program,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let edit = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .is_some_and(|setup| {
+            setup
+                .programs
+                .iter()
+                .any(|existing| existing.id == program.id)
+        });
+    run_program_action(
+        state.inner(),
+        setup_id,
+        if edit {
+            ObsAction::ProgramEdit { program }
+        } else {
+            ObsAction::ProgramAdd { program }
+        },
+        false,
+    )?;
+    Ok(get_state(state))
+}
+
+#[tauri::command]
+fn remove_program(
+    setup_id: String,
+    program_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
+    run_program_action(
+        state.inner(),
+        setup_id,
+        ObsAction::ProgramRemove { id: program_id },
+        false,
+    )?;
+    Ok(get_state(state))
+}
+
+#[tauri::command]
+fn start_program(
+    setup_id: String,
+    program_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
+    run_program_action(
+        state.inner(),
+        setup_id,
+        ObsAction::ProgramStart { id: program_id },
+        false,
+    )?;
+    Ok(get_state(state))
+}
+
+#[tauri::command]
+fn stop_program(
+    setup_id: String,
+    program_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
+    run_program_action(
+        state.inner(),
+        setup_id,
+        ObsAction::ProgramStop { id: program_id },
+        false,
+    )?;
+    Ok(get_state(state))
+}
+
+#[tauri::command]
+fn set_allow_dashboard_program_edits(
+    setup_id: String,
+    allow: bool,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    let mut updated_config = config.clone();
+    let setup = updated_config
+        .setups
+        .iter_mut()
+        .find(|setup| setup.id == setup_id)
+        .ok_or("setup not found")?;
+    setup.allow_dashboard_program_edits = allow;
+    state
+        .store
+        .save(&updated_config)
+        .map_err(|error| error.to_string())?;
+    *config = updated_config;
+    drop(config);
+    Ok(get_state(state))
 }
 
 fn create_log_upload(
@@ -1042,6 +1324,7 @@ fn start_link_session(
         None => (PcObsState::WebsocketDisabled, None, String::new()),
     };
     let (state_tx, state_rx) = watch::channel(initial_state);
+    let (programs_tx, programs_rx) = watch::channel(programs::status(&setup.programs));
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
@@ -1077,7 +1360,7 @@ fn start_link_session(
         if link_started.await.is_err() {
             return;
         }
-        match run_link(link_config, state_rx, watchdog_tx).await {
+        match run_link_with_programs(link_config, state_rx, programs_rx, watchdog_tx).await {
             Ok(()) => {}
             Err(error) if relay_error_requires_pairing_cleanup(&error) => {
                 forget_rejected_pairing(&app_handle, link_setup_id);
@@ -1096,6 +1379,7 @@ fn start_link_session(
     let mut monitor_telemetry = telemetry_rx.clone();
     let mut monitor_watchdog = watchdog_rx.clone();
     let monitor_state_tx = state_tx.clone();
+    let monitor_programs_tx = programs_tx.clone();
     let monitor = tauri::async_runtime::spawn(async move {
         let monitor_state = monitor_state;
         let mut watchdog = Watchdog::default();
@@ -1112,6 +1396,18 @@ fn start_link_session(
                         .lock()
                         .map(|mut supervisor| supervisor.state(&monitor_setup))
                         .unwrap_or(PcObsState::Unknown);
+                    let program_status = app_state.config.lock().ok().and_then(|config| {
+                        config
+                            .setups
+                            .iter()
+                            .find(|setup| setup.id == monitor_setup.id)
+                            .map(|setup| programs::status(&setup.programs))
+                    });
+                    if let Some(program_status) = program_status
+                        && *monitor_programs_tx.borrow() != program_status
+                    {
+                        let _ = monitor_programs_tx.send(program_status);
+                    }
                     if process_state == PcObsState::WaitingForInput
                         && matches!(state, PcObsState::Unknown | PcObsState::Starting)
                     {
@@ -1244,12 +1540,18 @@ fn start_link_session(
     let command_consumer = tauri::async_runtime::spawn(async move {
         while let Some(command) = command_rx.recv().await {
             let app_state = command_app.state::<AppState>();
-            let result = if command.action == ObsAction::UploadLog {
-                create_log_upload(app_state.inner(), command_setup_id, "obs_log", true).map(Some)
-            } else {
-                run_obs_action(app_state.inner(), command_setup_id, command.action)
+            let result = match command.action.clone() {
+                ObsAction::UploadLog => {
+                    create_log_upload(app_state.inner(), command_setup_id, "obs_log", true)
+                        .map(Some)
+                }
+                action if action.is_program() => {
+                    run_program_action(app_state.inner(), command_setup_id, action, true)
+                        .map(|()| None)
+                }
+                action => run_obs_action(app_state.inner(), command_setup_id, action)
                     .await
-                    .map(|()| None)
+                    .map(|()| None),
             };
             let _ = command.reply.send(result);
             let _ = command_app.emit(
@@ -1263,6 +1565,7 @@ fn start_link_session(
         setup.id,
         LinkSession {
             state: state_tx.clone(),
+            programs: programs_tx,
             effective_obs: effective_obs_rx,
             task,
             monitor,
@@ -1373,6 +1676,8 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
                             setup.name.clone(),
                             setup.obs_state.clone(),
                             setup.obs_process_running,
+                            setup.programs.clone(),
+                            setup.allow_dashboard_program_edits,
                         ),
                     )
                 })
@@ -1504,7 +1809,12 @@ fn main() {
             restart_obs,
             enable_websocket,
             unpair_setup,
-            remove_setup
+            remove_setup,
+            upsert_program,
+            remove_program,
+            start_program,
+            stop_program,
+            set_allow_dashboard_program_edits
         ])
         .run(tauri::generate_context!())
         .expect("failed to run NOALBS Cloud Connect");
@@ -1849,6 +2159,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                programs: watch::channel(Vec::new()).0,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -1908,6 +2219,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                programs: watch::channel(Vec::new()).0,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -1978,6 +2290,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                programs: watch::channel(Vec::new()).0,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -2073,6 +2386,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                programs: watch::channel(Vec::new()).0,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -2162,6 +2476,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                programs: watch::channel(Vec::new()).0,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
