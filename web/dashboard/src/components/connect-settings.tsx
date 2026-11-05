@@ -826,8 +826,8 @@ function ConnectDeviceRow({
   });
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-divider p-3 sm:flex-row sm:items-center">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-divider p-3">
+      <div className="flex min-w-48 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-x-2 text-sm font-semibold">
           <span className="truncate">{device.name}</span>
           <span className="text-xs font-normal text-muted-foreground">
