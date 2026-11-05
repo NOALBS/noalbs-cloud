@@ -913,7 +913,6 @@ function SetupDetail({
 					{editingProgram && (
 						<ProgramForm
 							program={editingProgram}
-							platform={platform}
 							onCancel={() => setEditingProgram(null)}
 							onSave={(program) =>
 								void programCommand("upsert_program", {
@@ -980,12 +979,10 @@ function SetupDetail({
 
 function ProgramForm({
 	program,
-	platform,
 	onCancel,
 	onSave,
 }: {
 	program: Program;
-	platform: string;
 	onCancel: () => void;
 	onSave: (program: Program) => void;
 }) {
@@ -1011,7 +1008,7 @@ function ProgramForm({
 						type="button"
 						onClick={() =>
 							void open({
-								directory: platform === "macos",
+								directory: false,
 								multiple: false,
 							}).then((selection) => {
 								if (typeof selection === "string") {

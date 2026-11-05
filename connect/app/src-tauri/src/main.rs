@@ -78,6 +78,7 @@ impl SharedProcesses {
 }
 
 const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
+const NOT_RESPONDING_GRACE: Duration = Duration::from_secs(10);
 
 fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
     max_age.is_zero() || now.saturating_duration_since(last_refresh) >= max_age
@@ -1318,6 +1319,15 @@ fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState)
         )
 }
 
+fn not_responding_incident_due(
+    link_state: PcObsState,
+    since: Option<Instant>,
+    now: Instant,
+) -> bool {
+    link_state == PcObsState::NotResponding
+        && since.is_some_and(|since| now.saturating_duration_since(since) >= NOT_RESPONDING_GRACE)
+}
+
 fn displayed_obs_state(process_state: PcObsState, link_state: Option<PcObsState>) -> PcObsState {
     link_state.unwrap_or(process_state)
 }
@@ -1461,11 +1471,12 @@ fn start_link_session(
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
         let mut handled_incident = None;
+        let mut not_responding_since = None;
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
                 _ = tick.tick() => {
-                    let state = *monitor_state.borrow();
+                    let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
                     let (process_state, program_status) =
                         with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
@@ -1499,13 +1510,44 @@ fn start_link_session(
                     }
                     if should_publish_not_running(process_state, state) {
                         let _ = monitor_state_tx.send(PcObsState::NotRunning);
+                        state = PcObsState::NotRunning;
+                    }
+                    if state == PcObsState::NotResponding {
+                        not_responding_since.get_or_insert_with(Instant::now);
+                    } else {
+                        not_responding_since = None;
                     }
                     let incident = if process_state == PcObsState::Crashed {
                         Some(PcObsState::Crashed)
-                    } else if state == PcObsState::NotResponding
-                        && process_state != PcObsState::NotRunning
-                    {
-                        Some(PcObsState::NotResponding)
+                    } else if not_responding_incident_due(
+                        state,
+                        not_responding_since,
+                        Instant::now(),
+                    ) {
+                        if handled_incident == Some(PcObsState::NotResponding) {
+                            Some(PcObsState::NotResponding)
+                        } else {
+                            let fresh_process_state =
+                                with_processes(&app_state, Duration::ZERO, |snapshot| {
+                                    app_state
+                                        .supervisor
+                                        .lock()
+                                        .map(|mut supervisor| {
+                                            supervisor.state_with(
+                                                &monitor_setup,
+                                                snapshot.system(),
+                                            )
+                                        })
+                                        .unwrap_or(PcObsState::Unknown)
+                                });
+                            if fresh_process_state == PcObsState::NotRunning {
+                                let _ = monitor_state_tx.send(PcObsState::NotRunning);
+                                not_responding_since = None;
+                                None
+                            } else {
+                                Some(PcObsState::NotResponding)
+                            }
+                        }
                     } else {
                         None
                     };
@@ -2154,6 +2196,38 @@ mod tests {
         assert!(!should_publish_not_running(
             PcObsState::Starting,
             PcObsState::Starting
+        ));
+    }
+
+    #[test]
+    fn not_responding_incident_waits_for_grace() {
+        let now = Instant::now();
+        let grace_elapsed = now - NOT_RESPONDING_GRACE;
+
+        assert!(!not_responding_incident_due(
+            PcObsState::NotResponding,
+            None,
+            now
+        ));
+        assert!(!not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed + Duration::from_millis(1)),
+            now
+        ));
+        assert!(not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed),
+            now
+        ));
+        assert!(not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed - Duration::from_secs(1)),
+            now
+        ));
+        assert!(!not_responding_incident_due(
+            PcObsState::Connected,
+            Some(grace_elapsed - Duration::from_secs(1)),
+            now
         ));
     }
 
