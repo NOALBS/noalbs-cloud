@@ -1654,7 +1654,7 @@ fn executable_obs_pids_with(setup: &Setup, system: &System) -> Vec<Pid> {
         .collect()
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
     let system = process_snapshot();
     executable_obs_pids_with(setup, &system)
@@ -2063,10 +2063,11 @@ pub fn detected_obs_install_kind() -> InstallKind {
 
 #[cfg(all(test, unix))]
 mod tests {
+    #[cfg(target_os = "linux")]
+    use std::ffi::OsString;
     #[cfg(target_os = "macos")]
     use std::sync::OnceLock;
     use std::{
-        ffi::OsString,
         fs,
         os::unix::fs::PermissionsExt,
         path::{Path, PathBuf},
@@ -2077,16 +2078,16 @@ mod tests {
 
     use tempfile::tempdir;
 
-    #[cfg(target_os = "linux")]
-    use super::resolve_executable;
     use super::{
-        StartedObs, Supervisor, WINDOWS_PORTABLE_MARKERS, appimage_env_fixes,
-        config_dir_for_platform, copy_latest_crash_report, is_obs_process_name,
-        is_portable_obs_for_platform, launch_arguments, launch_arguments_for_platform,
-        macos_obs_binary_candidates, macos_obs_config_dir, prepare_after_crash, process_start_time,
+        StartedObs, Supervisor, WINDOWS_PORTABLE_MARKERS, config_dir_for_platform,
+        copy_latest_crash_report, is_obs_process_name, is_portable_obs_for_platform,
+        launch_arguments, launch_arguments_for_platform, macos_obs_binary_candidates,
+        macos_obs_config_dir, prepare_after_crash, process_start_time,
         same_obs_identity_for_platform, should_launch_multi,
     };
     use super::{SupervisorError, find_matching_obs_with_start_time_for_setups, matching_obs_pids};
+    #[cfg(target_os = "linux")]
+    use super::{appimage_env_fixes, resolve_executable};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
 
     #[cfg(target_os = "linux")]

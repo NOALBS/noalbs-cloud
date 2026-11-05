@@ -5,6 +5,7 @@ mod updates;
 use std::{
     collections::{HashMap, HashSet},
     sync::Mutex,
+    time::{Duration, Instant},
 };
 
 use connect_core::{
@@ -27,7 +28,6 @@ use connect_core::{
     watchdog::{Watchdog, WatchdogAction},
 };
 use serde::Serialize;
-use std::time::Duration;
 use tauri::{
     Emitter, Manager, State,
     menu::{Menu, MenuItem},
@@ -55,10 +55,56 @@ struct AppState {
     store: ConfigStore,
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
+    // Acquire this before config, supervisor, and link_sessions locks.
+    processes: SharedProcesses,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
     obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
     updates: updates::UpdateManager,
+}
+
+struct SharedProcesses {
+    snapshot: Mutex<connect_core::supervisor::ProcessSnapshot>,
+    last_refresh: Mutex<Instant>,
+}
+
+impl SharedProcesses {
+    fn new() -> Self {
+        Self {
+            snapshot: Mutex::new(connect_core::supervisor::ProcessSnapshot::new()),
+            last_refresh: Mutex::new(Instant::now() - Duration::from_secs(2)),
+        }
+    }
+}
+
+const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
+
+fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
+    max_age.is_zero() || now.saturating_duration_since(last_refresh) >= max_age
+}
+
+fn with_processes<R>(
+    state: &AppState,
+    max_age: Duration,
+    f: impl FnOnce(&connect_core::supervisor::ProcessSnapshot) -> R,
+) -> R {
+    let mut snapshot = state
+        .processes
+        .snapshot
+        .lock()
+        .expect("process snapshot lock");
+    let mut last_refresh = state
+        .processes
+        .last_refresh
+        .lock()
+        .expect("process snapshot refresh lock");
+    let now = Instant::now();
+    if process_snapshot_needs_refresh(*last_refresh, now, max_age) {
+        snapshot.refresh();
+        *last_refresh = now;
+    }
+    drop(last_refresh);
+    f(&snapshot)
 }
 
 #[derive(Clone, Serialize)]
@@ -68,6 +114,7 @@ struct SetupSummary {
     paired: bool,
     switcher_id: Option<String>,
     obs_state: PcObsState,
+    obs_label: String,
     obs_process_running: bool,
     obs: connect_core::config::ObsLaunchConfig,
     detected_binary: String,
@@ -94,9 +141,9 @@ fn get_state(state: State<'_, AppState>) -> UiState {
 }
 
 fn build_ui_state(state: &AppState) -> UiState {
-    let mut process_snapshot = connect_core::supervisor::ProcessSnapshot::new();
-    process_snapshot.refresh();
-    build_ui_state_with(state, &process_snapshot)
+    with_processes(state, Duration::ZERO, |snapshot| {
+        build_ui_state_with(state, snapshot)
+    })
 }
 
 fn build_ui_state_with(
@@ -146,6 +193,7 @@ fn build_ui_state_with(
                         .as_ref()
                         .map(|pair| pair.switcher_id.to_string()),
                     obs_state,
+                    obs_label: obs_state_label(obs_state, link_state.is_some()).to_owned(),
                     obs_process_running,
                     obs: setup.obs.clone(),
                     detected_binary: setup
@@ -1274,7 +1322,10 @@ fn displayed_obs_state(process_state: PcObsState, link_state: Option<PcObsState>
     link_state.unwrap_or(process_state)
 }
 
-fn obs_state_label(state: PcObsState) -> &'static str {
+fn obs_state_label(state: PcObsState, paired: bool) -> &'static str {
+    if !paired && matches!(state, PcObsState::Starting | PcObsState::WaitingForInput) {
+        return "OBS is running";
+    }
     match state {
         PcObsState::Connected => "OBS connected",
         PcObsState::Starting => "Starting OBS…",
@@ -1289,25 +1340,33 @@ fn obs_state_label(state: PcObsState) -> &'static str {
 }
 
 fn tray_setup_labels(state: &AppState) -> Vec<(String, String)> {
-    let setups = state.config.lock().expect("app config lock").setups.clone();
-    let mut supervisor = state.supervisor.lock().expect("supervisor lock");
-    supervisor.set_known_setups(&setups);
-    let sessions = state.link_sessions.lock().expect("link session lock");
-    setups
-        .iter()
-        .map(|setup| {
-            let link_state = sessions
-                .get(&setup.id)
-                .map(|session| *session.state.borrow());
-            let process_state =
-                link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
-            let status = displayed_obs_state(process_state, link_state);
-            (
-                format!("setup-{}", setup.id),
-                format!("{} — {}", setup.name, obs_state_label(status)),
-            )
-        })
-        .collect()
+    with_processes(state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+        let setups = state.config.lock().expect("app config lock").setups.clone();
+        let mut supervisor = state.supervisor.lock().expect("supervisor lock");
+        supervisor.set_known_setups(&setups);
+        let sessions = state.link_sessions.lock().expect("link session lock");
+        setups
+            .iter()
+            .map(|setup| {
+                let link_state = sessions
+                    .get(&setup.id)
+                    .map(|session| *session.state.borrow());
+                let process_state = link_state.map_or_else(
+                    || supervisor.state_with(setup, snapshot.system()),
+                    |_| PcObsState::Unknown,
+                );
+                let status = displayed_obs_state(process_state, link_state);
+                (
+                    format!("setup-{}", setup.id),
+                    format!(
+                        "{} — {}",
+                        setup.name,
+                        obs_state_label(status, link_state.is_some())
+                    ),
+                )
+            })
+            .collect()
+    })
 }
 
 fn setup_for_watchdog_restart(config: &AppConfig, fallback: &Setup) -> Setup {
@@ -1408,18 +1467,25 @@ fn start_link_session(
                 _ = tick.tick() => {
                     let state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
-                    let process_system = connect_core::supervisor::process_snapshot();
-                    let process_state = app_state
-                        .supervisor
-                        .lock()
-                        .map(|mut supervisor| supervisor.state_with(&monitor_setup, &process_system))
-                        .unwrap_or(PcObsState::Unknown);
-                    let program_status = app_state.config.lock().ok().and_then(|config| {
-                        config
-                            .setups
-                            .iter()
-                            .find(|setup| setup.id == monitor_setup.id)
-                            .map(|setup| programs::status_with(&setup.programs, &process_system))
+                    let (process_state, program_status) =
+                        with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+                            let process_state = app_state
+                                .supervisor
+                                .lock()
+                                .map(|mut supervisor| {
+                                    supervisor.state_with(&monitor_setup, snapshot.system())
+                                })
+                                .unwrap_or(PcObsState::Unknown);
+                            let program_status = app_state.config.lock().ok().and_then(|config| {
+                                config
+                                    .setups
+                                    .iter()
+                                    .find(|setup| setup.id == monitor_setup.id)
+                                    .map(|setup| {
+                                        programs::status_with(&setup.programs, snapshot.system())
+                                    })
+                            });
+                            (process_state, program_status)
                     });
                     if let Some(program_status) = program_status
                         && *monitor_programs_tx.borrow() != program_status
@@ -1686,13 +1752,13 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         let mut last_states = None;
         let mut previous_running = HashMap::<uuid::Uuid, bool>::new();
-        let mut process_snapshot = connect_core::supervisor::ProcessSnapshot::new();
-        let mut tick = tokio::time::interval(Duration::from_secs(1));
+        let mut tick = tokio::time::interval(Duration::from_secs(2));
         loop {
             tick.tick().await;
-            process_snapshot.refresh();
             let app_state = app.state::<AppState>();
-            let state = build_ui_state_with(&app_state, &process_snapshot);
+            let state = with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+                build_ui_state_with(&app_state, snapshot)
+            });
             let current_ids = state
                 .setups
                 .iter()
@@ -1851,6 +1917,7 @@ fn main() {
             }
         }))
         .plugin(autostart_builder.build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
@@ -1859,6 +1926,7 @@ fn main() {
             store,
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
@@ -2107,8 +2175,46 @@ mod tests {
 
     #[test]
     fn tray_obs_state_label_matches_the_window_label() {
-        assert_eq!(obs_state_label(PcObsState::Starting), "Starting OBS…");
-        assert_eq!(obs_state_label(PcObsState::NotRunning), "OBS not running");
+        let states = [
+            (PcObsState::Connected, "OBS connected"),
+            (PcObsState::Starting, "Starting OBS…"),
+            (PcObsState::WaitingForInput, "OBS is waiting for input"),
+            (PcObsState::SafeMode, "OBS is asking about Safe Mode"),
+            (PcObsState::WebsocketDisabled, "OBS websocket is off"),
+            (PcObsState::NotResponding, "OBS is not responding"),
+            (PcObsState::Crashed, "OBS crashed"),
+            (PcObsState::NotRunning, "OBS not running"),
+            (PcObsState::Unknown, "OBS running, not started by Connect"),
+        ];
+        for (state, paired_label) in states {
+            assert_eq!(obs_state_label(state, true), paired_label);
+            let unpaired_label =
+                if matches!(state, PcObsState::Starting | PcObsState::WaitingForInput) {
+                    "OBS is running"
+                } else {
+                    paired_label
+                };
+            assert_eq!(obs_state_label(state, false), unpaired_label);
+        }
+    }
+
+    #[test]
+    fn process_snapshot_age_reuses_fresh_snapshots_and_zero_forces_refresh() {
+        let now = Instant::now();
+        let mut last_refresh = now - Duration::from_secs(2);
+        let mut refreshes = 0;
+        for _ in 0..2 {
+            if process_snapshot_needs_refresh(last_refresh, now, PROCESS_SNAPSHOT_MAX_AGE) {
+                refreshes += 1;
+                last_refresh = now;
+            }
+        }
+        assert_eq!(refreshes, 1);
+        assert!(process_snapshot_needs_refresh(
+            last_refresh,
+            now,
+            Duration::ZERO
+        ));
     }
 
     #[test]
@@ -2139,6 +2245,7 @@ mod tests {
             store: ConfigStore::new(Default::default()),
             tokens: TokenStore::new(Default::default()),
             supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
@@ -2241,6 +2348,8 @@ mod tests {
             store: store.clone(),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
@@ -2305,6 +2414,8 @@ mod tests {
             store: store.clone(),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
@@ -2371,6 +2482,8 @@ mod tests {
             store: ConfigStore::new(blocked_parent.join("config.json")),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
@@ -2469,6 +2582,8 @@ mod tests {
             store: store.clone(),
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
@@ -2562,6 +2677,8 @@ mod tests {
             store,
             tokens,
             supervisor: Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(1))),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),

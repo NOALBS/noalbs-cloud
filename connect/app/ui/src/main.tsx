@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./style.css";
@@ -27,6 +28,7 @@ type Setup = {
 	paired: boolean;
 	switcher_id: string | null;
 	obs_state: string;
+	obs_label: string;
 	obs_process_running: boolean;
 	obs: ObsConfig;
 	detected_binary: string;
@@ -73,20 +75,20 @@ type Tone = "ok" | "busy" | "bad" | "off";
 
 const SETTINGS = "settings";
 
-const OBS_STATES: Record<string, [string, Tone]> = {
-	connected: ["OBS connected", "ok"],
-	starting: ["Starting OBS…", "busy"],
-	waiting_for_input: ["OBS is waiting for input", "busy"],
-	safe_mode: ["OBS is asking about Safe Mode", "busy"],
-	websocket_disabled: ["OBS websocket is off", "busy"],
-	not_responding: ["OBS is not responding", "bad"],
-	crashed: ["OBS crashed", "bad"],
-	not_running: ["OBS not running", "off"],
-	unknown: ["OBS running, not started by Connect", "off"],
+const OBS_TONES: Record<string, Tone> = {
+	connected: "ok",
+	starting: "busy",
+	waiting_for_input: "busy",
+	safe_mode: "busy",
+	websocket_disabled: "busy",
+	not_responding: "bad",
+	crashed: "bad",
+	not_running: "off",
+	unknown: "off",
 };
 
-function obsStatus(state: string): [string, Tone] {
-	return OBS_STATES[state] ?? [state.replaceAll("_", " "), "off"];
+function obsTone(state: string): Tone {
+	return OBS_TONES[state] ?? "off";
 }
 
 const INSTALL_KINDS: Record<ObsConfig["install_kind"], string> = {
@@ -403,7 +405,8 @@ function App() {
 					<div className="sidebar-heading">Setups</div>
 					<ul className="list">
 						{state.setups.map((s) => {
-							const [label, tone] = obsStatus(s.obs_state);
+							const label = s.obs_label;
+							const tone = obsTone(s.obs_state);
 							return (
 								<li key={s.id}>
 									<button
@@ -418,7 +421,9 @@ function App() {
 										<span className="item-text">
 											<span className="item-title">{s.name}</span>
 											<span className="item-sub">
-												{s.paired ? label : "Not paired"}
+												{s.paired || label === "OBS is running"
+													? label
+													: "Not paired"}
 											</span>
 										</span>
 									</button>
@@ -685,7 +690,8 @@ function SetupDetail({
 		args: Record<string, unknown>,
 	) => Promise<void>;
 }) {
-	const [obsLabel, obsTone] = obsStatus(setup.obs_state);
+	const obsLabel = setup.obs_label;
+	const tone = obsTone(setup.obs_state);
 	const running = setup.obs_process_running;
 	const [editingProgram, setEditingProgram] = React.useState<Program | null>(
 		null,
@@ -715,7 +721,7 @@ function SetupDetail({
 			<h2>OBS</h2>
 			<section className="group">
 				<Row label="Status">
-					<Dot tone={obsTone} />
+					<Dot tone={tone} />
 					{obsLabel}
 				</Row>
 				<Row label="Install">{INSTALL_KINDS[setup.obs.install_kind]}</Row>
@@ -907,6 +913,7 @@ function SetupDetail({
 					{editingProgram && (
 						<ProgramForm
 							program={editingProgram}
+							platform={platform}
 							onCancel={() => setEditingProgram(null)}
 							onSave={(program) =>
 								void programCommand("upsert_program", {
@@ -973,10 +980,12 @@ function SetupDetail({
 
 function ProgramForm({
 	program,
+	platform,
 	onCancel,
 	onSave,
 }: {
 	program: Program;
+	platform: string;
 	onCancel: () => void;
 	onSave: (program: Program) => void;
 }) {
@@ -991,10 +1000,29 @@ function ProgramForm({
 				/>
 			</Field>
 			<Field label="Full program path">
-				<input
-					value={value.path}
-					onChange={(event) => setValue({ ...value, path: event.target.value })}
-				/>
+				<div className="buttons">
+					<input
+						value={value.path}
+						onChange={(event) =>
+							setValue({ ...value, path: event.target.value })
+						}
+					/>
+					<button
+						type="button"
+						onClick={() =>
+							void open({
+								directory: platform === "macos",
+								multiple: false,
+							}).then((selection) => {
+								if (typeof selection === "string") {
+									setValue({ ...value, path: selection });
+								}
+							})
+						}
+					>
+						Browse…
+					</button>
+				</div>
 			</Field>
 			<Field label="Arguments (one per line)">
 				<textarea
