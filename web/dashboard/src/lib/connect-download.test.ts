@@ -22,6 +22,12 @@ const platformCases: Array<{
     expected: "windows",
   },
   {
+    name: "Windows user agent mentioning Microsoft",
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Microsoft Outlook 16.0) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
+    expected: "windows",
+  },
+  {
     name: "macOS Safari",
     userAgent:
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15",

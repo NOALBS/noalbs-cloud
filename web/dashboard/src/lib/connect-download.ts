@@ -55,7 +55,7 @@ export function detectConnectPlatform({
   const normalizedUserAgent = userAgent.toLowerCase();
   const hints = `${normalizedPlatform ?? ""} ${normalizedUserAgent}`;
 
-  if (/android|iphone|ipad|ipod|ipad os|ios|cros|chrome\s?os/.test(hints)) return null;
+  if (/android|iphone|ipad|ipod|\bios\b|\bcros\b|chrome\s?os/.test(hints)) return null;
   if (normalizedPlatform && /mac/.test(normalizedPlatform) && maxTouchPoints > 1) return null;
 
   if (normalizedPlatform) {
