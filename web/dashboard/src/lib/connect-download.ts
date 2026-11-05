@@ -57,6 +57,8 @@ export function detectConnectPlatform({
 
   if (/android|iphone|ipad|ipod|\bios\b|\bcros\b|chrome\s?os/.test(hints)) return null;
   if (normalizedPlatform && /mac/.test(normalizedPlatform) && maxTouchPoints > 1) return null;
+  // Linux installers are only built for x86_64.
+  if (/linux/.test(hints) && /aarch64|arm64|\barmv?\d*l?\b|riscv/.test(hints)) return null;
 
   if (normalizedPlatform) {
     if (/win/.test(normalizedPlatform)) return "windows";

@@ -28,6 +28,17 @@ const platformCases: Array<{
     expected: "windows",
   },
   {
+    name: "ARM64 Linux",
+    userAgent: "Mozilla/5.0 (X11; Linux aarch64; rv:140.0) Gecko/20100101 Firefox/140.0",
+    platform: "Linux aarch64",
+    expected: null,
+  },
+  {
+    name: "32-bit ARM Linux",
+    userAgent: "Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
+    expected: null,
+  },
+  {
     name: "macOS Safari",
     userAgent:
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15",
