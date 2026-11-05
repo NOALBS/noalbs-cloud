@@ -146,6 +146,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v6
         with:
           pattern: connect-*
@@ -165,13 +167,10 @@ jobs:
           (cd release-assets && sha256sum -- * > SHA256SUMS)
       - name: Generate release notes
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          gh api "repos/{owner}/{repo}/releases/generate-notes" \
-            -f tag_name="$TAG" \
-            --jq .body > notes.md
+          bash .github/scripts/connect-release-notes.sh "$TAG" > notes.md
           printf '\n## Unsigned builds\n\n- **Windows SmartScreen:** select **More info** → **Run anyway**.\n- **macOS:** right-click → **Open**, or use **System Settings → Privacy & Security → Open Anyway**.\n- Verify downloads with SHA256SUMS.\n' >> notes.md
       - name: Publish release
         env:
