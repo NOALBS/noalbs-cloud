@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-dialog";
+import { ask, open } from "@tauri-apps/plugin-dialog";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./style.css";
@@ -878,14 +878,21 @@ function SetupDetail({
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										if (window.confirm(`Remove ${program.name}?`)) {
-											void programCommand("remove_program", {
+									onClick={() =>
+										void (async () => {
+											const ok = await ask(`Remove ${program.name}?`, {
+												title: "NOALBS Cloud Connect",
+												kind: "warning",
+												okLabel: "Remove",
+												cancelLabel: "Cancel",
+											});
+											if (!ok) return;
+											await programCommand("remove_program", {
 												setupId: setup.id,
 												programId: program.id,
 											});
-										}
-									}}
+										})()
+									}
 								>
 									Remove
 								</button>
@@ -957,15 +964,21 @@ function SetupDetail({
 							</button>
 							<button
 								type="button"
-								onClick={() => {
-									if (
-										window.confirm(
+								onClick={() =>
+									void (async () => {
+										const ok = await ask(
 											`Remove ${setup.name}? OBS will keep running.`,
-										)
-									) {
-										onAction("remove_setup");
-									}
-								}}
+											{
+												title: "NOALBS Cloud Connect",
+												kind: "warning",
+												okLabel: "Remove",
+												cancelLabel: "Cancel",
+											},
+										);
+										if (!ok) return;
+										await onAction("remove_setup");
+									})()
+								}
 							>
 								Remove setup…
 							</button>
