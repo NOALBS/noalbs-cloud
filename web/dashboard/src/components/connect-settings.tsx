@@ -29,10 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { type ConnectObsAction, useConnectObsCommand } from "@/hooks/use-connect-obs-command";
 import { useSwitcher } from "@/hooks/use-switcher";
 import {
   canControlConnect,
   connectAccessOptions,
+  connectObsActionAvailability,
   pcObsLabel,
   watchdogOptions,
 } from "@/lib/connect";
@@ -52,6 +54,7 @@ export function ConnectSettings() {
   const canManageDevices = canManage && !isSupport(actor);
   const accessOptions = connectAccessOptions(workspace.managed_by?.name ?? null);
   const watchdogAllowed = canControlConnect(switcher.connect_obs_control, actor);
+  const obsControlAllowed = watchdogAllowed;
   const watchdogChoices = watchdogOptions();
   const watchdogDescription = watchdogChoices.find(
     (option) => option.value === switcher.connect_watchdog,
@@ -120,6 +123,8 @@ export function ConnectSettings() {
               path={path}
               canManage={canManageDevices}
               onlineObs={pc?.device_id === device.id ? pc.obs : undefined}
+              canControlObs={obsControlAllowed}
+              streaming={Boolean(summary?.status?.streaming)}
             />
           ))}
         </div>
@@ -230,14 +235,21 @@ function ConnectDeviceRow({
   path,
   canManage,
   onlineObs,
+  canControlObs,
+  streaming,
 }: {
   device: ConnectDeviceDto;
   path: { workspace_id: string; switcher_id: string };
   canManage: boolean;
   onlineObs?: PcObsState;
+  canControlObs: boolean;
+  streaming: boolean;
 }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(device.name);
+  const [confirmAction, setConfirmAction] = useState<"stop" | "restart" | null>(null);
+  const obsCommand = useConnectObsCommand(path);
+  const obsActions = connectObsActionAvailability(onlineObs);
   const changed = name.trim() !== device.name;
   const rename = useMutation({
     mutationFn: () =>
@@ -347,6 +359,75 @@ function ConnectDeviceRow({
           </AlertDialog>
         </div>
       )}
+      {canControlObs && obsActions.visible && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!obsActions.canStart || obsCommand.isPending}
+            onClick={() => obsCommand.mutate("start")}
+          >
+            <Trans>Start OBS</Trans>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!obsActions.canStopOrRestart || obsCommand.isPending}
+            onClick={() => setConfirmAction("stop")}
+          >
+            <Trans>Stop OBS</Trans>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!obsActions.canStopOrRestart || obsCommand.isPending}
+            onClick={() => setConfirmAction("restart")}
+          >
+            <Trans>Restart OBS</Trans>
+          </Button>
+        </div>
+      )}
+      <AlertDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "stop" ? t`Stop OBS?` : t`Restart OBS?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {streaming ? (
+                <Trans>
+                  The stream is live and will drop if OBS stops. Do you want to continue?
+                </Trans>
+              ) : confirmAction === "stop" ? (
+                <Trans>Stop OBS on {device.name}?</Trans>
+              ) : (
+                <Trans>Restart OBS on {device.name}?</Trans>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={obsCommand.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={obsCommand.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (confirmAction) {
+                  obsCommand.mutate(confirmAction satisfies ConnectObsAction, {
+                    onSuccess: () => setConfirmAction(null),
+                  });
+                }
+              }}
+            >
+              {confirmAction === "stop" ? <Trans>Stop OBS</Trans> : <Trans>Restart OBS</Trans>}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

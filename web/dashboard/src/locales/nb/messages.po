@@ -546,6 +546,11 @@ msgstr "{0}-abonnement"
 msgid "{0} removed"
 msgstr "{0} fjernet"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} restarted OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
@@ -570,11 +575,21 @@ msgstr "{0} valgt"
 msgid "{0} servers · {1}"
 msgstr "{0} servere · {1}"
 
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} started OBS through Connect"
+msgstr ""
+
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} stays until {1}, then the workspace moves to Free. Nothing is refunded."
 msgstr "{0} gjelder til {1}, deretter går arbeidsområdet over til Free. Ingenting refunderes."
+
+#. placeholder {0}: event.data.by
+#: src/lib/live-format.ts
+msgid "{0} stopped OBS through Connect"
+msgstr ""
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -5918,6 +5933,10 @@ msgstr "OBS"
 msgid "OBS already has a source or scene with that name."
 msgstr "OBS har allerede en kilde eller scene med det navnet."
 
+#: src/lib/live-format.ts
+msgid "OBS command"
+msgstr ""
+
 #: src/lib/admin.ts
 #: src/lib/connect.ts
 #: src/lib/live-format.ts
@@ -6039,6 +6058,10 @@ msgstr "OBS-forhåndsvisning"
 msgid "OBS preview off air"
 msgstr "OBS-forhåndsvisning utenfor sending"
 
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS restarted"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
 msgstr "OBS lagrer opptaket så langt. Et nytt opptak starter en ny fil."
@@ -6046,6 +6069,10 @@ msgstr "OBS lagrer opptaket så langt. Et nytt opptak starter en ny fil."
 #: src/lib/api-messages.ts
 msgid "OBS sent an image we can't read."
 msgstr "OBS sendte et bilde vi ikke kan lese."
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS started"
+msgstr ""
 
 #: src/lib/connect.ts
 msgid "OBS starting"
@@ -6058,6 +6085,10 @@ msgstr ""
 #: src/components/app-shell.tsx
 msgid "OBS stats"
 msgstr "OBS-statistikk"
+
+#: src/hooks/use-connect-obs-command.ts
+msgid "OBS stopped"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
@@ -7251,6 +7282,7 @@ msgstr "Svarmodus"
 msgid "Request failed ({0})"
 msgstr "Forespørselen mislyktes ({0})"
 
+#: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr ""
@@ -7259,9 +7291,22 @@ msgstr ""
 msgid "Restart OBS and go live again"
 msgstr ""
 
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Restart OBS on {0}?"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Restart OBS?"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
 msgstr "Start avspillingen på nytt når kilden blir aktiv"
+
+#: src/lib/live-format.ts
+msgid "Restarted OBS through Connect"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -8181,6 +8226,11 @@ msgstr "Start hotspoten"
 msgid "Start Moblin with the OBS stream"
 msgstr "Start Moblin med OBS-strømmen"
 
+#: src/components/connect-settings.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Start OBS"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "Start stream"
 msgstr "Start strøm"
@@ -8201,6 +8251,10 @@ msgstr "Start, slutt og raid"
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "Startet en Checkout"
+
+#: src/lib/live-format.ts
+msgid "Started OBS through Connect"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8302,6 +8356,19 @@ msgstr "Stopp Moblin"
 msgid "Stop Moblin with the OBS stream"
 msgstr "Stopp Moblin med OBS-strømmen"
 
+#: src/components/connect-settings.tsx
+msgid "Stop OBS"
+msgstr ""
+
+#. placeholder {0}: device.name
+#: src/components/connect-settings.tsx
+msgid "Stop OBS on {0}?"
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "Stop OBS?"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Stop on the Ending scene"
 msgstr "Stopp på Slutt-scenen"
@@ -8357,6 +8424,10 @@ msgstr "Stopp når offline"
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
 msgstr "Stopp, og start på nytt når den vises"
+
+#: src/lib/live-format.ts
+msgid "Stopped OBS through Connect"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -9229,6 +9300,10 @@ msgstr "Trinnvis sjekkliste for å koble til OBS, en strømserver og scenene din
 #: src/routes/_app/$workspace/account.tsx
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "Strømhistorikken, statistikken, markørene og aktivitetsloggen til dine egne switchere, ett JSON-objekt per linje. Den kan bli stor."
+
+#: src/components/connect-settings.tsx
+msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "The streams API of Node Media Server; the application and key are added to it."

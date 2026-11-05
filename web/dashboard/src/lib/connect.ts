@@ -79,3 +79,11 @@ export function canControlConnect(level: ConnectAccess, actor: Actor): boolean {
     Boolean(actor.organization)
   );
 }
+
+export function connectObsActionAvailability(state: PcObsState | undefined) {
+  return {
+    visible: state !== undefined,
+    canStart: state === "not_running" || state === "crashed",
+    canStopOrRestart: state !== undefined && state !== "not_running" && state !== "unknown",
+  };
+}

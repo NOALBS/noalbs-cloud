@@ -209,8 +209,8 @@ chat environment), so nobody else can send OBS requests or chat commands:
 | User | Publish | Subscribe |
 |---|---|---|
 | all three | `$JS.API.>`, `$JS.ACK.>`, `$JS.FC.>` | `_INBOX.>` |
-| api | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `switcher.*.reconnect`, `switcher.*.audio.demand`, `switcher.*.preview.watching`, `chat.*.reconcile` | `switcher.*.event`, `switcher.*.audio`, `switcher.*.preview.watching` |
-| obs-link (plus `allow_responses: true`) | `$KV.switcher-status.>`, `$KV.belabox-status.>`, `$KV.moblin-status.>`, `$KV.moblin-attempts.>`, `switcher.*.stats`, `switcher.*.event`, `switcher.*.audio`, `switcher.*.takeover`, `moblin.*.request`, `moblin.*.takeover` | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `moblin.*.takeover`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.takeover`, `switcher.*.reconnect`, `switcher.*.audio.demand` |
+| api | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `connect.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `switcher.*.reconnect`, `switcher.*.audio.demand`, `switcher.*.preview.watching`, `chat.*.reconcile` | `switcher.*.event`, `switcher.*.audio`, `switcher.*.preview.watching` |
+| obs-link (plus `allow_responses: true`) | `$KV.switcher-status.>`, `$KV.belabox-status.>`, `$KV.moblin-status.>`, `$KV.moblin-attempts.>`, `switcher.*.stats`, `switcher.*.event`, `switcher.*.audio`, `switcher.*.takeover`, `moblin.*.request`, `moblin.*.takeover` | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `moblin.*.takeover`, `connect.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.takeover`, `switcher.*.reconnect`, `switcher.*.audio.demand` |
 | chat | `$KV.<bucket>.>` for each `chat-*` bucket in `crates/live`, `obslink.*.request`, `belabox.*.request`, `moblin.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `chat.>` | `switcher.*.event`, `chat.>` |
 
 ### Updating

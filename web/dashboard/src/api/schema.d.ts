@@ -2361,6 +2361,22 @@ export interface paths {
         patch: operations["rename_device"];
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["connect_obs_command"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/pair": {
         parameters: {
             query?: never;
@@ -4646,6 +4662,11 @@ export interface components {
             browser_source_url: string;
         };
         /** @enum {string} */
+        ConnectObsAction: "start" | "stop" | "restart";
+        ConnectObsCommand: {
+            action: components["schemas"]["ConnectObsAction"];
+        };
+        /** @enum {string} */
         ConnectOs: "windows" | "linux" | "macos";
         ConnectPairing: {
             app_version: string;
@@ -5343,6 +5364,13 @@ export interface components {
             };
             /** @enum {string} */
             kind: "connect_watchdog_changed";
+        } | {
+            data: {
+                action: components["schemas"]["ConnectObsAction"];
+                by?: string | null;
+            };
+            /** @enum {string} */
+            kind: "connect_obs_command";
         };
         ExistingSourceDto: {
             /** @description The input's kind (e.g. `ffmpeg_source`); `null` for scenes. */
@@ -12985,6 +13013,57 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    connect_obs_command: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectObsCommand"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `connect_forbidden` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `connect_offline`, `connect_unsupported`, or `connect_refused` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `connect_timeout` after up to 65 seconds */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

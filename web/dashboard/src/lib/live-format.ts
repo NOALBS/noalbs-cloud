@@ -98,6 +98,23 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         title: t`Connect watchdog changed`,
         detail: t`Mode: ${event.data.mode} ${by(event.data.by, t`from the dashboard`)}`,
       };
+    case "connect_obs_command": {
+      const detail = event.data.by
+        ? {
+            start: t`${event.data.by} started OBS through Connect`,
+            stop: t`${event.data.by} stopped OBS through Connect`,
+            restart: t`${event.data.by} restarted OBS through Connect`,
+          }[event.data.action]
+        : {
+            start: t`Started OBS through Connect`,
+            stop: t`Stopped OBS through Connect`,
+            restart: t`Restarted OBS through Connect`,
+          }[event.data.action];
+      return {
+        title: t`OBS command`,
+        detail,
+      };
+    }
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

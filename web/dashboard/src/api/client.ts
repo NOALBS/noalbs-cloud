@@ -28,8 +28,12 @@ export class NetworkError extends Error {
  * signal, and rejects with a {@link NetworkError} instead of the browser's own
  * ("Failed to fetch", "Load failed", …).
  */
-export async function fetchWithTimeout(request: Request, init?: RequestInit): Promise<Response> {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+export async function fetchWithTimeout(
+  request: Request,
+  init?: RequestInit,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const timeout = AbortSignal.timeout(timeoutMs);
   // Older Safari has no `AbortSignal.any`; there only the timeout cancels.
   const signal = AbortSignal.any ? AbortSignal.any([request.signal, timeout]) : timeout;
   try {
@@ -50,6 +54,15 @@ export const api = createClient<paths>({
   credentials: "include",
   fetch: fetchWithTimeout,
 });
+
+/** A typed client for one-off requests that need a different timeout. */
+export function apiWithTimeout(timeoutMs: number) {
+  return createClient<paths>({
+    baseUrl: "/api",
+    credentials: "include",
+    fetch: (request) => fetchWithTimeout(request, undefined, timeoutMs),
+  });
+}
 
 /** An API call that failed; `code` is the API's stable error code. */
 export class ApiRequestError extends Error {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { PcObsState } from "@/api/types";
-import { canControlConnect, connectAccessOptions, pcObsLabel, watchdogOptions } from "./connect";
+import {
+  canControlConnect,
+  connectAccessOptions,
+  connectObsActionAvailability,
+  pcObsLabel,
+  watchdogOptions,
+} from "./connect";
 
 describe("Connect settings", () => {
   it("names roles and organization managers", () => {
@@ -60,5 +66,28 @@ describe("Connect settings", () => {
       [true, true, false, false],
       [true, true, true, false],
     ]);
+  });
+
+  it("enables OBS actions only for the states that support them", () => {
+    expect(connectObsActionAvailability(undefined)).toEqual({
+      visible: false,
+      canStart: false,
+      canStopOrRestart: false,
+    });
+    expect(connectObsActionAvailability("not_running")).toEqual({
+      visible: true,
+      canStart: true,
+      canStopOrRestart: false,
+    });
+    expect(connectObsActionAvailability("crashed")).toEqual({
+      visible: true,
+      canStart: true,
+      canStopOrRestart: true,
+    });
+    expect(connectObsActionAvailability("unknown")).toEqual({
+      visible: true,
+      canStart: false,
+      canStopOrRestart: false,
+    });
   });
 });

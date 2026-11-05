@@ -33,6 +33,15 @@ pub enum Watchdog {
     RestartResume,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectObsAction {
+    Start,
+    Stop,
+    Restart,
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Pairing {
     pub id: Uuid,
@@ -298,4 +307,27 @@ pub async fn touch(pool: &PgPool, device_id: Uuid, os: &str, app_version: &str) 
     .execute(pool)
     .await?;
     Ok(result.rows_affected() > 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ConnectObsAction;
+
+    #[test]
+    fn obs_actions_round_trip_as_snake_case() {
+        for (action, value) in [
+            (ConnectObsAction::Start, "start"),
+            (ConnectObsAction::Stop, "stop"),
+            (ConnectObsAction::Restart, "restart"),
+        ] {
+            assert_eq!(
+                serde_json::to_string(&action).unwrap(),
+                format!("\"{value}\"")
+            );
+            assert_eq!(
+                serde_json::from_str::<ConnectObsAction>(&format!("\"{value}\"")).unwrap(),
+                action
+            );
+        }
+    }
 }

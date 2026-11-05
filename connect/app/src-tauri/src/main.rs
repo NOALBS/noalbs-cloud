@@ -10,7 +10,10 @@ use connect_core::{
     config::validate_obs_config_for_platform,
     credentials::TokenStore,
     pairing::ConnectOs,
-    relay::{LinkConfig, ObsTelemetry, PcObsState, WatchdogMode, run_link, stop_active_streams},
+    relay::{
+        LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState, WatchdogMode, run_link,
+        stop_active_streams,
+    },
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
         read_obs_websocket_config, same_obs_binary, same_obs_identity_for_platform,
@@ -30,13 +33,14 @@ use tauri::{
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
-use tokio::sync::watch;
+use tokio::sync::{mpsc, watch};
 
 struct LinkSession {
     state: watch::Sender<PcObsState>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
     task: tauri::async_runtime::JoinHandle<()>,
     monitor: tauri::async_runtime::JoinHandle<()>,
+    command_consumer: tauri::async_runtime::JoinHandle<()>,
 }
 
 struct AppState {
@@ -46,6 +50,7 @@ struct AppState {
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
+    obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
 }
 
@@ -454,55 +459,102 @@ fn open_verification_url(
 }
 
 #[tauri::command]
-fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    let obs_state = {
-        let mut supervisor = state
-            .supervisor
-            .lock()
-            .map_err(|_| "supervisor lock poisoned")?;
-        supervisor
-            .start(&setup, false, None)
-            .map_err(|error| error.to_string())?;
-        supervisor.state(&setup)
-    };
-    set_link_state(state.inner(), setup.id, obs_state);
+async fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Start).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
 async fn stop_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    stop_setup_streams(&setup, state.inner()).await;
-    let obs_state = {
-        let mut supervisor = state
-            .supervisor
-            .lock()
-            .map_err(|_| "supervisor lock poisoned")?;
-        supervisor.stop(&setup).map_err(|error| error.to_string())?;
-        supervisor.state(&setup)
-    };
-    set_link_state(state.inner(), setup.id, obs_state);
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Stop).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
 async fn restart_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
-    let setup = find_setup(&state, &setup_id)?;
-    stop_setup_streams(&setup, state.inner()).await;
-    let mut supervisor = state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?;
-    if supervisor.state(&setup) != connect_core::relay::PcObsState::NotRunning {
-        supervisor.stop(&setup).map_err(|error| error.to_string())?;
-    }
-    supervisor
-        .start(&setup, false, None)
-        .map_err(|error| error.to_string())?;
-    drop(supervisor);
-    set_link_state(state.inner(), setup.id, PcObsState::Starting);
+    let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    run_obs_action(state.inner(), id, ObsAction::Restart).await?;
     Ok(get_state(state))
+}
+
+struct ObsActionGuard<'a> {
+    running: &'a Mutex<HashSet<uuid::Uuid>>,
+    setup_id: uuid::Uuid,
+}
+
+impl Drop for ObsActionGuard<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut running) = self.running.lock() {
+            running.remove(&self.setup_id);
+        }
+    }
+}
+
+fn begin_obs_action(
+    running: &Mutex<HashSet<uuid::Uuid>>,
+    setup_id: uuid::Uuid,
+) -> Result<ObsActionGuard<'_>, String> {
+    let mut actions = running.lock().map_err(|_| "OBS action lock poisoned")?;
+    if !actions.insert(setup_id) {
+        return Err("Another OBS action is still running".into());
+    }
+    Ok(ObsActionGuard { running, setup_id })
+}
+
+async fn run_obs_action(
+    state: &AppState,
+    setup_id: uuid::Uuid,
+    action: ObsAction,
+) -> Result<(), String> {
+    let _action_guard = begin_obs_action(&state.obs_actions_running, setup_id)?;
+    let setup = state
+        .config
+        .lock()
+        .map_err(|_| "config lock poisoned")?
+        .setups
+        .iter()
+        .find(|setup| setup.id == setup_id)
+        .cloned()
+        .ok_or_else(|| "setup not found".to_string())?;
+
+    if matches!(action, ObsAction::Stop | ObsAction::Restart)
+        && !stop_setup_streams_with_timeout(
+            Duration::from_secs(25),
+            stop_setup_streams(&setup, state),
+        )
+        .await
+    {
+        tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
+    }
+    let process_state = {
+        let mut supervisor = state
+            .supervisor
+            .lock()
+            .map_err(|_| "supervisor lock poisoned")?;
+        match action {
+            ObsAction::Start => {
+                supervisor
+                    .start(&setup, false, None)
+                    .map_err(|error| error.to_string())?;
+            }
+            ObsAction::Stop => {
+                supervisor.stop(&setup).map_err(|error| error.to_string())?;
+            }
+            ObsAction::Restart => {
+                if supervisor.state(&setup) != PcObsState::NotRunning {
+                    supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                }
+                supervisor
+                    .start(&setup, false, None)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+        supervisor.state(&setup)
+    };
+    set_link_state(state, setup_id, process_state);
+    Ok(())
 }
 
 async fn stop_setup_streams(setup: &Setup, state: &AppState) {
@@ -532,6 +584,13 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
     if let Some((port, password)) = connection {
         let _ = stop_active_streams(port, &password).await;
     }
+}
+
+async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> bool
+where
+    F: std::future::Future<Output = ()>,
+{
+    tokio::time::timeout(deadline, future).await.is_ok()
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -596,7 +655,7 @@ fn unpair_setup(
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    abort_link_session(clear_pairing_state(&state, id)?);
+    clear_pairing_state(&state, id, true)?;
     let _ = app.emit("connect-state-changed", build_ui_state(&state));
     let _ = refresh_tray_menu(&app);
     Ok(get_state(state))
@@ -641,8 +700,7 @@ fn remove_setup_state(state: &AppState, setup_id: uuid::Uuid) -> Result<bool, St
     if let Ok(mut pending) = state.pending_verification_urls.lock() {
         pending.remove(&setup_id);
     }
-    let session = remove_link_session(state, setup_id)?;
-    abort_link_session(session);
+    remove_link_session(state, setup_id, true)?;
     let forget_result = state
         .supervisor
         .lock()
@@ -724,17 +782,11 @@ fn cleanup_startup_tokens(
     }
 }
 
-fn abort_link_session(session: Option<LinkSession>) {
-    if let Some(session) = session {
-        session.task.abort();
-        session.monitor.abort();
-    }
-}
-
 fn clear_pairing_state(
     state: &AppState,
     setup_id: uuid::Uuid,
-) -> Result<Option<LinkSession>, String> {
+    abort_link_task: bool,
+) -> Result<(), String> {
     state
         .tokens
         .delete(setup_id)
@@ -748,37 +800,39 @@ fn clear_pairing_state(
         .save(&config)
         .map_err(|error| error.to_string())?;
     drop(config);
-    remove_link_session(state, setup_id)
+    remove_link_session(state, setup_id, abort_link_task)
 }
 
 fn remove_link_session(
     state: &AppState,
     setup_id: uuid::Uuid,
-) -> Result<Option<LinkSession>, String> {
+    abort_link_task: bool,
+) -> Result<(), String> {
     let session = state
         .link_sessions
         .lock()
-        .map_err(|_| "link session lock poisoned")?
+        .map_err(|_| "link session lock poisoned".to_owned())?
         .remove(&setup_id);
+    if let Some(session) = session {
+        if abort_link_task {
+            session.task.abort();
+        }
+        session.monitor.abort();
+        session.command_consumer.abort();
+    }
     state
         .supervisor
         .lock()
         .map_err(|_| "supervisor lock poisoned")?
         .clear_connected(setup_id);
-    Ok(session)
+    Ok(())
 }
 
 fn finish_taken_over_session(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
     let state = app.state::<AppState>();
-    let session = match remove_link_session(&state, setup_id) {
-        Ok(session) => session,
-        Err(error) => {
-            let _ = app.emit("connect-error", error);
-            return;
-        }
-    };
-    if let Some(session) = session {
-        session.monitor.abort();
+    if let Err(error) = remove_link_session(&state, setup_id, false) {
+        let _ = app.emit("connect-error", error);
+        return;
     }
     let _ = app.emit("connect-state-changed", build_ui_state(&state));
     let _ = refresh_tray_menu(app);
@@ -794,9 +848,8 @@ fn relay_error_requires_pairing_cleanup(error: &connect_core::relay::RelayError)
 
 fn forget_rejected_pairing(app: &tauri::AppHandle, setup_id: uuid::Uuid) {
     let state = app.state::<AppState>();
-    match clear_pairing_state(&state, setup_id) {
-        Ok(Some(session)) => session.monitor.abort(),
-        Ok(None) => {}
+    match clear_pairing_state(&state, setup_id, false) {
+        Ok(()) => {}
         Err(error) => {
             let _ = app.emit("connect-error", error);
             return;
@@ -916,6 +969,7 @@ fn start_link_session(
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
+    let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
     let link_config = LinkConfig {
         link_url: pairing.link_url.clone(),
         device_token: token,
@@ -927,6 +981,7 @@ fn start_link_session(
         state_tx: state_tx.clone(),
         telemetry_tx,
         effective_obs_tx,
+        commands: command_tx,
     };
     let mut sessions = state
         .link_sessions
@@ -935,6 +990,7 @@ fn start_link_session(
     if let Some(previous) = sessions.remove(&setup.id) {
         previous.task.abort();
         previous.monitor.abort();
+        previous.command_consumer.abort();
     }
     let app_handle = app.clone();
     let link_setup_id = setup.id;
@@ -1027,8 +1083,17 @@ fn start_link_session(
                                     setup_for_watchdog_restart(&config, &monitor_setup)
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
-                            if incident == PcObsState::NotResponding {
-                                stop_setup_streams(&restart_setup, &app_state).await;
+                            if incident == PcObsState::NotResponding
+                                && !stop_setup_streams_with_timeout(
+                                    Duration::from_secs(25),
+                                    stop_setup_streams(&restart_setup, &app_state),
+                                )
+                                .await
+                            {
+                                tracing::warn!(
+                                    setup_id = %restart_setup.id,
+                                    "Timed out stopping streams before OBS watchdog restart"
+                                );
                             }
                             let restart_result = {
                                 let mut supervisor =
@@ -1086,6 +1151,24 @@ fn start_link_session(
             }
         }
     });
+    let command_app = app.clone();
+    let command_setup_id = setup.id;
+    let command_consumer = tauri::async_runtime::spawn(async move {
+        while let Some(command) = command_rx.recv().await {
+            let result = run_obs_action(
+                command_app.state::<AppState>().inner(),
+                command_setup_id,
+                command.action,
+            )
+            .await;
+            let _ = command.reply.send(result);
+            let _ = command_app.emit(
+                "connect-state-changed",
+                get_state(command_app.state::<AppState>()),
+            );
+            let _ = refresh_tray_menu(&command_app);
+        }
+    });
     sessions.insert(
         setup.id,
         LinkSession {
@@ -1093,6 +1176,7 @@ fn start_link_session(
             effective_obs: effective_obs_rx,
             task,
             monitor,
+            command_consumer,
         },
     );
     drop(sessions);
@@ -1256,6 +1340,7 @@ fn main() {
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         })
         .setup(|app| {
@@ -1338,6 +1423,17 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn stream_stop_timeout_returns_when_obs_side_hangs() {
+        assert!(
+            !stop_setup_streams_with_timeout(
+                Duration::from_millis(1),
+                std::future::pending::<()>(),
+            )
+            .await
+        );
+    }
 
     #[test]
     fn taken_over_relay_error_does_not_forget_pairing() {
@@ -1485,6 +1581,19 @@ mod tests {
     }
 
     #[test]
+    fn obs_actions_are_exclusive_per_setup() {
+        let running = Mutex::new(HashSet::new());
+        let setup_id = uuid::Uuid::new_v4();
+        let action = begin_obs_action(&running, setup_id).unwrap();
+        assert!(matches!(
+            begin_obs_action(&running, setup_id),
+            Err(error) if error == "Another OBS action is still running"
+        ));
+        drop(action);
+        assert!(begin_obs_action(&running, setup_id).is_ok());
+    }
+
+    #[test]
     fn tray_setup_labels_use_setup_ids_and_human_readable_states() {
         let mut setup = Setup::new("Smoke test".into());
         setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
@@ -1500,6 +1609,7 @@ mod tests {
             tokens: TokenStore::new(Default::default()),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
 
@@ -1600,25 +1710,29 @@ mod tests {
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
+        let link_task = tokio::spawn(std::future::pending::<()>());
+        let link_task_abort = link_task.abort_handle();
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
                 state: state_tx,
                 effective_obs,
-                task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                task: tauri::async_runtime::JoinHandle::Tokio(link_task),
+                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
-                monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
             },
         );
 
-        let removed = clear_pairing_state(&state, setup_id).unwrap();
+        clear_pairing_state(&state, setup_id, false).unwrap();
         let config = store.load().unwrap();
         let ui_state = build_ui_state(&state);
 
@@ -1627,10 +1741,8 @@ mod tests {
         assert_eq!(tokens.get(setup_id).unwrap(), None);
         assert!(!ui_state.setups[0].paired);
         assert_eq!(ui_state.setups[0].obs_state, "not_running");
-        if let Some(session) = removed {
-            session.task.abort();
-            session.monitor.abort();
-        }
+        assert!(!link_task_abort.is_finished());
+        link_task_abort.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
@@ -1659,6 +1771,7 @@ mod tests {
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
@@ -1672,6 +1785,9 @@ mod tests {
                     std::future::pending::<()>(),
                 )),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
             },
@@ -1718,6 +1834,7 @@ mod tests {
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
@@ -1727,6 +1844,8 @@ mod tests {
         let (_, effective_obs) = watch::channel(None);
         let link_task = tokio::spawn(std::future::pending::<()>());
         let link_task_abort = link_task.abort_handle();
+        let command_consumer = tokio::spawn(std::future::pending::<()>());
+        let command_consumer_abort = command_consumer.abort_handle();
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
@@ -1736,6 +1855,7 @@ mod tests {
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(command_consumer),
             },
         );
 
@@ -1763,6 +1883,7 @@ mod tests {
             Some("verification-url")
         );
         assert!(!link_task_abort.is_finished());
+        assert!(!command_consumer_abort.is_finished());
 
         let session = state
             .link_sessions
@@ -1772,6 +1893,7 @@ mod tests {
             .unwrap();
         session.task.abort();
         session.monitor.abort();
+        session.command_consumer.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
@@ -1807,6 +1929,7 @@ mod tests {
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
@@ -1816,6 +1939,8 @@ mod tests {
         let (_, effective_obs) = watch::channel(None);
         let link_task = tokio::spawn(std::future::pending::<()>());
         let link_task_abort = link_task.abort_handle();
+        let command_consumer = tokio::spawn(std::future::pending::<()>());
+        let command_consumer_abort = command_consumer.abort_handle();
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
@@ -1825,6 +1950,7 @@ mod tests {
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(command_consumer),
             },
         );
 
@@ -1849,6 +1975,7 @@ mod tests {
         );
         tokio::task::yield_now().await;
         assert!(link_task_abort.is_finished());
+        assert!(command_consumer_abort.is_finished());
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 
@@ -1892,6 +2019,7 @@ mod tests {
             tokens,
             supervisor: Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(1))),
             link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
         };
         {
@@ -1913,14 +2041,13 @@ mod tests {
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
+                command_consumer: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
+                    std::future::pending::<()>(),
+                )),
             },
         );
 
-        let removed = clear_pairing_state(&state, setup_id).unwrap();
-        if let Some(session) = removed {
-            session.task.abort();
-            session.monitor.abort();
-        }
+        clear_pairing_state(&state, setup_id, false).unwrap();
         let mut supervisor = state.supervisor.lock().unwrap();
         assert_eq!(supervisor.state(&setup), PcObsState::Starting);
         assert!(supervisor.owns_running_process(&setup));

@@ -27,9 +27,11 @@ import { SceneGrid } from "@/components/live/scene-grid";
 import { ServerCard } from "@/components/live/server-card";
 import { SourceList } from "@/components/live/source-list";
 import { SwitcherPage } from "@/components/switcher-page";
+import { Button } from "@/components/ui/button";
+import { useConnectObsCommand } from "@/hooks/use-connect-obs-command";
 import { useNow } from "@/hooks/use-now";
 import { useSwitcher } from "@/hooks/use-switcher";
-import { pcObsLabel } from "@/lib/connect";
+import { canControlConnect, connectObsActionAvailability, pcObsLabel } from "@/lib/connect";
 import { formatKbps, formatUptime } from "@/lib/live-format";
 import { can, isOwner, isSupport, seesPreviewOffAir } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -46,8 +48,10 @@ function LivePage() {
   const servers = useQuery(streamServersQuery(workspace.id, switcher.id));
   const summaries = useQuery(switchersQuery(workspace.id));
   const controls = useObsControls(path);
+  const obsCommand = useConnectObsCommand(path);
   const now = useNow();
   const canControl = can(actor, "switcher.control");
+  const canControlConnectObs = canControlConnect(switcher.connect_obs_control, actor);
 
   const status =
     live.status && !isStale(live.status, now)
@@ -191,6 +195,15 @@ function LivePage() {
                   {pcObsLabel(status.pc.obs)}.
                 </Trans>
               </p>
+              {canControlConnectObs && connectObsActionAvailability(status.pc.obs).canStart && (
+                <Button
+                  size="sm"
+                  disabled={obsCommand.isPending}
+                  onClick={() => obsCommand.mutate("start")}
+                >
+                  <Trans>Start OBS</Trans>
+                </Button>
+              )}
               <Link
                 to="/$workspace/s/$switcher/obs"
                 params={params}
