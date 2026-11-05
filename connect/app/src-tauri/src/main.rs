@@ -36,6 +36,7 @@ use tauri::{
 #[cfg(target_os = "macos")]
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_autostart::ManagerExt;
+#[cfg(not(target_os = "linux"))]
 use tauri_plugin_opener::OpenerExt;
 use tokio::sync::{mpsc, watch};
 
@@ -501,9 +502,21 @@ fn open_verification_url(
         &verification_url,
     )?;
     drop(config);
-    app.opener()
-        .open_url(verification_url, None::<&str>)
-        .map_err(|error| error.to_string())
+    open_external_url(&app, &verification_url)
+}
+
+pub(crate) fn open_external_url(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        let _ = app;
+        connect_core::supervisor::open_url(url).map_err(|error| error.to_string())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        app.opener()
+            .open_url(url, None::<&str>)
+            .map_err(|error| error.to_string())
+    }
 }
 
 #[tauri::command]

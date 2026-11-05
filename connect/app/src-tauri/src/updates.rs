@@ -3,7 +3,6 @@ use std::{sync::Mutex, time::Duration};
 use semver::Version;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 
 #[derive(Clone, Default, Serialize)]
@@ -234,11 +233,7 @@ fn set_install_error(app: &AppHandle, error: String) {
 
 #[tauri::command]
 pub(crate) fn open_release_notes(app: AppHandle, version: String) -> crate::UiState {
-    let result = release_notes_url(&version).and_then(|url| {
-        app.opener()
-            .open_url(url, None::<&str>)
-            .map_err(|error| error.to_string())
-    });
+    let result = release_notes_url(&version).and_then(|url| crate::open_external_url(&app, &url));
     {
         let state = app.state::<crate::AppState>();
         state.updates.update(|current| {

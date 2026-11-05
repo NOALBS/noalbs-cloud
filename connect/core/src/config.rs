@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use common::programs::Program;
 
-pub const PRODUCTION_API_URL: &str = "https://app.noalbs.com/api";
+pub const PRODUCTION_API_URL: &str = "https://noalbs.com/api";
 
 #[derive(Debug, Error)]
 pub enum ConfigError {
@@ -402,7 +402,7 @@ mod tests {
             Some("https://dashboard.example"),
         );
 
-        assert_eq!(loaded.settings.api_url, PRODUCTION_API_URL);
+        assert_eq!(loaded.settings.api_url, "https://noalbs.com/api");
         assert_eq!(loaded.settings.dashboard_url, None);
         assert_eq!(effective.api_url, "https://api.example/api");
         assert_eq!(

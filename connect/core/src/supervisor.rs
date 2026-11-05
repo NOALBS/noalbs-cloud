@@ -121,6 +121,22 @@ pub(crate) fn apply_child_env(command: &mut Command) {
     }
 }
 
+#[cfg(target_os = "linux")]
+pub fn open_url(url: &str) -> std::io::Result<()> {
+    let mut command = Command::new("xdg-open");
+    command.arg(url);
+    apply_child_env(&mut command);
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    let mut child = command.spawn()?;
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
 #[derive(Debug, Error)]
 pub enum SupervisorError {
     #[error("OBS process I/O failed: {0}")]
