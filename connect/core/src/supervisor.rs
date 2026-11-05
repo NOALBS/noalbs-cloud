@@ -1372,6 +1372,12 @@ impl ProcessSnapshot {
     }
 }
 
+impl Default for ProcessSnapshot {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn process_snapshot() -> System {
     let mut snapshot = ProcessSnapshot::new();
     snapshot.refresh();
