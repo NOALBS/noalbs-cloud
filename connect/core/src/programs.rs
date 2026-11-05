@@ -1,13 +1,17 @@
 use std::{
+    ffi::OsString,
     io,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
+    time::Duration,
 };
 
 use common::programs::{Program, ProgramStatus};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::supervisor::{self, Supervisor, SupervisorError};
+use crate::supervisor::{self, SupervisorError};
+use crate::{config::HostPlatform, relay::PcObsState};
 
 #[derive(Debug, Error)]
 pub enum ProgramError {
@@ -17,6 +21,8 @@ pub enum ProgramError {
     AlreadyRunning,
     #[error("Could not start program: {0}")]
     Start(#[from] io::Error),
+    #[error("Could not start program: {0}")]
+    LaunchFailed(String),
     #[error("Could not stop program: {0}")]
     Stop(#[from] SupervisorError),
 }
@@ -38,7 +44,39 @@ pub enum ObsLifecycleAction {
     Stop,
 }
 
+pub fn obs_is_running(state: &PcObsState) -> bool {
+    matches!(
+        state,
+        PcObsState::Starting
+            | PcObsState::Connected
+            | PcObsState::NotResponding
+            | PcObsState::WaitingForInput
+            | PcObsState::SafeMode
+    )
+}
+
+pub fn lifecycle_for_transition(
+    previous: Option<bool>,
+    current: &PcObsState,
+    watchdog_restarts: bool,
+) -> Option<ObsLifecycleAction> {
+    if *current == PcObsState::Unknown {
+        return None;
+    }
+    let running = obs_is_running(current);
+    match (previous, running) {
+        (None, true) | (Some(false), true) => Some(ObsLifecycleAction::Start),
+        (Some(true), false) if *current == PcObsState::Crashed && watchdog_restarts => None,
+        (Some(true), false) => Some(ObsLifecycleAction::Stop),
+        _ => None,
+    }
+}
+
 pub fn validate(program: &Program) -> Result<(), &'static str> {
+    validate_for_platform(program, HostPlatform::current())
+}
+
+fn validate_for_platform(program: &Program, platform: HostPlatform) -> Result<(), &'static str> {
     let name_len = program.name.chars().count();
     if name_len == 0 || name_len > 64 {
         return Err("Program name must be between 1 and 64 characters");
@@ -47,13 +85,15 @@ pub fn validate(program: &Program) -> Result<(), &'static str> {
         return Err("Program path must be absolute");
     }
     let metadata = std::fs::metadata(&program.path).map_err(|_| "Program path does not exist")?;
-    if !metadata.is_file() {
+    let is_app_bundle =
+        platform == HostPlatform::MacOS && metadata.is_dir() && is_app_bundle_path(&program.path);
+    if !metadata.is_file() && !is_app_bundle {
         return Err("Program path must be a file");
     }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        if metadata.permissions().mode() & 0o111 == 0 {
+        if metadata.is_file() && metadata.permissions().mode() & 0o111 == 0 {
             return Err("Program file is not executable");
         }
     }
@@ -64,26 +104,33 @@ pub fn validate(program: &Program) -> Result<(), &'static str> {
 }
 
 pub fn status(programs: &[Program]) -> Vec<ProgramStatus> {
+    let system = supervisor::process_snapshot();
+    status_with(programs, &system)
+}
+
+pub fn status_with(programs: &[Program], system: &sysinfo::System) -> Vec<ProgramStatus> {
     programs
         .iter()
         .cloned()
         .map(|program| ProgramStatus {
-            running: is_running(&program),
+            running: is_running_with(&program, system),
             program,
         })
         .collect()
 }
 
 pub fn is_running(program: &Program) -> bool {
-    let Ok(expected) = program.path.canonicalize() else {
+    let system = supervisor::process_snapshot();
+    is_running_with(program, &system)
+}
+
+fn is_running_with(program: &Program, system: &sysinfo::System) -> bool {
+    let path = resolved_program_path(&program.path, HostPlatform::current());
+    let Ok(expected) = path.canonicalize() else {
         return false;
     };
-    let system = supervisor::process_snapshot();
-    supervisor::non_thread_processes(&system).any(|(_, process)| {
-        process
-            .exe()
-            .is_some_and(|exe| supervisor::same_path(exe, &expected))
-    })
+    supervisor::non_thread_processes(system)
+        .any(|(_, process)| supervisor::process_executable_matches(process, &path, &expected))
 }
 
 pub fn start(program: &Program) -> Result<(), ProgramError> {
@@ -92,13 +139,25 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
         return Err(ProgramError::AlreadyRunning);
     }
 
-    let mut command = Command::new(&program.path);
-    command
-        .args(&program.args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    if let Some(parent) = program.path.parent() {
+    let launch = command_for_program(&program.path, &program.args, HostPlatform::current());
+    let mut command = Command::new(&launch.executable);
+    command.args(&launch.args).stdin(Stdio::null());
+    if launch.wait_for_exit {
+        supervisor::apply_child_env(&mut command);
+        let output = command.output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+            let message = if stderr.is_empty() {
+                format!("launcher exited with {}", output.status)
+            } else {
+                stderr
+            };
+            return Err(ProgramError::LaunchFailed(message));
+        }
+        return Ok(());
+    }
+    command.stdout(Stdio::null()).stderr(Stdio::null());
+    if let Some(parent) = launch.current_dir {
         command.current_dir(parent);
     }
     #[cfg(windows)]
@@ -106,6 +165,7 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x00000008 | 0x08000000);
     }
+    supervisor::apply_child_env(&mut command);
     let mut child = command.spawn()?;
     std::thread::spawn(move || {
         let _ = child.wait();
@@ -113,8 +173,11 @@ pub fn start(program: &Program) -> Result<(), ProgramError> {
     Ok(())
 }
 
-pub fn stop(program: &Program, supervisor: &Supervisor) -> Result<(), ProgramError> {
-    let Ok(expected) = program.path.canonicalize() else {
+pub const PROGRAM_SHUTDOWN_GRACE: Duration = Duration::from_secs(5);
+
+pub fn stop(program: &Program, shutdown_grace: Duration) -> Result<(), ProgramError> {
+    let path = resolved_program_path(&program.path, HostPlatform::current());
+    let Ok(expected) = path.canonicalize() else {
         return Ok(());
     };
     let system = supervisor::process_snapshot();
@@ -122,14 +185,78 @@ pub fn stop(program: &Program, supervisor: &Supervisor) -> Result<(), ProgramErr
         .filter_map(|(pid, process)| {
             process
                 .exe()
-                .is_some_and(|exe| supervisor::same_path(exe, &expected))
+                .is_some_and(|exe| supervisor::process_path_matches(exe, &path, &expected))
                 .then_some(pid.as_u32())
         })
         .collect::<Vec<_>>();
     for pid in pids {
-        supervisor::terminate_process(pid, supervisor.shutdown_grace())?;
+        supervisor::terminate_process(pid, shutdown_grace)?;
     }
     Ok(())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ProgramCommand {
+    executable: PathBuf,
+    args: Vec<OsString>,
+    current_dir: Option<PathBuf>,
+    wait_for_exit: bool,
+}
+
+fn command_for_program(path: &Path, args: &[String], platform: HostPlatform) -> ProgramCommand {
+    if platform == HostPlatform::MacOS
+        && let Some(bundle) = app_bundle_ancestor(path)
+    {
+        let mut command_args = vec![
+            OsString::from("-a"),
+            bundle.as_os_str().to_os_string(),
+            OsString::from("--args"),
+        ];
+        command_args.extend(args.iter().map(OsString::from));
+        return ProgramCommand {
+            executable: PathBuf::from("/usr/bin/open"),
+            args: command_args,
+            current_dir: None,
+            wait_for_exit: true,
+        };
+    }
+    ProgramCommand {
+        executable: path.to_path_buf(),
+        args: args.iter().map(OsString::from).collect(),
+        current_dir: path.parent().map(Path::to_path_buf),
+        wait_for_exit: false,
+    }
+}
+
+fn is_app_bundle_path(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|extension| extension.to_string_lossy().eq_ignore_ascii_case("app"))
+}
+
+fn app_bundle_ancestor(path: &Path) -> Option<&Path> {
+    path.ancestors()
+        .find(|ancestor| is_app_bundle_path(ancestor))
+}
+
+fn resolved_program_path(path: &Path, platform: HostPlatform) -> PathBuf {
+    if platform != HostPlatform::MacOS {
+        return path.to_path_buf();
+    }
+    let Some(bundle) = app_bundle_ancestor(path) else {
+        return path.to_path_buf();
+    };
+    let fallback = bundle.file_stem().unwrap_or_default().to_os_string();
+    let executable = plist::Value::from_file(bundle.join("Contents/Info.plist"))
+        .ok()
+        .and_then(|value| {
+            value
+                .as_dictionary()?
+                .get("CFBundleExecutable")?
+                .as_string()
+                .map(OsString::from)
+        })
+        .unwrap_or(fallback);
+    bundle.join("Contents/MacOS").join(executable)
 }
 
 pub fn find(programs: &[Program], id: Uuid) -> Option<&Program> {
@@ -175,9 +302,9 @@ pub fn for_obs_action(programs: &[Program], action: ObsLifecycleAction) -> Vec<&
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     #[cfg(unix)]
-    use std::{fs, time::Duration};
+    use std::time::Duration;
+    use std::{fs, path::PathBuf};
 
     use super::*;
     fn program(path: PathBuf) -> Program {
@@ -259,6 +386,49 @@ mod tests {
     }
 
     #[test]
+    fn lifecycle_for_transition_handles_obs_state_changes() {
+        let cases = [
+            (
+                None,
+                PcObsState::Connected,
+                false,
+                Some(ObsLifecycleAction::Start),
+            ),
+            (None, PcObsState::NotRunning, false, None),
+            (
+                Some(false),
+                PcObsState::WaitingForInput,
+                false,
+                Some(ObsLifecycleAction::Start),
+            ),
+            (Some(true), PcObsState::NotResponding, false, None),
+            (
+                Some(true),
+                PcObsState::NotRunning,
+                false,
+                Some(ObsLifecycleAction::Stop),
+            ),
+            (Some(true), PcObsState::Crashed, true, None),
+            (
+                Some(true),
+                PcObsState::Crashed,
+                false,
+                Some(ObsLifecycleAction::Stop),
+            ),
+            (Some(false), PcObsState::NotRunning, false, None),
+            (None, PcObsState::Unknown, false, None),
+        ];
+
+        for (previous, current, watchdog_restarts, expected) in cases {
+            assert_eq!(
+                lifecycle_for_transition(previous, &current, watchdog_restarts),
+                expected,
+                "previous={previous:?}, current={current:?}, watchdog_restarts={watchdog_restarts}"
+            );
+        }
+    }
+
+    #[test]
     fn dashboard_edits_can_be_refused_per_setup() {
         assert!(require_dashboard_edits_allowed(true).is_ok());
         assert_eq!(
@@ -299,6 +469,71 @@ mod tests {
         assert!(require_stopped_for_path_change(&existing, &existing, true).is_ok());
     }
 
+    #[test]
+    fn macos_app_commands_use_open_and_non_bundle_paths_remain_direct() {
+        let bundle = PathBuf::from("/Applications/TextEdit.app");
+        let args = vec!["--example".to_owned()];
+        let inside = command_for_program(
+            &bundle.join("Contents/MacOS/TextEdit"),
+            &args,
+            HostPlatform::MacOS,
+        );
+        assert_eq!(inside.executable, PathBuf::from("/usr/bin/open"));
+        assert_eq!(
+            inside.args,
+            [
+                OsString::from("-a"),
+                bundle.as_os_str().to_os_string(),
+                OsString::from("--args"),
+                OsString::from("--example"),
+            ]
+        );
+        assert!(inside.wait_for_exit);
+
+        let selected_bundle = command_for_program(&bundle, &[], HostPlatform::MacOS);
+        assert_eq!(selected_bundle.executable, PathBuf::from("/usr/bin/open"));
+        assert_eq!(selected_bundle.args[1], bundle.as_os_str());
+
+        let direct =
+            command_for_program(Path::new("/usr/local/bin/tool"), &args, HostPlatform::MacOS);
+        assert_eq!(direct.executable, PathBuf::from("/usr/local/bin/tool"));
+        assert_eq!(direct.args, [OsString::from("--example")]);
+        assert!(!direct.wait_for_exit);
+    }
+
+    #[test]
+    fn macos_bundle_executable_uses_info_plist() {
+        let temp = tempfile::tempdir().unwrap();
+        let bundle = temp.path().join("Sample.app");
+        let contents = bundle.join("Contents");
+        fs::create_dir_all(contents.join("MacOS")).unwrap();
+        fs::write(
+            contents.join("Info.plist"),
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>SampleBinary</string></dict></plist>"#,
+        )
+        .unwrap();
+        assert_eq!(
+            resolved_program_path(&bundle.join("Contents/MacOS/Other"), HostPlatform::MacOS),
+            bundle.join("Contents/MacOS/SampleBinary")
+        );
+    }
+
+    #[test]
+    fn macos_validation_accepts_existing_app_bundle_directories() {
+        let temp = tempfile::tempdir().unwrap();
+        let bundle = temp.path().join("Sample.app");
+        fs::create_dir_all(&bundle).unwrap();
+        let mut app = program(bundle);
+        app.path = app.path.canonicalize().unwrap();
+        assert!(validate_for_platform(&app, HostPlatform::MacOS).is_ok());
+        assert_eq!(
+            validate_for_platform(&app, HostPlatform::Linux),
+            Err("Program path must be a file")
+        );
+    }
+
     #[cfg(unix)]
     fn copied_sleep() -> (PathBuf, Program) {
         use std::os::unix::fs::PermissionsExt;
@@ -332,8 +567,31 @@ mod tests {
         assert!(is_running(&program));
         assert!(matches!(start(&program), Err(ProgramError::AlreadyRunning)));
 
-        let supervisor = Supervisor::default();
-        stop(&program, &supervisor).unwrap();
+        stop(&program, Duration::from_secs(1)).unwrap();
+        assert!(!is_running(&program));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn program_shutdown_grace_is_five_seconds() {
+        assert_eq!(PROGRAM_SHUTDOWN_GRACE, Duration::from_secs(5));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stop_terminates_copied_sleep_with_short_grace() {
+        let (dir, program) = copied_sleep();
+        start(&program).unwrap();
+        for _ in 0..50 {
+            if is_running(&program) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(is_running(&program));
+
+        stop(&program, Duration::from_millis(100)).unwrap();
+
         assert!(!is_running(&program));
         fs::remove_dir_all(dir).unwrap();
     }

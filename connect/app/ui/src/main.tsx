@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { ask, open } from "@tauri-apps/plugin-dialog";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./style.css";
@@ -27,6 +28,7 @@ type Setup = {
 	paired: boolean;
 	switcher_id: string | null;
 	obs_state: string;
+	obs_label: string;
 	obs_process_running: boolean;
 	obs: ObsConfig;
 	detected_binary: string;
@@ -44,6 +46,15 @@ type Program = {
 	added_from_dashboard_by: string | null;
 };
 type ProgramStatus = { program: Program; running: boolean };
+type UpdateState = {
+	supported: boolean;
+	bundle: string | null;
+	current_version: string;
+	checking: boolean;
+	available: string | null;
+	installing: boolean;
+	error: string | null;
+};
 type State = {
 	platform: string;
 	start_at_login: boolean;
@@ -52,6 +63,7 @@ type State = {
 	startup_error: string | null;
 	first_run: boolean;
 	setups: Setup[];
+	update: UpdateState;
 };
 type Pairing = {
 	device_code: string;
@@ -63,20 +75,20 @@ type Tone = "ok" | "busy" | "bad" | "off";
 
 const SETTINGS = "settings";
 
-const OBS_STATES: Record<string, [string, Tone]> = {
-	connected: ["OBS connected", "ok"],
-	starting: ["Starting OBS…", "busy"],
-	waiting_for_input: ["OBS is waiting for input", "busy"],
-	safe_mode: ["OBS is asking about Safe Mode", "busy"],
-	websocket_disabled: ["OBS websocket is off", "busy"],
-	not_responding: ["OBS is not responding", "bad"],
-	crashed: ["OBS crashed", "bad"],
-	not_running: ["OBS not running", "off"],
-	unknown: ["OBS running, not started by Connect", "off"],
+const OBS_TONES: Record<string, Tone> = {
+	connected: "ok",
+	starting: "busy",
+	waiting_for_input: "busy",
+	safe_mode: "busy",
+	websocket_disabled: "busy",
+	not_responding: "bad",
+	crashed: "bad",
+	not_running: "off",
+	unknown: "off",
 };
 
-function obsStatus(state: string): [string, Tone] {
-	return OBS_STATES[state] ?? [state.replaceAll("_", " "), "off"];
+function obsTone(state: string): Tone {
+	return OBS_TONES[state] ?? "off";
 }
 
 const INSTALL_KINDS: Record<ObsConfig["install_kind"], string> = {
@@ -188,6 +200,11 @@ function App() {
 				setPairing(null);
 				setPairingSetupId(null);
 			}),
+			listen<UpdateState>("connect-update-changed", (event) =>
+				setState((current) =>
+					current ? { ...current, update: event.payload } : current,
+				),
+			),
 			listen<string>("connect-error", (event) => setError(event.payload)),
 		];
 		return () => {
@@ -248,13 +265,7 @@ function App() {
 			const updated = await invoke<State>("save_setup", {
 				setupId: editing.id,
 				name: editing.name,
-				obs: {
-					...editing.obs,
-					config_dir_override:
-						state?.platform === "linux"
-							? editing.obs.config_dir_override
-							: null,
-				},
+				obs: editing.obs,
 			});
 			setEditing(null);
 			return updated;
@@ -289,6 +300,21 @@ function App() {
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 			}),
 		);
+	}
+
+	async function runUpdateCommand(
+		command: "check_for_update" | "install_update" | "open_release_notes",
+		args?: Record<string, string>,
+	) {
+		try {
+			applyState(await invoke<State>(command, args));
+		} catch (e) {
+			setState((current) =>
+				current
+					? { ...current, update: { ...current.update, error: String(e) } }
+					: current,
+			);
+		}
 	}
 
 	const setupAction = (
@@ -379,7 +405,8 @@ function App() {
 					<div className="sidebar-heading">Setups</div>
 					<ul className="list">
 						{state.setups.map((s) => {
-							const [label, tone] = obsStatus(s.obs_state);
+							const label = s.obs_label;
+							const tone = obsTone(s.obs_state);
 							return (
 								<li key={s.id}>
 									<button
@@ -394,7 +421,9 @@ function App() {
 										<span className="item-text">
 											<span className="item-title">{s.name}</span>
 											<span className="item-sub">
-												{s.paired ? label : "Not paired"}
+												{s.paired || label === "OBS is running"
+													? label
+													: "Not paired"}
 											</span>
 										</span>
 									</button>
@@ -470,6 +499,82 @@ function App() {
 											While Connect is closed, the watchdog and dashboard
 											controls don't work.
 										</p>
+									)}
+								</div>
+							</section>
+							<h2>Updates</h2>
+							<section className="group">
+								<div className="group-body">
+									<Row label="Version">
+										Version {state.update.current_version}
+									</Row>
+									<Row label="Status">
+										{!state.update.supported
+											? "Updates aren't available in this build"
+											: state.update.error
+												? state.update.error
+												: state.update.checking
+													? "Checking…"
+													: state.update.available
+														? `Version ${state.update.available} is available`
+														: "Up to date"}
+									</Row>
+									{state.update.supported && (
+										<div className="buttons">
+											<button
+												type="button"
+												disabled={
+													state.update.checking || state.update.installing
+												}
+												onClick={() =>
+													void runUpdateCommand("check_for_update")
+												}
+											>
+												Check for updates
+											</button>
+											{state.update.available && (
+												<>
+													<button
+														type="button"
+														className="primary"
+														disabled={
+															state.update.checking || state.update.installing
+														}
+														onClick={() =>
+															void runUpdateCommand("install_update")
+														}
+													>
+														Install and restart
+													</button>
+													<button
+														type="button"
+														disabled={state.update.installing}
+														onClick={() =>
+															void runUpdateCommand("open_release_notes", {
+																version: state.update.available ?? "",
+															})
+														}
+													>
+														What's new
+													</button>
+												</>
+											)}
+										</div>
+									)}
+									{state.update.supported && state.update.available && (
+										<>
+											<p className="hint">
+												OBS and your programs keep running. Connect reconnects
+												to NOALBS Cloud after it restarts.
+											</p>
+											{(state.update.bundle === "deb" ||
+												state.update.bundle === "rpm") && (
+												<p className="hint">
+													You'll be asked for your password to install the
+													update.
+												</p>
+											)}
+										</>
 									)}
 								</div>
 							</section>
@@ -585,7 +690,8 @@ function SetupDetail({
 		args: Record<string, unknown>,
 	) => Promise<void>;
 }) {
-	const [obsLabel, obsTone] = obsStatus(setup.obs_state);
+	const obsLabel = setup.obs_label;
+	const tone = obsTone(setup.obs_state);
 	const running = setup.obs_process_running;
 	const [editingProgram, setEditingProgram] = React.useState<Program | null>(
 		null,
@@ -615,7 +721,7 @@ function SetupDetail({
 			<h2>OBS</h2>
 			<section className="group">
 				<Row label="Status">
-					<Dot tone={obsTone} />
+					<Dot tone={tone} />
 					{obsLabel}
 				</Row>
 				<Row label="Install">{INSTALL_KINDS[setup.obs.install_kind]}</Row>
@@ -772,14 +878,21 @@ function SetupDetail({
 								</button>
 								<button
 									type="button"
-									onClick={() => {
-										if (window.confirm(`Remove ${program.name}?`)) {
-											void programCommand("remove_program", {
+									onClick={() =>
+										void (async () => {
+											const ok = await ask(`Remove ${program.name}?`, {
+												title: "NOALBS Cloud Connect",
+												kind: "warning",
+												okLabel: "Remove",
+												cancelLabel: "Cancel",
+											});
+											if (!ok) return;
+											await programCommand("remove_program", {
 												setupId: setup.id,
 												programId: program.id,
 											});
-										}
-									}}
+										})()
+									}
 								>
 									Remove
 								</button>
@@ -851,15 +964,21 @@ function SetupDetail({
 							</button>
 							<button
 								type="button"
-								onClick={() => {
-									if (
-										window.confirm(
+								onClick={() =>
+									void (async () => {
+										const ok = await ask(
 											`Remove ${setup.name}? OBS will keep running.`,
-										)
-									) {
-										onAction("remove_setup");
-									}
-								}}
+											{
+												title: "NOALBS Cloud Connect",
+												kind: "warning",
+												okLabel: "Remove",
+												cancelLabel: "Cancel",
+											},
+										);
+										if (!ok) return;
+										await onAction("remove_setup");
+									})()
+								}
 							>
 								Remove setup…
 							</button>
@@ -891,10 +1010,29 @@ function ProgramForm({
 				/>
 			</Field>
 			<Field label="Full program path">
-				<input
-					value={value.path}
-					onChange={(event) => setValue({ ...value, path: event.target.value })}
-				/>
+				<div className="buttons">
+					<input
+						value={value.path}
+						onChange={(event) =>
+							setValue({ ...value, path: event.target.value })
+						}
+					/>
+					<button
+						type="button"
+						onClick={() =>
+							void open({
+								directory: false,
+								multiple: false,
+							}).then((selection) => {
+								if (typeof selection === "string") {
+									setValue({ ...value, path: selection });
+								}
+							})
+						}
+					>
+						Browse…
+					</button>
+				</div>
 			</Field>
 			<Field label="Arguments (one per line)">
 				<textarea
@@ -1011,11 +1149,7 @@ function SetupForm({
 			>
 				<input
 					disabled={platform === "macos" || platform === "windows"}
-					value={
-						platform === "linux"
-							? (obs.config_dir_override ?? setup.config_dir)
-							: ""
-					}
+					value={obs.config_dir_override ?? setup.config_dir}
 					onChange={(event) =>
 						onObsChange(
 							"config_dir_override",

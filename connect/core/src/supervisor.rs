@@ -1,6 +1,8 @@
 use std::{
     collections::{HashMap, HashSet},
-    env, fs,
+    env,
+    ffi::OsString,
+    fs,
     io::Write,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
@@ -9,7 +11,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -27,6 +29,97 @@ const WINDOWS_PORTABLE_MARKERS: [&str; 4] = [
     "portable_mode.txt",
     "obs_portable_mode.txt",
 ];
+
+fn appimage_env_fixes(
+    vars: impl IntoIterator<Item = (OsString, OsString)>,
+) -> Vec<(OsString, Option<OsString>)> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::{
+            ffi::OsStr,
+            os::unix::ffi::{OsStrExt, OsStringExt},
+        };
+
+        let vars = vars.into_iter().collect::<Vec<_>>();
+        if !vars
+            .iter()
+            .any(|(name, _)| name.as_os_str() == OsStr::new("APPIMAGE"))
+        {
+            return Vec::new();
+        }
+        let Some(appdir) = vars
+            .iter()
+            .find(|(name, _)| name.as_os_str() == OsStr::new("APPDIR"))
+            .map(|(_, value)| value.as_os_str().as_bytes().to_vec())
+            .filter(|appdir| !appdir.is_empty())
+        else {
+            return Vec::new();
+        };
+        let mut appdir_prefix = appdir.clone();
+        if !appdir_prefix.ends_with(b"/") {
+            appdir_prefix.push(b'/');
+        }
+
+        let mut fixes = Vec::new();
+        for (name, value) in vars {
+            if [
+                OsStr::new("APPDIR"),
+                OsStr::new("APPIMAGE"),
+                OsStr::new("ARGV0"),
+                OsStr::new("OWD"),
+            ]
+            .contains(&name.as_os_str())
+            {
+                fixes.push((name, None));
+                continue;
+            }
+
+            let entries = value.as_os_str().as_bytes().split(|byte| *byte == b':');
+            let entries = entries.collect::<Vec<_>>();
+            let remaining = entries
+                .iter()
+                .copied()
+                .filter(|entry| {
+                    *entry != appdir.as_slice()
+                        && !entry.starts_with(&appdir_prefix)
+                        && !entry.starts_with(b"/tmp/.mount_")
+                })
+                .collect::<Vec<_>>();
+            if remaining.len() == entries.len() {
+                continue;
+            }
+            if remaining.is_empty() {
+                fixes.push((name, None));
+                continue;
+            }
+
+            let mut cleaned = Vec::new();
+            for (index, entry) in remaining.iter().enumerate() {
+                if index > 0 {
+                    cleaned.push(b':');
+                }
+                cleaned.extend_from_slice(entry);
+            }
+            fixes.push((name, Some(OsString::from_vec(cleaned))));
+        }
+        fixes
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = vars;
+        Vec::new()
+    }
+}
+
+pub(crate) fn apply_child_env(command: &mut Command) {
+    for (name, value) in appimage_env_fixes(env::vars_os()) {
+        if let Some(value) = value {
+            command.env(name, value);
+        } else {
+            command.env_remove(name);
+        }
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum SupervisorError {
@@ -348,6 +441,7 @@ fn obs_version_for_launch(setup: &Setup, flatpak_binary: &Path) -> Option<String
         command.arg("--version");
         command
     };
+    apply_child_env(&mut command);
     let mut child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -460,6 +554,10 @@ impl Supervisor {
 
     fn matching_obs_pids(&self, setup: &Setup) -> Vec<Pid> {
         matching_obs_pids_for_setups(setup, &self.known_setups)
+    }
+
+    fn matching_obs_pids_with(&self, setup: &Setup, system: &System) -> Vec<Pid> {
+        matching_obs_pids_for_setups_with(setup, &self.known_setups, system)
     }
 
     pub fn start(
@@ -633,6 +731,7 @@ impl Supervisor {
         {
             command.env("XDG_CONFIG_HOME", config.parent().unwrap_or(config));
         }
+        apply_child_env(&mut command);
         let launch_started = Instant::now();
         let child = command.spawn()?;
         let flatpak_wrapper_start_time = is_flatpak
@@ -668,8 +767,13 @@ impl Supervisor {
     }
 
     pub fn state(&mut self, setup: &Setup) -> PcObsState {
+        let system = process_snapshot();
+        self.state_with(setup, &system)
+    }
+
+    pub fn state_with(&mut self, setup: &Setup, system: &System) -> PcObsState {
         if self.crashed_state.contains(&setup.id) {
-            if self.matching_obs_pids(setup).is_empty() {
+            if self.matching_obs_pids_with(setup, system).is_empty() {
                 return PcObsState::Crashed;
             }
             self.crashed_state.remove(&setup.id);
@@ -692,15 +796,16 @@ impl Supervisor {
                 };
                 if child.flatpak_obs.is_none()
                     && !wrapper_finished
-                    && let Some((pid, start_time)) = find_flatpak_obs_pid(child.child.id())
+                    && let Some((pid, start_time)) =
+                        find_flatpak_obs_pid_with(child.child.id(), system)
                 {
                     child.flatpak_obs = Some((pid, start_time));
                     child.pid = pid;
                     child.process_start_time = start_time;
                 }
-                let obs_running = child
-                    .flatpak_obs
-                    .is_some_and(|(pid, start_time)| process_start_time(pid) == Some(start_time));
+                let obs_running = child.flatpak_obs.is_some_and(|(pid, start_time)| {
+                    process_start_time_with(pid, system) == Some(start_time)
+                });
                 if obs_running {
                     if self.connected.contains(&setup.id) {
                         PcObsState::Connected
@@ -770,14 +875,19 @@ impl Supervisor {
                 Err(_) => return PcObsState::NotResponding,
             }
         }
-        match self.matching_obs_pids(setup).as_slice() {
+        match self.matching_obs_pids_with(setup, system).as_slice() {
             [_] => PcObsState::WaitingForInput,
-            [] if executable_obs_pids(setup).is_empty() => PcObsState::NotRunning,
+            [] if executable_obs_pids_with(setup, system).is_empty() => PcObsState::NotRunning,
             _ => PcObsState::Unknown,
         }
     }
 
     pub fn owns_running_process(&mut self, setup: &Setup) -> bool {
+        let system = process_snapshot();
+        self.owns_running_process_with(setup, &system)
+    }
+
+    pub fn owns_running_process_with(&mut self, setup: &Setup, system: &System) -> bool {
         let child_running = if let Some(child) = self.children.get_mut(&setup.id) {
             if child.is_flatpak {
                 let wrapper_pid = child.child.id();
@@ -788,23 +898,23 @@ impl Supervisor {
                 };
                 if child.flatpak_obs.is_none()
                     && !wrapper_finished
-                    && let Some((pid, start_time)) = find_flatpak_obs_pid(wrapper_pid)
+                    && let Some((pid, start_time)) = find_flatpak_obs_pid_with(wrapper_pid, system)
                 {
                     child.flatpak_obs = Some((pid, start_time));
                     child.pid = pid;
                     child.process_start_time = start_time;
                 }
                 if let Some((pid, start_time)) = child.flatpak_obs {
-                    process_start_time(pid) == Some(start_time)
+                    process_start_time_with(pid, system) == Some(start_time)
                 } else {
                     !wrapper_finished
                         && child.flatpak_wrapper_start_time.is_some_and(|start_time| {
-                            process_start_time(wrapper_pid) == Some(start_time)
+                            process_start_time_with(wrapper_pid, system) == Some(start_time)
                         })
                 }
             } else {
                 child.child.try_wait().is_ok_and(|status| status.is_none())
-                    && process_start_time(child.pid) == Some(child.process_start_time)
+                    && process_start_time_with(child.pid, system) == Some(child.process_start_time)
             }
         } else {
             false
@@ -813,8 +923,11 @@ impl Supervisor {
             || self
                 .adopted
                 .get(&setup.id)
-                .is_some_and(|(_, pid, start_time)| process_start_time(*pid) == Some(*start_time))
-            || find_matching_obs_with_start_time_for_setups(setup, &self.known_setups).is_some()
+                .is_some_and(|(_, pid, start_time)| {
+                    process_start_time_with(*pid, system) == Some(*start_time)
+                })
+            || find_matching_obs_with_start_time_for_setups_with(setup, &self.known_setups, system)
+                .is_some()
     }
 
     pub fn mark_connected(&mut self, setup_id: Uuid, connected: bool) {
@@ -1155,16 +1268,25 @@ fn find_matching_obs_with_start_time_for_setups(
     setup: &Setup,
     setups: &[Setup],
 ) -> Option<(Pid, u64)> {
-    let matches = matching_obs_pids_for_setups(setup, setups);
-    find_matching_obs_start_time(matches)
+    let system = process_snapshot();
+    find_matching_obs_with_start_time_for_setups_with(setup, setups, &system)
 }
 
-fn find_matching_obs_start_time(matches: Vec<Pid>) -> Option<(Pid, u64)> {
+fn find_matching_obs_with_start_time_for_setups_with(
+    setup: &Setup,
+    setups: &[Setup],
+    system: &System,
+) -> Option<(Pid, u64)> {
+    let matches = matching_obs_pids_for_setups_with(setup, setups, system);
+    find_matching_obs_start_time(matches, system)
+}
+
+fn find_matching_obs_start_time(matches: Vec<Pid>, system: &System) -> Option<(Pid, u64)> {
     if matches.len() != 1 {
         return None;
     }
     let pid = matches[0];
-    Some((pid, process_start_time(pid.as_u32())?))
+    Some((pid, process_start_time_with(pid.as_u32(), system)?))
 }
 
 fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
@@ -1172,6 +1294,11 @@ fn matching_obs_pids(setup: &Setup) -> Vec<Pid> {
 }
 
 fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
+    let system = process_snapshot();
+    matching_obs_pids_for_setups_with(setup, setups, &system)
+}
+
+fn matching_obs_pids_for_setups_with(setup: &Setup, setups: &[Setup], system: &System) -> Vec<Pid> {
     let mut known_setups = setups.to_vec();
     if !known_setups
         .iter()
@@ -1193,19 +1320,19 @@ fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
         .then(|| read_obs_websocket_config(&config_dir(setup)).ok())
         .flatten()
         .map(|config| config.server_port);
-    let system = process_snapshot();
     let expected = setup
         .obs
         .binary_path
         .clone()
         .unwrap_or_else(default_obs_binary);
     let expected = resolve_executable(&expected);
-    non_thread_processes(&system)
+    let expected_canonical = canonical_executable(&expected);
+    non_thread_processes(system)
         .filter_map(|(pid, process)| {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
             } else {
-                process_executable_matches(process, &expected)
+                process_executable_matches(process, &expected, &expected_canonical)
             };
             (executable_matches
                 && process_matches_obs_config_with_shared_ports(
@@ -1221,14 +1348,48 @@ fn matching_obs_pids_for_setups(setup: &Setup, setups: &[Setup]) -> Vec<Pid> {
         .collect()
 }
 
-pub(crate) fn process_snapshot() -> System {
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
-    system
+pub struct ProcessSnapshot {
+    system: System,
+}
+
+impl ProcessSnapshot {
+    pub fn new() -> Self {
+        Self {
+            system: System::new(),
+        }
+    }
+
+    pub fn refresh(&mut self) {
+        self.system.refresh_processes_specifics(
+            ProcessesToUpdate::All,
+            true,
+            process_refresh_kind(),
+        );
+    }
+
+    pub fn system(&self) -> &System {
+        &self.system
+    }
+}
+
+impl Default for ProcessSnapshot {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub fn process_snapshot() -> System {
+    let mut snapshot = ProcessSnapshot::new();
+    snapshot.refresh();
+    snapshot.system
+}
+
+fn process_refresh_kind() -> ProcessRefreshKind {
+    ProcessRefreshKind::nothing()
+        .with_environ(UpdateKind::OnlyIfNotSet)
+        .with_cmd(UpdateKind::OnlyIfNotSet)
+        .with_exe(UpdateKind::OnlyIfNotSet)
+        .without_tasks()
 }
 
 pub(crate) fn non_thread_processes(
@@ -1270,24 +1431,21 @@ pub(crate) fn terminate_process(pid: u32, shutdown_grace: Duration) -> Result<()
 }
 
 impl Supervisor {
-    pub(crate) fn shutdown_grace(&self) -> Duration {
+    pub fn shutdown_grace(&self) -> Duration {
         self.shutdown_grace
     }
 }
 
 fn any_obs_running_for_executable(executable: &Path) -> bool {
     let expected = resolve_executable(executable);
+    let expected_canonical = canonical_executable(&expected);
     let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
+    system.refresh_processes_specifics(ProcessesToUpdate::All, true, process_refresh_kind());
     system
         .processes()
         .values()
         .filter(|process| process.thread_kind().is_none())
-        .any(|process| process_executable_matches(process, &expected))
+        .any(|process| process_executable_matches(process, &expected, &expected_canonical))
 }
 
 #[cfg(all(test, unix))]
@@ -1377,8 +1535,15 @@ fn shared_config_port_matches(
             == 1
 }
 
-fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bool {
-    if process.exe().is_some_and(|exe| same_path(exe, expected)) {
+pub(crate) fn process_executable_matches(
+    process: &sysinfo::Process,
+    expected: &Path,
+    expected_canonical: &Path,
+) -> bool {
+    if process
+        .exe()
+        .is_some_and(|exe| process_path_matches(exe, expected, expected_canonical))
+    {
         return true;
     }
     if !cfg!(target_os = "linux") {
@@ -1387,11 +1552,49 @@ fn process_executable_matches(process: &sysinfo::Process, expected: &Path) -> bo
     let Some(exe) = process.exe() else {
         return false;
     };
-    is_nix_wrapped_binary(exe, expected)
+    (is_nix_wrapped_binary(exe, expected) || is_nix_wrapped_binary(exe, expected_canonical))
         && process.cmd().first().is_some_and(|argv0| {
             // Nix/makeWrapper may exec a different binary while preserving argv[0].
-            same_path(&resolve_executable(Path::new(argv0)), expected)
+            process_path_matches(
+                &resolve_executable(Path::new(argv0)),
+                expected,
+                expected_canonical,
+            )
         })
+}
+
+fn canonical_executable(path: &Path) -> PathBuf {
+    path.canonicalize().unwrap_or_else(|_| path.to_owned())
+}
+
+pub(crate) fn process_path_matches(
+    candidate: &Path,
+    expected: &Path,
+    expected_canonical: &Path,
+) -> bool {
+    if candidate == expected || candidate == expected_canonical {
+        return true;
+    }
+    let same_name = |expected: &Path| {
+        let (Some(candidate), Some(expected)) = (candidate.file_name(), expected.file_name())
+        else {
+            return false;
+        };
+        #[cfg(windows)]
+        {
+            candidate
+                .to_string_lossy()
+                .eq_ignore_ascii_case(&expected.to_string_lossy())
+        }
+        #[cfg(not(windows))]
+        {
+            candidate == expected
+        }
+    };
+    (same_name(expected) || same_name(expected_canonical))
+        && candidate
+            .canonicalize()
+            .is_ok_and(|path| path == expected_canonical)
 }
 
 fn is_nix_wrapped_binary(exe: &Path, expected: &Path) -> bool {
@@ -1427,13 +1630,7 @@ fn command_has_option_name(arguments: &[std::ffi::OsString], option: &str) -> bo
     })
 }
 
-fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
+fn executable_obs_pids_with(setup: &Setup, system: &System) -> Vec<Pid> {
     let expected = resolve_executable(
         setup
             .obs
@@ -1441,6 +1638,7 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
             .as_deref()
             .unwrap_or(&default_obs_binary()),
     );
+    let expected_canonical = canonical_executable(&expected);
     system
         .processes()
         .iter()
@@ -1449,11 +1647,17 @@ fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
             let executable_matches = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 is_flatpak_obs_process(pid.as_u32(), process)
             } else {
-                process_executable_matches(process, &expected)
+                process_executable_matches(process, &expected, &expected_canonical)
             };
             executable_matches.then_some(*pid)
         })
         .collect()
+}
+
+#[cfg(all(test, target_os = "linux"))]
+fn executable_obs_pids(setup: &Setup) -> Vec<Pid> {
+    let system = process_snapshot();
+    executable_obs_pids_with(setup, &system)
 }
 
 fn resolve_executable(path: &Path) -> PathBuf {
@@ -1467,12 +1671,7 @@ fn resolve_executable(path: &Path) -> PathBuf {
 }
 
 fn any_obs_running() -> bool {
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
+    let system = process_snapshot();
     system.processes().values().any(|process| {
         process.thread_kind().is_none()
             && is_obs_process_name(&process.name().to_string_lossy(), HostPlatform::current())
@@ -1513,17 +1712,16 @@ fn wait_for_flatpak_obs_pid_with_timeout(
 }
 
 fn find_flatpak_obs_pid(wrapper_pid: u32) -> Option<(u32, u64)> {
+    let system = process_snapshot();
+    find_flatpak_obs_pid_with(wrapper_pid, &system)
+}
+
+fn find_flatpak_obs_pid_with(wrapper_pid: u32, system: &System) -> Option<(u32, u64)> {
     let wrapper_pid = Pid::from_u32(wrapper_pid);
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
-    let pid = find_descendant_pid(&system, wrapper_pid, |pid, process| {
+    let pid = find_descendant_pid(system, wrapper_pid, |pid, process| {
         is_flatpak_obs_process(pid.as_u32(), process)
     })?;
-    Some((pid.as_u32(), process_start_time(pid.as_u32())?))
+    Some((pid.as_u32(), process_start_time_with(pid.as_u32(), system)?))
 }
 
 fn find_descendant_pid(
@@ -1541,12 +1739,7 @@ fn find_descendant_pid(
 
 fn descendant_processes(wrapper_pid: u32) -> Vec<(u32, u64)> {
     let ancestor = Pid::from_u32(wrapper_pid);
-    let mut system = System::new();
-    system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything().without_tasks(),
-    );
+    let system = process_snapshot();
     system
         .processes()
         .iter()
@@ -1607,9 +1800,15 @@ fn process_start_time(pid: u32) -> Option<u64> {
     system.refresh_processes_specifics(
         ProcessesToUpdate::Some(&[pid]),
         true,
-        ProcessRefreshKind::everything().without_tasks(),
+        ProcessRefreshKind::nothing().without_tasks(),
     );
     system.process(pid).map(|process| process.start_time())
+}
+
+fn process_start_time_with(pid: u32, system: &System) -> Option<u64> {
+    system
+        .process(Pid::from_u32(pid))
+        .map(|process| process.start_time())
 }
 
 fn wait_for_process_start_time(pid: u32) -> Option<u64> {
@@ -1852,11 +2051,10 @@ pub fn detected_obs_install_kind() -> InstallKind {
         if default_obs_binary().is_file() {
             return InstallKind::Native;
         }
-        if Command::new("flatpak")
-            .args(["info", "com.obsproject.Studio"])
-            .status()
-            .is_ok_and(|status| status.success())
-        {
+        let mut command = Command::new("flatpak");
+        command.args(["info", "com.obsproject.Studio"]);
+        apply_child_env(&mut command);
+        if command.status().is_ok_and(|status| status.success()) {
             return InstallKind::Flatpak;
         }
     }
@@ -1865,6 +2063,8 @@ pub fn detected_obs_install_kind() -> InstallKind {
 
 #[cfg(all(test, unix))]
 mod tests {
+    #[cfg(target_os = "linux")]
+    use std::ffi::OsString;
     #[cfg(target_os = "macos")]
     use std::sync::OnceLock;
     use std::{
@@ -1878,8 +2078,6 @@ mod tests {
 
     use tempfile::tempdir;
 
-    #[cfg(target_os = "linux")]
-    use super::resolve_executable;
     use super::{
         StartedObs, Supervisor, WINDOWS_PORTABLE_MARKERS, config_dir_for_platform,
         copy_latest_crash_report, is_obs_process_name, is_portable_obs_for_platform,
@@ -1888,7 +2086,90 @@ mod tests {
         same_obs_identity_for_platform, should_launch_multi,
     };
     use super::{SupervisorError, find_matching_obs_with_start_time_for_setups, matching_obs_pids};
+    #[cfg(target_os = "linux")]
+    use super::{appimage_env_fixes, resolve_executable};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn appimage_environment_is_removed_from_child_processes() {
+        let changes = appimage_env_fixes(
+            [
+                ("APPDIR", "/opt/noalbs"),
+                ("APPIMAGE", "/home/user/Connect.AppImage"),
+                ("ARGV0", "Connect"),
+                ("OWD", "/home/user"),
+                ("PYTHONHOME", "/opt/noalbs/usr"),
+                (
+                    "PATH",
+                    "/usr/bin:/opt/noalbs/usr/bin:/usr/local/bin:/tmp/.mount_old/usr/bin",
+                ),
+                (
+                    "XDG_DATA_DIRS",
+                    "/usr/share:/opt/noalbs/usr/share:/home/user/share",
+                ),
+                (
+                    "PREFIX_TEST",
+                    "/opt/noalbsXY/lib:/opt/noalbs/lib:/tmp/.mount_old/lib:/usr/local/lib",
+                ),
+                ("UNRELATED", "unchanged"),
+            ]
+            .into_iter()
+            .map(|(name, value)| (OsString::from(name), OsString::from(value))),
+        );
+
+        assert_eq!(
+            changes,
+            vec![
+                (OsString::from("APPDIR"), None),
+                (OsString::from("APPIMAGE"), None),
+                (OsString::from("ARGV0"), None),
+                (OsString::from("OWD"), None),
+                (OsString::from("PYTHONHOME"), None),
+                (
+                    OsString::from("PATH"),
+                    Some(OsString::from("/usr/bin:/usr/local/bin"))
+                ),
+                (
+                    OsString::from("XDG_DATA_DIRS"),
+                    Some(OsString::from("/usr/share:/home/user/share"))
+                ),
+                (
+                    OsString::from("PREFIX_TEST"),
+                    Some(OsString::from("/opt/noalbsXY/lib:/usr/local/lib"))
+                ),
+            ]
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn appimage_environment_without_required_markers_is_unchanged() {
+        assert!(
+            appimage_env_fixes([
+                (OsString::from("APPDIR"), OsString::from("/opt/noalbs")),
+                (
+                    OsString::from("PATH"),
+                    OsString::from("/opt/noalbs/usr/bin")
+                ),
+            ])
+            .is_empty()
+        );
+        assert!(
+            appimage_env_fixes([
+                (
+                    OsString::from("APPIMAGE"),
+                    OsString::from("/home/user/Connect.AppImage")
+                ),
+                (OsString::from("APPDIR"), OsString::new()),
+                (
+                    OsString::from("PATH"),
+                    OsString::from("/opt/noalbs/usr/bin")
+                ),
+            ])
+            .is_empty()
+        );
+    }
 
     #[test]
     fn force_closed_process_that_does_not_exit_has_an_error() {
@@ -2441,7 +2722,7 @@ int main(int argc, char **argv) {
             system.refresh_processes_specifics(
                 sysinfo::ProcessesToUpdate::All,
                 true,
-                sysinfo::ProcessRefreshKind::everything().without_tasks(),
+                super::process_refresh_kind(),
             );
             descendant = super::find_descendant_pid(
                 &system,

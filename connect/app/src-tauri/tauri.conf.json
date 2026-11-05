@@ -23,6 +23,17 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ipc: http://ipc.localhost"
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENCNUM4ODYxODM1RjU2RkIKUldUN1ZsK0RZWWhjeTdDNFpUWkNhNTA4VEZnUXA1OUpWRXMvb0NBekhGVzNwMzRtK0VJWTE3K2UK",
+      "endpoints": [
+        "https://github.com/NOALBS/noalbs-cloud/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["app", "dmg", "appimage", "deb", "rpm", "nsis"],

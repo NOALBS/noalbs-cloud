@@ -1,8 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod updates;
+
 use std::{
     collections::{HashMap, HashSet},
     sync::Mutex,
+    time::{Duration, Instant},
 };
 
 use connect_core::{
@@ -25,7 +28,6 @@ use connect_core::{
     watchdog::{Watchdog, WatchdogAction},
 };
 use serde::Serialize;
-use std::time::Duration;
 use tauri::{
     Emitter, Manager, State,
     menu::{Menu, MenuItem},
@@ -40,6 +42,7 @@ use tokio::sync::{mpsc, watch};
 struct LinkSession {
     state: watch::Sender<PcObsState>,
     programs: watch::Sender<Vec<common::programs::ProgramStatus>>,
+    watchdog: watch::Receiver<WatchdogMode>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
     task: tauri::async_runtime::JoinHandle<()>,
     monitor: tauri::async_runtime::JoinHandle<()>,
@@ -52,9 +55,57 @@ struct AppState {
     store: ConfigStore,
     tokens: TokenStore,
     supervisor: Mutex<Supervisor>,
+    // Acquire this before config, supervisor, and link_sessions locks.
+    processes: SharedProcesses,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
     obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
+    updates: updates::UpdateManager,
+}
+
+struct SharedProcesses {
+    snapshot: Mutex<connect_core::supervisor::ProcessSnapshot>,
+    last_refresh: Mutex<Instant>,
+}
+
+impl SharedProcesses {
+    fn new() -> Self {
+        Self {
+            snapshot: Mutex::new(connect_core::supervisor::ProcessSnapshot::new()),
+            last_refresh: Mutex::new(Instant::now() - Duration::from_secs(2)),
+        }
+    }
+}
+
+const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
+const NOT_RESPONDING_GRACE: Duration = Duration::from_secs(10);
+
+fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
+    max_age.is_zero() || now.saturating_duration_since(last_refresh) >= max_age
+}
+
+fn with_processes<R>(
+    state: &AppState,
+    max_age: Duration,
+    f: impl FnOnce(&connect_core::supervisor::ProcessSnapshot) -> R,
+) -> R {
+    let mut snapshot = state
+        .processes
+        .snapshot
+        .lock()
+        .expect("process snapshot lock");
+    let mut last_refresh = state
+        .processes
+        .last_refresh
+        .lock()
+        .expect("process snapshot refresh lock");
+    let now = Instant::now();
+    if process_snapshot_needs_refresh(*last_refresh, now, max_age) {
+        snapshot.refresh();
+        *last_refresh = now;
+    }
+    drop(last_refresh);
+    f(&snapshot)
 }
 
 #[derive(Clone, Serialize)]
@@ -63,7 +114,8 @@ struct SetupSummary {
     name: String,
     paired: bool,
     switcher_id: Option<String>,
-    obs_state: String,
+    obs_state: PcObsState,
+    obs_label: String,
     obs_process_running: bool,
     obs: connect_core::config::ObsLaunchConfig,
     detected_binary: String,
@@ -73,7 +125,7 @@ struct SetupSummary {
 }
 
 #[derive(Clone, Serialize)]
-struct UiState {
+pub(crate) struct UiState {
     platform: String,
     start_at_login: bool,
     api_url: String,
@@ -81,6 +133,7 @@ struct UiState {
     startup_error: Option<String>,
     first_run: bool,
     setups: Vec<SetupSummary>,
+    update: updates::UpdateState,
 }
 
 #[tauri::command]
@@ -89,6 +142,15 @@ fn get_state(state: State<'_, AppState>) -> UiState {
 }
 
 fn build_ui_state(state: &AppState) -> UiState {
+    with_processes(state, Duration::ZERO, |snapshot| {
+        build_ui_state_with(state, snapshot)
+    })
+}
+
+fn build_ui_state_with(
+    state: &AppState,
+    process_snapshot: &connect_core::supervisor::ProcessSnapshot,
+) -> UiState {
     let (setups, start_at_login, api_url, dashboard_url) = {
         let config = state.config.lock().expect("app config lock");
         let settings = config.settings.effective();
@@ -109,20 +171,20 @@ fn build_ui_state(state: &AppState) -> UiState {
         dashboard_url,
         startup_error: state.startup_error.clone(),
         first_run: setups.is_empty(),
+        update: state.updates.snapshot(),
         setups: setups
             .iter()
             .map(|setup| {
                 let link_state = sessions
                     .get(&setup.id)
                     .map(|session| *session.state.borrow());
-                let process_state =
-                    link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
-                let obs_state =
-                    serde_json::to_value(displayed_obs_state(process_state, link_state))
-                        .ok()
-                        .and_then(|value| value.as_str().map(str::to_owned))
-                        .unwrap_or_else(|| "unknown".into());
-                let obs_process_running = supervisor.owns_running_process(setup);
+                let process_state = link_state.map_or_else(
+                    || supervisor.state_with(setup, process_snapshot.system()),
+                    |_| PcObsState::Unknown,
+                );
+                let obs_state = displayed_obs_state(process_state, link_state);
+                let obs_process_running =
+                    supervisor.owns_running_process_with(setup, process_snapshot.system());
                 SetupSummary {
                     id: setup.id.to_string(),
                     name: setup.name.clone(),
@@ -132,6 +194,7 @@ fn build_ui_state(state: &AppState) -> UiState {
                         .as_ref()
                         .map(|pair| pair.switcher_id.to_string()),
                     obs_state,
+                    obs_label: obs_state_label(obs_state, link_state.is_some()).to_owned(),
                     obs_process_running,
                     obs: setup.obs.clone(),
                     detected_binary: setup
@@ -142,7 +205,7 @@ fn build_ui_state(state: &AppState) -> UiState {
                         .to_string_lossy()
                         .into_owned(),
                     config_dir: config_dir(setup).to_string_lossy().into_owned(),
-                    programs: programs::status(&setup.programs),
+                    programs: programs::status_with(&setup.programs, process_snapshot.system()),
                     allow_dashboard_program_edits: setup.allow_dashboard_program_edits,
                 }
             })
@@ -172,7 +235,6 @@ fn save_setup(
         name.trim().to_owned()
     };
     updated_setup.obs = obs;
-    clear_unsupported_config_dir_override(&mut updated_setup.obs, HostPlatform::current());
     validate_setup_identity(&config.setups, &updated_setup)?;
     config.setups[index] = updated_setup.clone();
     state
@@ -228,27 +290,6 @@ fn validate_setup_identity_for_platform(
         }
     }
     Ok(())
-}
-
-fn clear_unsupported_config_dir_override(
-    obs: &mut connect_core::config::ObsLaunchConfig,
-    platform: HostPlatform,
-) -> bool {
-    if obs.config_dir_override.is_some() && validate_obs_config_for_platform(obs, platform).is_err()
-    {
-        obs.config_dir_override = None;
-        true
-    } else {
-        false
-    }
-}
-
-fn remove_unsupported_config_dir_overrides(config: &mut AppConfig, platform: HostPlatform) -> bool {
-    let mut removed = false;
-    for setup in &mut config.setups {
-        removed |= clear_unsupported_config_dir_override(&mut setup.obs, platform);
-    }
-    removed
 }
 
 #[tauri::command]
@@ -537,9 +578,7 @@ async fn run_obs_action(
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
-            if let Ok(supervisor) = state.supervisor.lock()
-                && let Err(error) = programs::stop(program, &supervisor)
-            {
+            if let Err(error) = programs::stop(program, programs::PROGRAM_SHUTDOWN_GRACE) {
                 tracing::warn!(program = %program.name, %error, "Failed to stop program with OBS");
             }
         }
@@ -633,11 +672,8 @@ fn run_program_action(
         ObsAction::ProgramStop { id } => {
             let program = programs::find(&setup.programs, id)
                 .ok_or_else(|| "Program not found".to_string())?;
-            let supervisor = state
-                .supervisor
-                .lock()
-                .map_err(|_| "supervisor lock poisoned")?;
-            programs::stop(program, &supervisor).map_err(|error| error.to_string())?;
+            programs::stop(program, programs::PROGRAM_SHUTDOWN_GRACE)
+                .map_err(|error| error.to_string())?;
         }
         ObsAction::ProgramAdd { mut program } => {
             if dashboard_request {
@@ -705,11 +741,8 @@ fn run_program_action(
                 .cloned()
                 .ok_or_else(|| "Program not found".to_string())?;
             if programs::is_running(&program_to_stop) {
-                let supervisor = state
-                    .supervisor
-                    .lock()
-                    .map_err(|_| "supervisor lock poisoned")?;
-                programs::stop(&program_to_stop, &supervisor).map_err(|error| error.to_string())?;
+                programs::stop(&program_to_stop, programs::PROGRAM_SHUTDOWN_GRACE)
+                    .map_err(|error| error.to_string())?;
             }
             let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
             let mut updated_config = config.clone();
@@ -731,6 +764,20 @@ fn run_program_action(
     }
     set_link_programs(state, setup_id);
     Ok(())
+}
+
+async fn run_program_action_blocking(
+    app: tauri::AppHandle,
+    setup_id: uuid::Uuid,
+    action: ObsAction,
+    dashboard_request: bool,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        run_program_action(state.inner(), setup_id, action, dashboard_request)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -767,54 +814,57 @@ fn upsert_program(
 }
 
 #[tauri::command]
-fn remove_program(
+async fn remove_program(
+    app: tauri::AppHandle,
     setup_id: String,
     program_id: String,
-    state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
-    run_program_action(
-        state.inner(),
+    run_program_action_blocking(
+        app.clone(),
         setup_id,
         ObsAction::ProgramRemove { id: program_id },
         false,
-    )?;
-    Ok(get_state(state))
+    )
+    .await?;
+    Ok(get_state(app.state::<AppState>()))
 }
 
 #[tauri::command]
-fn start_program(
+async fn start_program(
+    app: tauri::AppHandle,
     setup_id: String,
     program_id: String,
-    state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
-    run_program_action(
-        state.inner(),
+    run_program_action_blocking(
+        app.clone(),
         setup_id,
         ObsAction::ProgramStart { id: program_id },
         false,
-    )?;
-    Ok(get_state(state))
+    )
+    .await?;
+    Ok(get_state(app.state::<AppState>()))
 }
 
 #[tauri::command]
-fn stop_program(
+async fn stop_program(
+    app: tauri::AppHandle,
     setup_id: String,
     program_id: String,
-    state: State<'_, AppState>,
 ) -> Result<UiState, String> {
     let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
     let program_id = uuid::Uuid::parse_str(&program_id).map_err(|error| error.to_string())?;
-    run_program_action(
-        state.inner(),
+    run_program_action_blocking(
+        app.clone(),
         setup_id,
         ObsAction::ProgramStop { id: program_id },
         false,
-    )?;
-    Ok(get_state(state))
+    )
+    .await?;
+    Ok(get_state(app.state::<AppState>()))
 }
 
 #[tauri::command]
@@ -1253,11 +1303,23 @@ fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState)
         )
 }
 
+fn not_responding_incident_due(
+    link_state: PcObsState,
+    since: Option<Instant>,
+    now: Instant,
+) -> bool {
+    link_state == PcObsState::NotResponding
+        && since.is_some_and(|since| now.saturating_duration_since(since) >= NOT_RESPONDING_GRACE)
+}
+
 fn displayed_obs_state(process_state: PcObsState, link_state: Option<PcObsState>) -> PcObsState {
     link_state.unwrap_or(process_state)
 }
 
-fn obs_state_label(state: PcObsState) -> &'static str {
+fn obs_state_label(state: PcObsState, paired: bool) -> &'static str {
+    if !paired && matches!(state, PcObsState::Starting | PcObsState::WaitingForInput) {
+        return "OBS is running";
+    }
     match state {
         PcObsState::Connected => "OBS connected",
         PcObsState::Starting => "Starting OBS…",
@@ -1272,25 +1334,33 @@ fn obs_state_label(state: PcObsState) -> &'static str {
 }
 
 fn tray_setup_labels(state: &AppState) -> Vec<(String, String)> {
-    let setups = state.config.lock().expect("app config lock").setups.clone();
-    let mut supervisor = state.supervisor.lock().expect("supervisor lock");
-    supervisor.set_known_setups(&setups);
-    let sessions = state.link_sessions.lock().expect("link session lock");
-    setups
-        .iter()
-        .map(|setup| {
-            let link_state = sessions
-                .get(&setup.id)
-                .map(|session| *session.state.borrow());
-            let process_state =
-                link_state.map_or_else(|| supervisor.state(setup), |_| PcObsState::Unknown);
-            let status = displayed_obs_state(process_state, link_state);
-            (
-                format!("setup-{}", setup.id),
-                format!("{} — {}", setup.name, obs_state_label(status)),
-            )
-        })
-        .collect()
+    with_processes(state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+        let setups = state.config.lock().expect("app config lock").setups.clone();
+        let mut supervisor = state.supervisor.lock().expect("supervisor lock");
+        supervisor.set_known_setups(&setups);
+        let sessions = state.link_sessions.lock().expect("link session lock");
+        setups
+            .iter()
+            .map(|setup| {
+                let link_state = sessions
+                    .get(&setup.id)
+                    .map(|session| *session.state.borrow());
+                let process_state = link_state.map_or_else(
+                    || supervisor.state_with(setup, snapshot.system()),
+                    |_| PcObsState::Unknown,
+                );
+                let status = displayed_obs_state(process_state, link_state);
+                (
+                    format!("setup-{}", setup.id),
+                    format!(
+                        "{} — {}",
+                        setup.name,
+                        obs_state_label(status, link_state.is_some())
+                    ),
+                )
+            })
+            .collect()
+    })
 }
 
 fn setup_for_watchdog_restart(config: &AppConfig, fallback: &Setup) -> Setup {
@@ -1385,23 +1455,32 @@ fn start_link_session(
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
         let mut handled_incident = None;
+        let mut not_responding_since = None;
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
                 _ = tick.tick() => {
-                    let state = *monitor_state.borrow();
+                    let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
-                    let process_state = app_state
-                        .supervisor
-                        .lock()
-                        .map(|mut supervisor| supervisor.state(&monitor_setup))
-                        .unwrap_or(PcObsState::Unknown);
-                    let program_status = app_state.config.lock().ok().and_then(|config| {
-                        config
-                            .setups
-                            .iter()
-                            .find(|setup| setup.id == monitor_setup.id)
-                            .map(|setup| programs::status(&setup.programs))
+                    let (process_state, program_status) =
+                        with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+                            let process_state = app_state
+                                .supervisor
+                                .lock()
+                                .map(|mut supervisor| {
+                                    supervisor.state_with(&monitor_setup, snapshot.system())
+                                })
+                                .unwrap_or(PcObsState::Unknown);
+                            let program_status = app_state.config.lock().ok().and_then(|config| {
+                                config
+                                    .setups
+                                    .iter()
+                                    .find(|setup| setup.id == monitor_setup.id)
+                                    .map(|setup| {
+                                        programs::status_with(&setup.programs, snapshot.system())
+                                    })
+                            });
+                            (process_state, program_status)
                     });
                     if let Some(program_status) = program_status
                         && *monitor_programs_tx.borrow() != program_status
@@ -1415,13 +1494,44 @@ fn start_link_session(
                     }
                     if should_publish_not_running(process_state, state) {
                         let _ = monitor_state_tx.send(PcObsState::NotRunning);
+                        state = PcObsState::NotRunning;
+                    }
+                    if state == PcObsState::NotResponding {
+                        not_responding_since.get_or_insert_with(Instant::now);
+                    } else {
+                        not_responding_since = None;
                     }
                     let incident = if process_state == PcObsState::Crashed {
                         Some(PcObsState::Crashed)
-                    } else if state == PcObsState::NotResponding
-                        && process_state != PcObsState::NotRunning
-                    {
-                        Some(PcObsState::NotResponding)
+                    } else if not_responding_incident_due(
+                        state,
+                        not_responding_since,
+                        Instant::now(),
+                    ) {
+                        if handled_incident == Some(PcObsState::NotResponding) {
+                            Some(PcObsState::NotResponding)
+                        } else {
+                            let fresh_process_state =
+                                with_processes(&app_state, Duration::ZERO, |snapshot| {
+                                    app_state
+                                        .supervisor
+                                        .lock()
+                                        .map(|mut supervisor| {
+                                            supervisor.state_with(
+                                                &monitor_setup,
+                                                snapshot.system(),
+                                            )
+                                        })
+                                        .unwrap_or(PcObsState::Unknown)
+                                });
+                            if fresh_process_state == PcObsState::NotRunning {
+                                let _ = monitor_state_tx.send(PcObsState::NotRunning);
+                                not_responding_since = None;
+                                None
+                            } else {
+                                Some(PcObsState::NotResponding)
+                            }
+                        }
                     } else {
                         None
                     };
@@ -1539,19 +1649,23 @@ fn start_link_session(
     let command_setup_id = setup.id;
     let command_consumer = tauri::async_runtime::spawn(async move {
         while let Some(command) = command_rx.recv().await {
-            let app_state = command_app.state::<AppState>();
             let result = match command.action.clone() {
                 ObsAction::UploadLog => {
+                    let app_state = command_app.state::<AppState>();
                     create_log_upload(app_state.inner(), command_setup_id, "obs_log", true)
                         .map(Some)
                 }
                 action if action.is_program() => {
-                    run_program_action(app_state.inner(), command_setup_id, action, true)
+                    run_program_action_blocking(command_app.clone(), command_setup_id, action, true)
+                        .await
                         .map(|()| None)
                 }
-                action => run_obs_action(app_state.inner(), command_setup_id, action)
-                    .await
-                    .map(|()| None),
+                action => {
+                    let app_state = command_app.state::<AppState>();
+                    run_obs_action(app_state.inner(), command_setup_id, action)
+                        .await
+                        .map(|()| None)
+                }
             };
             let _ = command.reply.send(result);
             let _ = command_app.emit(
@@ -1566,6 +1680,7 @@ fn start_link_session(
         LinkSession {
             state: state_tx.clone(),
             programs: programs_tx,
+            watchdog: watchdog_rx.clone(),
             effective_obs: effective_obs_rx,
             task,
             monitor,
@@ -1662,10 +1777,113 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let mut last_states = None;
-        let mut tick = tokio::time::interval(Duration::from_secs(1));
+        let mut previous_running = HashMap::<uuid::Uuid, bool>::new();
+        let mut tick = tokio::time::interval(Duration::from_secs(2));
         loop {
             tick.tick().await;
-            let state = get_state(app.state::<AppState>());
+            let app_state = app.state::<AppState>();
+            let state = with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
+                build_ui_state_with(&app_state, snapshot)
+            });
+            let current_ids = state
+                .setups
+                .iter()
+                .filter_map(|setup| uuid::Uuid::parse_str(&setup.id).ok())
+                .collect::<HashSet<_>>();
+            previous_running.retain(|id, _| current_ids.contains(id));
+            for setup in &state.setups {
+                let Ok(setup_id) = uuid::Uuid::parse_str(&setup.id) else {
+                    continue;
+                };
+                if setup.obs_state == PcObsState::Unknown
+                    || app_state
+                        .obs_actions_running
+                        .lock()
+                        .map(|running| running.contains(&setup_id))
+                        .unwrap_or(true)
+                {
+                    continue;
+                }
+                let lifecycle_state = if setup.obs_state == PcObsState::WebsocketDisabled
+                    && setup.obs_process_running
+                {
+                    PcObsState::WaitingForInput
+                } else {
+                    setup.obs_state
+                };
+                let watchdog_restarts = app_state
+                    .link_sessions
+                    .lock()
+                    .ok()
+                    .and_then(|sessions| {
+                        sessions
+                            .get(&setup_id)
+                            .map(|session| *session.watchdog.borrow() != WatchdogMode::Off)
+                    })
+                    .unwrap_or(false);
+                let action = programs::lifecycle_for_transition(
+                    previous_running.get(&setup_id).copied(),
+                    &lifecycle_state,
+                    watchdog_restarts,
+                );
+                previous_running.insert(setup_id, programs::obs_is_running(&lifecycle_state));
+                let Some(action) = action else {
+                    continue;
+                };
+                let already_running = setup
+                    .programs
+                    .iter()
+                    .filter(|program| program.running)
+                    .map(|program| program.program.id)
+                    .collect::<HashSet<_>>();
+                let selected = app_state.config.lock().ok().and_then(|config| {
+                    config
+                        .setups
+                        .iter()
+                        .find(|configured| configured.id == setup_id)
+                        .map(|configured| {
+                            programs::for_obs_action(&configured.programs, action)
+                                .into_iter()
+                                .filter(|program| {
+                                    action == ObsLifecycleAction::Stop
+                                        || !already_running.contains(&program.id)
+                                })
+                                .cloned()
+                                .collect::<Vec<_>>()
+                        })
+                });
+                let Some(selected) = selected.filter(|selected| !selected.is_empty()) else {
+                    continue;
+                };
+                let lifecycle_app = app.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    let lifecycle_state = lifecycle_app.state::<AppState>();
+                    for program in selected {
+                        let result = match action {
+                            ObsLifecycleAction::Start => {
+                                programs::start(&program).map_err(|error| {
+                                    if matches!(
+                                        &error,
+                                        connect_core::programs::ProgramError::AlreadyRunning
+                                    ) {
+                                        None
+                                    } else {
+                                        Some(error.to_string())
+                                    }
+                                })
+                            }
+                            ObsLifecycleAction::Stop => {
+                                programs::stop(&program, programs::PROGRAM_SHUTDOWN_GRACE)
+                                    .map_err(|error| Some(error.to_string()))
+                            }
+                        };
+                        if let Err(Some(error)) = result {
+                            tracing::warn!(program = %program.name, %error, "Failed to run program with OBS");
+                        }
+                    }
+                    set_link_programs(lifecycle_state.inner(), setup_id);
+                });
+            }
             let current_states: HashMap<_, _> = state
                 .setups
                 .iter()
@@ -1674,7 +1892,7 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
                         setup.id.clone(),
                         (
                             setup.name.clone(),
-                            setup.obs_state.clone(),
+                            setup.obs_state,
                             setup.obs_process_running,
                             setup.programs.clone(),
                             setup.allow_dashboard_program_edits,
@@ -1693,22 +1911,8 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
 
 fn main() {
     let store = ConfigStore::new(ConfigStore::default_path().expect("user config path"));
-    let (mut config, mut startup_error) = store.load_or_backup();
+    let (mut config, startup_error) = store.load_or_backup();
     let config_loaded_without_recovery_error = startup_error.is_none();
-    if remove_unsupported_config_dir_overrides(&mut config, HostPlatform::current()) {
-        let mut notice =
-            "The separate settings folder isn't supported here and was removed.".to_owned();
-        if let Err(error) = store.save(&config) {
-            notice.push_str(&format!(
-                " The updated configuration could not be saved: {error}"
-            ));
-        }
-        startup_error = Some(
-            startup_error
-                .map(|error| format!("{error}\n{notice}"))
-                .unwrap_or(notice),
-        );
-    }
     let tokens = TokenStore::default_store().expect("token store path");
     cleanup_startup_tokens(
         &store,
@@ -1727,16 +1931,20 @@ fn main() {
             }
         }))
         .plugin(autostart_builder.build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             config: Mutex::new(config),
             startup_error,
             store,
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         })
         .setup(|app| {
             let has_tray = tray_available();
@@ -1768,6 +1976,12 @@ fn main() {
                 }
             }
             let state = app.state::<AppState>();
+            state
+                .updates
+                .initialize(app.package_info().version.to_string());
+            if state.updates.snapshot().supported {
+                updates::start_background_checks(app.handle().clone());
+            }
             let start_at_login = {
                 let config = state.config.lock().expect("app config lock");
                 config.settings.start_at_login
@@ -1814,7 +2028,10 @@ fn main() {
             remove_program,
             start_program,
             stop_program,
-            set_allow_dashboard_program_edits
+            set_allow_dashboard_program_edits,
+            updates::check_for_update,
+            updates::install_update,
+            updates::open_release_notes
         ])
         .run(tauri::generate_context!())
         .expect("failed to run NOALBS Cloud Connect");
@@ -1924,48 +2141,6 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_config_dir_overrides_are_removed_only_on_rejecting_platforms() {
-        let mut setup = Setup::new("Legacy setup".into());
-        setup.obs.config_dir_override = Some(std::path::PathBuf::from("/legacy/obs-settings"));
-        let mut second_setup = Setup::new("Another legacy setup".into());
-        second_setup.obs.config_dir_override =
-            Some(std::path::PathBuf::from("/legacy/other-obs-settings"));
-        let mut config = AppConfig {
-            setups: vec![setup, second_setup],
-            ..Default::default()
-        };
-
-        assert!(remove_unsupported_config_dir_overrides(
-            &mut config,
-            HostPlatform::Windows
-        ));
-        assert!(
-            config
-                .setups
-                .iter()
-                .all(|setup| setup.obs.config_dir_override.is_none())
-        );
-        assert!(!remove_unsupported_config_dir_overrides(
-            &mut config,
-            HostPlatform::Windows
-        ));
-
-        for setup in &mut config.setups {
-            setup.obs.config_dir_override = Some(std::path::PathBuf::from("/legacy/obs-settings"));
-        }
-        assert!(!remove_unsupported_config_dir_overrides(
-            &mut config,
-            HostPlatform::Linux
-        ));
-        assert!(
-            config
-                .setups
-                .iter()
-                .all(|setup| setup.obs.config_dir_override.is_some())
-        );
-    }
-
-    #[test]
     fn watchdog_restart_uses_the_latest_setup_version() {
         let mut fallback = Setup::new("OBS".into());
         fallback.obs.last_obs_version = Some("33.0.1".into());
@@ -1997,6 +2172,38 @@ mod tests {
     }
 
     #[test]
+    fn not_responding_incident_waits_for_grace() {
+        let now = Instant::now();
+        let grace_elapsed = now - NOT_RESPONDING_GRACE;
+
+        assert!(!not_responding_incident_due(
+            PcObsState::NotResponding,
+            None,
+            now
+        ));
+        assert!(!not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed + Duration::from_millis(1)),
+            now
+        ));
+        assert!(not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed),
+            now
+        ));
+        assert!(not_responding_incident_due(
+            PcObsState::NotResponding,
+            Some(grace_elapsed - Duration::from_secs(1)),
+            now
+        ));
+        assert!(!not_responding_incident_due(
+            PcObsState::Connected,
+            Some(grace_elapsed - Duration::from_secs(1)),
+            now
+        ));
+    }
+
+    #[test]
     fn unpaired_setup_uses_the_supervisor_obs_state() {
         assert_eq!(
             displayed_obs_state(PcObsState::Starting, None),
@@ -2014,8 +2221,46 @@ mod tests {
 
     #[test]
     fn tray_obs_state_label_matches_the_window_label() {
-        assert_eq!(obs_state_label(PcObsState::Starting), "Starting OBS…");
-        assert_eq!(obs_state_label(PcObsState::NotRunning), "OBS not running");
+        let states = [
+            (PcObsState::Connected, "OBS connected"),
+            (PcObsState::Starting, "Starting OBS…"),
+            (PcObsState::WaitingForInput, "OBS is waiting for input"),
+            (PcObsState::SafeMode, "OBS is asking about Safe Mode"),
+            (PcObsState::WebsocketDisabled, "OBS websocket is off"),
+            (PcObsState::NotResponding, "OBS is not responding"),
+            (PcObsState::Crashed, "OBS crashed"),
+            (PcObsState::NotRunning, "OBS not running"),
+            (PcObsState::Unknown, "OBS running, not started by Connect"),
+        ];
+        for (state, paired_label) in states {
+            assert_eq!(obs_state_label(state, true), paired_label);
+            let unpaired_label =
+                if matches!(state, PcObsState::Starting | PcObsState::WaitingForInput) {
+                    "OBS is running"
+                } else {
+                    paired_label
+                };
+            assert_eq!(obs_state_label(state, false), unpaired_label);
+        }
+    }
+
+    #[test]
+    fn process_snapshot_age_reuses_fresh_snapshots_and_zero_forces_refresh() {
+        let now = Instant::now();
+        let mut last_refresh = now - Duration::from_secs(2);
+        let mut refreshes = 0;
+        for _ in 0..2 {
+            if process_snapshot_needs_refresh(last_refresh, now, PROCESS_SNAPSHOT_MAX_AGE) {
+                refreshes += 1;
+                last_refresh = now;
+            }
+        }
+        assert_eq!(refreshes, 1);
+        assert!(process_snapshot_needs_refresh(
+            last_refresh,
+            now,
+            Duration::ZERO
+        ));
     }
 
     #[test]
@@ -2046,9 +2291,11 @@ mod tests {
             store: ConfigStore::new(Default::default()),
             tokens: TokenStore::new(Default::default()),
             supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
 
         assert_eq!(
@@ -2147,9 +2394,12 @@ mod tests {
             store: store.clone(),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2160,6 +2410,7 @@ mod tests {
             LinkSession {
                 state: state_tx,
                 programs: watch::channel(Vec::new()).0,
+                watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -2179,7 +2430,7 @@ mod tests {
         assert!(config.setups[0].pairing.is_none());
         assert_eq!(tokens.get(setup_id).unwrap(), None);
         assert!(!ui_state.setups[0].paired);
-        assert_eq!(ui_state.setups[0].obs_state, "not_running");
+        assert_eq!(ui_state.setups[0].obs_state, PcObsState::NotRunning);
         assert!(!link_task_abort.is_finished());
         link_task_abort.abort();
         std::fs::remove_dir_all(test_dir).unwrap();
@@ -2209,9 +2460,12 @@ mod tests {
             store: store.clone(),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2220,6 +2474,7 @@ mod tests {
             LinkSession {
                 state: state_tx,
                 programs: watch::channel(Vec::new()).0,
+                watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -2273,12 +2528,15 @@ mod tests {
             store: ConfigStore::new(blocked_parent.join("config.json")),
             tokens: tokens.clone(),
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
             )])),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2291,6 +2549,7 @@ mod tests {
             LinkSession {
                 state: state_tx,
                 programs: watch::channel(Vec::new()).0,
+                watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -2369,12 +2628,15 @@ mod tests {
             store: store.clone(),
             tokens,
             supervisor: Mutex::new(Supervisor::default()),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
             )])),
+            updates: updates::UpdateManager::default(),
         };
         let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (_, effective_obs) = watch::channel(None);
@@ -2387,6 +2649,7 @@ mod tests {
             LinkSession {
                 state: state_tx,
                 programs: watch::channel(Vec::new()).0,
+                watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -2460,9 +2723,12 @@ mod tests {
             store,
             tokens,
             supervisor: Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(1))),
+
+            processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
             obs_actions_running: Mutex::new(HashSet::new()),
             pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
         };
         {
             let mut supervisor = state.supervisor.lock().unwrap();
@@ -2477,6 +2743,7 @@ mod tests {
             LinkSession {
                 state: state_tx,
                 programs: watch::channel(Vec::new()).0,
+                watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -2496,7 +2763,10 @@ mod tests {
         assert!(supervisor.owns_running_process(&setup));
         supervisor.stop(&setup).unwrap();
         drop(supervisor);
-        assert_eq!(build_ui_state(&state).setups[0].obs_state, "not_running");
+        assert_eq!(
+            build_ui_state(&state).setups[0].obs_state,
+            PcObsState::NotRunning
+        );
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
