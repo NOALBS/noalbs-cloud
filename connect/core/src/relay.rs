@@ -125,6 +125,7 @@ async fn connect_once(
     programs: &mut watch::Receiver<Vec<ProgramStatus>>,
     watchdog: &watch::Sender<WatchdogMode>,
 ) -> Result<(), RelayError> {
+    crate::install_crypto_provider();
     let mut obs_port = if config.use_dashboard_obs_settings {
         None
     } else {
