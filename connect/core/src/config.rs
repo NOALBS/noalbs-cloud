@@ -13,6 +13,7 @@ use uuid::Uuid;
 use common::programs::Program;
 
 pub const PRODUCTION_API_URL: &str = "https://noalbs.com/api";
+const OLD_PRODUCTION_API_URL: &str = "https://app.noalbs.com/api";
 
 #[derive(Debug, Error)]
 pub enum ConfigError {
@@ -280,7 +281,19 @@ impl ConfigStore {
             Ok(mut file) => {
                 let mut bytes = Vec::new();
                 file.read_to_end(&mut bytes)?;
-                Ok(serde_json::from_slice(&bytes)?)
+                drop(file);
+                let mut config: AppConfig = serde_json::from_slice(&bytes)?;
+                if config.settings.api_url.trim().trim_end_matches('/') == OLD_PRODUCTION_API_URL {
+                    config.settings.api_url = PRODUCTION_API_URL.to_owned();
+                    if let Err(error) = self.save(&config) {
+                        tracing::warn!(
+                            path = %self.path.display(),
+                            error = %error,
+                            "could not persist migrated Connect API URL"
+                        );
+                    }
+                }
+                Ok(config)
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(AppConfig::default()),
             Err(error) => Err(error.into()),
@@ -338,8 +351,8 @@ impl ConfigStore {
 #[cfg(test)]
 mod tests {
     use super::{
-        AppConfig, ConfigStore, HostPlatform, ObsLaunchConfig, PRODUCTION_API_URL, Setup,
-        validate_obs_config_for_platform, windows_obs_install_root,
+        AppConfig, ConfigStore, HostPlatform, OLD_PRODUCTION_API_URL, ObsLaunchConfig,
+        PRODUCTION_API_URL, Setup, validate_obs_config_for_platform, windows_obs_install_root,
     };
     use std::path::{Path, PathBuf};
 
@@ -357,6 +370,60 @@ mod tests {
         assert_eq!(loaded.setups[0].name, "Studio");
         assert!(!loaded.setups[0].obs.start_obs_with_connect);
         assert_eq!(loaded.pending_token_deletions, [pending_token_deletion]);
+    }
+
+    #[test]
+    fn migrates_old_production_api_url_and_persists_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let stored = serde_json::json!({
+            "settings": { "api_url": OLD_PRODUCTION_API_URL },
+            "setups": []
+        });
+        std::fs::write(&path, stored.to_string()).unwrap();
+        let store = ConfigStore::new(path.clone());
+
+        let loaded = store.load().unwrap();
+
+        assert_eq!(loaded.settings.api_url, PRODUCTION_API_URL);
+        let persisted: AppConfig = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(persisted.settings.api_url, PRODUCTION_API_URL);
+    }
+
+    #[test]
+    fn migrates_old_production_api_url_with_trailing_slash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let stored = serde_json::json!({
+            "settings": { "api_url": format!("{OLD_PRODUCTION_API_URL}/") },
+            "setups": []
+        });
+        std::fs::write(&path, stored.to_string()).unwrap();
+        let store = ConfigStore::new(path.clone());
+
+        let loaded = store.load().unwrap();
+
+        assert_eq!(loaded.settings.api_url, PRODUCTION_API_URL);
+        let persisted: AppConfig = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(persisted.settings.api_url, PRODUCTION_API_URL);
+    }
+
+    #[test]
+    fn leaves_other_api_urls_unchanged_without_rewriting_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let stored = serde_json::json!({
+            "settings": { "api_url": "https://api.example/api" },
+            "setups": []
+        })
+        .to_string();
+        std::fs::write(&path, &stored).unwrap();
+        let store = ConfigStore::new(path.clone());
+
+        let loaded = store.load().unwrap();
+
+        assert_eq!(loaded.settings.api_url, "https://api.example/api");
+        assert_eq!(std::fs::read(path).unwrap(), stored.as_bytes());
     }
 
     #[test]
