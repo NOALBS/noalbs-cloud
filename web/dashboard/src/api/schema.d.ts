@@ -696,6 +696,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/connect/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start the device authorization flow. */
+        post: operations["create_pairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connect/pair/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Poll for confirmation; the device token is returned exactly once. */
+        post: operations["poll_pairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connect/pair/{user_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Show the PC waiting for the signed-in user to pair it. */
+        get: operations["pairing_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invites/{token}": {
         parameters: {
             query?: never;
@@ -2275,6 +2326,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active Connect devices paired with this switcher. */
+        get: operations["list_devices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a device token and close the current obs-link session. */
+        delete: operations["revoke_device"];
+        options?: never;
+        head?: never;
+        /** Rename a paired Connect device. */
+        patch: operations["rename_device"];
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pair this computer with the switcher. */
+        post: operations["confirm_pairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose which switcher roles may control OBS or view Connect logs. */
+        put: operations["set_permissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/watchdog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose the watchdog behavior for Connect. */
+        put: operations["set_watchdog"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/events": {
         parameters: {
             query?: never;
@@ -3348,6 +3485,10 @@ export interface components {
         AccountExport: {
             account: components["schemas"]["Account"];
             chat: components["schemas"]["Chat"];
+            /** @description Connect devices you paired. */
+            connect_devices: components["schemas"]["ConnectDevice"][];
+            /** @description Connect pairings you confirmed and that are waiting to be claimed. */
+            connect_pairings: components["schemas"]["ConnectPairing"][];
             /** @description The Twitch, Kick and YouTube accounts you sign in with. */
             connections: components["schemas"]["Connection"][];
             /** @description Invites you made or accepted. */
@@ -4468,12 +4609,58 @@ export interface components {
             enabled: boolean;
             min_role?: string | null;
         };
+        ConfirmPairing: {
+            user_code: string;
+        };
+        /** @enum {string} */
+        ConnectAccess: "owners" | "admins" | "everyone";
+        ConnectDevice: {
+            app_version: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_seen_at?: string | null;
+            name: string;
+            os: string;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            /** Format: uuid */
+            switcher_id: string;
+        };
+        ConnectDeviceDto: {
+            app_version: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            last_seen_at?: string | null;
+            name: string;
+            os: string;
+        };
         /**
          * @description The browser-source URL for OBS. It contains the connect token, so it is
          *     only shown when the switcher is created or its token is replaced.
          */
         ConnectLink: {
             browser_source_url: string;
+        };
+        /** @enum {string} */
+        ConnectOs: "windows" | "linux" | "macos";
+        ConnectPairing: {
+            app_version: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            name: string;
+            os: string;
+            /** Format: uuid */
+            switcher_id?: string | null;
+        };
+        ConnectPermissions: {
+            logs: components["schemas"]["ConnectAccess"];
+            obs_control: components["schemas"]["ConnectAccess"];
         };
         ConnectedBot: {
             /** @description The workspace or organization it answers for; `None` for NOALBS's shared bot. */
@@ -4573,6 +4760,11 @@ export interface components {
         CreateMarker: {
             /** @description What happened; up to 200 characters. Blank = no description. */
             description?: string | null;
+        };
+        CreatePairing: {
+            app_version: string;
+            name: string;
+            os: components["schemas"]["ConnectOs"];
         };
         CreatePlan: {
             custom_chat_bot?: boolean;
@@ -5122,6 +5314,35 @@ export interface components {
             };
             /** @enum {string} */
             kind: "moblin_error";
+        } | {
+            data: {
+                by?: string | null;
+                name: string;
+            };
+            /** @enum {string} */
+            kind: "connect_device_paired";
+        } | {
+            data: {
+                by?: string | null;
+                name: string;
+            };
+            /** @enum {string} */
+            kind: "connect_device_revoked";
+        } | {
+            data: {
+                by?: string | null;
+                logs: components["schemas"]["ConnectAccess"];
+                obs_control: components["schemas"]["ConnectAccess"];
+            };
+            /** @enum {string} */
+            kind: "connect_permissions_changed";
+        } | {
+            data: {
+                by?: string | null;
+                mode: components["schemas"]["Watchdog"];
+            };
+            /** @enum {string} */
+            kind: "connect_watchdog_changed";
         };
         ExistingSourceDto: {
             /** @description The input's kind (e.g. `ffmpeg_source`); `null` for scenes. */
@@ -6103,6 +6324,39 @@ export interface components {
             /** Format: uuid */
             offline?: string | null;
         };
+        PairingClaimed: {
+            /** Format: uuid */
+            device_id: string;
+            device_token: string;
+            link_url: string;
+            /** Format: uuid */
+            switcher_id: string;
+        };
+        PairingCreated: {
+            device_code: string;
+            /** Format: int32 */
+            expires_in: number;
+            /** Format: int32 */
+            interval: number;
+            user_code: string;
+            verification_url: string;
+        };
+        PairingPreview: {
+            app_version: string;
+            /** Format: date-time */
+            expires_at: string;
+            name: string;
+            os: string;
+        };
+        /** @enum {string} */
+        PcObsState: "unknown" | "not_running" | "starting" | "connected" | "not_responding" | "waiting_for_input" | "safe_mode" | "crashed" | "websocket_disabled";
+        PcStatus: {
+            /** Format: uuid */
+            device_id?: string | null;
+            device_name?: string | null;
+            obs: components["schemas"]["PcObsState"];
+            obs_version?: string | null;
+        };
         PlaceSource: {
             /** Format: int64 */
             item_id: number;
@@ -6203,6 +6457,9 @@ export interface components {
             /** Format: int64 */
             switchers: number;
         };
+        PollPairing: {
+            device_code: string;
+        };
         /**
          * @description Who may watch the OBS preview while the switcher isn't streaming. While it
          *     streams, everyone who can see the switcher may: it shows what viewers see.
@@ -6256,6 +6513,9 @@ export interface components {
             /** @description The source's `parent`, `parent_is_group` and `item_id` from the list. */
             parent: string;
             parent_is_group?: boolean;
+        };
+        RenameDevice: {
+            name: string;
         };
         RenameSwitcher: {
             name: string;
@@ -6555,6 +6815,9 @@ export interface components {
         };
         SetStaff: {
             staff: boolean;
+        };
+        SetWatchdog: {
+            mode: components["schemas"]["Watchdog"];
         };
         ShardDto: {
             id: string;
@@ -6924,6 +7187,9 @@ export interface components {
             behaviour: components["schemas"]["BehaviourDto"];
             belabox: components["schemas"]["BelaboxDto"];
             chat: components["schemas"]["ChatSettingsDto"];
+            connect_logs: components["schemas"]["ConnectAccess"];
+            connect_obs_control: components["schemas"]["ConnectAccess"];
+            connect_watchdog: components["schemas"]["Watchdog"];
             /** Format: date-time */
             created_at: string;
             /** Format: uuid */
@@ -6960,6 +7226,7 @@ export interface components {
             obs_connected: boolean;
             /** @description Over the workspace plan's switcher limit: connected, but not switching. */
             paused?: boolean;
+            pc?: components["schemas"]["PcStatus"] | null;
             recording: boolean;
             recording_paused: boolean;
             /** Format: date-time */
@@ -7160,6 +7427,8 @@ export interface components {
             playlist?: string[] | null;
             shuffle: boolean;
         };
+        /** @enum {string} */
+        Watchdog: "off" | "restart" | "restart_resume";
         WhatsNewSeen: {
             /** @description The newest post shown, by its ID (`2026-11-02-scene-picker`). */
             post_id: string;
@@ -8930,6 +9199,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProvidersDto"];
+                };
+            };
+        };
+    };
+    create_pairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePairing"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCreated"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    poll_pairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollPairing"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingClaimed"];
+                };
+            };
+            /** @description `authorization_pending` or `expired_token` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    pairing_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingPreview"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };
@@ -12496,6 +12873,228 @@ export interface operations {
                 };
             };
             /** @description `support_secret` for NOALBS support */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_devices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectDeviceDto"][];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    revoke_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Device revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    rename_device: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameDevice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectDeviceDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    confirm_pairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPairing"];
+            };
+        };
+        responses: {
+            /** @description Pairing confirmed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    set_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectPermissions"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitcherDto"];
+                };
+            };
+            /** @description `owner_only` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    set_watchdog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetWatchdog"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitcherDto"];
+                };
+            };
+            /** @description `connect_forbidden` */
             403: {
                 headers: {
                     [name: string]: unknown;

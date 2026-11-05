@@ -12,6 +12,8 @@ const EXPORTED: &[&str] = &[
     "chat_bots",
     "chat_channels",
     "chat_ignored_chatters",
+    "connect_devices",
+    "connect_pairings",
     "noalbs_chat_command_aliases",
     "noalbs_chat_command_overrides",
     "notices",
@@ -63,6 +65,8 @@ const NOT_PERSONAL: &[(&str, &str)] = &[
 const USER_REFERENCES: &[&str] = &[
     "chat_bots.connected_by",
     "chat_channels.authorized_by",
+    "connect_devices.created_by",
+    "connect_pairings.confirmed_by",
     "notices.created_by",
     "oauth2_connections.user_id",
     "organization_audit.actor_user_id",
@@ -200,6 +204,30 @@ async fn fixture(pool: &PgPool) -> Fixture {
         .await
         .unwrap()
         .id;
+    sqlx::query(
+        "INSERT INTO connect_devices
+             (switcher_id, name, os, app_version, token_hash, created_by)
+         VALUES ($1, 'Studio PC', 'linux', '1.2.3', $2, $3)",
+    )
+    .bind(backpack)
+    .bind(SECRET)
+    .bind(kate)
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO connect_pairings
+             (device_code_hash, user_code, name, os, app_version, expires_at,
+              switcher_id, confirmed_by)
+         VALUES ($1, 'ABCD-EFGH', 'Edit PC', 'windows', '2.0.0',
+                 now() + interval '10 minutes', $2, $3)",
+    )
+    .bind(SECRET)
+    .bind(backpack)
+    .bind(kate)
+    .execute(pool)
+    .await
+    .unwrap();
     sqlx::query(
         "UPDATE switchers
          SET password = $2, belabox_remote_key = $2, moblin_password = $2, trigger_low = 1234
@@ -434,6 +462,16 @@ async fn the_export_holds_what_is_kept_about_the_user(pool: PgPool) {
         json!(["user:read:chat"])
     );
     assert_eq!(export["sessions"][0]["user_agent"], "Firefox");
+    assert_eq!(export["connect_devices"][0]["name"], "Studio PC");
+    assert_eq!(
+        export["connect_devices"][0]["switcher_id"],
+        json!(fixture.backpack)
+    );
+    assert_eq!(export["connect_pairings"][0]["name"], "Edit PC");
+    assert_eq!(
+        export["connect_pairings"][0]["switcher_id"],
+        json!(fixture.backpack)
+    );
 
     let own = workspace(&export, "Kate");
     assert_eq!(own["role"], "owner");

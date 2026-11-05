@@ -1,0 +1,64 @@
+import { describe, expect, it } from "vitest";
+import type { PcObsState } from "@/api/types";
+import { canControlConnect, connectAccessOptions, pcObsLabel, watchdogOptions } from "./connect";
+
+describe("Connect settings", () => {
+  it("names roles and organization managers", () => {
+    expect(connectAccessOptions(null).map((option) => option.label)).toEqual([
+      "Only the owner",
+      "The owner and admins",
+      "Everyone in the workspace",
+    ]);
+    expect(connectAccessOptions("Acme IRL")[0]?.label).toBe("Only Acme IRL");
+    expect(connectAccessOptions("Acme IRL")[1]?.label).toBe("Acme IRL and admins");
+    expect(watchdogOptions().map((option) => option.value)).toEqual([
+      "off",
+      "restart",
+      "restart_resume",
+    ]);
+    expect(watchdogOptions().every((option) => option.description.trim().length > 0)).toBe(true);
+  });
+
+  it("labels every Connect OBS state", () => {
+    const states: PcObsState[] = [
+      "unknown",
+      "not_running",
+      "starting",
+      "connected",
+      "not_responding",
+      "waiting_for_input",
+      "safe_mode",
+      "crashed",
+      "websocket_disabled",
+    ];
+    expect(states.map(pcObsLabel)).toEqual([
+      "OBS state unknown",
+      "OBS not running",
+      "OBS starting",
+      "OBS connected",
+      "OBS not responding",
+      "OBS is waiting for input",
+      "OBS is in safe mode",
+      "OBS crashed",
+      "OBS WebSocket is disabled",
+    ]);
+  });
+
+  it("allows watchdog changes to the configured roles but never support", () => {
+    const viewers = [
+      { role: "owner", staff: false },
+      { role: "admin", staff: false },
+      { role: "operator", staff: false },
+      { role: null, staff: true, support: "control" },
+    ] as const;
+    expect(
+      ["owners", "admins", "everyone"].map((level) =>
+        viewers.map((actor) => canControlConnect(level as "owners" | "admins" | "everyone", actor)),
+      ),
+    ).toEqual([
+      [true, false, false, false],
+      [true, true, false, false],
+      [true, true, true, false],
+    ]);
+  });
+});

@@ -27,10 +27,12 @@ type Path = { workspace_id: string; switcher_id: string };
 export function ObsStatsPopover({
   path,
   connected,
+  connectDevice,
   children,
 }: {
   path: Path;
   connected: boolean;
+  connectDevice?: string;
   children: ReactElement;
 }) {
   return (
@@ -54,9 +56,14 @@ export function ObsStatsPopover({
           <ObsStatsBody path={path} />
         ) : (
           <p className="p-4 text-sm text-muted-foreground">
-            <Trans>
-              OBS isn’t connected. Open OBS with the NOALBS browser source active to see its stats.
-            </Trans>
+            {connectDevice ? (
+              t`OBS isn’t connected to Connect on ${connectDevice}.`
+            ) : (
+              <Trans>
+                OBS isn’t connected. Open OBS with the NOALBS browser source active to see its
+                stats.
+              </Trans>
+            )}
           </p>
         )}
       </PopoverContent>

@@ -8,6 +8,7 @@ import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
 import type { PreviewOffAir, SwitcherSummary } from "@/api/types";
 import { BelaboxSettings } from "@/components/belabox-settings";
+import { ConnectSettings } from "@/components/connect-settings";
 import { CopyField } from "@/components/copy-field";
 import { MoblinSettings } from "@/components/moblin-settings";
 import { ObsConnectionForm } from "@/components/obs-connection-form";
@@ -50,7 +51,7 @@ function ObsPage() {
   return (
     <SwitcherPage
       title={t`Switcher settings`}
-      description={t`The OBS connection, the browser-source link, BELABOX Cloud, Moblin, who sees the preview off air and this switcher’s name.`}
+      description={t`The OBS connection, browser-source link and NOALBS Cloud Connect, BELABOX Cloud, Moblin, preview visibility and this switcher’s name.`}
       backToSettings
       className="max-w-3xl"
     >
@@ -84,6 +85,7 @@ function ObsPage() {
         }
       />
       <PreviewPrivacy />
+      <ConnectSettings />
       <SwitcherName />
       {canManage && <DeleteSwitcher />}
     </SwitcherPage>

@@ -9,7 +9,7 @@
 //! | config changed | core subject [`config_subject`] | API, after saving settings |
 //! | [`Intent`] | core subject [`intent_subject`] | API, before an OBS command |
 //! | [`Takeover`] | core subject [`takeover_subject`] | obs-link, when a browser source identifies |
-//! | reconnect | core subject [`reconnect_subject`] | API (staff): close the browser source's connection so it reconnects |
+//! | [`Reconnect`] | core subject [`reconnect_subject`] | API: close the browser source's connection so it reconnects |
 //! | chat links changed | core subject [`chat_reconcile_subject`] | API, after linking or unlinking chat channels and bots |
 //! | [`BelaboxStatus`] | KV bucket [`BELABOX_BUCKET`], key = switcher ID | obs-link, while a BELABOX link runs, on change + every 10 s |
 //! | [`BelaboxCommand`] → [`BelaboxReply`] | request subject [`belabox_request_subject`] | API and chat service |
@@ -34,6 +34,7 @@ use std::time::Duration;
 
 use async_nats::jetstream::{self, kv, stream};
 use chrono::{DateTime, Utc};
+use db::connect::{ConnectAccess, Watchdog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -89,8 +90,7 @@ pub fn takeover_subject(switcher_id: Uuid) -> String {
     format!("switcher.{switcher_id}.takeover")
 }
 
-/// Staff asking obs-link to close a switcher's browser-source connection; the
-/// browser source reconnects on its own (unlike after a takeover).
+/// Ask obs-link to close a switcher's connection so it reconnects.
 pub fn reconnect_subject(switcher_id: Uuid) -> String {
     format!("switcher.{switcher_id}.reconnect")
 }
@@ -283,6 +283,37 @@ pub struct SwitcherStatus {
     /// NOALBS. `null` while not streaming, and while paused (no switcher runs).
     #[serde(default)]
     pub stream_frames: Option<ObsFrames>,
+    /// Status reported by a NOALBS Cloud Connect desktop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pc: Option<PcStatus>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct PcStatus {
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+    #[serde(default)]
+    pub device_name: Option<String>,
+    pub obs: PcObsState,
+    #[serde(default)]
+    pub obs_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum PcObsState {
+    #[default]
+    Unknown,
+    NotRunning,
+    Starting,
+    Connected,
+    NotResponding,
+    WaitingForInput,
+    SafeMode,
+    Crashed,
+    WebsocketDisabled,
 }
 
 /// OBS's frame counters (`GetStats`), which run since OBS started.
@@ -330,6 +361,7 @@ impl SwitcherStatus {
             active_server_id: None,
             paused: false,
             stream_frames: None,
+            pc: None,
         }
     }
 }
@@ -587,6 +619,23 @@ pub enum EventDetail {
     MoblinError {
         message: String,
     },
+    ConnectDevicePaired {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectDeviceRevoked {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectPermissionsChanged {
+        obs_control: ConnectAccess,
+        logs: ConnectAccess,
+        by: Option<String>,
+    },
+    ConnectWatchdogChanged {
+        mode: Watchdog,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
@@ -644,11 +693,29 @@ pub struct Takeover {
     pub connection_id: Uuid,
 }
 
+/// A reconnect request. With no device ID, any session is closed (as for staff
+/// reconnects); with one, only that Connect device's session is closed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Reconnect {
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+}
+
+/// An empty or unparsable payload means settings changed.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConfigChange {
+    #[serde(default)]
+    pub renamed_device_id: Option<Uuid>,
+}
+
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
 
-    use super::{BelaboxChange, EventDetail, ObsFrames, SwitchReason};
+    use super::{
+        BelaboxChange, ConnectAccess, EventDetail, ObsFrames, PcObsState, SwitchReason,
+        SwitcherStatus, Watchdog,
+    };
 
     #[test]
     fn frames_count_from_the_stream_start() {
@@ -804,6 +871,23 @@ mod tests {
                 priority: 3,
                 by: Some("kate".into()),
             },
+            EventDetail::ConnectDevicePaired {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectDeviceRevoked {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectPermissionsChanged {
+                obs_control: ConnectAccess::Admins,
+                logs: ConnectAccess::Owners,
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectWatchdogChanged {
+                mode: Watchdog::RestartResume,
+                by: Some("kate".into()),
+            },
         ];
 
         for event in events {
@@ -817,6 +901,20 @@ mod tests {
         let (kind, data) = EventDetail::ObsConnected.into_parts();
         assert_eq!(kind, "obs_connected");
         assert_eq!(data, serde_json::json!({}));
+    }
+
+    #[test]
+    fn connect_pc_status_is_optional_and_has_snake_case_states() {
+        let status = SwitcherStatus::connected(false);
+        let value = serde_json::to_value(&status).unwrap();
+        assert!(value.get("pc").is_none());
+
+        let parsed: SwitcherStatus = serde_json::from_value(value).unwrap();
+        assert_eq!(parsed.pc, None);
+        assert_eq!(
+            serde_json::to_string(&PcObsState::NotResponding).unwrap(),
+            "\"not_responding\""
+        );
     }
 }
 

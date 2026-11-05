@@ -48,14 +48,39 @@ pub fn password() -> String {
     password
 }
 
+const USER_CODE_CHARS: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/// Generates an eight-character code that is easy to read aloud.
+pub fn user_code() -> String {
+    let limit = (256 / USER_CODE_CHARS.len() * USER_CODE_CHARS.len()) as u16;
+    let mut code = String::with_capacity(8);
+    let mut bytes = [0u8; 32];
+    while code.len() < 8 {
+        getrandom::fill(&mut bytes).expect("the OS random number generator is available");
+        for &byte in bytes.iter().filter(|&&byte| u16::from(byte) < limit) {
+            if code.len() == 8 {
+                break;
+            }
+            code.push(USER_CODE_CHARS[usize::from(byte) % USER_CODE_CHARS.len()] as char);
+        }
+    }
+    code.insert(4, '-');
+    code
+}
+
 /// The SHA-256 of a token, which is what gets stored and looked up.
 pub fn hash(token: &str) -> [u8; 32] {
     Sha256::digest(token.as_bytes()).into()
 }
 
+/// A text representation for schemas that store hashes in text columns.
+pub fn hash_text(token: &str) -> String {
+    URL_SAFE_NO_PAD.encode(hash(token))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{generate, hash, password};
+    use super::{USER_CODE_CHARS, generate, hash, password, user_code};
 
     #[test]
     fn passwords_are_alphanumeric_and_unique() {
@@ -75,6 +100,19 @@ mod tests {
             a.chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
         );
+    }
+
+    #[test]
+    fn user_codes_are_readable_and_unique() {
+        let a = user_code();
+        assert_eq!(a.len(), 9);
+        assert_eq!(&a[4..5], "-");
+        assert!(
+            a.bytes()
+                .filter(|byte| *byte != b'-')
+                .all(|byte| USER_CODE_CHARS.contains(&byte))
+        );
+        assert_ne!(a, user_code());
     }
 
     #[test]

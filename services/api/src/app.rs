@@ -11,9 +11,9 @@ use crate::{
     oauth::OAuthProviders,
     routes::{
         ErrorBody, admin, admin_actions, admin_organizations, admin_status, auth, belabox, billing,
-        chat, chat_bots, feed, history, invites, markers, me, members, moblin, my_workspaces,
-        notices, organization_audit, organization_ops, organizations, plans, stream_servers,
-        support, switchers, workspaces,
+        chat, chat_bots, connect, feed, history, invites, markers, me, members, moblin,
+        my_workspaces, notices, organization_audit, organization_ops, organizations, plans,
+        stream_servers, support, switchers, workspaces,
     },
 };
 
@@ -146,6 +146,22 @@ impl BrowserSourceLinks {
             None => format!("{scheme}://{host}/moblin/{switcher_id}"),
         }
     }
+
+    /// The WebSocket endpoint used by NOALBS Cloud Connect.
+    pub fn link_url(&self) -> String {
+        let page =
+            reqwest::Url::parse(&self.page).expect("browser_source_url is validated at startup");
+        let scheme = if page.scheme() == "https" {
+            "wss"
+        } else {
+            "ws"
+        };
+        let host = page.host_str().unwrap_or("localhost");
+        match page.port() {
+            Some(port) => format!("{scheme}://{host}:{port}/link"),
+            None => format!("{scheme}://{host}/link"),
+        }
+    }
 }
 
 #[derive(OpenApi)]
@@ -178,6 +194,7 @@ fn api_router() -> OpenApiRouter<ApiState> {
         .merge(admin_status::router())
         .merge(notices::router())
         .merge(workspaces::router())
+        .merge(connect::router())
         .merge(my_workspaces::router())
         .merge(members::router())
         .merge(invites::router())
@@ -373,6 +390,14 @@ mod link_tests {
             dev.moblin_url(id),
             format!("ws://192.168.1.20:5173/moblin/{id}")
         );
+    }
+
+    #[test]
+    fn connect_link_url_uses_the_browser_source_host_and_scheme() {
+        let links = BrowserSourceLinks::new("https://app.noalbs.com/source/");
+        assert_eq!(links.link_url(), "wss://app.noalbs.com/link");
+        let dev = BrowserSourceLinks::new("http://192.168.1.20:5173/source/");
+        assert_eq!(dev.link_url(), "ws://192.168.1.20:5173/link");
     }
 }
 

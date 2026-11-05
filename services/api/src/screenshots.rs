@@ -18,7 +18,7 @@ use std::{
 use axum::body::Bytes;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use common::shutdown::ShutdownHandler;
-use db::switchers::PreviewOffAir;
+use db::{connect::ConnectAccess, switchers::PreviewOffAir};
 use futures_util::StreamExt;
 use live::PreviewWatching;
 use uuid::Uuid;
@@ -58,6 +58,39 @@ pub fn allowed_off_air(off_air: PreviewOffAir, viewer: Viewer) -> bool {
         (PreviewOffAir::Admins, viewer) => matches!(viewer, Viewer::Owner | Viewer::Admin),
         (PreviewOffAir::Everyone, _) => true,
     }
+}
+
+/// Whether `viewer` may control OBS through a paired Connect device.
+pub fn connect_allowed(level: ConnectAccess, viewer: Viewer) -> bool {
+    match (level, viewer) {
+        (_, Viewer::Support) => false,
+        (ConnectAccess::Owners, Viewer::Owner) => true,
+        (ConnectAccess::Admins, Viewer::Owner | Viewer::Admin) => true,
+        (ConnectAccess::Everyone, Viewer::Owner | Viewer::Admin | Viewer::Operator) => true,
+        _ => false,
+    }
+}
+
+/// Resolves the viewer class once for APIs that enforce viewer-based settings.
+pub async fn viewer_for(
+    state: &crate::app::ApiState,
+    access: &crate::permissions::WorkspaceAccess,
+) -> Result<Viewer, db::Error> {
+    use crate::permissions::Via;
+
+    Ok(match access.via {
+        Via::Support { .. } => Viewer::Support,
+        Via::Organization => Viewer::Owner,
+        Via::Member => {
+            match db::workspaces::member_role(&state.db, access.workspace_id, access.user.id())
+                .await?
+            {
+                Some(db::workspaces::WorkspaceRoleEnum::Owner) => Viewer::Owner,
+                Some(db::workspaces::WorkspaceRoleEnum::Admin) => Viewer::Admin,
+                _ => Viewer::Operator,
+            }
+        }
+    })
 }
 
 pub const MIN_WIDTH: u32 = 160;
@@ -230,9 +263,12 @@ mod tests {
     use axum::body::Bytes;
     use uuid::Uuid;
 
-    use db::switchers::PreviewOffAir;
+    use db::{connect::ConnectAccess, switchers::PreviewOffAir};
 
-    use super::{Announce, Cache, Viewer, Watchers, allowed_off_air, decode_data_uri, settings};
+    use super::{
+        Announce, Cache, Viewer, Watchers, allowed_off_air, connect_allowed, decode_data_uri,
+        settings,
+    };
 
     #[test]
     fn off_air_follows_the_setting_and_never_shows_support() {
@@ -249,6 +285,24 @@ mod tests {
         assert_eq!(off_air(PreviewOffAir::Owners), [true, false, false, false]);
         assert_eq!(off_air(PreviewOffAir::Admins), [true, true, false, false]);
         assert_eq!(off_air(PreviewOffAir::Everyone), [true, true, true, false]);
+    }
+
+    #[test]
+    fn connect_access_obeys_the_viewer_role_and_never_allows_support() {
+        for (setting, expected) in [
+            (ConnectAccess::Owners, [true, false, false, false]),
+            (ConnectAccess::Admins, [true, true, false, false]),
+            (ConnectAccess::Everyone, [true, true, true, false]),
+        ] {
+            let actual = [
+                Viewer::Owner,
+                Viewer::Admin,
+                Viewer::Operator,
+                Viewer::Support,
+            ]
+            .map(|viewer| connect_allowed(setting, viewer));
+            assert_eq!(actual, expected);
+        }
     }
 
     #[test]

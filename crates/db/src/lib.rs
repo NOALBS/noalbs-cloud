@@ -4,6 +4,7 @@ pub mod admin;
 pub mod billing;
 pub mod chat;
 pub mod chat_commands;
+pub mod connect;
 pub mod error;
 pub mod export;
 pub mod invites;

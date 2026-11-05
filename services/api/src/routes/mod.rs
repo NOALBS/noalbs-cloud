@@ -7,6 +7,7 @@ pub mod belabox;
 pub mod billing;
 pub mod chat;
 pub mod chat_bots;
+pub mod connect;
 pub mod feed;
 pub mod history;
 pub mod invites;

@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use axum::{Json, extract::State, http::StatusCode};
+use db::connect::{ConnectAccess, Watchdog};
 use db::switchers::{
     Behaviour, PreviewOffAir, Scenes, SecretChange, StreamLink, Switcher, Triggers,
 };
@@ -203,6 +204,9 @@ pub struct SwitcherDto {
     pub moblin: MoblinDto,
     /// Who may watch the OBS preview while it isn't streaming.
     pub preview_off_air: PreviewOffAir,
+    pub connect_obs_control: ConnectAccess,
+    pub connect_logs: ConnectAccess,
+    pub connect_watchdog: Watchdog,
 }
 
 /// BELABOX Cloud. Optional: without a remote key nothing BELABOX-related runs.
@@ -301,6 +305,9 @@ impl From<Switcher> for SwitcherDto {
                 stop_with_stream: s.moblin_stop_with_stream,
             },
             preview_off_air: s.preview_off_air,
+            connect_obs_control: s.connect_obs_control,
+            connect_logs: s.connect_logs,
+            connect_watchdog: s.connect_watchdog,
         }
     }
 }

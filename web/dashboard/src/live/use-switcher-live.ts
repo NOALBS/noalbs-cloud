@@ -80,7 +80,12 @@ export function useSwitcherLive(workspaceId: string, switcherId: string) {
             queryKey: queryKeys.obsScenes(workspaceId, switcherId),
           });
         }
-        if (event.kind === "auto_switch_changed" || event.kind === "preview_off_air_changed") {
+        if (
+          event.kind === "auto_switch_changed" ||
+          event.kind === "preview_off_air_changed" ||
+          event.kind === "connect_permissions_changed" ||
+          event.kind === "connect_watchdog_changed"
+        ) {
           void queryClient.invalidateQueries({
             queryKey: queryKeys.switcher(workspaceId, switcherId),
           });

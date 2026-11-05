@@ -67,6 +67,10 @@ pub struct AccountExport {
     pub organizations: Vec<Organization>,
     /// Invites you made or accepted.
     pub invites: Vec<Invite>,
+    /// Connect devices you paired.
+    pub connect_devices: Vec<ConnectDevice>,
+    /// Connect pairings you confirmed and that are waiting to be claimed.
+    pub connect_pairings: Vec<ConnectPairing>,
     pub chat: Chat,
     /// NOALBS support access you gave (or, as staff, opened).
     pub support_grants: Vec<SupportGrant>,
@@ -283,6 +287,29 @@ pub struct Invite {
     pub expires_at: DateTime<Utc>,
     pub accepted_at: Option<DateTime<Utc>>,
     pub revoked_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectDevice {
+    pub switcher_id: Uuid,
+    pub name: String,
+    pub os: String,
+    pub app_version: String,
+    pub created_at: DateTime<Utc>,
+    pub last_seen_at: Option<DateTime<Utc>>,
+    pub revoked_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectPairing {
+    pub switcher_id: Option<Uuid>,
+    pub name: String,
+    pub os: String,
+    pub app_version: String,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -520,6 +547,20 @@ pub async fn account(pool: &PgPool, user_id: Uuid) -> Result<Option<AccountExpor
              JOIN organizations ON organizations.id = invites.organization_id
              WHERE invites.invited_by = $1 OR invites.accepted_by = $1
              ORDER BY created_at",
+        )
+        .await?,
+        connect_devices: all(
+            pool,
+            user_id,
+            "SELECT switcher_id, name, os, app_version, created_at, last_seen_at, revoked_at
+             FROM connect_devices WHERE created_by = $1 ORDER BY created_at",
+        )
+        .await?,
+        connect_pairings: all(
+            pool,
+            user_id,
+            "SELECT switcher_id, name, os, app_version, created_at, expires_at
+             FROM connect_pairings WHERE confirmed_by = $1 ORDER BY created_at",
         )
         .await?,
         chat: Chat {
