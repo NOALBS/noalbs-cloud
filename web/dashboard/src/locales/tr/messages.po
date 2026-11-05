@@ -3257,9 +3257,18 @@ msgstr ""
 msgid "Download CSV"
 msgstr "CSV indir"
 
+#. placeholder {0}: connectDownloadOptions.primary.label
+#: src/components/connect-settings.tsx
+msgid "Download for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download my data"
 msgstr "Verilerimi indir"
+
+#: src/components/connect-settings.tsx
+msgid "Download NOALBS Cloud Connect"
+msgstr ""
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download stream history"
@@ -6631,6 +6640,10 @@ msgstr "Orijinal"
 msgid "Other"
 msgstr "Diğer"
 
+#: src/components/connect-settings.tsx
+msgid "Other platforms"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Other settings by kind: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5> and <6>api_key</6> (a token for IRLHosting WebSocket). The builder below shows which ones each kind takes."
 msgstr "Türe göre diğer ayarlar: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5> ve <6>api_key</6> (IRLHosting WebSocket için token). Aşağıdaki oluşturucu, her türün hangilerini aldığını gösterir."
@@ -9175,6 +9188,10 @@ msgstr "Nimble API’sinin adresi (/manage/… olmadan)."
 #: src/components/orgs/client-dialog.tsx
 msgid "The allocation can’t go below the switchers the client has. A limit never stops a running switcher."
 msgstr "Tahsis, müşterinin sahip olduğu switcher sayısının altına inemez. Limit, çalışan bir switcher’ı asla durdurmaz."
+
+#: src/components/connect-settings.tsx
+msgid "The app isn't code-signed yet, so Windows and macOS may warn before opening it."
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "The basics of this workspace."

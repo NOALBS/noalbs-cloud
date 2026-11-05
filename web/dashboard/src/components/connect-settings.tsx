@@ -49,6 +49,11 @@ import {
   pcObsLabel,
   watchdogOptions,
 } from "@/lib/connect";
+import {
+  CONNECT_RELEASES_URL,
+  connectDownloads,
+  detectConnectPlatform,
+} from "@/lib/connect-download";
 import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
 import { redactLog } from "@/lib/redact-log";
@@ -73,6 +78,17 @@ export function ConnectSettings() {
     (candidate) => candidate.id === switcher.id,
   );
   const pc = summary?.status?.pc;
+  const connectPlatform =
+    typeof navigator === "undefined"
+      ? null
+      : detectConnectPlatform({
+          userAgent: navigator.userAgent,
+          platform:
+            (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+              ?.platform ?? navigator.platform,
+          maxTouchPoints: navigator.maxTouchPoints,
+        });
+  const connectDownloadOptions = connectDownloads(connectPlatform);
   const owner = isOwner(actor);
   const canManageDevices = canManage && !isSupport(actor);
   const accessOptions = connectAccessOptions(workspace.managed_by?.name ?? null);
@@ -159,6 +175,51 @@ export function ConnectSettings() {
       description={t`Manage computers paired with this switcher and choose who can control OBS.`}
     >
       <div className="flex flex-col gap-5 px-5 pb-5">
+        <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {connectDownloadOptions.primary ? (
+              <Button variant="outline" size="sm" asChild>
+                <a href={connectDownloadOptions.primary.url} target="_blank" rel="noreferrer">
+                  <Download aria-hidden="true" />
+                  <Trans>Download for {connectDownloadOptions.primary.label}</Trans>
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <a href={CONNECT_RELEASES_URL} target="_blank" rel="noreferrer">
+                  <Download aria-hidden="true" />
+                  <Trans>Download NOALBS Cloud Connect</Trans>
+                </a>
+              </Button>
+            )}
+            {connectDownloadOptions.others.map((download) => (
+              <a
+                key={download.label}
+                href={download.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {download.label}
+              </a>
+            ))}
+            {connectDownloadOptions.primary && (
+              <a
+                href={CONNECT_RELEASES_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                <Trans>Other platforms</Trans>
+              </a>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <Trans>
+              The app isn't code-signed yet, so Windows and macOS may warn before opening it.
+            </Trans>
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold">
             <Trans>Paired computers</Trans>

@@ -3257,9 +3257,18 @@ msgstr ""
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
 
+#. placeholder {0}: connectDownloadOptions.primary.label
+#: src/components/connect-settings.tsx
+msgid "Download for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download my data"
 msgstr "自分のデータをダウンロード"
+
+#: src/components/connect-settings.tsx
+msgid "Download NOALBS Cloud Connect"
+msgstr ""
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download stream history"
@@ -6631,6 +6640,10 @@ msgstr "元のサイズ"
 msgid "Other"
 msgstr "その他"
 
+#: src/components/connect-settings.tsx
+msgid "Other platforms"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Other settings by kind: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5> and <6>api_key</6> (a token for IRLHosting WebSocket). The builder below shows which ones each kind takes."
 msgstr "種類ごとのその他の設定：<0>publisher</0>、<1>application</1>、<2>key</2>、<3>listener_id</3>、<4>username</4>、<5>password</5>、<6>api_key</6>（IRLHosting WebSocket用のトークン）。各種類で使う設定は、下のビルダーで確認できます。"
@@ -9175,6 +9188,10 @@ msgstr "NimbleのAPIアドレス（/manage/…を除く）です。"
 #: src/components/orgs/client-dialog.tsx
 msgid "The allocation can’t go below the switchers the client has. A limit never stops a running switcher."
 msgstr "割り当ては、クライアントのスイッチャー数を下回ることはできません。上限を設定しても、稼働中のスイッチャーが止まることはありません。"
+
+#: src/components/connect-settings.tsx
+msgid "The app isn't code-signed yet, so Windows and macOS may warn before opening it."
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "The basics of this workspace."

@@ -3257,9 +3257,18 @@ msgstr ""
 msgid "Download CSV"
 msgstr "CSV 다운로드"
 
+#. placeholder {0}: connectDownloadOptions.primary.label
+#: src/components/connect-settings.tsx
+msgid "Download for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download my data"
 msgstr "내 데이터 다운로드"
+
+#: src/components/connect-settings.tsx
+msgid "Download NOALBS Cloud Connect"
+msgstr ""
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download stream history"
@@ -6631,6 +6640,10 @@ msgstr "원래 크기"
 msgid "Other"
 msgstr "기타"
 
+#: src/components/connect-settings.tsx
+msgid "Other platforms"
+msgstr ""
+
 #: src/routes/integrate-stream-server.tsx
 msgid "Other settings by kind: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5> and <6>api_key</6> (a token for IRLHosting WebSocket). The builder below shows which ones each kind takes."
 msgstr "종류별 기타 설정: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5>, <6>api_key</6>(IRLHosting WebSocket용 토큰). 아래 빌더에서 종류별로 쓰는 설정을 확인할 수 있어요."
@@ -9175,6 +9188,10 @@ msgstr "Nimble API 주소예요(/manage/… 제외)."
 #: src/components/orgs/client-dialog.tsx
 msgid "The allocation can’t go below the switchers the client has. A limit never stops a running switcher."
 msgstr "할당량은 클라이언트의 스위처 수보다 낮출 수 없어요. 한도 때문에 실행 중인 스위처가 멈추지는 않아요."
+
+#: src/components/connect-settings.tsx
+msgid "The app isn't code-signed yet, so Windows and macOS may warn before opening it."
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "The basics of this workspace."
