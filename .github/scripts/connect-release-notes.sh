@@ -17,7 +17,9 @@ mapfile -t subjects < <(
     connect \
     .github/workflows/connect-release.yml \
     .github/workflows/connect.yml \
-    .github/scripts/connect-update-manifest.py
+    .github/scripts/connect-update-manifest.py \
+    .github/scripts/connect-release-notes.sh \
+    .github/scripts/test_connect_update_manifest.py
 )
 
 if ((${#subjects[@]} == 0)); then
