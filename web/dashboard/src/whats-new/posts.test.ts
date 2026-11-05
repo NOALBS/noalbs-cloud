@@ -49,6 +49,10 @@ describe("parsePost", () => {
     expect(post(`${basic}\npopup: false`).popup).toBe(false);
   });
 
+  it("refuses quoted field values", () => {
+    expect(() => post('title: "Quoted"\nsummary: Pick scenes.')).toThrow(/no quotes needed/);
+  });
+
   it("opens outside links in a new tab", () => {
     const { html } = post(basic, "[Docs](https://docs.noalbs.com/) and [home](/)");
     expect(html).toContain(

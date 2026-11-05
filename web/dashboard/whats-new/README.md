@@ -18,6 +18,8 @@ once in the dashboard to everyone who signed up before its date. Publishing is m
   The details, in Markdown: **bold**, lists, [links](https://docs.noalbs.com/), `## headings`.
   ```
 
+  Values are plain text: don't put them in quotes, even if they contain a colon.
+
   `image` (with `image_alt`) is optional: shown at the top of the post and in the popup. `popup` defaults to `true`;
   use `false` for small news that only goes on the page.
 - **Images** go in `images/`, linked as `images/…` (in the text too: `![What it shows](images/x.webp)`; the alt text is
