@@ -355,7 +355,7 @@ msgstr "{0} · {1}, {2} til {3}"
 #. placeholder {2}: by(event.data.by, t`from Connect`)
 #: src/lib/live-format.ts
 msgid "{0} · Args: {1} · {2}"
-msgstr ""
+msgstr "{0} · Argumenter: {1} · {2}"
 
 #. placeholder {0}: device.interface
 #: src/components/belabox/wifi-panel.tsx
@@ -556,12 +556,12 @@ msgstr "{0} fjernet"
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} requested an OBS log through Connect"
-msgstr ""
+msgstr "{0} ba om en OBS-logg via Connect"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} restarted OBS through Connect"
-msgstr ""
+msgstr "{0} startet OBS på nytt via Connect"
 
 #. placeholder {0}: addon.name
 #. placeholder {0}: plan.name
@@ -590,7 +590,7 @@ msgstr "{0} servere · {1}"
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} started OBS through Connect"
-msgstr ""
+msgstr "{0} startet OBS via Connect"
 
 #. placeholder {0}: workspacePlan.plan.name
 #. placeholder {1}: formatDay(subscription.current_period_end)
@@ -601,7 +601,7 @@ msgstr "{0} gjelder til {1}, deretter går arbeidsområdet over til Free. Ingent
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} stopped OBS through Connect"
-msgstr ""
+msgstr "{0} stoppet OBS via Connect"
 
 #. placeholder {0}: organization.name
 #. placeholder {0}: workspace.name
@@ -643,12 +643,12 @@ msgstr "{0} oppdatert"
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} uploaded a crash report through Connect"
-msgstr ""
+msgstr "{0} lastet opp en krasjrapport via Connect"
 
 #. placeholder {0}: event.data.by
 #: src/lib/live-format.ts
 msgid "{0} uploaded an OBS log through Connect"
-msgstr ""
+msgstr "{0} lastet opp en OBS-logg via Connect"
 
 #. placeholder {0}: users.data.total
 #: src/routes/_app/admin/users/index.tsx
@@ -784,7 +784,7 @@ msgstr "{inUse} i bruk: slett noen først, eller behold minst så mange."
 #. placeholder {0}: result.label
 #: src/components/switcher-status.tsx
 msgid "{label} · {0}"
-msgstr ""
+msgstr "{label} · {0}"
 
 #: src/components/orgs/chat-bot-section.tsx
 msgid "{label} bot disconnected"
@@ -830,11 +830,11 @@ msgstr "Teamet til {managedBy} og arbeidsområdets adminer ser den også utenfor
 
 #: src/lib/connect.ts
 msgid "{managedBy}’s team and workspace admins can use it. Operators can’t."
-msgstr ""
+msgstr "Teamet til {managedBy} og adminene i arbeidsområdet kan bruke den. Operatører kan ikke."
 
 #: src/lib/connect.ts
 msgid "{managedBy}’s team can use it. Admins and operators can’t."
-msgstr ""
+msgstr "Teamet til {managedBy} kan bruke den. Adminer og operatører kan ikke."
 
 #: src/lib/obs-preview.ts
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
@@ -995,7 +995,7 @@ msgstr "<0>{0}</0>per {1} / {2}"
 #. placeholder {0}: pcObsLabel(status.pc.obs)
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "<0>{connectDeviceName} is connected, but OBS isn’t.</0> {0}."
-msgstr ""
+msgstr "<0>{connectDeviceName} er tilkoblet, men OBS er ikke.</0> {0}."
 
 #: src/routes/integrate-stream-server.tsx
 msgid "<0>kind</0> and <1>url</1> are required, <2>name</2> is optional (the streamer can change it). Settings a kind doesn’t use are ignored."
@@ -1298,7 +1298,7 @@ msgstr "Legg til en for å koble til OBS. Oppsettet tar et par minutter."
 
 #: src/components/connect-settings.tsx
 msgid "Add program"
-msgstr ""
+msgstr "Legg til program"
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
@@ -1378,7 +1378,7 @@ msgstr "La til en switcher"
 #. placeholder {0}: program.added_from_dashboard_by
 #: src/components/connect-settings.tsx
 msgid "Added from the dashboard by {0}"
-msgstr ""
+msgstr "Lagt til fra dashbordet av {0}"
 
 #. placeholder {0}: created.name
 #. placeholder {0}: event.data.scene
@@ -1649,7 +1649,7 @@ msgstr "Tar i bruk…"
 
 #: src/components/connect-settings.tsx
 msgid "Arguments (one per line)"
-msgstr ""
+msgstr "Argumenter (ett per linje)"
 
 #: src/components/live/source-position.tsx
 msgid "As large as fits, keeping its shape."
@@ -2351,7 +2351,7 @@ msgstr "Sjekk lenken, eller be om en ny invitasjon."
 
 #: src/routes/_app/connect.tsx
 msgid "Checking this pairing code…"
-msgstr ""
+msgstr "Sjekker denne paringskoden…"
 
 #: src/components/slug-field.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -2377,11 +2377,11 @@ msgstr "Velg et abonnement eller et tillegg."
 
 #: src/routes/_app/connect.tsx
 msgid "Choose a switcher"
-msgstr ""
+msgstr "Velg en switcher"
 
 #: src/routes/_app/connect.tsx
 msgid "Choose a workspace"
-msgstr ""
+msgstr "Velg et arbeidsområde"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Choose network…"
@@ -2469,15 +2469,15 @@ msgstr "Gitt gratis av ansatte: det er ikke noe abonnement bak dem ennå. Hver e
 
 #: src/routes/_app/connect.tsx
 msgid "Computer connected"
-msgstr ""
+msgstr "Datamaskin tilkoblet"
 
 #: src/routes/_app/connect.tsx
 msgid "Computer requesting access"
-msgstr ""
+msgstr "Datamaskin ber om tilgang"
 
 #: src/components/connect-settings.tsx
 msgid "Computer revoked"
-msgstr ""
+msgstr "Datamaskin trukket tilbake"
 
 #. placeholder {0}: twitch.conduit_id ?? t`not created yet`
 #: src/routes/_app/admin/status.tsx
@@ -2500,7 +2500,7 @@ msgstr "Koble til"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
-msgstr ""
+msgstr "Connect · {connectDeviceName}"
 
 #. placeholder {0}: platform.label
 #: src/routes/_app/$workspace/account.tsx
@@ -2526,15 +2526,15 @@ msgstr "Koble til ved å logge inn som botkontoen (ikke din egen) når plattform
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
-msgstr ""
+msgstr "Connect-datamaskin"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
-msgstr ""
+msgstr "Connect er frakoblet. Programmer vises når datamaskinen er tilkoblet."
 
 #: src/lib/live-format.ts
 msgid "Connect log upload"
-msgstr ""
+msgstr "Logg lastet opp fra Connect"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect Moblin"
@@ -2559,7 +2559,7 @@ msgstr "Koble til OBS for å velge scener."
 
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
-msgstr ""
+msgstr "Connect-tillatelser endret"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect the channel you stream on so its chat can run commands."
@@ -2567,23 +2567,23 @@ msgstr "Koble til kanalen du strømmer på, så chatten kan kjøre kommandoer."
 
 #: src/routes/_app/connect.tsx
 msgid "Connect this computer"
-msgstr ""
+msgstr "Koble til denne datamaskinen"
 
 #: src/routes/_app/connect.tsx
 msgid "Connect to this switcher"
-msgstr ""
+msgstr "Koble til denne switcheren"
 
 #: src/lib/live-format.ts
 msgid "Connect uploaded a crash report"
-msgstr ""
+msgstr "Connect lastet opp en krasjrapport"
 
 #: src/lib/live-format.ts
 msgid "Connect uploaded an OBS log"
-msgstr ""
+msgstr "Connect lastet opp en OBS-logg"
 
 #: src/lib/live-format.ts
 msgid "Connect watchdog changed"
-msgstr ""
+msgstr "Connect-watchdog endret"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
@@ -2658,7 +2658,7 @@ msgstr "Tilkoblingen ble avbrutt."
 
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
-msgstr ""
+msgstr "Kobler til…"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
@@ -2761,7 +2761,7 @@ msgstr "Kunne ikke se etter et kort; beholder påminnelsen"
 
 #: src/routes/_app/connect.tsx
 msgid "Couldn’t check this code"
-msgstr ""
+msgstr "Kunne ikke sjekke denne koden"
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Couldn’t connect the account. Please try again."
@@ -2823,11 +2823,11 @@ msgstr "Dekker rammen og beholder formen; kantene skjæres bort."
 
 #: src/components/connect-settings.tsx
 msgid "Crash report"
-msgstr ""
+msgstr "Krasjrapport"
 
 #: src/components/connect-settings.tsx
 msgid "Crash reports and OBS logs uploaded by Connect."
-msgstr ""
+msgstr "Krasjrapporter og OBS-logger lastet opp av Connect."
 
 #: src/components/app-shell.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -3083,7 +3083,7 @@ msgstr "Slett kunder"
 
 #: src/components/connect-settings.tsx
 msgid "Delete log"
-msgstr ""
+msgstr "Slett logg"
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Delete my account"
@@ -3103,7 +3103,7 @@ msgstr "Slett switcher"
 
 #: src/components/connect-settings.tsx
 msgid "Delete this log?"
-msgstr ""
+msgstr "Slette denne loggen?"
 
 #: src/routes/_app/admin/notices.tsx
 msgid "Delete this notice?"
@@ -3173,7 +3173,7 @@ msgstr "Dev-innlogging"
 
 #: src/components/connect-settings.tsx
 msgid "Device removed"
-msgstr ""
+msgstr "Enhet fjernet"
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3255,7 +3255,7 @@ msgstr "Last ned"
 
 #: src/components/connect-settings.tsx
 msgid "Download .txt"
-msgstr ""
+msgstr "Last ned .txt"
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Download CSV"
@@ -3264,7 +3264,7 @@ msgstr "Last ned CSV"
 #. placeholder {0}: connectDownloadOptions.primary.label
 #: src/components/connect-settings.tsx
 msgid "Download for {0}"
-msgstr ""
+msgstr "Last ned for {0}"
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download my data"
@@ -3272,7 +3272,7 @@ msgstr "Last ned dataene mine"
 
 #: src/components/connect-settings.tsx
 msgid "Download NOALBS Cloud Connect"
-msgstr ""
+msgstr "Last ned NOALBS Cloud Connect"
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Download stream history"
@@ -3341,7 +3341,7 @@ msgstr "Rediger kunngjøring"
 
 #: src/components/connect-settings.tsx
 msgid "Edit program"
-msgstr ""
+msgstr "Rediger program"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -3631,7 +3631,7 @@ msgstr "Fyll"
 
 #: src/components/connect-settings.tsx
 msgid "Filter log lines"
-msgstr ""
+msgstr "Filtrer logglinjer"
 
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
@@ -3724,7 +3724,7 @@ msgstr "Fra {0} switcher(e). Hvert berørte arbeidsområde ser det i støttelogg
 
 #: src/lib/live-format.ts
 msgid "from Connect"
-msgstr ""
+msgstr "fra Connect"
 
 #: src/lib/live-format.ts
 msgid "from the dashboard"
@@ -3732,7 +3732,7 @@ msgstr "fra dashbordet"
 
 #: src/components/connect-settings.tsx
 msgid "Full program path"
-msgstr ""
+msgstr "Full sti til programmet"
 
 #: src/components/moblin-settings.tsx
 msgid "Generate"
@@ -3744,7 +3744,7 @@ msgstr "Generere et nytt Moblin-passord?"
 
 #: src/components/connect-settings.tsx
 msgid "Get latest OBS log"
-msgstr ""
+msgstr "Hent nyeste OBS-logg"
 
 #: src/lib/moblin.ts
 msgid "Getting hot"
@@ -3907,15 +3907,15 @@ msgstr "HTML"
 
 #: src/lib/connect.ts
 msgid "If OBS crashes or stops responding on a paired computer, Connect only reports it. It doesn’t restart OBS."
-msgstr ""
+msgstr "Hvis OBS krasjer eller slutter å svare på en paret datamaskin, rapporterer Connect det bare. Den starter ikke OBS på nytt."
 
 #: src/lib/connect.ts
 msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it and starts the stream again if it was live."
-msgstr ""
+msgstr "Hvis OBS krasjer eller slutter å svare på en paret datamaskin, starter Connect det på nytt og starter strømmen igjen hvis den var live."
 
 #: src/lib/connect.ts
 msgid "If OBS crashes or stops responding on a paired computer, Connect restarts it. It doesn’t go live again on its own."
-msgstr ""
+msgstr "Hvis OBS krasjer eller slutter å svare på en paret datamaskin, starter Connect det på nytt. Den går ikke live igjen av seg selv."
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -4383,7 +4383,7 @@ msgstr "Siste feil {0}{1}: {2}"
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
 msgid "Last seen {0}"
-msgstr ""
+msgstr "Sist sett {0}"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Latency"
@@ -4599,7 +4599,7 @@ msgstr "Last inn eldre strømmer"
 
 #: src/components/connect-settings.tsx
 msgid "Loading devices…"
-msgstr ""
+msgstr "Laster inn enheter…"
 
 #: src/components/live/source-editor.tsx
 msgid "Loading its settings from OBS…"
@@ -4607,15 +4607,15 @@ msgstr "Henter innstillingene fra OBS…"
 
 #: src/components/connect-settings.tsx
 msgid "Loading log…"
-msgstr ""
+msgstr "Laster inn logg…"
 
 #: src/components/connect-settings.tsx
 msgid "Loading logs…"
-msgstr ""
+msgstr "Laster inn logger…"
 
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
-msgstr ""
+msgstr "Laster inn programmer…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4629,7 +4629,7 @@ msgstr "Laster inn…"
 
 #: src/components/connect-settings.tsx
 msgid "Logs"
-msgstr ""
+msgstr "Logger"
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -4792,7 +4792,7 @@ msgstr "Administrer fakturering"
 
 #: src/components/connect-settings.tsx
 msgid "Manage computers paired with this switcher and choose who can control OBS."
-msgstr ""
+msgstr "Administrer datamaskiner som er paret med denne switcheren, og velg hvem som kan styre OBS."
 
 #: src/routes/_app/invite.$token.tsx
 msgid "Manage members, switchers or billing"
@@ -5100,7 +5100,7 @@ msgstr "Moderator for noen? Lim inn lenken de sendte deg."
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "Mode: {0} {1}"
-msgstr ""
+msgstr "Modus: {0} {1}"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Modems"
@@ -5481,7 +5481,7 @@ msgstr "Ingen kunder ennå. Opprett en for å sette opp switcheren deres og invi
 
 #: src/components/connect-settings.tsx
 msgid "No computers are paired yet."
-msgstr ""
+msgstr "Ingen datamaskiner er paret ennå."
 
 #: src/lib/triggers.ts
 msgid "no feed"
@@ -5515,7 +5515,7 @@ msgstr "Ingen instans har fulgt YouTube-chatter ennå."
 
 #: src/components/connect-settings.tsx
 msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
-msgstr ""
+msgstr "Ingen logger ennå. Connect laster opp en etter et OBS-krasj, eller hent den nyeste her."
 
 #: src/routes/_app/admin/status.tsx
 msgid "No longer linked"
@@ -5582,7 +5582,7 @@ msgstr "Ingen pris: det er gratisabonnementet."
 
 #: src/components/connect-settings.tsx
 msgid "No programs have been added yet."
-msgstr ""
+msgstr "Ingen programmer er lagt til ennå."
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5663,7 +5663,7 @@ msgstr "Ingen switcher er tilkoblet akkurat nå. Tilkoblede switchere vises her.
 
 #: src/routes/_app/connect.tsx
 msgid "No switcher you can manage"
-msgstr ""
+msgstr "Ingen switcher du kan administrere"
 
 #: src/routes/_app/$workspace/overview.tsx
 msgid "No switchers yet"
@@ -5702,7 +5702,7 @@ msgstr "NOALBS Cloud i korte trekk."
 #: src/components/connect-settings.tsx
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
-msgstr ""
+msgstr "NOALBS Cloud Connect"
 
 #: src/components/belabox-settings.tsx
 msgid "NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX. BELABOX is a trademark of its owner."
@@ -5793,7 +5793,9 @@ msgstr "Nomad Live"
 msgid "Nomad Live\n"
 "Bike Crew\n"
 "Kate IRL"
-msgstr ""
+msgstr "Nomad Live\n"
+"Bike Crew\n"
+"Kate IRL"
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -5879,7 +5881,7 @@ msgstr "Ikke koblet til et WiFi-nettverk"
 
 #: src/components/connect-settings.tsx
 msgid "Not connected yet"
-msgstr ""
+msgstr "Ikke tilkoblet ennå"
 
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Not connected: {label} channels without their own bot get no replies."
@@ -6068,7 +6070,7 @@ msgstr "OBS har allerede en kilde eller scene med det navnet."
 
 #: src/lib/live-format.ts
 msgid "OBS command"
-msgstr ""
+msgstr "OBS-kommando"
 
 #: src/lib/admin.ts
 #: src/lib/connect.ts
@@ -6091,11 +6093,11 @@ msgstr "OBS kobler til gjennom nettleserkilden"
 #. placeholder {3}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
 msgid "OBS control: {0} · Logs: {1} · Programs: {2} {3}"
-msgstr ""
+msgstr "OBS-styring: {0} · Logger: {1} · Programmer: {2} {3}"
 
 #: src/lib/connect.ts
 msgid "OBS crashed"
-msgstr ""
+msgstr "OBS krasjet"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "OBS did not return any scenes with UUIDs."
@@ -6149,15 +6151,15 @@ msgstr "OBS har ikke rapportert scenen sin ennå."
 
 #: src/lib/connect.ts
 msgid "OBS is in safe mode"
-msgstr ""
+msgstr "OBS er i sikker modus"
 
 #: src/lib/connect.ts
 msgid "OBS is waiting for input"
-msgstr ""
+msgstr "OBS venter på input"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS isn’t connected to Connect on {connectDevice}."
-msgstr ""
+msgstr "OBS er ikke koblet til Connect på {connectDevice}."
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS isn’t connected."
@@ -6173,19 +6175,19 @@ msgstr "OBS er ikke tilkoblet. Åpne OBS med NOALBS-nettleserkilden aktiv for å
 
 #: src/components/connect-settings.tsx
 msgid "OBS log"
-msgstr ""
+msgstr "OBS-logg"
 
 #: src/components/connect-settings.tsx
 msgid "OBS log uploaded"
-msgstr ""
+msgstr "OBS-logg lastet opp"
 
 #: src/lib/connect.ts
 msgid "OBS not responding"
-msgstr ""
+msgstr "OBS svarer ikke"
 
 #: src/lib/connect.ts
 msgid "OBS not running"
-msgstr ""
+msgstr "OBS kjører ikke"
 
 #. placeholder {0}: switcher.obs.port
 #: src/components/settings-hub.tsx
@@ -6202,7 +6204,7 @@ msgstr "OBS-forhåndsvisning utenfor sending"
 
 #: src/hooks/use-connect-obs-command.ts
 msgid "OBS restarted"
-msgstr ""
+msgstr "OBS startet på nytt"
 
 #: src/components/live/quick-actions.tsx
 msgid "OBS saves the recording so far. Recording again starts a new file."
@@ -6214,15 +6216,15 @@ msgstr "OBS sendte et bilde vi ikke kan lese."
 
 #: src/hooks/use-connect-obs-command.ts
 msgid "OBS started"
-msgstr ""
+msgstr "OBS startet"
 
 #: src/lib/connect.ts
 msgid "OBS starting"
-msgstr ""
+msgstr "OBS starter"
 
 #: src/lib/connect.ts
 msgid "OBS state unknown"
-msgstr ""
+msgstr "OBS-status ukjent"
 
 #: src/components/app-shell.tsx
 msgid "OBS stats"
@@ -6230,11 +6232,11 @@ msgstr "OBS-statistikk"
 
 #: src/hooks/use-connect-obs-command.ts
 msgid "OBS stopped"
-msgstr ""
+msgstr "OBS stoppet"
 
 #: src/components/connect-settings.tsx
 msgid "OBS watchdog"
-msgstr ""
+msgstr "OBS-watchdog"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "OBS WebSocket"
@@ -6242,7 +6244,7 @@ msgstr "OBS WebSocket"
 
 #: src/lib/connect.ts
 msgid "OBS WebSocket is disabled"
-msgstr ""
+msgstr "OBS WebSocket er slått av"
 
 #. placeholder {0}: connected ? t`connected` : t`not connected`
 #: src/components/app-shell.tsx
@@ -6374,12 +6376,12 @@ msgstr "Én kunde per linje, opptil {BULK_MAX}. Hver URL følger navnet (et tall
 #. placeholder {0}: pcObsLabel(onlineObs)
 #: src/components/connect-settings.tsx
 msgid "Online · {0}"
-msgstr ""
+msgstr "Tilkoblet · {0}"
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/connect-settings.tsx
 msgid "Only {0} can change these permissions."
-msgstr ""
+msgstr "Bare {0} kan endre disse tillatelsene."
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -6417,7 +6419,7 @@ msgstr "Bare en admin kan bli eier. Gjør vedkommende til admin først."
 
 #: src/routes/_app/connect.tsx
 msgid "Only continue if NOALBS Cloud Connect is showing this code on your own computer. If someone sent you this link, don’t connect it. The computer will be able to control OBS for this switcher."
-msgstr ""
+msgstr "Fortsett bare hvis NOALBS Cloud Connect viser denne koden på din egen datamaskin. Hvis noen har sendt deg denne lenken, ikke koble den til. Datamaskinen vil kunne styre OBS for denne switcheren."
 
 #: src/lib/api-messages.ts
 msgid "Only flat-rate prices above zero can be linked."
@@ -6466,7 +6468,7 @@ msgstr "Bare eieren av arbeidsområdet kan endre abonnementet."
 
 #: src/components/connect-settings.tsx
 msgid "Only the workspace’s owner can change these permissions."
-msgstr ""
+msgstr "Bare eieren av arbeidsområdet kan endre disse tillatelsene."
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Only the workspace’s owner can change this."
@@ -6478,7 +6480,7 @@ msgstr "Bare eieren av arbeidsområdet kan velge hvem som ser forhåndsvisningen
 
 #: src/lib/connect.ts
 msgid "Only the workspace’s owner can use it. Admins and operators can’t."
-msgstr ""
+msgstr "Bare eieren av arbeidsområdet kan bruke den. Adminer og operatører kan ikke."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Only used when you or a mod asks for them."
@@ -6519,7 +6521,7 @@ msgstr "Åpent nettverk: uten passord"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
-msgstr ""
+msgstr "Åpne innstillinger"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open Setup"
@@ -6646,7 +6648,7 @@ msgstr "Annet"
 
 #: src/components/connect-settings.tsx
 msgid "Other platforms"
-msgstr ""
+msgstr "Andre plattformer"
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Other settings by kind: <0>publisher</0>, <1>application</1>, <2>key</2>, <3>listener_id</3>, <4>username</4>, <5>password</5> and <6>api_key</6> (a token for IRLHosting WebSocket). The builder below shows which ones each kind takes."
@@ -6695,7 +6697,7 @@ msgstr "Eier"
 
 #: src/lib/connect.ts
 msgid "Owners, admins and operators can use it."
-msgstr ""
+msgstr "Eiere, adminer og operatører kan bruke den."
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
@@ -6704,11 +6706,11 @@ msgstr "side-URL"
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
 msgid "Paired {0}"
-msgstr ""
+msgstr "Paret {0}"
 
 #: src/components/connect-settings.tsx
 msgid "Paired computers"
-msgstr ""
+msgstr "Parede datamaskiner"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
@@ -7017,41 +7019,41 @@ msgstr "Produkter"
 
 #: src/lib/live-format.ts
 msgid "Program added"
-msgstr ""
+msgstr "Program lagt til"
 
 #. placeholder {0}: by(event.data.by, t`from Connect`)
 #: src/lib/live-format.ts
 msgid "Program details hidden · {0}"
-msgstr ""
+msgstr "Programdetaljer skjult · {0}"
 
 #: src/lib/live-format.ts
 msgid "Program edited"
-msgstr ""
+msgstr "Program redigert"
 
 #: src/components/connect-settings.tsx
 msgid "Program editing is controlled by the Connect setting on this PC. Turn on “Allow the dashboard to add and edit programs” in Connect and try again."
-msgstr ""
+msgstr "Redigering av programmer styres av en Connect-innstilling på denne PC-en. Slå på «Tillat dashbordet å legge til og redigere programmer» i Connect og prøv igjen."
 
 #: src/components/connect-settings.tsx
 #: src/lib/live-format.ts
 msgid "Program removed"
-msgstr ""
+msgstr "Program fjernet"
 
 #: src/lib/live-format.ts
 msgid "Program started"
-msgstr ""
+msgstr "Program startet"
 
 #: src/lib/live-format.ts
 msgid "Program stopped"
-msgstr ""
+msgstr "Program stoppet"
 
 #: src/components/connect-settings.tsx
 msgid "Programs"
-msgstr ""
+msgstr "Programmer"
 
 #: src/components/connect-settings.tsx
 msgid "Programs managed by the paired Connect computer."
-msgstr ""
+msgstr "Programmer som styres av den parede Connect-datamaskinen."
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Public commands"
@@ -7304,7 +7306,7 @@ msgstr "Fjern passord"
 
 #: src/components/connect-settings.tsx
 msgid "Remove program?"
-msgstr ""
+msgstr "Fjerne programmet?"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7398,12 +7400,12 @@ msgstr "Fjerner kontoen din og alle arbeidsområder du eier alene. Dette kan ikk
 
 #: src/components/connect-settings.tsx
 msgid "Rename"
-msgstr ""
+msgstr "Gi nytt navn"
 
 #. placeholder {0}: device.name
 #: src/components/connect-settings.tsx
 msgid "Rename {0}"
-msgstr ""
+msgstr "Gi {0} nytt navn"
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -7473,25 +7475,25 @@ msgstr "Forespørselen mislyktes ({0})"
 
 #: src/lib/live-format.ts
 msgid "Requested an OBS log through Connect"
-msgstr ""
+msgstr "Ba om en OBS-logg via Connect"
 
 #: src/components/connect-settings.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
-msgstr ""
+msgstr "Start OBS på nytt"
 
 #: src/lib/connect.ts
 msgid "Restart OBS and go live again"
-msgstr ""
+msgstr "Start OBS på nytt og gå live igjen"
 
 #. placeholder {0}: device.name
 #: src/components/connect-settings.tsx
 msgid "Restart OBS on {0}?"
-msgstr ""
+msgstr "Starte OBS på nytt på {0}?"
 
 #: src/components/connect-settings.tsx
 msgid "Restart OBS?"
-msgstr ""
+msgstr "Starte OBS på nytt?"
 
 #: src/components/live/source-editor.tsx
 msgid "Restart playback when the source becomes active"
@@ -7499,7 +7501,7 @@ msgstr "Start avspillingen på nytt når kilden blir aktiv"
 
 #: src/lib/live-format.ts
 msgid "Restarted OBS through Connect"
-msgstr ""
+msgstr "Startet OBS på nytt via Connect"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Restarting hotspot…"
@@ -7527,11 +7529,11 @@ msgstr "Antall nye forsøk må være mellom 0 og 100"
 
 #: src/routes/_app/connect.tsx
 msgid "Return to the NOALBS Cloud Connect app and open its pairing link again."
-msgstr ""
+msgstr "Gå tilbake til NOALBS Cloud Connect-appen og åpne paringslenken på nytt."
 
 #: src/routes/_app/connect.tsx
 msgid "Return to the NOALBS Cloud Connect app to start a new pairing."
-msgstr ""
+msgstr "Gå tilbake til NOALBS Cloud Connect-appen for å starte en ny paring."
 
 #: src/components/app-shell.tsx
 msgid "Review"
@@ -7545,7 +7547,7 @@ msgstr "Trekk tilbake"
 #. placeholder {0}: device.name
 #: src/components/connect-settings.tsx
 msgid "Revoke {0}?"
-msgstr ""
+msgstr "Trekke tilbake {0}?"
 
 #: src/components/orgs/customer-invite-dialog.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -7559,7 +7561,7 @@ msgstr "Trukket tilbake"
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
 msgid "Revoked {0}"
-msgstr ""
+msgstr "Trakk tilbake {0}"
 
 #: src/lib/org-audit.ts
 msgid "Revoked a customer invite link for {subject}"
@@ -7639,7 +7641,7 @@ msgstr "RTT-utløsere må være mellom 1 og 60 000 ms."
 
 #: src/components/connect-settings.tsx
 msgid "Running"
-msgstr ""
+msgstr "Kjører"
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Running a stream server? Put a link on your site that opens NOALBS Cloud with your stats URL filled in. The streamer signs in, picks a workspace and a switcher, and confirms."
@@ -7727,7 +7729,7 @@ msgstr "Lagret her, ikke på BELABOX-en ennå: den beholder dem når den startes
 
 #: src/components/connect-settings.tsx
 msgid "Saved program"
-msgstr ""
+msgstr "Program lagret"
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Saved. The BELABOX uses these from its next start."
@@ -8138,7 +8140,7 @@ msgstr "Vis eldre"
 
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
-msgstr ""
+msgstr "Vis sensitive verdier"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
@@ -8436,7 +8438,7 @@ msgstr "Start Moblin med OBS-strømmen"
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Start OBS"
-msgstr ""
+msgstr "Start OBS"
 
 #: src/components/live/quick-actions.tsx
 msgid "Start stream"
@@ -8453,7 +8455,7 @@ msgstr "Starte strømmen?"
 
 #: src/components/connect-settings.tsx
 msgid "Start with OBS"
-msgstr ""
+msgstr "Start med OBS"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Start, end & raids"
@@ -8465,7 +8467,7 @@ msgstr "Startet en Checkout"
 
 #: src/lib/live-format.ts
 msgid "Started OBS through Connect"
-msgstr ""
+msgstr "Startet OBS via Connect"
 
 #: src/lib/support.ts
 msgid "Started or stopped recording"
@@ -8570,16 +8572,16 @@ msgstr "Stopp Moblin med OBS-strømmen"
 
 #: src/components/connect-settings.tsx
 msgid "Stop OBS"
-msgstr ""
+msgstr "Stopp OBS"
 
 #. placeholder {0}: device.name
 #: src/components/connect-settings.tsx
 msgid "Stop OBS on {0}?"
-msgstr ""
+msgstr "Stoppe OBS på {0}?"
 
 #: src/components/connect-settings.tsx
 msgid "Stop OBS?"
-msgstr ""
+msgstr "Stoppe OBS?"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Stop on the Ending scene"
@@ -8635,7 +8637,7 @@ msgstr "Stopp når offline"
 
 #: src/components/connect-settings.tsx
 msgid "Stop with OBS"
-msgstr ""
+msgstr "Stopp med OBS"
 
 #: src/components/live/source-editor.tsx
 msgid "Stop, and restart when shown"
@@ -8643,11 +8645,11 @@ msgstr "Stopp, og start på nytt når den vises"
 
 #: src/components/connect-settings.tsx
 msgid "Stopped"
-msgstr ""
+msgstr "Stoppet"
 
 #: src/lib/live-format.ts
 msgid "Stopped OBS through Connect"
-msgstr ""
+msgstr "Stoppet OBS via Connect"
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -9195,7 +9197,7 @@ msgstr "Tildelingen kan ikke settes lavere enn antall switchere kunden har. En g
 
 #: src/components/connect-settings.tsx
 msgid "The app isn't code-signed yet, so Windows and macOS may warn before opening it."
-msgstr ""
+msgstr "Appen er ikke kodesignert ennå, så Windows og macOS kan advare før den åpnes."
 
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "The basics of this workspace."
@@ -9361,7 +9363,7 @@ msgstr "De nyeste switcherne over {0} er satt på pause: de forblir tilkoblet, m
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "The OBS connection, browser-source link and NOALBS Cloud Connect, BELABOX Cloud, Moblin, preview visibility and this switcher’s name."
-msgstr ""
+msgstr "OBS-tilkoblingen, nettleserkildelenken og NOALBS Cloud Connect, BELABOX Cloud, Moblin, synligheten til forhåndsvisningen og navnet på denne switcheren."
 
 #: src/lib/api-messages.ts
 msgid "The offline timeout must be between 1 and 1440 minutes"
@@ -9390,7 +9392,7 @@ msgstr "Eieren og adminer ser den også utenfor sending. Operatører ser den bar
 
 #: src/lib/connect.ts
 msgid "The owner and workspace admins can use it. Operators can’t."
-msgstr ""
+msgstr "Eieren og adminene i arbeidsområdet kan bruke den. Operatører kan ikke."
 
 #: src/lib/api-messages.ts
 msgid "The owner can't leave or be removed. Transfer ownership to an admin first."
@@ -9527,7 +9529,7 @@ msgstr "Strømhistorikken, statistikken, markørene og aktivitetsloggen til dine
 
 #: src/components/connect-settings.tsx
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
-msgstr ""
+msgstr "Strømmen er live og faller ut hvis OBS stopper. Vil du fortsette?"
 
 #: src/lib/stream-server-kinds.ts
 msgid "The streams API of Node Media Server; the application and key are added to it."
@@ -9668,7 +9670,7 @@ msgstr "Dette kan ikke angres. Innstillingene og strømserverne slettes også."
 
 #: src/components/connect-settings.tsx
 msgid "This computer’s token will stop working. It must be paired again to reconnect."
-msgstr ""
+msgstr "Tokenet til denne datamaskinen slutter å virke. Den må pares på nytt for å koble til igjen."
 
 #: src/lib/api-messages.ts
 #: src/routes/_app/invite.$token.tsx
@@ -9760,11 +9762,11 @@ msgstr "Denne siden eller dette arbeidsområdet finnes ikke, eller du er ikke me
 
 #: src/routes/_app/connect.tsx
 msgid "This pairing code expired or was already confirmed. Return to the app to start again."
-msgstr ""
+msgstr "Denne paringskoden har utløpt eller er allerede bekreftet. Gå tilbake til appen for å begynne på nytt."
 
 #: src/routes/_app/connect.tsx
 msgid "This pairing code has expired"
-msgstr ""
+msgstr "Denne paringskoden har utløpt"
 
 #: src/components/belabox/stream-panel.tsx
 msgid "This pipeline has no audio settings."
@@ -9772,7 +9774,7 @@ msgstr "Denne pipelinen har ingen lydinnstillinger."
 
 #: src/components/connect-settings.tsx
 msgid "This program will be removed from the paired Connect computer."
-msgstr ""
+msgstr "Dette programmet fjernes fra den parede Connect-datamaskinen."
 
 #: src/components/live/source-list.tsx
 msgid "This scene has no sources."
@@ -9800,7 +9802,7 @@ msgstr "Denne switcheren er satt på pause: arbeidsområdet har flere switchere 
 
 #: src/components/connect-settings.tsx
 msgid "This uploaded log will be permanently deleted."
-msgstr ""
+msgstr "Denne opplastede loggen slettes permanent."
 
 #: src/lib/api-messages.ts
 msgid "This URL is already taken"
@@ -9812,7 +9814,7 @@ msgstr "Denne URL-en er ikke tilgjengelig"
 
 #: src/routes/_app/connect.tsx
 msgid "This verification link is incomplete"
-msgstr ""
+msgstr "Denne bekreftelseslenken er ufullstendig"
 
 #: src/lib/api-messages.ts
 msgid "This workspace already has a subscription. Change it here instead."
@@ -9914,7 +9916,7 @@ msgstr "Prøvde å se Moblin-passordet"
 
 #: src/components/connect-settings.tsx
 msgid "Truncated"
-msgstr ""
+msgstr "Avkortet"
 
 #: src/routes/integrate-stream-server.tsx
 msgid "Try it"
@@ -10421,7 +10423,7 @@ msgstr "Hvem som svarer i chatten til kundenes kanaler."
 
 #: src/components/connect-settings.tsx
 msgid "Who can add, start and stop programs"
-msgstr ""
+msgstr "Hvem som kan legge til, starte og stoppe programmer"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Who can see and run this workspace."
@@ -10433,11 +10435,11 @@ msgstr "Hvem som kan se og styre kundene dine."
 
 #: src/components/connect-settings.tsx
 msgid "Who can see OBS logs"
-msgstr ""
+msgstr "Hvem som kan se OBS-logger"
 
 #: src/components/connect-settings.tsx
 msgid "Who can start, stop and restart OBS"
-msgstr ""
+msgstr "Hvem som kan starte, stoppe og starte OBS på nytt"
 
 #. placeholder {0}: command.command
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
@@ -10614,7 +10616,7 @@ msgstr "Du er ikke admin eller eier av noe arbeidsområde, så du kan ikke legge
 
 #: src/routes/_app/connect.tsx
 msgid "You can close this tab; Connect is now connected."
-msgstr ""
+msgstr "Du kan lukke denne fanen; Connect er nå tilkoblet."
 
 #: src/components/settings.tsx
 msgid "You can view these settings. Ask an admin of this workspace to change them."
@@ -10666,7 +10668,7 @@ msgstr "Du mister tilgangen til organisasjonen og alle kundene med en gang. En a
 
 #: src/routes/_app/connect.tsx
 msgid "You need switcher management access in a workspace to pair this computer."
-msgstr ""
+msgstr "Du trenger tilgang til å administrere switchere i et arbeidsområde for å pare denne datamaskinen."
 
 #: src/components/orgs/managed-notice.tsx
 msgid "You run it with them as an admin. You can leave any time, and you can still create workspaces of your own."
@@ -10851,7 +10853,7 @@ msgstr "Seerne dine vil se at strømmen slutter."
 
 #: src/components/connect-settings.tsx
 msgid "Your workspace role can’t control OBS through Connect, so it can’t change the watchdog."
-msgstr ""
+msgstr "Rollen din i arbeidsområdet kan ikke styre OBS via Connect, så den kan ikke endre watchdogen."
 
 #: src/routes/_app/admin/status.tsx
 msgid "YouTube"
