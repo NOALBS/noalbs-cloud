@@ -49,6 +49,8 @@ pub struct Program {
     pub args: Vec<String>,
     pub start_with_obs: bool,
     pub stop_with_obs: bool,
+    #[serde(default)]
+    pub close_when_idle: bool,
     pub added_from_dashboard_by: Option<String>,
 }
 
@@ -74,6 +76,7 @@ mod tests {
             args: Vec::new(),
             start_with_obs: false,
             stop_with_obs: false,
+            close_when_idle: false,
             added_from_dashboard_by: None,
         };
         let add = ConnectCommandAction::ProgramAdd {

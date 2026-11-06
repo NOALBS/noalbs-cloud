@@ -224,6 +224,8 @@ pub struct Setup {
     pub programs: Vec<Program>,
     #[serde(default = "default_allow_dashboard_program_edits")]
     pub allow_dashboard_program_edits: bool,
+    #[serde(default)]
+    pub idle_close_minutes: Option<u32>,
 }
 
 fn default_allow_dashboard_program_edits() -> bool {
@@ -245,6 +247,7 @@ impl Setup {
             pairing: None,
             programs: Vec::new(),
             allow_dashboard_program_edits: true,
+            idle_close_minutes: None,
         }
     }
 }

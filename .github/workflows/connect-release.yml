@@ -62,7 +62,7 @@ jobs:
             os: windows-latest
             bundles: nsis
           - platform: macos
-            os: macos-14
+            os: macos-15
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

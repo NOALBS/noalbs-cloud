@@ -315,6 +315,7 @@ mod tests {
             args: Vec::new(),
             start_with_obs: false,
             stop_with_obs: false,
+            close_when_idle: false,
             added_from_dashboard_by: None,
         }
     }

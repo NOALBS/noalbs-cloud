@@ -663,6 +663,7 @@ async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
             "args": ["--secret"],
             "start_with_obs": false,
             "stop_with_obs": false,
+            "close_when_idle": true,
             "added_from_dashboard_by": "Kate"
         },
         "by": "Kate"
@@ -704,6 +705,11 @@ async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
         .unwrap();
     assert!(admin_event["data"]["program"].get("path").is_none());
     assert_eq!(admin_event["data"]["program"]["args"], json!([]));
+    assert!(
+        admin_event["data"]["program"]
+            .get("close_when_idle")
+            .is_none()
+    );
     assert!(
         admin_event["data"]["program"]
             .get("added_from_dashboard_by")

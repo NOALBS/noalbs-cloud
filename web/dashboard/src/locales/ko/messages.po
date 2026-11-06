@@ -2435,6 +2435,10 @@ msgstr "닫기"
 msgid "Close the stream while it isn’t shown"
 msgstr "보이지 않는 동안 스트림 닫기"
 
+#: src/components/connect-settings.tsx
+msgid "Close when OBS is idle"
+msgstr "OBS가 유휴 상태일 때 닫기"
+
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "코드"
