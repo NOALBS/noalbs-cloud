@@ -2437,7 +2437,7 @@ msgstr "Stream schließen, solange sie nicht sichtbar ist"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "Schließen, wenn OBS inaktiv ist"
 
 #: src/components/admin/products.tsx
 msgid "Code"

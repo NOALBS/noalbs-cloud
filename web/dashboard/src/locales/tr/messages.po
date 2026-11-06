@@ -2437,7 +2437,7 @@ msgstr "Gösterilmediği sürece yayını kapat"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "OBS boştayken kapat"
 
 #: src/components/admin/products.tsx
 msgid "Code"

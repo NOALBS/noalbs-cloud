@@ -2437,7 +2437,7 @@ msgstr "不显示时关闭视频流"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "OBS 空闲时关闭"
 
 #: src/components/admin/products.tsx
 msgid "Code"

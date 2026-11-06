@@ -2437,7 +2437,7 @@ msgstr "Stäng strömmen när den inte visas"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "Stäng när OBS är inaktiv"
 
 #: src/components/admin/products.tsx
 msgid "Code"

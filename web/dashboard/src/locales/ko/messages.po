@@ -2437,7 +2437,7 @@ msgstr "보이지 않는 동안 스트림 닫기"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "OBS가 유휴 상태일 때 닫기"
 
 #: src/components/admin/products.tsx
 msgid "Code"

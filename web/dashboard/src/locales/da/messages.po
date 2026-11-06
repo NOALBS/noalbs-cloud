@@ -2437,7 +2437,7 @@ msgstr "Luk streamen, mens den ikke vises"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "Luk, når OBS er inaktiv"
 
 #: src/components/admin/products.tsx
 msgid "Code"

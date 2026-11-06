@@ -2437,7 +2437,7 @@ msgstr "Закрывать поток, пока он не показан"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "Закрывать, когда OBS простаивает"
 
 #: src/components/admin/products.tsx
 msgid "Code"

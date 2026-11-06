@@ -2437,7 +2437,7 @@ msgstr "Fermer le flux quand elle n’est pas affichée"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "Fermer quand OBS est inactif"
 
 #: src/components/admin/products.tsx
 msgid "Code"

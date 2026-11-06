@@ -2437,7 +2437,7 @@ msgstr "表示されていない間はストリームを閉じる"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "OBSがアイドル状態のときに閉じる"
 
 #: src/components/admin/products.tsx
 msgid "Code"

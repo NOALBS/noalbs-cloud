@@ -2437,7 +2437,7 @@ msgstr "未顯示時關閉串流"
 
 #: src/components/connect-settings.tsx
 msgid "Close when OBS is idle"
-msgstr ""
+msgstr "OBS 閒置時關閉"
 
 #: src/components/admin/products.tsx
 msgid "Code"
