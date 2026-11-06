@@ -1514,7 +1514,7 @@ fn start_link_session(
         let mut not_responding_since = None;
         let mut last_obs_activity_count = 0_u64;
         let mut last_obs_activity = Instant::now();
-        let mut idle_close_done = false;
+        let mut idle_closed: HashSet<uuid::Uuid> = HashSet::new();
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
@@ -1560,7 +1560,7 @@ fn start_link_session(
                     if activity_count != last_obs_activity_count {
                         last_obs_activity_count = activity_count;
                         last_obs_activity = Instant::now();
-                        idle_close_done = false;
+                        idle_closed.clear();
                     }
                     let outputs_active = {
                         let telemetry = monitor_telemetry.borrow();
@@ -1572,22 +1572,25 @@ fn start_link_session(
                         && programs::obs_is_running(&process_state);
                     if !observable || outputs_active {
                         last_obs_activity = Instant::now();
-                        idle_close_done = false;
+                        idle_closed.clear();
                     }
                     if let Some(minutes) = idle_close_minutes
                         && observable
-                        && !idle_close_done
                         && last_obs_activity.elapsed()
                             >= Duration::from_secs(u64::from(minutes) * 60)
                     {
-                        idle_close_done = true;
                         let due = program_status
                             .iter()
                             .flatten()
-                            .filter(|status| status.running && status.program.close_when_idle)
+                            .filter(|status| {
+                                status.running
+                                    && status.program.close_when_idle
+                                    && !idle_closed.contains(&status.program.id)
+                            })
                             .map(|status| status.program.clone())
                             .collect::<Vec<_>>();
                         if !due.is_empty() {
+                            idle_closed.extend(due.iter().map(|program| program.id));
                             let idle_app = monitor_handle.clone();
                             let idle_setup_id = monitor_setup.id;
                             tauri::async_runtime::spawn_blocking(move || {

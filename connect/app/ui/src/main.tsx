@@ -829,13 +829,18 @@ function SetupDetail({
 					</Check>
 					<Field
 						label="Close programs when OBS is idle for"
-						hint="Minutes with no stream, recording, or OBS activity while connected. Programs need “Close when OBS is idle” checked. Leave empty to turn off."
+						hint={
+							setup.paired
+								? "Minutes with no stream, recording, or OBS activity while connected. Programs need “Close when OBS is idle” checked. Leave empty to turn off."
+								: "Requires pairing: idle detection needs the OBS websocket link."
+						}
 					>
 						<input
 							key={String(setup.idle_close_minutes)}
 							type="number"
 							min={1}
 							placeholder="Off"
+							disabled={!setup.paired}
 							defaultValue={setup.idle_close_minutes ?? ""}
 							onBlur={(event) => {
 								const minutes = Number(event.target.value);
