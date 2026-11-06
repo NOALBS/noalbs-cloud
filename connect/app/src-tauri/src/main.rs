@@ -6,7 +6,7 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -84,6 +84,7 @@ impl SharedProcesses {
 
 const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
 const NOT_RESPONDING_GRACE: Duration = Duration::from_secs(10);
+const IDLE_OBS_STOP_RETRY: Duration = Duration::from_secs(60);
 
 fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
     max_age.is_zero() || now.saturating_duration_since(last_refresh) >= max_age
@@ -128,6 +129,7 @@ struct SetupSummary {
     programs: Vec<common::programs::ProgramStatus>,
     allow_dashboard_program_edits: bool,
     idle_close_minutes: Option<u32>,
+    idle_keep_obs_open: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -214,6 +216,7 @@ fn build_ui_state_with(
                     programs: programs::status_with(&setup.programs, process_snapshot.system()),
                     allow_dashboard_program_edits: setup.allow_dashboard_program_edits,
                     idle_close_minutes: setup.idle_close_minutes,
+                    idle_keep_obs_open: setup.idle_keeps_obs_open(),
                 }
             })
             .collect(),
@@ -944,6 +947,30 @@ fn set_idle_close_minutes(
     Ok(get_state(state))
 }
 
+#[tauri::command]
+fn set_idle_keep_obs_open(
+    setup_id: String,
+    keep_open: bool,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    let mut updated_config = config.clone();
+    let setup = updated_config
+        .setups
+        .iter_mut()
+        .find(|setup| setup.id == setup_id)
+        .ok_or("setup not found")?;
+    setup.idle_keep_obs_open = Some(keep_open);
+    state
+        .store
+        .save(&updated_config)
+        .map_err(|error| error.to_string())?;
+    *config = updated_config;
+    drop(config);
+    Ok(get_state(state))
+}
+
 fn create_log_upload(
     state: &AppState,
     setup_id: uuid::Uuid,
@@ -1336,6 +1363,49 @@ fn find_setup(state: &State<'_, AppState>, setup_id: &str) -> Result<Setup, Stri
         .ok_or_else(|| "setup not found".into())
 }
 
+/// Closes idle programs, then OBS if asked, giving up once OBS is active again.
+fn close_idle_setup(
+    state: &AppState,
+    setup: &Setup,
+    due: &[common::programs::Program],
+    stop_obs: bool,
+    still_idle: impl Fn() -> bool,
+) -> Result<(), String> {
+    let cancelled = || {
+        tracing::info!(setup = %setup.name, "OBS became active again; cancelled idle close");
+        Ok(())
+    };
+    for program in due {
+        if !still_idle() {
+            return cancelled();
+        }
+        if let Err(error) = programs::stop(program, programs::PROGRAM_SHUTDOWN_GRACE) {
+            tracing::warn!(program = %program.name, %error, "Failed to stop idle program");
+        } else {
+            tracing::info!(program = %program.name, "Stopped program after OBS idle timeout");
+        }
+    }
+    if !stop_obs {
+        return Ok(());
+    }
+    // Same guard as the Stop button, so a dashboard Start or Restart can't interleave.
+    let _action_guard = begin_obs_action(&state.obs_actions_running, setup.id)?;
+    if !still_idle() {
+        return cancelled();
+    }
+    let process_state = {
+        let mut supervisor = state
+            .supervisor
+            .lock()
+            .map_err(|_| "supervisor lock poisoned")?;
+        supervisor.stop(setup).map_err(|error| error.to_string())?;
+        supervisor.state(setup)
+    };
+    set_link_state(state, setup.id, process_state);
+    tracing::info!(setup = %setup.name, "Stopped OBS after idle timeout");
+    Ok(())
+}
+
 fn set_link_state(state: &AppState, id: uuid::Uuid, next: PcObsState) {
     if let Ok(sessions) = state.link_sessions.lock()
         && let Some(session) = sessions.get(&id)
@@ -1514,14 +1584,21 @@ fn start_link_session(
         let mut not_responding_since = None;
         let mut last_obs_activity_count = 0_u64;
         let mut last_obs_activity = Instant::now();
+        // Programs already closed in this idle period, so each is closed once.
         let mut idle_closed: HashSet<uuid::Uuid> = HashSet::new();
+        // Programs an idle close stopped, to relaunch when a stream or recording
+        // starts. Unlike `idle_closed`, OBS activity doesn't clear this.
+        let mut idle_stopped: HashSet<uuid::Uuid> = HashSet::new();
+        let mut idle_obs_stop_at: Option<Instant> = None;
+        let idle_obs_stop_failed = Arc::new(AtomicBool::new(false));
+        let mut prev_outputs_active = false;
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
                 _ = tick.tick() => {
                     let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
-                    let (process_state, program_status, idle_close_minutes) =
+                    let (process_state, program_status, idle_close_minutes, idle_stop_obs) =
                         with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
                             let process_state = app_state
                                 .supervisor
@@ -1542,14 +1619,15 @@ fn start_link_session(
                                                 snapshot.system(),
                                             ),
                                             setup.idle_close_minutes,
+                                            !setup.idle_keeps_obs_open(),
                                         )
                                     })
                             });
-                            let (program_status, idle_close_minutes) = configured
-                                .map_or((None, None), |(status, minutes)| {
-                                    (Some(status), minutes)
+                            let (program_status, idle_close_minutes, idle_stop_obs) = configured
+                                .map_or((None, None, false), |(status, minutes, stop_obs)| {
+                                    (Some(status), minutes, stop_obs)
                                 });
-                            (process_state, program_status, idle_close_minutes)
+                            (process_state, program_status, idle_close_minutes, idle_stop_obs)
                     });
                     if let Some(ref program_status) = program_status
                         && *monitor_programs_tx.borrow() != *program_status
@@ -1561,6 +1639,7 @@ fn start_link_session(
                         last_obs_activity_count = activity_count;
                         last_obs_activity = Instant::now();
                         idle_closed.clear();
+                        idle_obs_stop_at = None;
                     }
                     let outputs_active = {
                         let telemetry = monitor_telemetry.borrow();
@@ -1570,42 +1649,97 @@ fn start_link_session(
                     // without it a quiet wire may just mean we can't see anything.
                     let observable = state == PcObsState::Connected
                         && programs::obs_is_running(&process_state);
+                    if !programs::obs_is_running(&process_state) {
+                        // OBS's own start brings back its programs.
+                        idle_stopped.clear();
+                    }
+                    if !prev_outputs_active && outputs_active {
+                        // Output resumed: bring back what the idle close stopped.
+                        let restart = program_status
+                            .iter()
+                            .flatten()
+                            .filter(|status| {
+                                !status.running && idle_stopped.contains(&status.program.id)
+                            })
+                            .map(|status| status.program.clone())
+                            .collect::<Vec<_>>();
+                        idle_stopped.clear();
+                        if !restart.is_empty() {
+                            let resume_app = monitor_handle.clone();
+                            let resume_setup_id = monitor_setup.id;
+                            tauri::async_runtime::spawn_blocking(move || {
+                                let resume_state = resume_app.state::<AppState>();
+                                for program in &restart {
+                                    if let Err(error) = programs::start(program) {
+                                        tracing::warn!(program = %program.name, %error, "Failed to restart program when output resumed");
+                                    } else {
+                                        tracing::info!(program = %program.name, "Restarted program when output resumed");
+                                    }
+                                }
+                                set_link_programs(resume_state.inner(), resume_setup_id);
+                            });
+                        }
+                    }
+                    prev_outputs_active = outputs_active;
                     if !observable || outputs_active {
                         last_obs_activity = Instant::now();
                         idle_closed.clear();
+                        idle_obs_stop_at = None;
                     }
                     if let Some(minutes) = idle_close_minutes
                         && observable
                         && last_obs_activity.elapsed()
                             >= Duration::from_secs(u64::from(minutes) * 60)
                     {
+                        // Stop OBS once per idle period, retrying a failed stop now and then.
+                        let stop_obs = idle_stop_obs
+                            && idle_obs_stop_at.is_none_or(|at| {
+                                idle_obs_stop_failed.load(Ordering::Relaxed)
+                                    && at.elapsed() >= IDLE_OBS_STOP_RETRY
+                            });
                         let due = program_status
                             .iter()
                             .flatten()
                             .filter(|status| {
                                 status.running
-                                    && status.program.close_when_idle
                                     && !idle_closed.contains(&status.program.id)
+                                    && (status.program.close_when_idle
+                                        || (stop_obs && status.program.stop_with_obs))
                             })
                             .map(|status| status.program.clone())
                             .collect::<Vec<_>>();
-                        if !due.is_empty() {
+                        if !due.is_empty() || stop_obs {
+                            if stop_obs {
+                                idle_obs_stop_at = Some(Instant::now());
+                                idle_obs_stop_failed.store(false, Ordering::Relaxed);
+                            }
                             idle_closed.extend(due.iter().map(|program| program.id));
+                            idle_stopped.extend(due.iter().map(|program| program.id));
                             let idle_app = monitor_handle.clone();
-                            let idle_setup_id = monitor_setup.id;
+                            let idle_setup = monitor_setup.clone();
+                            let idle_activity = monitor_activity.clone();
+                            let idle_telemetry = monitor_telemetry.clone();
+                            let idle_failed = idle_obs_stop_failed.clone();
                             tauri::async_runtime::spawn_blocking(move || {
                                 let idle_state = idle_app.state::<AppState>();
-                                for program in &due {
-                                    if let Err(error) = programs::stop(
-                                        program,
-                                        programs::PROGRAM_SHUTDOWN_GRACE,
-                                    ) {
-                                        tracing::warn!(program = %program.name, %error, "Failed to stop idle program");
-                                    } else {
-                                        tracing::info!(program = %program.name, "Stopped program after OBS idle timeout");
-                                    }
+                                // Any OBS activity or output since the timeout fired cancels the rest.
+                                let still_idle = || {
+                                    let telemetry = idle_telemetry.borrow();
+                                    idle_activity.load(Ordering::Relaxed) == activity_count
+                                        && !telemetry.stream_active
+                                        && !telemetry.record_active
+                                };
+                                if let Err(error) = close_idle_setup(
+                                    idle_state.inner(),
+                                    &idle_setup,
+                                    &due,
+                                    stop_obs,
+                                    still_idle,
+                                ) {
+                                    tracing::warn!(setup = %idle_setup.name, %error, "Failed to stop OBS after idle timeout");
+                                    idle_failed.store(true, Ordering::Relaxed);
                                 }
-                                set_link_programs(idle_state.inner(), idle_setup_id);
+                                set_link_programs(idle_state.inner(), idle_setup.id);
                             });
                         }
                     }
@@ -2155,6 +2289,7 @@ fn main() {
             stop_program,
             set_allow_dashboard_program_edits,
             set_idle_close_minutes,
+            set_idle_keep_obs_open,
             updates::check_for_update,
             updates::install_update,
             updates::open_release_notes

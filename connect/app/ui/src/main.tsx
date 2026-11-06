@@ -36,6 +36,7 @@ type Setup = {
 	programs: ProgramStatus[];
 	allow_dashboard_program_edits: boolean;
 	idle_close_minutes: number | null;
+	idle_keep_obs_open: boolean;
 };
 type Program = {
 	id: string;
@@ -142,10 +143,12 @@ function Field({
 function Check({
 	checked,
 	onChange,
+	disabled,
 	children,
 }: {
 	checked: boolean;
 	onChange: (checked: boolean) => void;
+	disabled?: boolean;
 	children: React.ReactNode;
 }) {
 	return (
@@ -156,6 +159,7 @@ function Check({
 				role="switch"
 				aria-checked={checked}
 				checked={checked}
+				disabled={disabled}
 				onChange={(event) => onChange(event.target.checked)}
 			/>
 		</label>
@@ -712,6 +716,15 @@ function SetupDetail({
 			return false;
 		}
 	}
+	const [idleError, setIdleError] = React.useState("");
+	async function idleCommand(command: string, args: Record<string, unknown>) {
+		setIdleError("");
+		try {
+			await onProgramCommand(command, args);
+		} catch (error) {
+			setIdleError(String(error));
+		}
+	}
 	return (
 		<>
 			<h1>{setup.name}</h1>
@@ -756,6 +769,53 @@ function SetupDetail({
 						<button type="button" onClick={() => onAction("enable_websocket")}>
 							Turn on OBS websocket
 						</button>
+					)}
+				</div>
+				<div className="group-body divided">
+					<Field
+						label="Close OBS when idle for"
+						hint={
+							setup.paired
+								? "Minutes with no stream, recording, or OBS activity while connected. Programs set to “Stop with OBS” close too. Leave empty to turn off."
+								: "Requires pairing: idle detection needs the OBS websocket link."
+						}
+					>
+						<input
+							key={String(setup.idle_close_minutes)}
+							type="number"
+							min={1}
+							placeholder="Off"
+							disabled={!setup.paired}
+							defaultValue={setup.idle_close_minutes ?? ""}
+							onBlur={(event) => {
+								const minutes = Number(event.target.value);
+								void idleCommand("set_idle_close_minutes", {
+									setupId: setup.id,
+									minutes: minutes > 0 ? minutes : null,
+								});
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") event.currentTarget.blur();
+							}}
+						/>
+						<span>minutes</span>
+					</Field>
+					<Check
+						checked={setup.idle_keep_obs_open}
+						disabled={!setup.paired || !setup.idle_close_minutes}
+						onChange={(keepOpen) =>
+							void idleCommand("set_idle_keep_obs_open", {
+								setupId: setup.id,
+								keepOpen,
+							})
+						}
+					>
+						Keep OBS open, only close programs marked “Close when OBS is idle”
+					</Check>
+					{idleError && (
+						<p className="error" role="alert">
+							{idleError}
+						</p>
 					)}
 				</div>
 			</section>
@@ -827,34 +887,6 @@ function SetupDetail({
 					>
 						Allow the dashboard to add and edit programs
 					</Check>
-					<Field
-						label="Close programs when OBS is idle for"
-						hint={
-							setup.paired
-								? "Minutes with no stream, recording, or OBS activity while connected. Programs need “Close when OBS is idle” checked. Leave empty to turn off."
-								: "Requires pairing: idle detection needs the OBS websocket link."
-						}
-					>
-						<input
-							key={String(setup.idle_close_minutes)}
-							type="number"
-							min={1}
-							placeholder="Off"
-							disabled={!setup.paired}
-							defaultValue={setup.idle_close_minutes ?? ""}
-							onBlur={(event) => {
-								const minutes = Number(event.target.value);
-								void programCommand("set_idle_close_minutes", {
-									setupId: setup.id,
-									minutes: minutes > 0 ? minutes : null,
-								});
-							}}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") event.currentTarget.blur();
-							}}
-						/>
-						<span>minutes</span>
-					</Field>
 					{programError && (
 						<p className="error" role="alert">
 							{programError}

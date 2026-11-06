@@ -224,8 +224,13 @@ pub struct Setup {
     pub programs: Vec<Program>,
     #[serde(default = "default_allow_dashboard_program_edits")]
     pub allow_dashboard_program_edits: bool,
+    /// Close OBS (and its programs) after this many idle minutes.
     #[serde(default)]
     pub idle_close_minutes: Option<u32>,
+    /// Keep OBS open on idle and only close programs marked `close_when_idle`.
+    /// `None` only in configs from before this option existed; `load` fills it in.
+    #[serde(default)]
+    pub idle_keep_obs_open: Option<bool>,
 }
 
 fn default_allow_dashboard_program_edits() -> bool {
@@ -248,7 +253,12 @@ impl Setup {
             programs: Vec::new(),
             allow_dashboard_program_edits: true,
             idle_close_minutes: None,
+            idle_keep_obs_open: Some(false),
         }
+    }
+
+    pub fn idle_keeps_obs_open(&self) -> bool {
+        self.idle_keep_obs_open == Some(true)
     }
 }
 
@@ -286,6 +296,12 @@ impl ConfigStore {
                 file.read_to_end(&mut bytes)?;
                 drop(file);
                 let mut config: AppConfig = serde_json::from_slice(&bytes)?;
+                for setup in &mut config.setups {
+                    // 0.2.0 idle timeouts only closed programs; keep them that way.
+                    setup
+                        .idle_keep_obs_open
+                        .get_or_insert(setup.idle_close_minutes.is_some());
+                }
                 if config.settings.api_url.trim().trim_end_matches('/') == OLD_PRODUCTION_API_URL {
                     config.settings.api_url = PRODUCTION_API_URL.to_owned();
                     if let Err(error) = self.save(&config) {
@@ -373,6 +389,26 @@ mod tests {
         assert_eq!(loaded.setups[0].name, "Studio");
         assert!(!loaded.setups[0].obs.start_obs_with_connect);
         assert_eq!(loaded.pending_token_deletions, [pending_token_deletion]);
+    }
+
+    #[test]
+    fn idle_timeouts_from_0_2_0_keep_obs_open() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let stored = serde_json::json!({
+            "setups": [
+                { "name": "Programs only", "idle_close_minutes": 30 },
+                { "name": "No timeout" },
+                { "name": "Close OBS", "idle_close_minutes": 30, "idle_keep_obs_open": false }
+            ]
+        });
+        std::fs::write(&path, stored.to_string()).unwrap();
+
+        let loaded = ConfigStore::new(path).load().unwrap();
+
+        assert!(loaded.setups[0].idle_keeps_obs_open());
+        assert!(!loaded.setups[1].idle_keeps_obs_open());
+        assert!(!loaded.setups[2].idle_keeps_obs_open());
     }
 
     #[test]
