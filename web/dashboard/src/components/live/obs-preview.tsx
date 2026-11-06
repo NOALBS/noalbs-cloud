@@ -178,12 +178,12 @@ export function ObsPreview({
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
       <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
         {on ? (
-          <div className="relative flex aspect-video items-center justify-center bg-black">
+          <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
             {frame && obsConnected && !hidden && (
               <img
                 src={frame.url}
                 alt={t`What OBS is showing`}
-                className="size-full object-contain"
+                className="absolute inset-0 size-full object-contain"
               />
             )}
             {obsConnected && hidden ? (
