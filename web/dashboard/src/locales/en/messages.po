@@ -2435,6 +2435,10 @@ msgstr "Close"
 msgid "Close the stream while it isn’t shown"
 msgstr "Close the stream while it isn’t shown"
 
+#: src/components/connect-settings.tsx
+msgid "Close when OBS is idle"
+msgstr "Close when OBS is idle"
+
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "Code"

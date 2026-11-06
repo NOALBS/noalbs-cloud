@@ -66,6 +66,7 @@ type ConnectProgramDto = {
   args: string[];
   start_with_obs: boolean;
   stop_with_obs: boolean;
+  close_when_idle: boolean;
   added_from_dashboard_by: string | null;
 };
 type ConnectProgramStatusDto = { program: ConnectProgramDto; running: boolean };
@@ -527,6 +528,7 @@ function ConnectProgramsCard({
               args: [],
               start_with_obs: false,
               stop_with_obs: false,
+              close_when_idle: false,
               added_from_dashboard_by: null,
             });
           }}
@@ -689,6 +691,7 @@ function ConnectProgramForm({
   const [args, setArgs] = useState(program.args.join("\n"));
   const [startWithObs, setStartWithObs] = useState(program.start_with_obs);
   const [stopWithObs, setStopWithObs] = useState(program.stop_with_obs);
+  const [closeWhenIdle, setCloseWhenIdle] = useState(program.close_when_idle);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
@@ -740,6 +743,14 @@ function ConnectProgramForm({
         />
         <Trans>Stop with OBS</Trans>
       </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={closeWhenIdle}
+          onChange={(event) => setCloseWhenIdle(event.target.checked)}
+        />
+        <Trans>Close when OBS is idle</Trans>
+      </label>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>
           <Trans>Cancel</Trans>
@@ -754,6 +765,7 @@ function ConnectProgramForm({
               args: args.split(/\r?\n/).filter((argument) => argument.length > 0),
               start_with_obs: startWithObs,
               stop_with_obs: stopWithObs,
+              close_when_idle: closeWhenIdle,
             })
           }
         >

@@ -16957,6 +16957,12 @@
               "type": "string"
             }
           },
+          "close_when_idle": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -22373,6 +22379,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "close_when_idle": {
+            "type": "boolean"
           },
           "id": {
             "type": "string",

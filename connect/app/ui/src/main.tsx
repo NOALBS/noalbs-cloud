@@ -35,6 +35,7 @@ type Setup = {
 	config_dir: string;
 	programs: ProgramStatus[];
 	allow_dashboard_program_edits: boolean;
+	idle_close_minutes: number | null;
 };
 type Program = {
 	id: string;
@@ -43,6 +44,7 @@ type Program = {
 	args: string[];
 	start_with_obs: boolean;
 	stop_with_obs: boolean;
+	close_when_idle: boolean;
 	added_from_dashboard_by: string | null;
 };
 type ProgramStatus = { program: Program; running: boolean };
@@ -825,6 +827,29 @@ function SetupDetail({
 					>
 						Allow the dashboard to add and edit programs
 					</Check>
+					<Field
+						label="Close programs when OBS is idle for"
+						hint="Minutes with no stream, recording, or OBS activity while connected. Programs need “Close when OBS is idle” checked. Leave empty to turn off."
+					>
+						<input
+							key={String(setup.idle_close_minutes)}
+							type="number"
+							min={1}
+							placeholder="Off"
+							defaultValue={setup.idle_close_minutes ?? ""}
+							onBlur={(event) => {
+								const minutes = Number(event.target.value);
+								void programCommand("set_idle_close_minutes", {
+									setupId: setup.id,
+									minutes: minutes > 0 ? minutes : null,
+								});
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") event.currentTarget.blur();
+							}}
+						/>
+						<span>minutes</span>
+					</Field>
 					{programError && (
 						<p className="error" role="alert">
 							{programError}
@@ -910,6 +935,7 @@ function SetupDetail({
 									args: [],
 									start_with_obs: false,
 									stop_with_obs: false,
+									close_when_idle: false,
 									added_from_dashboard_by: null,
 								})
 							}
@@ -1062,6 +1088,14 @@ function ProgramForm({
 					onChange={(checked) => setValue({ ...value, stop_with_obs: checked })}
 				>
 					Stop with OBS
+				</Check>
+				<Check
+					checked={value.close_when_idle}
+					onChange={(checked) =>
+						setValue({ ...value, close_when_idle: checked })
+					}
+				>
+					Close when OBS is idle
 				</Check>
 			</div>
 			<div className="buttons end">

@@ -2435,6 +2435,10 @@ msgstr "Zamknij"
 msgid "Close the stream while it isn’t shown"
 msgstr "Zamykaj strumień, gdy nie jest widoczne"
 
+#: src/components/connect-settings.tsx
+msgid "Close when OBS is idle"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "Kod"

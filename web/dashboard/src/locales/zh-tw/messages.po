@@ -2435,6 +2435,10 @@ msgstr "關閉"
 msgid "Close the stream while it isn’t shown"
 msgstr "未顯示時關閉串流"
 
+#: src/components/connect-settings.tsx
+msgid "Close when OBS is idle"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "代碼"

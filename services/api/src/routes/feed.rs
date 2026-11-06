@@ -149,6 +149,7 @@ mod tests {
                     args: vec!["600".into()],
                     start_with_obs: false,
                     stop_with_obs: false,
+                    close_when_idle: false,
                     added_from_dashboard_by: None,
                 },
                 running: true,

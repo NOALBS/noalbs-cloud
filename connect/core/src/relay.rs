@@ -1,4 +1,13 @@
-use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
+use std::{
+    collections::HashMap,
+    future::Future,
+    pin::Pin,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::Duration,
+};
 
 use crate::logs::ConnectLogUpload;
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -41,6 +50,7 @@ pub enum WatchdogMode {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ObsTelemetry {
     pub stream_active: bool,
+    pub record_active: bool,
     pub last_program_scene: Option<String>,
     pub obs_version: Option<String>,
 }
@@ -67,6 +77,9 @@ pub struct LinkConfig {
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
     pub commands: mpsc::UnboundedSender<ObsCommandRequest>,
     pub unsolicited_uploads: mpsc::UnboundedReceiver<ConnectLogUpload>,
+    /// Bumped whenever OBS or the dashboard does something user-visible; the app
+    /// uses it to decide when the setup has been idle.
+    pub activity: Arc<AtomicU64>,
 }
 
 #[derive(Debug, Error)]
@@ -145,6 +158,7 @@ async fn connect_once(
         match tokio::time::timeout(Duration::from_secs(5), connect_obs(port, &obs_password)).await {
             Ok(Ok(socket)) => {
                 let _ = config.state_tx.send(PcObsState::Connected);
+                config.activity.fetch_add(1, Ordering::Relaxed);
                 Some(socket)
             }
             Ok(Err(_)) | Err(_) => {
@@ -170,7 +184,12 @@ async fn connect_once(
         None
     };
     let mut pending_stream_status = if let Some(socket) = obs.as_mut() {
-        Some(request_stream_status(socket).await?)
+        Some(request_output_status(socket, "GetStreamStatus").await?)
+    } else {
+        None
+    };
+    let mut pending_record_status = if let Some(socket) = obs.as_mut() {
+        Some(request_output_status(socket, "GetRecordStatus").await?)
     } else {
         None
     };
@@ -263,7 +282,12 @@ async fn connect_once(
                         None
                     };
                     pending_stream_status = if let Some(socket) = obs.as_mut() {
-                        Some(request_stream_status(socket).await?)
+                        Some(request_output_status(socket, "GetStreamStatus").await?)
+                    } else {
+                        None
+                    };
+                    pending_record_status = if let Some(socket) = obs.as_mut() {
+                        Some(request_output_status(socket, "GetRecordStatus").await?)
                     } else {
                         None
                     };
@@ -272,6 +296,7 @@ async fn connect_once(
                     upstream.send(Message::Text(json!({"obsWsConnected": true}).to_string().into())).await?;
                     let _ = config.state_tx.send(PcObsState::Connected);
                     send_pc_state(&mut upstream, PcObsState::Connected).await?;
+                    config.activity.fetch_add(1, Ordering::Relaxed);
                 }
             }
             _ = meter_tick.tick() => {
@@ -291,6 +316,7 @@ async fn connect_once(
                         request_tokens.clear();
                         pending_scene_request = None;
                         pending_stream_status = None;
+                        pending_record_status = None;
                         pending_stats = None;
                         let _ = config.state_tx.send(PcObsState::NotResponding);
                         upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -361,6 +387,7 @@ async fn connect_once(
                     request_tokens.clear();
                     pending_scene_request = None;
                     pending_stream_status = None;
+                    pending_record_status = None;
                     pending_stats = None;
                     missed_stats = 0;
                     upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -383,9 +410,11 @@ async fn connect_once(
                     }
                     if let Some(socket) = obs.as_mut() {
                         socket.send(Message::Text(request.to_string().into())).await?;
+                        config.activity.fetch_add(1, Ordering::Relaxed);
                     }
                 }
                 if let Some(command) = value.get("connectCommand") {
+                    config.activity.fetch_add(1, Ordering::Relaxed);
                     let token = value.get("token").and_then(Value::as_str).map(str::to_owned);
                     let action = serde_json::from_value::<ObsAction>(command.clone()).ok();
                     match (token, action) {
@@ -450,6 +479,7 @@ async fn connect_once(
                     request_tokens.clear();
                     pending_scene_request = None;
                     pending_stream_status = None;
+                    pending_record_status = None;
                     pending_stats = None;
                     missed_stats = 0;
                     upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
@@ -485,6 +515,17 @@ async fn connect_once(
                         }
                         continue;
                     }
+                    if id.is_some_and(|id| pending_record_status.as_deref() == Some(id)) {
+                        pending_record_status = None;
+                        if let Some(active) = value
+                            .pointer("/d/responseData/outputActive")
+                            .and_then(Value::as_bool)
+                        {
+                            telemetry.record_active = active;
+                            let _ = config.telemetry_tx.send(telemetry.clone());
+                        }
+                        continue;
+                    }
                     if id.is_some_and(|id| {
                         pending_stats
                             .as_ref()
@@ -510,16 +551,23 @@ async fn connect_once(
                     {
                         telemetry.last_program_scene = Some(scene.to_owned());
                         let _ = config.telemetry_tx.send(telemetry.clone());
+                    } else if event == "RecordStateChanged"
+                        && let Some(active) = value.pointer("/d/eventData/outputActive").and_then(Value::as_bool)
+                    {
+                        telemetry.record_active = active;
+                        let _ = config.telemetry_tx.send(telemetry.clone());
                     }
                     if event == "InputVolumeMeters" {
                         collect_volume_meters(&mut pending_meters, &value);
                         continue;
                     }
+                    config.activity.fetch_add(1, Ordering::Relaxed);
                     upstream.send(Message::Text(json!({"obsRawEvent": value}).to_string().into())).await?;
                 } else if op == Some(2) {
                     upstream.send(Message::Text(json!({"obsWsConnected": true}).to_string().into())).await?;
                     let _ = config.state_tx.send(PcObsState::Connected);
                     send_pc_state(&mut upstream, PcObsState::Connected).await?;
+                    config.activity.fetch_add(1, Ordering::Relaxed);
                 }
             }
         }
@@ -742,14 +790,17 @@ async fn request_current_program_scene(socket: &mut Socket) -> Result<String, Re
     Ok(request_id)
 }
 
-async fn request_stream_status(socket: &mut Socket) -> Result<String, RelayError> {
-    let request_id = format!("noalbs-connect-stream-status-{}", uuid::Uuid::new_v4());
+async fn request_output_status(
+    socket: &mut Socket,
+    request_type: &str,
+) -> Result<String, RelayError> {
+    let request_id = format!("noalbs-connect-status-{}", uuid::Uuid::new_v4());
     socket
         .send(Message::Text(
             json!({
                 "op": 6,
                 "d": {
-                    "requestType": "GetStreamStatus",
+                    "requestType": request_type,
                     "requestId": request_id
                 }
             })
@@ -847,9 +898,9 @@ mod tests {
     use tokio_tungstenite::{accept_async, tungstenite::Message};
 
     use super::{
-        ConnectLogUpload, Duration, LinkConfig, PcObsState, RelayError, collect_volume_meters,
-        connect_obs, extract_obs_config, get_obs_version, hash_base64, identify_payload,
-        parse_watchdog, run_link, take_volume_meters,
+        Arc, AtomicU64, ConnectLogUpload, Duration, LinkConfig, PcObsState, RelayError,
+        collect_volume_meters, connect_obs, extract_obs_config, get_obs_version, hash_base64,
+        identify_payload, parse_watchdog, run_link, take_volume_meters,
     };
 
     #[test]
@@ -926,6 +977,7 @@ mod tests {
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+            activity: Arc::new(AtomicU64::new(0)),
         };
         let payload = identify_payload(&config, Some("31.0.0"));
         assert_eq!(
@@ -1024,6 +1076,7 @@ mod tests {
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             commands: commands_tx,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+            activity: Arc::new(AtomicU64::new(0)),
         };
         let relay = tokio::spawn(async move {
             let mut state_rx = state_rx;
@@ -1222,6 +1275,23 @@ mod tests {
                 ))
                 .await
                 .unwrap();
+            let Message::Text(record_request) = socket.next().await.unwrap().unwrap() else {
+                panic!("GetRecordStatus request expected");
+            };
+            let record_request: serde_json::Value = serde_json::from_str(&record_request).unwrap();
+            assert_eq!(
+                record_request.pointer("/d/requestType").unwrap(),
+                "GetRecordStatus"
+            );
+            let record_id = record_request.pointer("/d/requestId").unwrap().clone();
+            socket
+                .send(Message::Text(
+                    json!({"op":7,"d":{"requestId":record_id,"responseData":{"outputActive":false}}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
             let Message::Text(request) = socket.next().await.unwrap().unwrap() else {
                 panic!("forwarded request expected");
             };
@@ -1315,6 +1385,7 @@ mod tests {
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+                    activity: Arc::new(AtomicU64::new(0)),
                 },
                 state_rx,
                 watchdog_tx,
@@ -1365,6 +1436,7 @@ mod tests {
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+                activity: Arc::new(AtomicU64::new(0)),
             },
             state_rx,
             watchdog_tx,
@@ -1414,6 +1486,7 @@ mod tests {
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+                    activity: Arc::new(AtomicU64::new(0)),
                 },
                 state_rx,
                 watchdog_tx,
@@ -1490,6 +1563,7 @@ mod tests {
                 effective_obs_tx,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+                activity: Arc::new(AtomicU64::new(0)),
             },
             state_rx,
             watchdog_tx,

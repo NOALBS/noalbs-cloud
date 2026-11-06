@@ -833,6 +833,7 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
                      #- '{data,program,path}'
                      #- '{data,program,start_with_obs}'
                      #- '{data,program,stop_with_obs}'
+                     #- '{data,program,close_when_idle}'
                      #- '{data,program,added_from_dashboard_by}',
                  '{data,program,args}', '[]'::jsonb, true
              )

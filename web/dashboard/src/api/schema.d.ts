@@ -4800,6 +4800,7 @@ export interface components {
         ConnectProgramEventProgram: {
             added_from_dashboard_by?: string | null;
             args?: string[];
+            close_when_idle?: boolean | null;
             /** Format: uuid */
             id: string;
             name: string;
@@ -6647,6 +6648,7 @@ export interface components {
         Program: {
             added_from_dashboard_by?: string | null;
             args: string[];
+            close_when_idle?: boolean;
             /** Format: uuid */
             id: string;
             name: string;

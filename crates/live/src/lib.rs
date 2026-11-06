@@ -211,6 +211,8 @@ pub struct ConnectProgramEventProgram {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stop_with_obs: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub close_when_idle: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub added_from_dashboard_by: Option<String>,
 }
 
@@ -223,6 +225,7 @@ impl From<common::programs::Program> for ConnectProgramEventProgram {
             args: program.args,
             start_with_obs: Some(program.start_with_obs),
             stop_with_obs: Some(program.stop_with_obs),
+            close_when_idle: Some(program.close_when_idle),
             added_from_dashboard_by: program.added_from_dashboard_by,
         }
     }
@@ -777,6 +780,7 @@ impl EventDetail {
             program.args.clear();
             program.start_with_obs = None;
             program.stop_with_obs = None;
+            program.close_when_idle = None;
             program.added_from_dashboard_by = None;
         }
     }
@@ -1067,6 +1071,7 @@ mod tests {
                 args: vec!["--key".into(), "secret".into()],
                 start_with_obs: Some(true),
                 stop_with_obs: Some(true),
+                close_when_idle: Some(true),
                 added_from_dashboard_by: Some("Kate".into()),
             },
             by: Some("Kate (Web)".into()),
@@ -1077,6 +1082,7 @@ mod tests {
         assert!(value["data"]["program"].get("path").is_none());
         assert_eq!(value["data"]["program"]["args"], serde_json::json!([]));
         assert!(value["data"]["program"].get("start_with_obs").is_none());
+        assert!(value["data"]["program"].get("close_when_idle").is_none());
         assert_eq!(value["data"]["by"], "Kate (Web)");
     }
 

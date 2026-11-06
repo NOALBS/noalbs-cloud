@@ -4,7 +4,10 @@ mod updates;
 
 use std::{
     collections::{HashMap, HashSet},
-    sync::Mutex,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
     time::{Duration, Instant},
 };
 
@@ -45,6 +48,7 @@ struct LinkSession {
     programs: watch::Sender<Vec<common::programs::ProgramStatus>>,
     watchdog: watch::Receiver<WatchdogMode>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
+    activity: Arc<AtomicU64>,
     task: tauri::async_runtime::JoinHandle<()>,
     monitor: tauri::async_runtime::JoinHandle<()>,
     command_consumer: tauri::async_runtime::JoinHandle<()>,
@@ -123,6 +127,7 @@ struct SetupSummary {
     config_dir: String,
     programs: Vec<common::programs::ProgramStatus>,
     allow_dashboard_program_edits: bool,
+    idle_close_minutes: Option<u32>,
 }
 
 #[derive(Clone, Serialize)]
@@ -208,6 +213,7 @@ fn build_ui_state_with(
                     config_dir: config_dir(setup).to_string_lossy().into_owned(),
                     programs: programs::status_with(&setup.programs, process_snapshot.system()),
                     allow_dashboard_program_edits: setup.allow_dashboard_program_edits,
+                    idle_close_minutes: setup.idle_close_minutes,
                 }
             })
             .collect(),
@@ -686,6 +692,11 @@ fn run_program_action(
             let program = programs::find(&setup.programs, id)
                 .ok_or_else(|| "Program not found".to_string())?;
             programs::start(program).map_err(|error| error.to_string())?;
+            if let Ok(sessions) = state.link_sessions.lock()
+                && let Some(session) = sessions.get(&setup_id)
+            {
+                session.activity.fetch_add(1, Ordering::Relaxed);
+            }
         }
         ObsAction::ProgramStop { id } => {
             let program = programs::find(&setup.programs, id)
@@ -900,6 +911,30 @@ fn set_allow_dashboard_program_edits(
         .find(|setup| setup.id == setup_id)
         .ok_or("setup not found")?;
     setup.allow_dashboard_program_edits = allow;
+    state
+        .store
+        .save(&updated_config)
+        .map_err(|error| error.to_string())?;
+    *config = updated_config;
+    drop(config);
+    Ok(get_state(state))
+}
+
+#[tauri::command]
+fn set_idle_close_minutes(
+    setup_id: String,
+    minutes: Option<u32>,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    let setup_id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
+    let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
+    let mut updated_config = config.clone();
+    let setup = updated_config
+        .setups
+        .iter_mut()
+        .find(|setup| setup.id == setup_id)
+        .ok_or("setup not found")?;
+    setup.idle_close_minutes = minutes.filter(|minutes| *minutes > 0);
     state
         .store
         .save(&updated_config)
@@ -1418,6 +1453,7 @@ fn start_link_session(
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
     let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
     let (upload_tx, upload_rx) = mpsc::unbounded_channel();
+    let activity = Arc::new(AtomicU64::new(0));
     let link_config = LinkConfig {
         link_url: pairing.link_url.clone(),
         device_token: token,
@@ -1431,6 +1467,7 @@ fn start_link_session(
         effective_obs_tx,
         commands: command_tx,
         unsolicited_uploads: upload_rx,
+        activity: activity.clone(),
     };
     let mut sessions = state
         .link_sessions
@@ -1468,19 +1505,23 @@ fn start_link_session(
     let mut monitor_watchdog = watchdog_rx.clone();
     let monitor_state_tx = state_tx.clone();
     let monitor_programs_tx = programs_tx.clone();
+    let monitor_activity = activity.clone();
     let monitor = tauri::async_runtime::spawn(async move {
         let monitor_state = monitor_state;
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
         let mut handled_incident = None;
         let mut not_responding_since = None;
+        let mut last_obs_activity_count = 0_u64;
+        let mut last_obs_activity = Instant::now();
+        let mut idle_close_done = false;
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
                 _ = tick.tick() => {
                     let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
-                    let (process_state, program_status) =
+                    let (process_state, program_status, idle_close_minutes) =
                         with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
                             let process_state = app_state
                                 .supervisor
@@ -1489,21 +1530,81 @@ fn start_link_session(
                                     supervisor.state_with(&monitor_setup, snapshot.system())
                                 })
                                 .unwrap_or(PcObsState::Unknown);
-                            let program_status = app_state.config.lock().ok().and_then(|config| {
+                            let configured = app_state.config.lock().ok().and_then(|config| {
                                 config
                                     .setups
                                     .iter()
                                     .find(|setup| setup.id == monitor_setup.id)
                                     .map(|setup| {
-                                        programs::status_with(&setup.programs, snapshot.system())
+                                        (
+                                            programs::status_with(
+                                                &setup.programs,
+                                                snapshot.system(),
+                                            ),
+                                            setup.idle_close_minutes,
+                                        )
                                     })
                             });
-                            (process_state, program_status)
+                            let (program_status, idle_close_minutes) = configured
+                                .map_or((None, None), |(status, minutes)| {
+                                    (Some(status), minutes)
+                                });
+                            (process_state, program_status, idle_close_minutes)
                     });
-                    if let Some(program_status) = program_status
-                        && *monitor_programs_tx.borrow() != program_status
+                    if let Some(ref program_status) = program_status
+                        && *monitor_programs_tx.borrow() != *program_status
                     {
-                        let _ = monitor_programs_tx.send(program_status);
+                        let _ = monitor_programs_tx.send(program_status.clone());
+                    }
+                    let activity_count = monitor_activity.load(Ordering::Relaxed);
+                    if activity_count != last_obs_activity_count {
+                        last_obs_activity_count = activity_count;
+                        last_obs_activity = Instant::now();
+                        idle_close_done = false;
+                    }
+                    let outputs_active = {
+                        let telemetry = monitor_telemetry.borrow();
+                        telemetry.stream_active || telemetry.record_active
+                    };
+                    // Idle time only counts while the OBS websocket is connected;
+                    // without it a quiet wire may just mean we can't see anything.
+                    let observable = state == PcObsState::Connected
+                        && programs::obs_is_running(&process_state);
+                    if !observable || outputs_active {
+                        last_obs_activity = Instant::now();
+                        idle_close_done = false;
+                    }
+                    if let Some(minutes) = idle_close_minutes
+                        && observable
+                        && !idle_close_done
+                        && last_obs_activity.elapsed()
+                            >= Duration::from_secs(u64::from(minutes) * 60)
+                    {
+                        idle_close_done = true;
+                        let due = program_status
+                            .iter()
+                            .flatten()
+                            .filter(|status| status.running && status.program.close_when_idle)
+                            .map(|status| status.program.clone())
+                            .collect::<Vec<_>>();
+                        if !due.is_empty() {
+                            let idle_app = monitor_handle.clone();
+                            let idle_setup_id = monitor_setup.id;
+                            tauri::async_runtime::spawn_blocking(move || {
+                                let idle_state = idle_app.state::<AppState>();
+                                for program in &due {
+                                    if let Err(error) = programs::stop(
+                                        program,
+                                        programs::PROGRAM_SHUTDOWN_GRACE,
+                                    ) {
+                                        tracing::warn!(program = %program.name, %error, "Failed to stop idle program");
+                                    } else {
+                                        tracing::info!(program = %program.name, "Stopped program after OBS idle timeout");
+                                    }
+                                }
+                                set_link_programs(idle_state.inner(), idle_setup_id);
+                            });
+                        }
                     }
                     if process_state == PcObsState::WaitingForInput
                         && matches!(state, PcObsState::Unknown | PcObsState::Starting)
@@ -1655,6 +1756,7 @@ fn start_link_session(
                             .setups
                             .iter_mut()
                             .find(|setup| setup.id == monitor_setup.id)
+                        && setup.obs.last_obs_version.as_deref() != Some(version.as_str())
                     {
                         setup.obs.last_obs_version = Some(version);
                         let _ = monitor_handle.state::<AppState>().store.save(&config);
@@ -1700,6 +1802,7 @@ fn start_link_session(
             programs: programs_tx,
             watchdog: watchdog_rx.clone(),
             effective_obs: effective_obs_rx,
+            activity,
             task,
             monitor,
             command_consumer,
@@ -2048,6 +2151,7 @@ fn main() {
             start_program,
             stop_program,
             set_allow_dashboard_program_edits,
+            set_idle_close_minutes,
             updates::check_for_update,
             updates::install_update,
             updates::open_release_notes
@@ -2431,6 +2535,7 @@ mod tests {
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
+                activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -2495,6 +2600,7 @@ mod tests {
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
+                activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
@@ -2570,6 +2676,7 @@ mod tests {
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
+                activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -2670,6 +2777,7 @@ mod tests {
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
+                activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(link_task),
                 monitor: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
@@ -2764,6 +2872,7 @@ mod tests {
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
                 effective_obs,
+                activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
                     std::future::pending::<()>(),
                 )),
