@@ -988,62 +988,66 @@ function ConnectLogRow({
     onError: (error) => toast.error(errorMessage(error)),
   });
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-divider p-3">
-      <div className="min-w-0 flex-1">
+    <div className="flex flex-col gap-3 rounded-lg border border-divider p-3 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-xs whitespace-nowrap">
             {log.kind === "obs_log" ? t`OBS log` : t`Crash report`}
           </span>
-          <span className="truncate text-muted-foreground">{log.file_name}</span>
           {log.truncated && (
-            <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
               <Trans>Truncated</Trans>
             </span>
           )}
         </div>
+        <p className="truncate text-sm font-medium text-muted-foreground" title={log.file_name}>
+          {log.file_name}
+        </p>
         <p className="text-xs text-muted-foreground">
           {formatRelative(log.uploaded_at)} · {formatBytes(log.size_bytes)} ·{" "}
           {log.device_name ?? t`Device removed`}
         </p>
       </div>
-      <Button variant="outline" size="sm" onClick={onView}>
-        <Trans>View</Trans>
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() =>
-          void downloadLog(path, log).catch((error) => toast.error(errorMessage(error)))
-        }
-      >
-        <Download className="size-4" />
-        <Trans>Download .txt</Trans>
-      </Button>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Trans>Delete</Trans>
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              <Trans>Delete this log?</Trans>
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <Trans>This uploaded log will be permanently deleted.</Trans>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={remove.isPending}>
-              <Trans>Cancel</Trans>
-            </AlertDialogCancel>
-            <AlertDialogAction disabled={remove.isPending} onClick={() => remove.mutate()}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" onClick={onView}>
+          <Trans>View</Trans>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            void downloadLog(path, log).catch((error) => toast.error(errorMessage(error)))
+          }
+        >
+          <Download className="size-4" />
+          <Trans>Download .txt</Trans>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm">
               <Trans>Delete</Trans>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                <Trans>Delete this log?</Trans>
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <Trans>This uploaded log will be permanently deleted.</Trans>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={remove.isPending}>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
+              <AlertDialogAction disabled={remove.isPending} onClick={() => remove.mutate()}>
+                <Trans>Delete</Trans>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
@@ -1098,8 +1102,9 @@ function ConnectLogViewer({
         <DialogHeader>
           <DialogTitle>{log?.file_name ?? t`OBS log`}</DialogTitle>
         </DialogHeader>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Input
+            className="basis-full sm:flex-1 sm:basis-0"
             aria-label={t`Filter log lines`}
             placeholder={t`Filter log lines`}
             value={filter}
