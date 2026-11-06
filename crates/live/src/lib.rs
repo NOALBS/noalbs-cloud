@@ -9,7 +9,7 @@
 //! | config changed | core subject [`config_subject`] | API, after saving settings |
 //! | [`Intent`] | core subject [`intent_subject`] | API, before an OBS command |
 //! | [`Takeover`] | core subject [`takeover_subject`] | obs-link, when a browser source identifies |
-//! | reconnect | core subject [`reconnect_subject`] | API (staff): close the browser source's connection so it reconnects |
+//! | [`Reconnect`] | core subject [`reconnect_subject`] | API: close the browser source's connection so it reconnects |
 //! | chat links changed | core subject [`chat_reconcile_subject`] | API, after linking or unlinking chat channels and bots |
 //! | [`BelaboxStatus`] | KV bucket [`BELABOX_BUCKET`], key = switcher ID | obs-link, while a BELABOX link runs, on change + every 10 s |
 //! | [`BelaboxCommand`] → [`BelaboxReply`] | request subject [`belabox_request_subject`] | API and chat service |
@@ -34,6 +34,8 @@ use std::time::Duration;
 
 use async_nats::jetstream::{self, kv, stream};
 use chrono::{DateTime, Utc};
+use common::programs::ConnectCommandAction;
+use db::connect::{ConnectAccess, Watchdog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -89,8 +91,7 @@ pub fn takeover_subject(switcher_id: Uuid) -> String {
     format!("switcher.{switcher_id}.takeover")
 }
 
-/// Staff asking obs-link to close a switcher's browser-source connection; the
-/// browser source reconnects on its own (unlike after a takeover).
+/// Ask obs-link to close a switcher's connection so it reconnects.
 pub fn reconnect_subject(switcher_id: Uuid) -> String {
     format!("switcher.{switcher_id}.reconnect")
 }
@@ -163,6 +164,90 @@ pub fn chat_reconcile_subject(environment: &str) -> String {
 /// Where the API sends OBS requests; obs-link relays them to the browser source.
 pub fn obs_request_subject(switcher_id: Uuid) -> String {
     format!("obslink.{switcher_id}.request")
+}
+
+pub fn connect_request_subject(switcher_id: Uuid) -> String {
+    format!("connect.{switcher_id}.request")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectObsCommandCode {
+    Offline,
+    Unsupported,
+    Refused,
+    Timeout,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectObsCommandRequest {
+    #[serde(flatten)]
+    pub action: ConnectCommandAction,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectProgramAction {
+    Added,
+    Edited,
+    Removed,
+    Started,
+    Stopped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectProgramEventProgram {
+    pub id: Uuid,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start_with_obs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stop_with_obs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub added_from_dashboard_by: Option<String>,
+}
+
+impl From<common::programs::Program> for ConnectProgramEventProgram {
+    fn from(program: common::programs::Program) -> Self {
+        Self {
+            id: program.id,
+            name: program.name,
+            path: Some(program.path.to_string_lossy().into_owned()),
+            args: program.args,
+            start_with_obs: Some(program.start_with_obs),
+            stop_with_obs: Some(program.stop_with_obs),
+            added_from_dashboard_by: program.added_from_dashboard_by,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectObsCommandReply {
+    pub ok: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ConnectObsCommandCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectLogUpload {
+    pub kind: db::connect_logs::ConnectLogKind,
+    pub file_name: String,
+    #[serde(default)]
+    pub modified_at: Option<DateTime<Utc>>,
+    pub truncated: bool,
+    pub content_gzip_base64: String,
 }
 
 /// Options for a service's NATS connection, with its user and password when it
@@ -283,6 +368,39 @@ pub struct SwitcherStatus {
     /// NOALBS. `null` while not streaming, and while paused (no switcher runs).
     #[serde(default)]
     pub stream_frames: Option<ObsFrames>,
+    /// Status reported by a NOALBS Cloud Connect desktop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pc: Option<PcStatus>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct PcStatus {
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+    #[serde(default)]
+    pub device_name: Option<String>,
+    pub obs: PcObsState,
+    #[serde(default)]
+    pub obs_version: Option<String>,
+    #[serde(default)]
+    pub programs: Vec<common::programs::ProgramStatus>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum PcObsState {
+    #[default]
+    Unknown,
+    NotRunning,
+    Starting,
+    Connected,
+    NotResponding,
+    WaitingForInput,
+    SafeMode,
+    Crashed,
+    WebsocketDisabled,
 }
 
 /// OBS's frame counters (`GetStats`), which run since OBS started.
@@ -330,6 +448,7 @@ impl SwitcherStatus {
             active_server_id: None,
             paused: false,
             stream_frames: None,
+            pc: None,
         }
     }
 }
@@ -587,9 +706,51 @@ pub enum EventDetail {
     MoblinError {
         message: String,
     },
+    ConnectDevicePaired {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectDeviceRevoked {
+        name: String,
+        by: Option<String>,
+    },
+    ConnectPermissionsChanged {
+        obs_control: ConnectAccess,
+        logs: ConnectAccess,
+        programs: ConnectAccess,
+        by: Option<String>,
+    },
+    ConnectWatchdogChanged {
+        mode: Watchdog,
+        by: Option<String>,
+    },
+    ConnectObsCommand {
+        action: db::connect::ConnectObsAction,
+        by: Option<String>,
+    },
+    ConnectLogUploaded {
+        kind: db::connect_logs::ConnectLogKind,
+        log_id: Uuid,
+        by: Option<String>,
+    },
+    ConnectProgramCommand {
+        action: ConnectProgramAction,
+        program: ConnectProgramEventProgram,
+        by: Option<String>,
+    },
 }
 
 impl EventDetail {
+    pub fn redact_program_details(&mut self) {
+        if let Self::ConnectProgramCommand { program, .. } = self {
+            program.path = None;
+            program.args.clear();
+            program.start_with_obs = None;
+            program.stop_with_obs = None;
+            program.added_from_dashboard_by = None;
+        }
+    }
+
     /// Splits into the `kind` and `data` columns of `switcher_events`.
     pub fn into_parts(self) -> (String, serde_json::Value) {
         let mut value = serde_json::to_value(self).expect("events serialize");
@@ -644,11 +805,30 @@ pub struct Takeover {
     pub connection_id: Uuid,
 }
 
+/// A reconnect request. With no device ID, any session is closed (as for staff
+/// reconnects); with one, only that Connect device's session is closed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Reconnect {
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+}
+
+/// An empty or unparsable payload means settings changed.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConfigChange {
+    #[serde(default)]
+    pub renamed_device_id: Option<Uuid>,
+}
+
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
 
-    use super::{BelaboxChange, EventDetail, ObsFrames, SwitchReason};
+    use super::{
+        BelaboxChange, ConnectAccess, ConnectObsCommandCode, ConnectObsCommandReply,
+        ConnectObsCommandRequest, ConnectProgramAction, ConnectProgramEventProgram, EventDetail,
+        ObsFrames, PcObsState, SwitchReason, SwitcherStatus, Watchdog, connect_request_subject,
+    };
 
     #[test]
     fn frames_count_from_the_stream_start() {
@@ -804,6 +984,33 @@ mod tests {
                 priority: 3,
                 by: Some("kate".into()),
             },
+            EventDetail::ConnectDevicePaired {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectDeviceRevoked {
+                name: "Studio PC".into(),
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectPermissionsChanged {
+                obs_control: ConnectAccess::Admins,
+                logs: ConnectAccess::Owners,
+                programs: ConnectAccess::Owners,
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectWatchdogChanged {
+                mode: Watchdog::RestartResume,
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectObsCommand {
+                action: db::connect::ConnectObsAction::Restart,
+                by: Some("kate".into()),
+            },
+            EventDetail::ConnectLogUploaded {
+                kind: db::connect_logs::ConnectLogKind::ObsLog,
+                log_id: Uuid::nil(),
+                by: None,
+            },
         ];
 
         for event in events {
@@ -817,6 +1024,96 @@ mod tests {
         let (kind, data) = EventDetail::ObsConnected.into_parts();
         assert_eq!(kind, "obs_connected");
         assert_eq!(data, serde_json::json!({}));
+    }
+
+    #[test]
+    fn program_event_redaction_keeps_the_name_and_actor_only() {
+        let mut event = EventDetail::ConnectProgramCommand {
+            action: ConnectProgramAction::Started,
+            program: ConnectProgramEventProgram {
+                id: Uuid::nil(),
+                name: "Streamer.bot".into(),
+                path: Some("/home/user/Streamer.bot".into()),
+                args: vec!["--key".into(), "secret".into()],
+                start_with_obs: Some(true),
+                stop_with_obs: Some(true),
+                added_from_dashboard_by: Some("Kate".into()),
+            },
+            by: Some("Kate (Web)".into()),
+        };
+        event.redact_program_details();
+        let value = serde_json::to_value(event).unwrap();
+        assert_eq!(value["data"]["program"]["name"], "Streamer.bot");
+        assert!(value["data"]["program"].get("path").is_none());
+        assert_eq!(value["data"]["program"]["args"], serde_json::json!([]));
+        assert!(value["data"]["program"].get("start_with_obs").is_none());
+        assert_eq!(value["data"]["by"], "Kate (Web)");
+    }
+
+    #[test]
+    fn connect_pc_status_is_optional_and_has_snake_case_states() {
+        let status = SwitcherStatus::connected(false);
+        let value = serde_json::to_value(&status).unwrap();
+        assert!(value.get("pc").is_none());
+
+        let parsed: SwitcherStatus = serde_json::from_value(value).unwrap();
+        assert_eq!(parsed.pc, None);
+        assert_eq!(
+            serde_json::to_string(&PcObsState::NotResponding).unwrap(),
+            "\"not_responding\""
+        );
+    }
+
+    #[test]
+    fn connect_obs_command_payloads_use_the_wire_shape() {
+        let request = ConnectObsCommandRequest {
+            action: common::programs::ConnectCommandAction::Restart,
+        };
+        assert_eq!(
+            serde_json::to_value(&request).unwrap(),
+            serde_json::json!({"action": "restart"})
+        );
+        assert_eq!(
+            serde_json::to_value(ConnectObsCommandReply {
+                ok: true,
+                code: None,
+                error: None,
+                log_id: None,
+            })
+            .unwrap(),
+            serde_json::json!({"ok": true})
+        );
+        assert_eq!(
+            serde_json::from_value::<ConnectObsCommandRequest>(
+                serde_json::json!({"action": "restart"})
+            )
+            .unwrap(),
+            request
+        );
+        assert_eq!(
+            connect_request_subject(Uuid::nil()),
+            format!("connect.{}.request", Uuid::nil())
+        );
+        for code in [
+            ConnectObsCommandCode::Offline,
+            ConnectObsCommandCode::Unsupported,
+            ConnectObsCommandCode::Refused,
+            ConnectObsCommandCode::Timeout,
+        ] {
+            let reply = ConnectObsCommandReply {
+                ok: false,
+                code: Some(code),
+                error: Some("failure".into()),
+                log_id: None,
+            };
+            assert_eq!(
+                serde_json::from_value::<ConnectObsCommandReply>(
+                    serde_json::to_value(&reply).unwrap()
+                )
+                .unwrap(),
+                reply
+            );
+        }
     }
 }
 

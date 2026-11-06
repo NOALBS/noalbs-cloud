@@ -4,7 +4,7 @@
 //! | Limit | Key | Where |
 //! |---|---|---|
 //! | [`RateLimits::requests`] | client IP | every request ([`limit_requests`]), except Stripe's webhook |
-//! | [`RateLimits::sign_in`] | client IP | OAuth sign-in and linking, dev login |
+//! | [`RateLimits::sign_in`] | client IP | OAuth sign-in/linking, dev login and device pairing |
 //! | [`RateLimits::outbound`] | user | handlers that call someone else: stats probe, chatter lookup, Stripe Checkout/portal |
 //! | [`RateLimits::exports`] | user | "Download my data" and its stream history (heavy reads) |
 //!
@@ -201,6 +201,7 @@ fn client_ip(
 fn is_sign_in(path: &str) -> bool {
     path.strip_prefix("/auth/")
         .is_some_and(|rest| !matches!(rest, "me" | "providers" | "logout"))
+        || matches!(path, "/connect/pair" | "/connect/pair/poll")
 }
 
 #[cfg(test)]
@@ -283,5 +284,7 @@ mod tests {
         assert!(!is_sign_in("/auth/providers"));
         assert!(!is_sign_in("/auth/logout"));
         assert!(!is_sign_in("/workspaces"));
+        assert!(is_sign_in("/connect/pair"));
+        assert!(is_sign_in("/connect/pair/poll"));
     }
 }

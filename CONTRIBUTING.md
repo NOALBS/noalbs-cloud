@@ -68,6 +68,27 @@ Pull requests that look generated and unreviewed will be closed.
 
 ## Local development
 
+### NOALBS Cloud Connect
+
+Use `nix develop .#connect` on NixOS; on other Linux distributions, install the packages used by
+Connect CI: `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libssl-dev`,
+`patchelf` and `libxdo-dev`. Start the app with:
+
+    NOALBS_CONNECT_API_URL=http://localhost:5173/api \
+    NOALBS_CONNECT_DASHBOARD_URL=http://localhost:5173 \
+    nix develop .#connect -c bash -c 'cd connect/app/ui && pnpm install --frozen-lockfile && cd .. && ./ui/node_modules/.bin/tauri dev'
+
+The URL variables are needed when pairing with the local stack; otherwise Connect uses production.
+Untick “start when my computer starts” while developing, since the autostart entry runs without
+these variables.
+
+OBS settings folder overrides are supported on Linux only. macOS and normal Windows installs use
+OBS's shared settings folder; multiple setups on those platforms need shared config enabled and a
+distinct WebSocket port for each setup. On Windows, enable Portable OBS in Connect or add one of
+OBS's portable marker files (`portable_mode`, `obs_portable_mode`, `portable_mode.txt`, or
+`obs_portable_mode.txt`) to the install root for separate settings under
+`<install root>/config/obs-studio`.
+
 ### Settings
 
 Each service reads an optional `config.toml` from the directory you start it in (gitignored), then

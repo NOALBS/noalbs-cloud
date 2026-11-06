@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWorkspaceRouteImport } from './routes/_app/$workspace'
 import { Route as AppAddServerRouteImport } from './routes/_app/add-server'
 import { Route as AppAdminRouteRouteImport } from './routes/_app/admin/route'
+import { Route as AppConnectRouteImport } from './routes/_app/connect'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppWorkspacesRouteImport } from './routes/_app/workspaces'
 import { Route as AppWorkspaceIndexRouteImport } from './routes/_app/$workspace/index'
@@ -92,6 +93,11 @@ const AppAddServerRoute = AppAddServerRouteImport.update({
 const AppAdminRouteRoute = AppAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConnectRoute = AppConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => AppRoute,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
@@ -337,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRouteRouteWithChildren
   '/$workspace': typeof AppWorkspaceRouteWithChildren
   '/add-server': typeof AppAddServerRoute
+  '/connect': typeof AppConnectRoute
   '/welcome': typeof AppWelcomeRoute
   '/workspaces': typeof AppWorkspacesRouteWithChildren
   '/$workspace/account': typeof AppWorkspaceAccountRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/integrate-stream-server': typeof IntegrateStreamServerRoute
   '/login': typeof LoginRoute
   '/add-server': typeof AppAddServerRoute
+  '/connect': typeof AppConnectRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/$workspace/account': typeof AppWorkspaceAccountRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRouteRouteWithChildren
   '/_app/$workspace': typeof AppWorkspaceRouteWithChildren
   '/_app/add-server': typeof AppAddServerRoute
+  '/_app/connect': typeof AppConnectRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/workspaces': typeof AppWorkspacesRouteWithChildren
   '/_app/': typeof AppIndexRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/$workspace'
     | '/add-server'
+    | '/connect'
     | '/welcome'
     | '/workspaces'
     | '/$workspace/account'
@@ -537,6 +547,7 @@ export interface FileRouteTypes {
     | '/integrate-stream-server'
     | '/login'
     | '/add-server'
+    | '/connect'
     | '/welcome'
     | '/'
     | '/$workspace/account'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/$workspace'
     | '/_app/add-server'
+    | '/_app/connect'
     | '/_app/welcome'
     | '/_app/workspaces'
     | '/_app/'
@@ -687,6 +699,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminRouteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/connect': {
+      id: '/_app/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof AppConnectRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/welcome': {
@@ -1126,6 +1145,7 @@ interface AppRouteChildren {
   AppAdminRouteRoute: typeof AppAdminRouteRouteWithChildren
   AppWorkspaceRoute: typeof AppWorkspaceRouteWithChildren
   AppAddServerRoute: typeof AppAddServerRoute
+  AppConnectRoute: typeof AppConnectRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppWorkspacesRoute: typeof AppWorkspacesRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
@@ -1138,6 +1158,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRouteRoute: AppAdminRouteRouteWithChildren,
   AppWorkspaceRoute: AppWorkspaceRouteWithChildren,
   AppAddServerRoute: AppAddServerRoute,
+  AppConnectRoute: AppConnectRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppWorkspacesRoute: AppWorkspacesRouteWithChildren,
   AppIndexRoute: AppIndexRoute,

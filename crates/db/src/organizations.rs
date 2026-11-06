@@ -11,6 +11,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
+    connect::ConnectAccess,
     error::Result,
     workspaces::{Workspace, WorkspaceRoleEnum},
 };
@@ -1134,6 +1135,7 @@ pub struct ActivityRow {
     pub workspace_id: Uuid,
     pub workspace_name: String,
     pub workspace_slug: String,
+    pub connect_programs: ConnectAccess,
 }
 
 /// What to show of the organization's activity.
@@ -1162,7 +1164,8 @@ pub async fn activity(
         SELECT switcher_events.id, switcher_events.kind, switcher_events.data,
                switcher_events.created_at, switchers.id AS switcher_id,
                switchers.name AS switcher_name, workspaces.id AS workspace_id,
-               workspaces.name AS workspace_name, workspaces.url_slug AS workspace_slug
+               workspaces.name AS workspace_name, workspaces.url_slug AS workspace_slug,
+               switchers.connect_programs
         FROM switcher_events
         JOIN switchers ON switchers.id = switcher_events.switcher_id
         JOIN workspaces ON workspaces.id = switchers.workspace_id

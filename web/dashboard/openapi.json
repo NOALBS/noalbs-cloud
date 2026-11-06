@@ -2338,6 +2338,142 @@
         }
       }
     },
+    "/connect/pair": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Start the device authorization flow.",
+        "operationId": "create_pairing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePairing"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/pair/poll": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Poll for confirmation; the device token is returned exactly once.",
+        "operationId": "poll_pairing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PollPairing"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingClaimed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`authorization_pending` or `expired_token`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect/pair/{user_code}": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Show the PC waiting for the signed-in user to pair it.",
+        "operationId": "pairing_preview",
+        "parameters": [
+          {
+            "name": "user_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingPreview"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/invites/{token}": {
       "get": {
         "tags": [
@@ -7753,6 +7889,1018 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/devices": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "List active Connect devices paired with this switcher.",
+        "operationId": "list_devices",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectDeviceDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/devices/{device_id}": {
+      "delete": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Revoke a device token and close the current obs-link session.",
+        "operationId": "revoke_device",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Device revoked"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Rename a paired Connect device.",
+        "operationId": "rename_device",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameDevice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectDeviceDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "list_connect_logs",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectLogDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "upload_connect_log",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectLogDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/logs/{log_id}": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "get_connect_log",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectLogDetailDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "delete_connect_log",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "connect_obs_command",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectObsCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "description": "`connect_forbidden`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`connect_offline`, `connect_unsupported`, or `connect_refused`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "`connect_timeout` after up to 65 seconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/pair": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Pair this computer with the switcher.",
+        "operationId": "confirm_pairing",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPairing"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Pairing confirmed"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/permissions": {
+      "put": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Choose which switcher roles may control OBS or view Connect logs.",
+        "operationId": "set_permissions",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectPermissions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitcherDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`owner_only`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs": {
+      "get": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "list_connect_programs",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramStatus"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "add_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Program"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}": {
+      "put": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "edit_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Program"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "delete_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}": {
+      "post": {
+        "tags": [
+          "connect"
+        ],
+        "operationId": "control_connect_program",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {},
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/watchdog": {
+      "put": {
+        "tags": [
+          "connect"
+        ],
+        "summary": "Choose the watchdog behavior for Connect.",
+        "operationId": "set_watchdog",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetWatchdog"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitcherDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`connect_forbidden`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/events": {
       "get": {
         "tags": [
@@ -11980,6 +13128,8 @@
           "workspaces",
           "organizations",
           "invites",
+          "connect_devices",
+          "connect_pairings",
           "chat",
           "support_grants",
           "organization_audit",
@@ -11992,6 +13142,20 @@
           },
           "chat": {
             "$ref": "#/components/schemas/Chat"
+          },
+          "connect_devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectDevice"
+            },
+            "description": "Connect devices you paired."
+          },
+          "connect_pairings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectPairing"
+            },
+            "description": "Connect pairings you confirmed and that are waiting to be claimed."
           },
           "connections": {
             "type": "array",
@@ -15466,6 +16630,104 @@
           }
         }
       },
+      "ConfirmPairing": {
+        "type": "object",
+        "required": [
+          "user_code"
+        ],
+        "properties": {
+          "user_code": {
+            "type": "string"
+          }
+        }
+      },
+      "ConnectAccess": {
+        "type": "string",
+        "enum": [
+          "owners",
+          "admins",
+          "everyone"
+        ]
+      },
+      "ConnectDevice": {
+        "type": "object",
+        "required": [
+          "switcher_id",
+          "name",
+          "os",
+          "app_version",
+          "created_at"
+        ],
+        "properties": {
+          "app_version": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "switcher_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ConnectDeviceDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "os",
+          "app_version",
+          "created_at"
+        ],
+        "properties": {
+          "app_version": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "last_seen_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          }
+        }
+      },
       "ConnectLink": {
         "type": "object",
         "description": "The browser-source URL for OBS. It contains the connect token, so it is\nonly shown when the switcher is created or its token is replaced.",
@@ -15475,6 +16737,250 @@
         "properties": {
           "browser_source_url": {
             "type": "string"
+          }
+        }
+      },
+      "ConnectLogDetailDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "file_name",
+          "uploaded_at",
+          "size_bytes",
+          "truncated",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "device_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_modified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ConnectLogKind"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConnectLogDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "file_name",
+          "uploaded_at",
+          "size_bytes",
+          "truncated"
+        ],
+        "properties": {
+          "device_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_modified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ConnectLogKind"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConnectLogKind": {
+        "type": "string",
+        "enum": [
+          "obs_log",
+          "crash_report"
+        ]
+      },
+      "ConnectObsAction": {
+        "type": "string",
+        "enum": [
+          "start",
+          "stop",
+          "restart",
+          "upload_log"
+        ]
+      },
+      "ConnectObsCommand": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ConnectObsAction"
+          }
+        }
+      },
+      "ConnectOs": {
+        "type": "string",
+        "enum": [
+          "windows",
+          "linux",
+          "macos"
+        ]
+      },
+      "ConnectPairing": {
+        "type": "object",
+        "required": [
+          "name",
+          "os",
+          "app_version",
+          "created_at",
+          "expires_at"
+        ],
+        "properties": {
+          "app_version": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "switcher_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ConnectPermissions": {
+        "type": "object",
+        "required": [
+          "obs_control",
+          "logs",
+          "programs"
+        ],
+        "properties": {
+          "logs": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "obs_control": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "programs": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          }
+        }
+      },
+      "ConnectProgramAction": {
+        "type": "string",
+        "enum": [
+          "added",
+          "edited",
+          "removed",
+          "started",
+          "stopped"
+        ]
+      },
+      "ConnectProgramEventProgram": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "added_from_dashboard_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "stop_with_obs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         }
       },
@@ -15797,6 +17303,25 @@
               "null"
             ],
             "description": "What happened; up to 200 characters. Blank = no description."
+          }
+        }
+      },
+      "CreatePairing": {
+        "type": "object",
+        "required": [
+          "name",
+          "os",
+          "app_version"
+        ],
+        "properties": {
+          "app_version": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "$ref": "#/components/schemas/ConnectOs"
           }
         }
       },
@@ -17827,6 +19352,247 @@
                 "type": "string",
                 "enum": [
                   "moblin_error"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_device_paired"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_device_revoked"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "obs_control",
+                  "logs",
+                  "programs"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "logs": {
+                    "$ref": "#/components/schemas/ConnectAccess"
+                  },
+                  "obs_control": {
+                    "$ref": "#/components/schemas/ConnectAccess"
+                  },
+                  "programs": {
+                    "$ref": "#/components/schemas/ConnectAccess"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_permissions_changed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "mode": {
+                    "$ref": "#/components/schemas/Watchdog"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_watchdog_changed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "$ref": "#/components/schemas/ConnectObsAction"
+                  },
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_obs_command"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "log_id"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "kind": {
+                    "$ref": "#/components/schemas/ConnectLogKind"
+                  },
+                  "log_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_log_uploaded"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "action",
+                  "program"
+                ],
+                "properties": {
+                  "action": {
+                    "$ref": "#/components/schemas/ConnectProgramAction"
+                  },
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "program": {
+                    "$ref": "#/components/schemas/ConnectProgramEventProgram"
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "connect_program_command"
                 ]
               }
             }
@@ -20163,6 +21929,136 @@
           }
         }
       },
+      "PairingClaimed": {
+        "type": "object",
+        "required": [
+          "device_id",
+          "device_token",
+          "switcher_id",
+          "link_url"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_token": {
+            "type": "string"
+          },
+          "link_url": {
+            "type": "string"
+          },
+          "switcher_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PairingCreated": {
+        "type": "object",
+        "required": [
+          "device_code",
+          "user_code",
+          "verification_url",
+          "expires_in",
+          "interval"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "interval": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "user_code": {
+            "type": "string"
+          },
+          "verification_url": {
+            "type": "string"
+          }
+        }
+      },
+      "PairingPreview": {
+        "type": "object",
+        "required": [
+          "name",
+          "os",
+          "app_version",
+          "expires_at"
+        ],
+        "properties": {
+          "app_version": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          }
+        }
+      },
+      "PcObsState": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "not_running",
+          "starting",
+          "connected",
+          "not_responding",
+          "waiting_for_input",
+          "safe_mode",
+          "crashed",
+          "websocket_disabled"
+        ]
+      },
+      "PcStatus": {
+        "type": "object",
+        "required": [
+          "obs"
+        ],
+        "properties": {
+          "device_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "device_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "obs": {
+            "$ref": "#/components/schemas/PcObsState"
+          },
+          "obs_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "programs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramStatus"
+            }
+          }
+        }
+      },
       "PlaceSource": {
         "type": "object",
         "required": [
@@ -20417,6 +22313,17 @@
           }
         }
       },
+      "PollPairing": {
+        "type": "object",
+        "required": [
+          "device_code"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string"
+          }
+        }
+      },
       "PreviewOffAir": {
         "type": "string",
         "description": "Who may watch the OBS preview while the switcher isn't streaming. While it\nstreams, everyone who can see the switcher may: it shows what viewers see.\nNOALBS support never sees it off air.",
@@ -20441,6 +22348,62 @@
           "you": {
             "type": "boolean",
             "description": "The one asking."
+          }
+        }
+      },
+      "Program": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "path",
+          "args",
+          "start_with_obs",
+          "stop_with_obs"
+        ],
+        "properties": {
+          "added_from_dashboard_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "start_with_obs": {
+            "type": "boolean"
+          },
+          "stop_with_obs": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProgramStatus": {
+        "type": "object",
+        "required": [
+          "program",
+          "running"
+        ],
+        "properties": {
+          "program": {
+            "$ref": "#/components/schemas/Program"
+          },
+          "running": {
+            "type": "boolean"
           }
         }
       },
@@ -20559,6 +22522,17 @@
           },
           "parent_is_group": {
             "type": "boolean"
+          }
+        }
+      },
+      "RenameDevice": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
           }
         }
       },
@@ -21357,6 +23331,17 @@
         "properties": {
           "staff": {
             "type": "boolean"
+          }
+        }
+      },
+      "SetWatchdog": {
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/Watchdog"
           }
         }
       },
@@ -22472,7 +24457,11 @@
           "chat",
           "belabox",
           "moblin",
-          "preview_off_air"
+          "preview_off_air",
+          "connect_obs_control",
+          "connect_logs",
+          "connect_programs",
+          "connect_watchdog"
         ],
         "properties": {
           "behaviour": {
@@ -22483,6 +24472,18 @@
           },
           "chat": {
             "$ref": "#/components/schemas/ChatSettingsDto"
+          },
+          "connect_logs": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "connect_obs_control": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "connect_programs": {
+            "$ref": "#/components/schemas/ConnectAccess"
+          },
+          "connect_watchdog": {
+            "$ref": "#/components/schemas/Watchdog"
           },
           "created_at": {
             "type": "string",
@@ -22591,6 +24592,17 @@
           "paused": {
             "type": "boolean",
             "description": "Over the workspace plan's switcher limit: connected, but not switching."
+          },
+          "pc": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PcStatus",
+                "description": "Status reported by a NOALBS Cloud Connect desktop."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "recording": {
             "type": "boolean"
@@ -23131,6 +25143,14 @@
             "type": "boolean"
           }
         }
+      },
+      "Watchdog": {
+        "type": "string",
+        "enum": [
+          "off",
+          "restart",
+          "restart_resume"
+        ]
       },
       "WhatsNewSeen": {
         "type": "object",

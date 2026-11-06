@@ -6,18 +6,21 @@
 //! While OBS is connected, the switcher task runs (see [`crate::switcher`]).
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     sync::{Arc, atomic::AtomicBool},
     time::{Duration, Instant},
 };
 
 use async_nats::jetstream;
-use common::{crypto::DataKey, shutdown};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use common::{MAX_CONNECT_LOG_RAW_BYTES, crypto::DataKey, shutdown};
+use flate2::read::GzDecoder;
 use futures_util::{SinkExt, StreamExt};
-use live::{EventDetail, SwitcherStatus, Takeover};
+use live::{EventDetail, PcObsState, PcStatus, SwitcherStatus, Takeover};
 use obs_actions::types::{Event, ObsMessage, ObsRequest, Reidentify};
 use opentelemetry::KeyValue;
 use serde::{Deserialize, Serialize};
+use std::io::Read;
 use tokio::{
     net,
     sync::{mpsc, oneshot},
@@ -43,6 +46,10 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
+const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
+const REQUESTED_LOG_UPLOADS_PER_HOUR: usize = 30;
+const MAX_DECOMPRESSED_LOG_BYTES: u64 = MAX_CONNECT_LOG_RAW_BYTES;
 /// Delay before restarting a switcher that stopped with an error.
 const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 /// How long a client has to finish the WebSocket handshake.
@@ -223,15 +230,18 @@ pub enum InnerReply {
 
 /// News for a connection from NATS.
 enum Control {
-    /// The API saved settings for this switcher.
-    ConfigChanged,
+    /// The API saved settings or renamed a Connect device for this switcher.
+    ConfigChanged(live::ConfigChange),
     /// Another connection identified for the same switcher.
     TakenOver,
     /// Someone watches the audio levels.
     AudioWanted,
-    /// Staff asked for a fresh connection: close, and the browser source
-    /// reconnects.
-    Reconnect,
+    /// A reconnect request, optionally limited to one Connect device.
+    Reconnect { device_id: Option<Uuid> },
+    ConnectCommand {
+        payload: Vec<u8>,
+        reply: async_nats::Subject,
+    },
 }
 
 enum Flow {
@@ -239,12 +249,149 @@ enum Flow {
     Close,
 }
 
+fn reset_obs_status(status: &mut SwitcherStatus) {
+    let (auto_switch, paused, pc) = (status.auto_switch, status.paused, status.pc.clone());
+    *status = SwitcherStatus::connected(auto_switch);
+    status.paused = paused;
+    status.pc = pc;
+}
+
+fn set_pc_device_name(status: &mut SwitcherStatus, name: &str) -> bool {
+    let Some(pc) = &mut status.pc else {
+        return false;
+    };
+    if pc.device_name.as_deref() == Some(name) {
+        return false;
+    }
+    pc.device_name = Some(name.to_owned());
+    true
+}
+
+fn should_close_for_reconnect(
+    requested_device_id: Option<Uuid>,
+    session_device_id: Option<Uuid>,
+) -> bool {
+    requested_device_id.is_none() || requested_device_id == session_device_id
+}
+
+fn reconnect_device_id(payload: &[u8]) -> Option<Uuid> {
+    serde_json::from_slice::<live::Reconnect>(payload)
+        .unwrap_or(live::Reconnect { device_id: None })
+        .device_id
+}
+
+fn parse_config_change(payload: &[u8]) -> live::ConfigChange {
+    serde_json::from_slice(payload).unwrap_or_default()
+}
+
+fn should_refresh_device_name(renamed_device_id: Uuid, session_device_id: Option<Uuid>) -> bool {
+    Some(renamed_device_id) == session_device_id
+}
+
+fn connect_command_failure(
+    is_connect: bool,
+    supports_control: bool,
+    supports_logs: bool,
+    supports_programs: bool,
+    action: common::programs::ConnectCommandAction,
+) -> Option<(live::ConnectObsCommandCode, &'static str)> {
+    if !is_connect {
+        Some((
+            live::ConnectObsCommandCode::Offline,
+            "This switcher connects through the browser source, which can't control OBS",
+        ))
+    } else if action.is_program() && !supports_programs {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to manage programs from the dashboard",
+        ))
+    } else if action.is_log_upload() && !supports_logs {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to upload OBS logs",
+        ))
+    } else if action.is_obs_control() && !supports_control {
+        Some((
+            live::ConnectObsCommandCode::Unsupported,
+            "Update NOALBS Cloud Connect to control OBS from the dashboard",
+        ))
+    } else {
+        None
+    }
+}
+
+fn expired_connect_commands(
+    pending: &mut HashMap<String, PendingConnectCommand>,
+) -> Vec<async_nats::Subject> {
+    let tokens = pending
+        .iter()
+        .filter(|(_, command)| command.sent.elapsed() >= CONNECT_COMMAND_TIMEOUT)
+        .map(|(token, _)| token.clone())
+        .collect::<Vec<_>>();
+    tokens
+        .into_iter()
+        .filter_map(|token| pending.remove(&token).map(|command| command.reply))
+        .collect()
+}
+
+fn allow_unsolicited_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -> bool {
+    uploads.retain(|uploaded| now.saturating_duration_since(*uploaded) < Duration::from_secs(3600));
+    if uploads.len() >= UNSOLICITED_LOG_UPLOADS_PER_HOUR {
+        return false;
+    }
+    uploads.push_back(now);
+    true
+}
+
+fn allow_requested_log_upload(uploads: &mut VecDeque<Instant>, now: Instant) -> bool {
+    uploads.retain(|uploaded| now.saturating_duration_since(*uploaded) < Duration::from_secs(3600));
+    if uploads.len() >= REQUESTED_LOG_UPLOADS_PER_HOUR {
+        return false;
+    }
+    uploads.push_back(now);
+    true
+}
+
+fn decode_log_upload(upload: &live::ConnectLogUpload) -> Result<Vec<u8>> {
+    if upload.content_gzip_base64.len() > 3 * 1024 * 1024 {
+        return Err(Error::InvalidLogUpload("too large"));
+    }
+    let compressed = STANDARD
+        .decode(&upload.content_gzip_base64)
+        .map_err(|_| Error::InvalidLogUpload("bad base64"))?;
+    let mut content = Vec::new();
+    GzDecoder::new(compressed.as_slice())
+        .take(MAX_DECOMPRESSED_LOG_BYTES + 1)
+        .read_to_end(&mut content)
+        .map_err(|_| Error::InvalidLogUpload("bad gzip"))?;
+    if content.len() as u64 > MAX_DECOMPRESSED_LOG_BYTES {
+        return Err(Error::InvalidLogUpload("decompressed too large"));
+    }
+    Ok(content)
+}
+
+fn invalid_log_upload_reply(reason: &'static str) -> live::ConnectObsCommandReply {
+    live::ConnectObsCommandReply {
+        ok: false,
+        code: Some(live::ConnectObsCommandCode::Refused),
+        error: Some(format!("Invalid log upload: {reason}")),
+        log_id: None,
+    }
+}
+
 /// A browser source that identified as a switcher.
 struct Session {
     switcher_id: Uuid,
     token_hash: [u8; 32],
+    device_id: Option<Uuid>,
+    device_token_hash: Option<String>,
     /// The OBS settings last sent, to notice changes.
     obs_settings: (i32, Option<Vec<u8>>),
+    is_connect: bool,
+    connect_capabilities: Vec<String>,
+    pending_connect_commands: HashMap<String, PendingConnectCommand>,
+    unsolicited_log_uploads: VecDeque<Instant>,
+    requested_log_uploads: VecDeque<Instant>,
     status: StatusHandle,
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
@@ -260,6 +407,11 @@ struct Session {
     /// The BELABOX Cloud link, for switchers with a remote key (not while paused).
     belabox: Option<belabox::Link>,
     audio: audio::Meters,
+}
+
+struct PendingConnectCommand {
+    reply: async_nats::Subject,
+    sent: Instant,
 }
 
 struct RunningSwitcher {
@@ -317,7 +469,7 @@ impl Connection {
                     }
                 }
                 _ = prune.tick() => {
-                    self.prune_requests();
+                    self.prune_requests().await?;
                     self.resubscribe_audio().await?;
                 }
                 _ = &mut identify_deadline, if self.session.is_none() => {
@@ -417,17 +569,152 @@ impl Connection {
     }
 
     /// Drops requests the browser source never answered (e.g. OBS went away).
-    fn prune_requests(&mut self) {
+    async fn prune_requests(&mut self) -> Result<()> {
         self.requests
             .retain(|_, pending| pending.sent.elapsed() < REQUEST_TIMEOUT);
+        let expired = if let Some(session) = self.session.as_mut() {
+            expired_connect_commands(&mut session.pending_connect_commands)
+        } else {
+            Vec::new()
+        };
+        for subject in expired {
+            telemetry::nats::publish(
+                &self.shared.nats,
+                subject,
+                serde_json::to_vec(&live::ConnectObsCommandReply {
+                    ok: false,
+                    code: Some(live::ConnectObsCommandCode::Timeout),
+                    error: Some("Connect did not respond in time".into()),
+                    log_id: None,
+                })?,
+            )
+            .await?;
+        }
+        Ok(())
+    }
+
+    async fn store_log_upload(
+        &mut self,
+        upload: live::ConnectLogUpload,
+        unsolicited: bool,
+    ) -> Result<Uuid> {
+        let session = self.session.as_mut().ok_or(Error::SwitcherGone)?;
+        if unsolicited {
+            if !session.is_connect
+                || !session
+                    .connect_capabilities
+                    .iter()
+                    .any(|capability| capability == "obs_logs")
+            {
+                return Err(Error::SwitcherGone);
+            }
+            if !allow_unsolicited_log_upload(&mut session.unsolicited_log_uploads, Instant::now()) {
+                tracing::warn!("Dropping excess unsolicited Connect log upload");
+                return Err(Error::SwitcherGone);
+            }
+        }
+        let switcher_id = session.switcher_id;
+        let device_id = session.device_id;
+        let content = decode_log_upload(&upload)?;
+        let id = db::connect_logs::insert(
+            &self.shared.db,
+            switcher_id,
+            device_id,
+            upload.kind,
+            &upload.file_name,
+            upload.modified_at,
+            upload.truncated,
+            &content,
+        )
+        .await?;
+        if unsolicited {
+            live::record_event(
+                &self.shared.db,
+                &self.shared.nats,
+                switcher_id,
+                EventDetail::ConnectLogUploaded {
+                    kind: upload.kind,
+                    log_id: id,
+                    by: None,
+                },
+            )
+            .await?;
+        }
+        Ok(id)
     }
 
     async fn handle_message(&mut self, message: &str) -> Result<Flow> {
         let response = serde_json::from_str::<Response>(message)?;
 
         match response.response {
-            ResponseKind::Identify(identify) => return self.identify(&identify.token).await,
+            ResponseKind::Identify(identify) => return self.identify(&identify).await,
             ResponseKind::ObsWsConnected(connected) => self.obs_connection_changed(connected).await,
+            ResponseKind::PcState { obs } => {
+                if let Some(session) = self.session.as_ref() {
+                    session.status.update(|status| {
+                        if let Some(pc) = &mut status.pc {
+                            pc.obs = obs;
+                        }
+                    });
+                }
+            }
+            ResponseKind::ProgramsState(programs) => {
+                if let Some(session) = self.session.as_ref() {
+                    session.status.update(|status| {
+                        if let Some(pc) = &mut status.pc {
+                            pc.programs = programs;
+                        }
+                    });
+                }
+            }
+            ResponseKind::ConnectCommandResult { ok, error, log } => {
+                if let Some(token) = response.token
+                    && let Some(pending) = self
+                        .session
+                        .as_mut()
+                        .and_then(|session| session.pending_connect_commands.remove(&token))
+                {
+                    let reply = if ok {
+                        let upload_result = match log {
+                            Some(upload) => self.store_log_upload(upload, false).await.map(Some),
+                            None => Ok(None),
+                        };
+                        match upload_result {
+                            Ok(log_id) => live::ConnectObsCommandReply {
+                                ok: true,
+                                code: None,
+                                error: None,
+                                log_id,
+                            },
+                            Err(Error::InvalidLogUpload(reason)) => {
+                                tracing::warn!(reason, "Connect returned an invalid log upload");
+                                invalid_log_upload_reply(reason)
+                            }
+                            Err(error) => return Err(error),
+                        }
+                    } else {
+                        live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(live::ConnectObsCommandCode::Refused),
+                            error: Some(
+                                error.unwrap_or_else(|| "Connect refused the command".into()),
+                            ),
+                            log_id: None,
+                        }
+                    };
+                    telemetry::nats::publish(
+                        &self.shared.nats,
+                        pending.reply,
+                        serde_json::to_vec(&reply)?,
+                    )
+                    .await?;
+                }
+            }
+            ResponseKind::LogUpload(upload) => {
+                if let Err(error) = self.store_log_upload(upload, true).await {
+                    tracing::warn!(%error, "Dropping unsolicited Connect log upload");
+                }
+            }
             ResponseKind::ObsRawResponse(obs_response) => {
                 if let Some(token) = response.token
                     && let Some(pending) = self.requests.remove(&token)
@@ -476,16 +763,32 @@ impl Connection {
         Ok(Flow::Continue)
     }
 
-    async fn identify(&mut self, token: &str) -> Result<Flow> {
+    async fn identify(&mut self, identify: &Identify) -> Result<Flow> {
         if self.session.is_some() {
             tracing::warn!("Browser source identified twice; ignoring");
             return Ok(Flow::Continue);
         }
 
-        let token_hash = common::tokens::hash(token);
-        let Some(switcher) =
+        let token_hash = common::tokens::hash(&identify.token);
+        let device_token_hash = common::tokens::hash_text(&identify.token);
+        let (switcher, device, device_hash) = if let Some(switcher) =
             db::switchers::by_connect_token_hash(&self.shared.db, &token_hash).await?
-        else {
+        {
+            (switcher, None, None)
+        } else if let Some((device, switcher)) =
+            db::connect::by_token_hash(&self.shared.db, &device_token_hash).await?
+        {
+            let os = identify
+                .os
+                .as_deref()
+                .filter(|os| matches!(*os, "windows" | "linux" | "macos"))
+                .unwrap_or(&device.os);
+            if !db::connect::touch(&self.shared.db, device.id, os, &identify.version).await? {
+                tracing::info!("Connect device was revoked during authentication");
+                return self.refuse(RequestErrorKind::AuthenticationFailed).await;
+            }
+            (switcher, Some(device), Some(device_token_hash))
+        } else {
             tracing::info!("Browser source used an unknown connect token");
             return self.refuse(RequestErrorKind::AuthenticationFailed).await;
         };
@@ -495,8 +798,12 @@ impl Connection {
 
         self.send_request(RequestKind::IdentifyAck(true), None)
             .await?;
-        self.send_request(RequestKind::Settings(self.settings_for(&switcher)), None)
-            .await?;
+        let is_connect = identify.client.as_deref() == Some("connect");
+        self.send_request(
+            RequestKind::Settings(self.settings_for(&switcher, is_connect)),
+            None,
+        )
+        .await?;
         db::switchers::touch_last_seen(&self.shared.db, switcher_id).await?;
         let paused = db::switchers::is_paused(&self.shared.db, switcher_id).await?;
         if paused {
@@ -505,6 +812,15 @@ impl Connection {
 
         let mut initial = SwitcherStatus::connected(switcher.bitrate_switcher_enabled);
         initial.paused = paused;
+        if is_connect {
+            initial.pc = Some(PcStatus {
+                device_id: device.as_ref().map(|device| device.id),
+                device_name: device.as_ref().map(|device| device.name.clone()),
+                obs: PcObsState::Unknown,
+                obs_version: identify.obs_version.clone(),
+                programs: Vec::new(),
+            });
+        }
         let status = StatusHandle::new(initial);
         let attribution = SharedAttribution::default();
         let tasks = vec![
@@ -519,6 +835,11 @@ impl Connection {
                 self.shared.nats.clone(),
                 switcher_id,
                 self.inner_comm.clone(),
+            )),
+            crate::spawn(forward_connect_commands(
+                self.shared.nats.clone(),
+                switcher_id,
+                self.control_tx.clone(),
             )),
             crate::spawn(collect_intents(
                 self.shared.nats.clone(),
@@ -551,7 +872,14 @@ impl Connection {
         self.session = Some(Session {
             switcher_id,
             token_hash,
+            device_id: device.as_ref().map(|device| device.id),
+            device_token_hash: device_hash,
             obs_settings: (switcher.port, switcher.password.clone()),
+            is_connect,
+            connect_capabilities: identify.capabilities.clone(),
+            pending_connect_commands: HashMap::new(),
+            unsolicited_log_uploads: VecDeque::new(),
+            requested_log_uploads: VecDeque::new(),
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
@@ -567,7 +895,7 @@ impl Connection {
         Ok(Flow::Continue)
     }
 
-    fn settings_for(&self, switcher: &db::switchers::Switcher) -> Settings {
+    fn settings_for(&self, switcher: &db::switchers::Switcher, is_connect: bool) -> Settings {
         let password = switcher.password.as_deref().and_then(|encrypted| {
             match self.shared.data_key.decrypt(encrypted) {
                 Ok(bytes) => String::from_utf8(bytes).ok(),
@@ -583,6 +911,9 @@ impl Connection {
                 port: u32::try_from(switcher.port).unwrap_or(4455),
                 password,
             },
+            connect: is_connect.then_some(ConnectSettings {
+                watchdog: switcher.connect_watchdog,
+            }),
         }
     }
 
@@ -607,9 +938,7 @@ impl Connection {
             self.stop_switcher();
             if let Some(session) = self.session.as_ref() {
                 session.status.update(|status| {
-                    let (auto_switch, paused) = (status.auto_switch, status.paused);
-                    *status = SwitcherStatus::connected(auto_switch);
-                    status.paused = paused;
+                    reset_obs_status(status);
                 });
             }
         }
@@ -689,15 +1018,138 @@ impl Connection {
 
     async fn handle_control(&mut self, control: Control) -> Result<Flow> {
         match control {
+            Control::ConnectCommand { payload, reply } => {
+                let (is_connect, supports_control, supports_logs, supports_programs) = self
+                    .session
+                    .as_ref()
+                    .map(|session| {
+                        (
+                            session.is_connect,
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "obs_control"),
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "obs_logs"),
+                            session
+                                .connect_capabilities
+                                .iter()
+                                .any(|value| value == "programs"),
+                        )
+                    })
+                    .unwrap_or_default();
+                let request: live::ConnectObsCommandRequest = match serde_json::from_slice(&payload)
+                {
+                    Ok(request) => request,
+                    Err(_) => {
+                        let body = live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(live::ConnectObsCommandCode::Refused),
+                            error: Some("Invalid OBS command".into()),
+                            log_id: None,
+                        };
+                        telemetry::nats::publish(
+                            &self.shared.nats,
+                            reply,
+                            serde_json::to_vec(&body)?,
+                        )
+                        .await?;
+                        return Ok(Flow::Continue);
+                    }
+                };
+                if let Some((code, error)) = connect_command_failure(
+                    is_connect,
+                    supports_control,
+                    supports_logs,
+                    supports_programs,
+                    request.action.clone(),
+                ) {
+                    telemetry::nats::publish(
+                        &self.shared.nats,
+                        reply,
+                        serde_json::to_vec(&live::ConnectObsCommandReply {
+                            ok: false,
+                            code: Some(code),
+                            error: Some(error.into()),
+                            log_id: None,
+                        })?,
+                    )
+                    .await?;
+                    return Ok(Flow::Continue);
+                }
+                if request.action == common::programs::ConnectCommandAction::UploadLog {
+                    let allowed = self.session.as_mut().is_some_and(|session| {
+                        allow_requested_log_upload(
+                            &mut session.requested_log_uploads,
+                            Instant::now(),
+                        )
+                    });
+                    if !allowed {
+                        telemetry::nats::publish(
+                            &self.shared.nats,
+                            reply,
+                            serde_json::to_vec(&live::ConnectObsCommandReply {
+                                ok: false,
+                                code: Some(live::ConnectObsCommandCode::Refused),
+                                error: Some("Too many log requests; try again later".into()),
+                                log_id: None,
+                            })?,
+                        )
+                        .await?;
+                        return Ok(Flow::Continue);
+                    }
+                }
+                let token = Uuid::new_v4().to_string();
+                self.send_request(
+                    RequestKind::ConnectCommand(request.action),
+                    Some(token.clone()),
+                )
+                .await?;
+                if let Some(session) = self.session.as_mut() {
+                    session.pending_connect_commands.insert(
+                        token,
+                        PendingConnectCommand {
+                            reply,
+                            sent: Instant::now(),
+                        },
+                    );
+                }
+                Ok(Flow::Continue)
+            }
             Control::TakenOver => {
                 tracing::info!("A newer browser source took over this switcher");
                 self.taken_over = true;
                 self.refuse(RequestErrorKind::AlreadyConnected).await
             }
-            Control::ConfigChanged => self.reload().await,
-            Control::Reconnect => {
-                tracing::info!("Closing so the browser source reconnects (asked by staff)");
-                Ok(Flow::Close)
+            Control::ConfigChanged(change) => match change.renamed_device_id {
+                Some(device_id) => {
+                    let session_device_id =
+                        self.session.as_ref().and_then(|session| session.device_id);
+                    if should_refresh_device_name(device_id, session_device_id) {
+                        self.refresh_device_name().await?;
+                    }
+                    Ok(Flow::Continue)
+                }
+                None => self.reload().await,
+            },
+            Control::Reconnect { device_id } => {
+                let session_device_id = self.session.as_ref().and_then(|session| session.device_id);
+                if should_close_for_reconnect(device_id, session_device_id) {
+                    if let Some(device_id) = device_id {
+                        tracing::info!(%device_id, "Closing the revoked Connect device connection");
+                    } else {
+                        tracing::info!("Closing so the browser source reconnects (asked by staff)");
+                    }
+                    Ok(Flow::Close)
+                } else {
+                    tracing::debug!(
+                        ?device_id,
+                        "Ignoring reconnect for a different Connect device"
+                    );
+                    Ok(Flow::Continue)
+                }
             }
             Control::AudioWanted => {
                 if let Some(session) = self.session.as_mut() {
@@ -717,18 +1169,44 @@ impl Connection {
             return Ok(Flow::Continue);
         };
         let switcher_id = session.switcher_id;
-        let switcher = db::switchers::get(&self.shared.db, switcher_id).await?;
+        let is_connect = session.is_connect;
+        let (switcher, device) = if let Some(token_hash) = session.device_token_hash.as_deref() {
+            match db::connect::by_token_hash(&self.shared.db, token_hash)
+                .await?
+                .filter(|(device, switcher)| {
+                    Some(device.id) == session.device_id && switcher.id == switcher_id
+                }) {
+                Some((device, switcher)) => (Some(switcher), Some(device)),
+                None => (None, None),
+            }
+        } else {
+            (
+                db::switchers::get(&self.shared.db, switcher_id)
+                    .await?
+                    .filter(|switcher| switcher.connect_token_hash == session.token_hash),
+                None,
+            )
+        };
 
-        // Deleted, or its connect token was replaced: this link no longer works.
-        let Some(switcher) = switcher.filter(|s| s.connect_token_hash == session.token_hash) else {
+        // Deleted or revoked, or its link was replaced: this session no longer works.
+        let Some(switcher) = switcher else {
             tracing::info!(%switcher_id, "Switcher deleted or its link replaced; disconnecting");
             return self.refuse(RequestErrorKind::AuthenticationFailed).await;
         };
 
+        if let Some(device) = device {
+            session.status.update(|status| {
+                set_pc_device_name(status, &device.name);
+            });
+        }
+
         let obs_settings = (switcher.port, switcher.password.clone());
-        if obs_settings != session.obs_settings {
-            self.send_request(RequestKind::Settings(self.settings_for(&switcher)), None)
-                .await?;
+        if obs_settings != session.obs_settings || is_connect {
+            self.send_request(
+                RequestKind::Settings(self.settings_for(&switcher, is_connect)),
+                None,
+            )
+            .await?;
         }
 
         // A plan change may pause or resume this switcher.
@@ -775,10 +1253,46 @@ impl Connection {
         Ok(Flow::Continue)
     }
 
+    async fn refresh_device_name(&self) -> Result<()> {
+        let Some(session) = self.session.as_ref() else {
+            return Ok(());
+        };
+        let Some(token_hash) = session.device_token_hash.as_deref() else {
+            return Ok(());
+        };
+        let Some((device, switcher)) =
+            db::connect::by_token_hash(&self.shared.db, token_hash).await?
+        else {
+            return Ok(());
+        };
+        if Some(device.id) != session.device_id || switcher.id != session.switcher_id {
+            return Ok(());
+        }
+
+        session.status.update(|status| {
+            set_pc_device_name(status, &device.name);
+        });
+        Ok(())
+    }
+
     async fn cleanup(&mut self) {
         let Some(mut session) = self.session.take() else {
             return;
         };
+        for (_, pending) in session.pending_connect_commands.drain() {
+            let reply = live::ConnectObsCommandReply {
+                ok: false,
+                code: Some(live::ConnectObsCommandCode::Offline),
+                error: Some("Connect computer went offline".into()),
+                log_id: None,
+            };
+            if let Ok(payload) = serde_json::to_vec(&reply)
+                && let Err(error) =
+                    telemetry::nats::publish(&self.shared.nats, pending.reply, payload).await
+            {
+                tracing::warn!(%error, "Failed to reply to a pending Connect command");
+            }
+        }
         if let Some(running) = session.switcher.take() {
             running.task.abort();
         }
@@ -847,6 +1361,38 @@ async fn forward_obs_requests(
             reply: InnerReply::Nats(message.reply),
         };
         if inner_comm.send(request).is_err() {
+            return;
+        }
+    }
+}
+
+async fn forward_connect_commands(
+    nats: async_nats::Client,
+    switcher_id: Uuid,
+    control: mpsc::UnboundedSender<Control>,
+) {
+    let mut requests = match nats
+        .subscribe(live::connect_request_subject(switcher_id))
+        .await
+    {
+        Ok(subscription) => subscription,
+        Err(error) => {
+            tracing::error!(%error, "Couldn't subscribe to Connect OBS commands");
+            return;
+        }
+    };
+
+    while let Some(message) = requests.next().await {
+        let Some(reply) = message.reply else {
+            continue;
+        };
+        if control
+            .send(Control::ConnectCommand {
+                payload: message.payload.to_vec(),
+                reply,
+            })
+            .is_err()
+        {
             return;
         }
     }
@@ -922,7 +1468,9 @@ async fn listen_for_control(
 
     loop {
         let message = tokio::select! {
-            Some(_) = config.next() => Control::ConfigChanged,
+            Some(message) = config.next() => {
+                Control::ConfigChanged(parse_config_change(&message.payload))
+            }
             Some(message) = takeover.next() => {
                 match serde_json::from_slice::<Takeover>(&message.payload) {
                     Ok(other) if other.connection_id != connection_id => Control::TakenOver,
@@ -930,7 +1478,9 @@ async fn listen_for_control(
                 }
             }
             Some(_) = audio_demand.next() => Control::AudioWanted,
-            Some(_) = reconnect.next() => Control::Reconnect,
+            Some(message) = reconnect.next() => Control::Reconnect {
+                device_id: reconnect_device_id(&message.payload),
+            },
             else => return,
         };
         if control.send(message).is_err() {
@@ -954,6 +1504,7 @@ enum RequestKind {
     RequestError(RequestError),
     Settings(Settings),
     ObsRawRequest(String),
+    ConnectCommand(common::programs::ConnectCommandAction),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -971,6 +1522,13 @@ enum RequestErrorKind {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Settings {
     pub obs: ObsSettings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connect: Option<ConnectSettings>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ConnectSettings {
+    pub watchdog: db::connect::Watchdog,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -993,13 +1551,519 @@ struct Response {
 enum ResponseKind {
     Identify(Identify),
     ObsWsConnected(bool),
+    PcState {
+        obs: PcObsState,
+    },
+    ProgramsState(Vec<common::programs::ProgramStatus>),
     ObsRawResponse(serde_json::Value),
+    ConnectCommandResult {
+        ok: bool,
+        #[serde(default)]
+        error: Option<String>,
+        #[serde(default)]
+        log: Option<live::ConnectLogUpload>,
+    },
+    LogUpload(live::ConnectLogUpload),
     ObsRawEvent(serde_json::Value),
     Error(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Identify {
     pub token: String,
     pub version: String,
+    #[serde(default)]
+    pub client: Option<String>,
+    #[serde(default)]
+    pub capabilities: Vec<String>,
+    #[serde(default)]
+    pub os: Option<String>,
+    #[serde(default)]
+    pub obs_version: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        collections::{HashMap, VecDeque},
+        io::Write,
+        time::{Duration, Instant},
+    };
+
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    use flate2::{Compression, write::GzEncoder};
+    use live::{PcObsState, PcStatus, SwitcherStatus};
+    use serde_json::json;
+    use uuid::Uuid;
+
+    use super::{
+        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES,
+        ObsSettings, PendingConnectCommand, REQUESTED_LOG_UPLOADS_PER_HOUR, Request, RequestKind,
+        Response, ResponseKind, Settings, UNSOLICITED_LOG_UPLOADS_PER_HOUR,
+        allow_requested_log_upload, allow_unsolicited_log_upload, connect_command_failure,
+        decode_log_upload, expired_connect_commands, invalid_log_upload_reply, parse_config_change,
+        reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
+        should_refresh_device_name,
+    };
+
+    #[test]
+    fn programs_state_response_matches_connect_wire_shape() {
+        let response = serde_json::from_value::<Response>(json!({"programsState": []})).unwrap();
+
+        assert!(matches!(
+            response.response,
+            ResponseKind::ProgramsState(programs) if programs.is_empty()
+        ));
+    }
+
+    #[test]
+    fn browser_settings_wire_shape_is_unchanged_and_connect_gets_watchdog() {
+        let browser = serde_json::to_value(Settings {
+            obs: ObsSettings {
+                port: 4455,
+                password: None,
+            },
+            connect: None,
+        })
+        .unwrap();
+        assert_eq!(browser, json!({"obs": {"port": 4455}}));
+
+        let connect = serde_json::to_value(Settings {
+            obs: ObsSettings {
+                port: 4455,
+                password: None,
+            },
+            connect: Some(ConnectSettings {
+                watchdog: db::connect::Watchdog::RestartResume,
+            }),
+        })
+        .unwrap();
+        assert_eq!(
+            connect,
+            json!({"obs": {"port": 4455}, "connect": {"watchdog": "restart_resume"}})
+        );
+    }
+
+    #[test]
+    fn reconnects_only_close_the_target_device_session() {
+        let device_id = Uuid::from_u128(1);
+        let other_device_id = Uuid::from_u128(2);
+
+        assert!(should_close_for_reconnect(None, None));
+        assert!(should_close_for_reconnect(None, Some(other_device_id)));
+        assert!(should_close_for_reconnect(Some(device_id), Some(device_id)));
+        assert!(!should_close_for_reconnect(
+            Some(device_id),
+            Some(other_device_id)
+        ));
+        assert!(!should_close_for_reconnect(Some(device_id), None));
+    }
+
+    #[test]
+    fn empty_or_invalid_config_payload_means_settings_changed() {
+        assert_eq!(parse_config_change(b""), live::ConfigChange::default());
+        assert_eq!(
+            parse_config_change(b"not-json"),
+            live::ConfigChange::default()
+        );
+    }
+
+    #[test]
+    fn config_change_payload_identifies_a_renamed_device() {
+        let device_id = Uuid::from_u128(1);
+        let payload = serde_json::to_vec(&live::ConfigChange {
+            renamed_device_id: Some(device_id),
+        })
+        .unwrap();
+
+        assert_eq!(
+            parse_config_change(&payload),
+            live::ConfigChange {
+                renamed_device_id: Some(device_id),
+            }
+        );
+    }
+
+    #[test]
+    fn only_the_matching_connect_device_is_refreshed() {
+        let device_id = Uuid::from_u128(1);
+        let other_device_id = Uuid::from_u128(2);
+
+        assert!(should_refresh_device_name(device_id, Some(device_id)));
+        assert!(!should_refresh_device_name(
+            device_id,
+            Some(other_device_id)
+        ));
+        assert!(!should_refresh_device_name(device_id, None));
+    }
+
+    #[test]
+    fn empty_or_invalid_reconnect_payload_targets_any_session() {
+        assert_eq!(reconnect_device_id(b""), None);
+        assert_eq!(reconnect_device_id(b"not-json"), None);
+
+        let device_id = Uuid::from_u128(1);
+        let payload = serde_json::to_vec(&live::Reconnect {
+            device_id: Some(device_id),
+        })
+        .unwrap();
+        assert_eq!(reconnect_device_id(&payload), Some(device_id));
+    }
+
+    #[test]
+    fn old_browser_source_identify_messages_still_parse() {
+        let response: Response = serde_json::from_value(json!({
+            "identify": { "token": "browser-token", "version": "1.0" }
+        }))
+        .unwrap();
+        let ResponseKind::Identify(identify) = response.response else {
+            panic!("identify message expected");
+        };
+        assert_eq!(identify.token, "browser-token");
+        assert_eq!(identify.version, "1.0");
+        assert_eq!(identify.client, None);
+        assert!(identify.capabilities.is_empty());
+        assert_eq!(identify.os, None);
+        assert_eq!(identify.obs_version, None);
+    }
+
+    #[test]
+    fn connect_identify_fields_are_camel_case_and_pc_state_parses() {
+        let identify: Identify = serde_json::from_value(json!({
+            "token": "device-token",
+            "version": "2.0",
+            "client": "connect",
+            "capabilities": ["obs"],
+            "os": "linux",
+            "obsVersion": "31.0"
+        }))
+        .unwrap();
+        assert_eq!(identify.obs_version.as_deref(), Some("31.0"));
+        let response: Response = serde_json::from_value(json!({
+            "pcState": { "obs": "crashed" }
+        }))
+        .unwrap();
+        assert!(matches!(
+            response.response,
+            ResponseKind::PcState {
+                obs: PcObsState::Crashed
+            }
+        ));
+    }
+
+    #[test]
+    fn resetting_obs_status_preserves_connect_pc_status() {
+        let mut status = SwitcherStatus::connected(true);
+        status.paused = true;
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Studio PC".into()),
+            obs: PcObsState::NotResponding,
+            obs_version: Some("31.0".into()),
+            programs: Vec::new(),
+        });
+
+        reset_obs_status(&mut status);
+
+        assert!(status.auto_switch);
+        assert!(status.paused);
+        assert_eq!(
+            status.pc,
+            Some(PcStatus {
+                device_id: Some(Uuid::nil()),
+                device_name: Some("Studio PC".into()),
+                obs: PcObsState::NotResponding,
+                obs_version: Some("31.0".into()),
+                programs: Vec::new(),
+            })
+        );
+    }
+
+    #[test]
+    fn set_pc_device_name_updates_the_connect_status() {
+        let mut status = SwitcherStatus::connected(true);
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Old PC name".into()),
+            obs: PcObsState::Unknown,
+            obs_version: None,
+            programs: Vec::new(),
+        });
+
+        assert!(set_pc_device_name(&mut status, "New PC name"));
+        assert_eq!(
+            status.pc.as_ref().and_then(|pc| pc.device_name.as_deref()),
+            Some("New PC name")
+        );
+    }
+
+    #[test]
+    fn set_pc_device_name_returns_false_when_the_name_is_unchanged() {
+        let mut status = SwitcherStatus::connected(true);
+        status.pc = Some(PcStatus {
+            device_id: Some(Uuid::nil()),
+            device_name: Some("Studio PC".into()),
+            obs: PcObsState::Unknown,
+            obs_version: None,
+            programs: Vec::new(),
+        });
+        let before = status.clone();
+
+        assert!(!set_pc_device_name(&mut status, "Studio PC"));
+        assert_eq!(status, before);
+    }
+
+    #[test]
+    fn set_pc_device_name_is_a_noop_without_a_connect_pc() {
+        let mut status = SwitcherStatus::connected(true);
+        let before = status.clone();
+
+        assert!(!set_pc_device_name(&mut status, "Studio PC"));
+        assert_eq!(status, before);
+    }
+
+    #[test]
+    fn browser_source_commands_are_offline_and_old_connects_are_unsupported() {
+        use common::programs::ConnectCommandAction as Action;
+
+        let browser = connect_command_failure(false, false, false, false, Action::Start).unwrap();
+        assert_eq!(browser.0, live::ConnectObsCommandCode::Offline);
+        assert_eq!(
+            browser.1,
+            "This switcher connects through the browser source, which can't control OBS"
+        );
+        let old_connect =
+            connect_command_failure(true, false, false, false, Action::Start).unwrap();
+        assert_eq!(old_connect.0, live::ConnectObsCommandCode::Unsupported);
+        assert_eq!(
+            old_connect.1,
+            "Update NOALBS Cloud Connect to control OBS from the dashboard"
+        );
+        assert!(connect_command_failure(true, true, false, false, Action::Restart).is_none());
+        assert_eq!(
+            connect_command_failure(true, true, false, false, Action::UploadLog)
+                .unwrap()
+                .0,
+            live::ConnectObsCommandCode::Unsupported
+        );
+        assert!(connect_command_failure(true, false, true, false, Action::UploadLog).is_none());
+        assert_eq!(
+            connect_command_failure(
+                true,
+                true,
+                true,
+                false,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .unwrap()
+            .0,
+            live::ConnectObsCommandCode::Unsupported
+        );
+        assert!(
+            connect_command_failure(
+                true,
+                true,
+                true,
+                true,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .is_none()
+        );
+        assert_eq!(
+            connect_command_failure(
+                false,
+                false,
+                false,
+                true,
+                Action::ProgramStart { id: Uuid::nil() }
+            )
+            .unwrap()
+            .0,
+            live::ConnectObsCommandCode::Offline
+        );
+    }
+
+    #[test]
+    fn unsolicited_log_uploads_are_limited_to_ten_per_hour() {
+        let now = Instant::now();
+        let mut uploads = VecDeque::new();
+        for index in 0..UNSOLICITED_LOG_UPLOADS_PER_HOUR {
+            assert!(allow_unsolicited_log_upload(
+                &mut uploads,
+                now + Duration::from_secs(index as u64)
+            ));
+        }
+        assert!(!allow_unsolicited_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(20)
+        ));
+        assert!(allow_unsolicited_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(3601)
+        ));
+    }
+
+    #[test]
+    fn requested_log_uploads_are_limited_to_thirty_per_hour() {
+        let now = Instant::now();
+        let mut uploads = VecDeque::new();
+        for index in 0..REQUESTED_LOG_UPLOADS_PER_HOUR {
+            assert!(allow_requested_log_upload(
+                &mut uploads,
+                now + Duration::from_secs(index as u64)
+            ));
+        }
+        assert!(!allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(40)
+        ));
+        assert!(allow_requested_log_upload(
+            &mut uploads,
+            now + Duration::from_secs(3601)
+        ));
+    }
+
+    #[test]
+    fn connect_log_upload_is_decoded_before_storage() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(b"OBS log header\n").unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(decode_log_upload(&upload).unwrap(), b"OBS log header\n");
+    }
+
+    #[test]
+    fn connect_log_upload_accepts_the_shared_raw_limit() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap().len(),
+            MAX_DECOMPRESSED_LOG_BYTES as usize
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_oversized_base64() {
+        let upload = connect_log_upload("A".repeat(3 * 1024 * 1024 + 1));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: too large"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_base64() {
+        let upload = connect_log_upload("not base64!".into());
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad base64"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_invalid_gzip() {
+        let upload = connect_log_upload(STANDARD.encode(b"not a gzip stream"));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: bad gzip"
+        );
+    }
+
+    #[test]
+    fn connect_log_upload_rejects_excessive_decompressed_content() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&vec![0; MAX_DECOMPRESSED_LOG_BYTES as usize + 1])
+            .unwrap();
+        let upload = connect_log_upload(STANDARD.encode(encoder.finish().unwrap()));
+        assert_eq!(
+            decode_log_upload(&upload).unwrap_err().to_string(),
+            "Invalid Connect log upload: decompressed too large"
+        );
+    }
+
+    #[test]
+    fn invalid_log_upload_reply_refuses_the_requested_upload() {
+        let reply = invalid_log_upload_reply("bad gzip");
+        assert!(!reply.ok);
+        assert_eq!(reply.code, Some(live::ConnectObsCommandCode::Refused));
+        assert_eq!(reply.error.as_deref(), Some("Invalid log upload: bad gzip"));
+        assert_eq!(reply.log_id, None);
+    }
+
+    fn connect_log_upload(content_gzip_base64: String) -> live::ConnectLogUpload {
+        live::ConnectLogUpload {
+            kind: db::connect_logs::ConnectLogKind::ObsLog,
+            file_name: "latest.txt".into(),
+            modified_at: None,
+            truncated: false,
+            content_gzip_base64,
+        }
+    }
+
+    #[test]
+    fn supported_connect_command_uses_the_expected_websocket_shapes() {
+        let request = Request {
+            token: Some("command-token".into()),
+            request: RequestKind::ConnectCommand(common::programs::ConnectCommandAction::Restart),
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "token": "command-token",
+                "connectCommand": { "action": "restart" }
+            })
+        );
+        let response: Response = serde_json::from_value(json!({
+            "token": "command-token",
+            "connectCommandResult": { "ok": false, "error": "OBS is busy" }
+        }))
+        .unwrap();
+        assert_eq!(response.token.as_deref(), Some("command-token"));
+        assert!(matches!(
+            response.response,
+            ResponseKind::ConnectCommandResult {
+                ok: false,
+                error: Some(error),
+                ..
+            } if error == "OBS is busy"
+        ));
+    }
+
+    #[test]
+    fn program_connect_command_keeps_its_fields_in_the_wire_shape() {
+        let id = Uuid::nil();
+        let request = Request {
+            token: Some("command-token".into()),
+            request: RequestKind::ConnectCommand(
+                common::programs::ConnectCommandAction::ProgramStart { id },
+            ),
+        };
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "token": "command-token",
+                "connectCommand": { "action": "program_start", "id": id }
+            })
+        );
+    }
+
+    #[test]
+    fn pending_connect_commands_expire_after_thirty_seconds() {
+        let mut pending = HashMap::from([(
+            "token".into(),
+            PendingConnectCommand {
+                reply: async_nats::Subject::from("inbox.reply"),
+                sent: Instant::now() - CONNECT_COMMAND_TIMEOUT - Duration::from_secs(1),
+            },
+        )]);
+        assert_eq!(
+            expired_connect_commands(&mut pending),
+            [async_nats::Subject::from("inbox.reply")]
+        );
+        assert!(pending.is_empty());
+    }
 }

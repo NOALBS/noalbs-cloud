@@ -7,6 +7,7 @@ pub mod belabox;
 pub mod billing;
 pub mod chat;
 pub mod chat_bots;
+pub mod connect;
 pub mod feed;
 pub mod history;
 pub mod invites;
@@ -84,6 +85,10 @@ impl ApiError {
 
     pub fn bad_gateway(message: impl Into<String>) -> Self {
         Self::new(StatusCode::BAD_GATEWAY, "upstream_error", message)
+    }
+
+    pub fn gateway_timeout(code: &'static str, message: impl Into<String>) -> Self {
+        Self::new(StatusCode::GATEWAY_TIMEOUT, code, message)
     }
 
     /// 429 `rate_limited`: too many requests; another one is allowed after `wait`.

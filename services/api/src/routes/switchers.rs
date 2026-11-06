@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use axum::{Json, extract::State, http::StatusCode};
+use db::connect::{ConnectAccess, Watchdog};
 use db::switchers::{
     Behaviour, PreviewOffAir, Scenes, SecretChange, StreamLink, Switcher, Triggers,
 };
@@ -64,7 +65,16 @@ pub struct SwitcherSummaryDto {
 }
 
 impl SwitcherSummaryDto {
-    fn new(switcher: db::switchers::SwitcherSummary, status: Option<live::SwitcherStatus>) -> Self {
+    fn new(
+        switcher: db::switchers::SwitcherSummary,
+        mut status: Option<live::SwitcherStatus>,
+        can_view_programs: bool,
+    ) -> Self {
+        if !can_view_programs
+            && let Some(pc) = status.as_mut().and_then(|status| status.pc.as_mut())
+        {
+            pc.programs.clear();
+        }
         Self {
             id: switcher.id,
             name: switcher.name,
@@ -203,6 +213,10 @@ pub struct SwitcherDto {
     pub moblin: MoblinDto,
     /// Who may watch the OBS preview while it isn't streaming.
     pub preview_off_air: PreviewOffAir,
+    pub connect_obs_control: ConnectAccess,
+    pub connect_logs: ConnectAccess,
+    pub connect_programs: ConnectAccess,
+    pub connect_watchdog: Watchdog,
 }
 
 /// BELABOX Cloud. Optional: without a remote key nothing BELABOX-related runs.
@@ -301,6 +315,10 @@ impl From<Switcher> for SwitcherDto {
                 stop_with_stream: s.moblin_stop_with_stream,
             },
             preview_off_air: s.preview_off_air,
+            connect_obs_control: s.connect_obs_control,
+            connect_logs: s.connect_logs,
+            connect_programs: s.connect_programs,
+            connect_watchdog: s.connect_watchdog,
         }
     }
 }
@@ -422,12 +440,15 @@ async fn list_switchers(
     authorized: WorkspaceAuthorized<SwitcherView>,
 ) -> ApiResult<Json<Vec<SwitcherSummaryDto>>> {
     let access = authorized.into_access();
+    let viewer = crate::screenshots::viewer_for(&state, &access).await?;
     let switchers = db::switchers::list_summaries(&state.db, access.workspace_id).await?;
 
     let mut list = Vec::with_capacity(switchers.len());
     for switcher in switchers {
         let status = state.status_of(switcher.id).await;
-        list.push(SwitcherSummaryDto::new(switcher, status));
+        let can_view_programs =
+            crate::screenshots::connect_allowed(switcher.connect_programs, viewer);
+        list.push(SwitcherSummaryDto::new(switcher, status, can_view_programs));
     }
 
     Ok(Json(list))

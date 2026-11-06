@@ -129,7 +129,14 @@ function frontMatter(source: string): { fields: Map<string, string>; body: strin
       throw new PostError(`unknown line "${line}" (known: ${FIELDS.join(", ")})`);
     }
     if (fields.has(key)) throw new PostError(`${key} is there twice`);
-    fields.set(key, field[2] ?? "");
+    const value = field[2] ?? "";
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      throw new PostError(`${key}: no quotes needed around the value`);
+    }
+    fields.set(key, value);
   }
   return { fields, body: match[2] ?? "" };
 }

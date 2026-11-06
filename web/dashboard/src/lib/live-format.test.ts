@@ -14,6 +14,70 @@ describe("formatUptime", () => {
 describe("describeEvent", () => {
   const base = { id: "1", created_at: at };
 
+  it("labels Connect pairings and revocations", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_device_paired",
+        data: { name: "Studio PC", by: "kate" },
+      }),
+    ).toEqual({ title: "Paired Studio PC", detail: "by kate" });
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_device_revoked",
+        data: { name: "Studio PC", by: "kate" },
+      }),
+    ).toEqual({ title: "Revoked Studio PC", detail: "by kate" });
+  });
+
+  it("describes Connect log uploads", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_log_uploaded",
+        data: { kind: "obs_log", log_id: "log-1", by: "kate" },
+      }),
+    ).toEqual({ title: "Connect log upload", detail: "kate uploaded an OBS log through Connect" });
+  });
+
+  it("describes Connect OBS commands as complete translated sentences", () => {
+    for (const action of ["start", "stop", "restart"] as const) {
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: "kate" } })
+          .detail,
+      ).toContain("kate");
+      expect(
+        describeEvent({ ...base, kind: "connect_obs_command", data: { action, by: null } }).detail,
+      ).toMatch(/^(Started|Stopped|Restarted) OBS through Connect$/);
+    }
+  });
+
+  it("describes Connect program changes with the full command", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "connect_program_command",
+        data: {
+          action: "started",
+          program: {
+            id: "program-1",
+            name: "Streamer.bot",
+            path: "/opt/streamerbot/Streamer.bot",
+            args: ["--profile", "live stream"],
+            start_with_obs: true,
+            stop_with_obs: false,
+            added_from_dashboard_by: "kate",
+          },
+          by: "kate",
+        },
+      }),
+    ).toEqual({
+      title: "Program started: Streamer.bot",
+      detail: '/opt/streamerbot/Streamer.bot · Args: ["--profile","live stream"] · by kate',
+    });
+  });
+
   it("explains automatic switches with their cause", () => {
     const event: SwitcherEvent = {
       ...base,

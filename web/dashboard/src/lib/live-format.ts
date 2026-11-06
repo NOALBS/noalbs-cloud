@@ -78,6 +78,74 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         }[event.data.off_air],
         detail: by(event.data.by, t`from the dashboard`),
       };
+    case "connect_device_paired":
+      return {
+        title: t`Paired ${event.data.name}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "connect_device_revoked":
+      return {
+        title: t`Revoked ${event.data.name}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
+    case "connect_permissions_changed":
+      return {
+        title: t`Connect permissions changed`,
+        detail: t`OBS control: ${event.data.obs_control} · Logs: ${event.data.logs} · Programs: ${event.data.programs} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "connect_watchdog_changed":
+      return {
+        title: t`Connect watchdog changed`,
+        detail: t`Mode: ${event.data.mode} ${by(event.data.by, t`from the dashboard`)}`,
+      };
+    case "connect_obs_command": {
+      const detail = event.data.by
+        ? {
+            start: t`${event.data.by} started OBS through Connect`,
+            stop: t`${event.data.by} stopped OBS through Connect`,
+            restart: t`${event.data.by} restarted OBS through Connect`,
+            upload_log: t`${event.data.by} requested an OBS log through Connect`,
+          }[event.data.action]
+        : {
+            start: t`Started OBS through Connect`,
+            stop: t`Stopped OBS through Connect`,
+            restart: t`Restarted OBS through Connect`,
+            upload_log: t`Requested an OBS log through Connect`,
+          }[event.data.action];
+      return {
+        title: t`OBS command`,
+        detail,
+      };
+    }
+    case "connect_log_uploaded": {
+      const detail =
+        event.data.kind === "obs_log"
+          ? event.data.by
+            ? t`${event.data.by} uploaded an OBS log through Connect`
+            : t`Connect uploaded an OBS log`
+          : event.data.by
+            ? t`${event.data.by} uploaded a crash report through Connect`
+            : t`Connect uploaded a crash report`;
+      return {
+        title: t`Connect log upload`,
+        detail,
+      };
+    }
+    case "connect_program_command": {
+      const title = {
+        added: t`Program added`,
+        edited: t`Program edited`,
+        removed: t`Program removed`,
+        started: t`Program started`,
+        stopped: t`Program stopped`,
+      }[event.data.action];
+      return {
+        title: `${title}: ${event.data.program.name}`,
+        detail: event.data.program.path
+          ? t`${event.data.program.path} · Args: ${JSON.stringify(event.data.program.args)} · ${by(event.data.by, t`from Connect`)}`
+          : t`Program details hidden · ${by(event.data.by, t`from Connect`)}`,
+      };
+    }
     case "feed_fixed":
       return {
         title: t`Fixed the feed`,

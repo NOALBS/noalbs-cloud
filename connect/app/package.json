@@ -1,0 +1,7 @@
+{
+  "name": "noalbs-cloud-connect-app",
+  "private": true,
+  "scripts": {
+    "tauri": "./ui/node_modules/.bin/tauri"
+  }
+}

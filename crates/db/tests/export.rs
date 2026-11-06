@@ -1,17 +1,23 @@
 //! "Download my data" (GDPR): what the export holds, and guards that fail when
 //! the schema grows without deciding whether the new data is exported.
 
-use db::{export, switcher_events, switchers, users, workspaces, workspaces::WorkspaceRoleEnum};
+use db::{
+    connect_logs, export, switcher_events, switchers, users, workspaces,
+    workspaces::WorkspaceRoleEnum,
+};
 use futures_util::TryStreamExt;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Tables `db::export` covers (`account`, or `history` for stream history).
+/// Tables `db::export` covers (`account` or streamed `history`).
 const EXPORTED: &[&str] = &[
     "chat_bots",
     "chat_channels",
     "chat_ignored_chatters",
+    "connect_devices",
+    "connect_logs",
+    "connect_pairings",
     "noalbs_chat_command_aliases",
     "noalbs_chat_command_overrides",
     "notices",
@@ -63,6 +69,8 @@ const NOT_PERSONAL: &[(&str, &str)] = &[
 const USER_REFERENCES: &[&str] = &[
     "chat_bots.connected_by",
     "chat_channels.authorized_by",
+    "connect_devices.created_by",
+    "connect_pairings.confirmed_by",
     "notices.created_by",
     "oauth2_connections.user_id",
     "organization_audit.actor_user_id",
@@ -162,6 +170,8 @@ struct Fixture {
     backpack: Uuid,
     /// In Sam's workspace, where Kate is an admin.
     sams: Uuid,
+    /// In an organization-managed workspace, where Kate is an admin.
+    client: Uuid,
 }
 
 /// Kate: a workspace of her own with a switcher, stream server, chat channel,
@@ -200,6 +210,30 @@ async fn fixture(pool: &PgPool) -> Fixture {
         .await
         .unwrap()
         .id;
+    sqlx::query(
+        "INSERT INTO connect_devices
+             (switcher_id, name, os, app_version, token_hash, created_by)
+         VALUES ($1, 'Studio PC', 'linux', '1.2.3', $2, $3)",
+    )
+    .bind(backpack)
+    .bind(SECRET)
+    .bind(kate)
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO connect_pairings
+             (device_code_hash, user_code, name, os, app_version, expires_at,
+              switcher_id, confirmed_by)
+         VALUES ($1, 'ABCD-EFGH', 'Edit PC', 'windows', '2.0.0',
+                 now() + interval '10 minutes', $2, $3)",
+    )
+    .bind(SECRET)
+    .bind(backpack)
+    .bind(kate)
+    .execute(pool)
+    .await
+    .unwrap();
     sqlx::query(
         "UPDATE switchers
          SET password = $2, belabox_remote_key = $2, moblin_password = $2, trigger_low = 1234
@@ -351,7 +385,13 @@ async fn fixture(pool: &PgPool) -> Fixture {
     workspaces::add_member(pool, client, kate, WorkspaceRoleEnum::Admin)
         .await
         .unwrap();
-    switchers::create(pool, client, "Van", b"van")
+    let client_switcher = switchers::create(pool, client, "Van", b"van")
+        .await
+        .unwrap()
+        .id;
+    sqlx::query("UPDATE switchers SET connect_logs = 'owners' WHERE id = $1")
+        .bind(client_switcher)
+        .execute(pool)
         .await
         .unwrap();
 
@@ -369,6 +409,7 @@ async fn fixture(pool: &PgPool) -> Fixture {
         sam,
         backpack,
         sams,
+        client: client_switcher,
     }
 }
 
@@ -434,6 +475,16 @@ async fn the_export_holds_what_is_kept_about_the_user(pool: PgPool) {
         json!(["user:read:chat"])
     );
     assert_eq!(export["sessions"][0]["user_agent"], "Firefox");
+    assert_eq!(export["connect_devices"][0]["name"], "Studio PC");
+    assert_eq!(
+        export["connect_devices"][0]["switcher_id"],
+        json!(fixture.backpack)
+    );
+    assert_eq!(export["connect_pairings"][0]["name"], "Edit PC");
+    assert_eq!(
+        export["connect_pairings"][0]["switcher_id"],
+        json!(fixture.backpack)
+    );
 
     let own = workspace(&export, "Kate");
     assert_eq!(own["role"], "owner");
@@ -496,6 +547,42 @@ async fn the_export_holds_what_is_kept_about_the_user(pool: PgPool) {
 #[sqlx::test(migrator = "db::MIGRATOR")]
 async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     let fixture = fixture(&pool).await;
+    connect_logs::insert(
+        &pool,
+        fixture.backpack,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "latest.txt",
+        None,
+        false,
+        b"Kate's OBS log",
+    )
+    .await
+    .unwrap();
+    connect_logs::insert(
+        &pool,
+        fixture.client,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "client.txt",
+        None,
+        false,
+        b"Organization client's OBS log",
+    )
+    .await
+    .unwrap();
+    connect_logs::insert(
+        &pool,
+        fixture.sams,
+        None,
+        connect_logs::ConnectLogKind::ObsLog,
+        "latest.txt",
+        None,
+        false,
+        b"Sam's OBS log",
+    )
+    .await
+    .unwrap();
     let lines: Vec<String> = export::history(&pool, fixture.kate)
         .try_collect()
         .await
@@ -509,7 +596,7 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
         .iter()
         .map(|line| line["type"].as_str().unwrap())
         .collect();
-    assert_eq!(types, ["stream", "stats", "event"]);
+    assert_eq!(types, ["stream", "stats", "event", "connect_log"]);
     assert_eq!(lines[0]["switcher_id"], json!(fixture.backpack));
     assert_eq!(lines[0]["switcher"], "Backpack");
     assert_eq!(lines[0]["sources"][0]["name"], "Home");
@@ -517,9 +604,13 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
     assert_eq!(lines[1]["raw"]["publisher"], "live/kate");
     assert_eq!(lines[1]["stream_id"], lines[0]["id"]);
     assert_eq!(lines[2]["switcher_id"], json!(fixture.backpack));
+    assert_eq!(lines[3]["switcher_id"], json!(fixture.backpack));
+    assert_eq!(lines[3]["content"], "Kate's OBS log");
     // Nothing from Sam's switcher.
     for line in &lines {
         assert!(!line.to_string().contains(&fixture.sams.to_string()));
+        assert!(!line.to_string().contains("Sam's OBS log"));
+        assert!(!line.to_string().contains("Organization client's OBS log"));
     }
 
     // Sam gets his, and nothing of Kate's.
@@ -527,12 +618,111 @@ async fn stream_history_is_exported_for_the_users_own_switchers(pool: PgPool) {
         .try_collect()
         .await
         .unwrap();
-    assert_eq!(sams.len(), 3);
+    assert_eq!(sams.len(), 4);
     let stream: Value = serde_json::from_str(&sams[0]).unwrap();
     assert_eq!(stream["switcher_id"], json!(fixture.sams));
+    let log: Value = serde_json::from_str(&sams[3]).unwrap();
+    assert_eq!(log["content"], "Sam's OBS log");
     assert!(
         sams.iter()
             .all(|line| !line.contains(&fixture.backpack.to_string()))
+    );
+    assert!(sams.iter().all(|line| !line.contains("Kate's OBS log")));
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn program_event_export_obeys_the_program_permission(pool: PgPool) {
+    let fixture = fixture(&pool).await;
+    let operator = users::create(&pool).await.unwrap().id;
+    let client_workspace: Uuid =
+        sqlx::query_scalar("SELECT workspace_id FROM switchers WHERE id = $1")
+            .bind(fixture.client)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    workspaces::add_member(
+        &pool,
+        client_workspace,
+        operator,
+        WorkspaceRoleEnum::Operator,
+    )
+    .await
+    .unwrap();
+    sqlx::query("UPDATE switchers SET connect_programs = 'owners' WHERE id IN ($1, $2)")
+        .bind(fixture.backpack)
+        .bind(fixture.client)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let data = json!({
+        "action": "added",
+        "program": {
+            "id": Uuid::new_v4(),
+            "name": "Streamer.bot",
+            "path": "/home/kate/Streamer.bot.exe",
+            "args": ["--secret"],
+            "start_with_obs": false,
+            "stop_with_obs": false,
+            "added_from_dashboard_by": "Kate"
+        },
+        "by": "Kate"
+    });
+    switcher_events::insert(
+        &pool,
+        fixture.backpack,
+        "connect_program_command",
+        data.clone(),
+    )
+    .await
+    .unwrap();
+    switcher_events::insert(&pool, fixture.client, "connect_program_command", data)
+        .await
+        .unwrap();
+
+    let lines: Vec<String> = export::history(&pool, fixture.kate)
+        .try_collect()
+        .await
+        .unwrap();
+    let events: Vec<Value> = lines
+        .iter()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .filter(|event: &Value| event["kind"] == "connect_program_command")
+        .collect();
+    let owner_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.backpack))
+        .unwrap();
+    assert_eq!(
+        owner_event["data"]["program"]["path"],
+        "/home/kate/Streamer.bot.exe"
+    );
+    assert_eq!(owner_event["data"]["program"]["args"], json!(["--secret"]));
+
+    let admin_event = events
+        .iter()
+        .find(|event| event["switcher_id"] == json!(fixture.client))
+        .unwrap();
+    assert!(admin_event["data"]["program"].get("path").is_none());
+    assert_eq!(admin_event["data"]["program"]["args"], json!([]));
+    assert!(
+        admin_event["data"]["program"]
+            .get("added_from_dashboard_by")
+            .is_none()
+    );
+
+    let operator_lines: Vec<String> = export::history(&pool, operator)
+        .try_collect()
+        .await
+        .unwrap();
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("connect_program_command"))
+    );
+    assert!(
+        operator_lines
+            .iter()
+            .all(|line| !line.contains("/home/kate/Streamer.bot.exe"))
     );
 }
 

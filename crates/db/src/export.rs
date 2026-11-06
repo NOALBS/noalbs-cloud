@@ -1,15 +1,18 @@
 //! "Download my data" (GDPR access and portability): everything NOALBS Cloud
 //! keeps about a user. [`account`] is one document: the account, its sign-ins,
 //! workspaces with their switchers and billing, and every record that names
-//! the user. [`history`] is the stream history of the user's own switchers,
-//! one JSON object per line, as it can run to hundreds of megabytes.
+//! the user. [`history`] streams the user's switcher history, including Connect
+//! logs, one JSON object per line, as it can run to hundreds of megabytes.
 //!
 //! Left out: secrets (passwords, API keys, the BELABOX remote key, chat tokens,
 //! hashed invite and connect tokens), other people's data and what isn't
 //! stored. `tests/export.rs` fails when a table or a reference to `users` is
 //! added without deciding how it's exported.
 
+use std::io::Read;
+
 use chrono::{DateTime, Utc};
+use flate2::read::GzDecoder;
 use futures_util::{Stream, StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, postgres::PgRow, types::Json};
@@ -67,6 +70,10 @@ pub struct AccountExport {
     pub organizations: Vec<Organization>,
     /// Invites you made or accepted.
     pub invites: Vec<Invite>,
+    /// Connect devices you paired.
+    pub connect_devices: Vec<ConnectDevice>,
+    /// Connect pairings you confirmed and that are waiting to be claimed.
+    pub connect_pairings: Vec<ConnectPairing>,
     pub chat: Chat,
     /// NOALBS support access you gave (or, as staff, opened).
     pub support_grants: Vec<SupportGrant>,
@@ -283,6 +290,29 @@ pub struct Invite {
     pub expires_at: DateTime<Utc>,
     pub accepted_at: Option<DateTime<Utc>>,
     pub revoked_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectDevice {
+    pub switcher_id: Uuid,
+    pub name: String,
+    pub os: String,
+    pub app_version: String,
+    pub created_at: DateTime<Utc>,
+    pub last_seen_at: Option<DateTime<Utc>>,
+    pub revoked_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ConnectPairing {
+    pub switcher_id: Option<Uuid>,
+    pub name: String,
+    pub os: String,
+    pub app_version: String,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -522,6 +552,20 @@ pub async fn account(pool: &PgPool, user_id: Uuid) -> Result<Option<AccountExpor
              ORDER BY created_at",
         )
         .await?,
+        connect_devices: all(
+            pool,
+            user_id,
+            "SELECT switcher_id, name, os, app_version, created_at, last_seen_at, revoked_at
+             FROM connect_devices WHERE created_by = $1 ORDER BY created_at",
+        )
+        .await?,
+        connect_pairings: all(
+            pool,
+            user_id,
+            "SELECT switcher_id, name, os, app_version, created_at, expires_at
+             FROM connect_pairings WHERE confirmed_by = $1 ORDER BY created_at",
+        )
+        .await?,
         chat: Chat {
             channels_authorized: all(
                 pool,
@@ -740,11 +784,8 @@ async fn billing(pool: &PgPool, workspace_id: Uuid) -> Result<Billing> {
     Ok(billing)
 }
 
-/// The stream history of the user's own switchers (see [`yours!`]), one JSON
-/// object per item, as stored: each has a `type` of `stream` (a broadcast, with
-/// its stream servers as `sources` and its `markers`), then `stats` (one stream
-/// server over 10 seconds, with `raw`, its last report), then `event` (the
-/// activity log).
+/// The history of the user's own switchers (see [`yours!`]), one JSON object
+/// per item: streams, stats, events, and Connect logs with their stored text.
 pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String>> + Send + '_ {
     const STREAMS: &str = concat!(
         "SELECT (jsonb_build_object(
@@ -778,13 +819,83 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
          ORDER BY stats.stream_id, stats.bucket_at, stats.server_id"
     );
     const EVENTS: &str = concat!(
-        "SELECT (jsonb_build_object('type', 'event') || to_jsonb(events))::text
+        "SELECT (jsonb_build_object('type', 'event') || CASE
+             WHEN events.kind = 'connect_program_command'
+                  AND NOT (
+                      event_members.role = 'owner'
+                      OR (event_members.role = 'admin'
+                          AND event_switchers.connect_programs IN ('admins', 'everyone'))
+                      OR (event_members.role = 'operator'
+                          AND event_switchers.connect_programs = 'everyone')
+                  )
+             THEN jsonb_set(
+                 to_jsonb(events)
+                     #- '{data,program,path}'
+                     #- '{data,program,start_with_obs}'
+                     #- '{data,program,stop_with_obs}'
+                     #- '{data,program,added_from_dashboard_by}',
+                 '{data,program,args}', '[]'::jsonb, true
+             )
+             ELSE to_jsonb(events)
+         END)::text
          FROM switcher_events AS events
+         JOIN switchers AS event_switchers ON event_switchers.id = events.switcher_id
+         JOIN workspace_members AS event_members
+             ON event_members.workspace_id = event_switchers.workspace_id
+             AND event_members.user_id = $1
          WHERE events.switcher_id IN (",
         your_switchers!(),
         ")
          ORDER BY events.switcher_id, events.created_at"
     );
+
+    const CONNECT_LOGS: &str = concat!(
+        "SELECT logs.switcher_id, logs.id, logs.kind, logs.file_name, logs.file_modified_at,
+                logs.uploaded_at, logs.size_bytes, logs.truncated, device.name AS device_name,
+                logs.content
+         FROM connect_logs AS logs
+         LEFT JOIN connect_devices AS device ON device.id = logs.device_id
+         JOIN switchers AS log_switcher ON log_switcher.id = logs.switcher_id
+         JOIN workspace_members AS log_members
+             ON log_members.workspace_id = log_switcher.workspace_id
+             AND log_members.user_id = $1
+         WHERE logs.switcher_id IN (",
+        your_switchers!(),
+        ")
+         AND logs.uploaded_at > now() - interval '30 days'
+         AND (
+             log_members.role = 'owner'
+             OR (log_members.role = 'admin' AND log_switcher.connect_logs IN ('admins', 'everyone'))
+             OR (log_members.role = 'operator' AND log_switcher.connect_logs = 'everyone')
+         )
+         ORDER BY logs.uploaded_at, logs.id"
+    );
+
+    let connect_logs = sqlx::query_as::<_, HistoryConnectLog>(CONNECT_LOGS)
+        .bind(user_id)
+        .fetch(pool)
+        .map_err(Error::from)
+        .and_then(|log| async move {
+            let mut decoder = GzDecoder::new(log.content.as_slice());
+            let mut content = Vec::new();
+            decoder
+                .read_to_end(&mut content)
+                .map_err(|error| Error::Sqlx(sqlx::Error::Io(error)))?;
+            Ok(serde_json::json!({
+                "type": "connect_log",
+                "switcher_id": log.switcher_id,
+                "id": log.id,
+                "kind": log.kind,
+                "file_name": log.file_name,
+                "file_modified_at": log.file_modified_at,
+                "uploaded_at": log.uploaded_at,
+                "size_bytes": log.size_bytes,
+                "truncated": log.truncated,
+                "device_name": log.device_name,
+                "content": String::from_utf8_lossy(&content),
+            })
+            .to_string())
+        });
 
     futures_util::stream::iter([STREAMS, STATS, EVENTS])
         .flat_map(move |sql| {
@@ -793,4 +904,19 @@ pub fn history(pool: &PgPool, user_id: Uuid) -> impl Stream<Item = Result<String
                 .fetch(pool)
         })
         .map_err(Error::from)
+        .chain(connect_logs)
+}
+
+#[derive(sqlx::FromRow)]
+struct HistoryConnectLog {
+    switcher_id: Uuid,
+    id: Uuid,
+    kind: String,
+    file_name: String,
+    file_modified_at: Option<DateTime<Utc>>,
+    uploaded_at: DateTime<Utc>,
+    size_bytes: i32,
+    truncated: bool,
+    device_name: Option<String>,
+    content: Vec<u8>,
 }

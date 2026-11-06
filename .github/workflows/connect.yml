@@ -1,0 +1,131 @@
+name: Connect
+
+on:
+  pull_request:
+    paths:
+      - "connect/**"
+      - "services/obs-link/**"
+      - ".github/workflows/connect.yml"
+  push:
+    branches: [main]
+    paths:
+      - "connect/**"
+      - "services/obs-link/**"
+      - ".github/workflows/connect.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: connect-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-workspaces: connect
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: connect/app/ui/pnpm-lock.yaml
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev patchelf libxdo-dev
+      - run: cargo fmt --all -- --check
+        working-directory: connect
+      - run: cargo clippy -p connect-core --all-targets -- -D warnings
+        working-directory: connect
+      - run: cargo test -p connect-core
+        working-directory: connect
+      - run: pnpm install --frozen-lockfile
+        working-directory: connect/app/ui
+      - run: pnpm typecheck && pnpm lint && pnpm build
+        working-directory: connect/app/ui
+
+  bundle:
+    name: Bundle (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            bundles: deb,appimage,rpm
+          - os: windows-latest
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-workspaces: connect
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: connect/app/ui/pnpm-lock.yaml
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev patchelf libxdo-dev
+      - run: pnpm install --frozen-lockfile
+        working-directory: connect/app/ui
+      - run: ./ui/node_modules/.bin/tauri build --config src-tauri/tauri.conf.json --bundles ${{ matrix.bundles }}
+        working-directory: connect/app
+        shell: bash
+      - uses: actions/upload-artifact@v6
+        with:
+          name: connect-${{ matrix.os }}
+          path: connect/target/release/bundle/**
+          if-no-files-found: error
+
+  macos:
+    name: macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache-workspaces: connect
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: connect/app/ui/pnpm-lock.yaml
+      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - run: cargo fmt --all -- --check
+        working-directory: connect
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+        working-directory: connect
+      - run: cargo test -p connect-core
+        working-directory: connect
+      - run: cargo test -p noalbs-connect
+        working-directory: connect
+      - run: pnpm install --frozen-lockfile
+        working-directory: connect/app/ui
+      - run: pnpm typecheck && pnpm lint
+        working-directory: connect/app/ui
+      - run: ./ui/node_modules/.bin/tauri build --target universal-apple-darwin --bundles dmg
+        working-directory: connect/app
+        shell: bash
+      - uses: actions/upload-artifact@v6
+        with:
+          name: connect-macos
+          path: connect/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error

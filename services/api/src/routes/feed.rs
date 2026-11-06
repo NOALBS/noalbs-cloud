@@ -17,7 +17,6 @@ use axum::{
         sse::{Event, KeepAlive, Sse},
     },
 };
-use db::workspaces::WorkspaceRoleEnum;
 use futures_util::{Stream, StreamExt, stream};
 use live::{BelaboxRefusal, EventDetail, MoblinRefusal, SwitcherEvent};
 use obs_actions::{
@@ -36,7 +35,7 @@ use crate::{
         SwitcherAuthorized, SwitcherControl, SwitcherManage, SwitcherView, Via, user_display_name,
     },
     routes::{ApiError, ApiResult, ErrorBody},
-    screenshots::{self, Announce, Viewer},
+    screenshots::{self, Announce},
 };
 
 pub fn router() -> OpenApiRouter<ApiState> {
@@ -80,12 +79,99 @@ fn nats_error(error: impl std::fmt::Display) -> ApiError {
     ApiError::internal()
 }
 
-fn status_event(value: Option<&[u8]>) -> Event {
-    let data = value.map_or_else(
+fn status_event(value: Option<&[u8]>, can_view_programs: bool) -> Event {
+    Event::default()
+        .event("status")
+        .data(status_data(value, can_view_programs))
+}
+
+fn status_data(value: Option<&[u8]>, can_view_programs: bool) -> String {
+    value.map_or_else(
         || "null".to_owned(),
-        |bytes| String::from_utf8_lossy(bytes).into_owned(),
-    );
-    Event::default().event("status").data(data)
+        |bytes| {
+            if can_view_programs {
+                return String::from_utf8_lossy(bytes).into_owned();
+            }
+            serde_json::from_slice::<live::SwitcherStatus>(bytes)
+                .ok()
+                .map(|mut status| {
+                    if let Some(pc) = &mut status.pc {
+                        pc.programs.clear();
+                    }
+                    serde_json::to_string(&status).unwrap_or_else(|_| "null".into())
+                })
+                .unwrap_or_else(|| "null".into())
+        },
+    )
+}
+
+fn activity_event(bytes: &[u8], can_view_programs: bool) -> Option<Event> {
+    if can_view_programs {
+        return Some(
+            Event::default()
+                .event("event")
+                .data(String::from_utf8_lossy(bytes)),
+        );
+    }
+    let mut event = serde_json::from_slice::<SwitcherEvent>(bytes).ok()?;
+    event.detail.redact_program_details();
+    Some(
+        Event::default()
+            .event("event")
+            .data(serde_json::to_string(&event).ok()?),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::status_data;
+    use crate::screenshots::{self, Viewer};
+    use common::programs::{Program, ProgramStatus};
+    use live::{PcObsState, PcStatus, SwitcherStatus};
+    use serde_json::json;
+    use uuid::Uuid;
+
+    #[test]
+    fn status_feed_hides_programs_from_members_but_keeps_them_for_owners() {
+        let mut status = SwitcherStatus::connected(false);
+        status.pc = Some(PcStatus {
+            device_id: None,
+            device_name: Some("Studio PC".into()),
+            obs: PcObsState::Connected,
+            obs_version: None,
+            programs: vec![ProgramStatus {
+                program: Program {
+                    id: Uuid::new_v4(),
+                    name: "Streamer.bot".into(),
+                    path: PathBuf::from("/home/kate/Streamer.bot"),
+                    args: vec!["600".into()],
+                    start_with_obs: false,
+                    stop_with_obs: false,
+                    added_from_dashboard_by: None,
+                },
+                running: true,
+            }],
+        });
+        let bytes = serde_json::to_vec(&status).unwrap();
+
+        let member_can_view =
+            screenshots::connect_allowed(db::connect::ConnectAccess::Owners, Viewer::Operator);
+        let member_status: serde_json::Value =
+            serde_json::from_str(&status_data(Some(&bytes), member_can_view)).unwrap();
+        assert_eq!(member_status["pc"]["programs"], json!([]));
+
+        let owner_can_view =
+            screenshots::connect_allowed(db::connect::ConnectAccess::Owners, Viewer::Owner);
+        let owner_status: serde_json::Value =
+            serde_json::from_str(&status_data(Some(&bytes), owner_can_view)).unwrap();
+        assert_eq!(owner_status["pc"]["programs"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            owner_status["pc"]["programs"][0]["program"]["path"],
+            "/home/kate/Streamer.bot"
+        );
+    }
 }
 
 /// A device's status event (`belabox`, `moblin`): its KV value, or `null`.
@@ -137,7 +223,12 @@ async fn live_feed(
     State(state): State<ApiState>,
     authorized: SwitcherAuthorized<SwitcherView>,
 ) -> ApiResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
-    let switcher_id = authorized.into_access().switcher.id;
+    let access = authorized.into_access();
+    let can_view_programs = screenshots::connect_allowed(
+        access.switcher.connect_programs,
+        screenshots::viewer_for(&state, &access.workspace).await?,
+    );
+    let switcher_id = access.switcher.id;
     let key = live::status_key(switcher_id);
 
     // Subscribe before reading the current status, so no change slips through.
@@ -168,13 +259,13 @@ async fn live_feed(
         .await
         .map_err(nats_error)?;
 
-    let status_updates = status_updates.filter_map(|entry| async move {
+    let status_updates = status_updates.filter_map(move |entry| async move {
         match entry {
             Ok(entry) if entry.operation == Operation::Put => {
-                Some(status_event(Some(&entry.value)))
+                Some(status_event(Some(&entry.value), can_view_programs))
             }
             // Deleted on disconnect, or expired because obs-link stopped.
-            Ok(_) => Some(status_event(None)),
+            Ok(_) => Some(status_event(None, can_view_programs)),
             Err(error) => {
                 tracing::warn!(%error, "Status watch failed");
                 None
@@ -193,14 +284,12 @@ async fn live_feed(
                 .data(String::from_utf8_lossy(&message.payload)),
         )
     });
-    let events = events.map(|message| {
-        Event::default()
-            .event("event")
-            .data(String::from_utf8_lossy(&message.payload))
+    let events = events.filter_map(move |message| async move {
+        activity_event(&message.payload, can_view_programs)
     });
 
     let initial = [
-        status_event(current_status.as_deref()),
+        status_event(current_status.as_deref(), can_view_programs),
         device_event("belabox", current_belabox.as_deref()),
         device_event("moblin", current_moblin.as_deref()),
     ];
@@ -231,23 +320,27 @@ async fn list_events(
     authorized: SwitcherAuthorized<SwitcherView>,
     Query(query): Query<EventsQuery>,
 ) -> ApiResult<Json<Vec<SwitcherEvent>>> {
+    let access = authorized.into_access();
+    let can_view_programs = screenshots::connect_allowed(
+        access.switcher.connect_programs,
+        screenshots::viewer_for(&state, &access.workspace).await?,
+    );
     let limit = query.limit.unwrap_or(DEFAULT_EVENTS).clamp(1, MAX_EVENTS);
-    let rows = db::switcher_events::list(
-        &state.db,
-        authorized.into_access().switcher.id,
-        query.before,
-        limit,
-    )
-    .await?;
+    let rows =
+        db::switcher_events::list(&state.db, access.switcher.id, query.before, limit).await?;
 
     Ok(Json(
         rows.into_iter()
             .filter_map(|row| {
-                Some(SwitcherEvent {
+                let mut event = SwitcherEvent {
                     id: row.id,
                     created_at: row.created_at,
                     detail: EventDetail::from_parts(&row.kind, row.data)?,
-                })
+                };
+                if !can_view_programs {
+                    event.detail.redact_program_details();
+                }
+                Some(event)
             })
             .collect(),
     ))
@@ -1602,21 +1695,7 @@ async fn obs_screenshot(
     let switcher_id = access.switcher.id;
     let status = state.status_of(switcher_id).await;
     if !status.as_ref().is_some_and(|status| status.streaming) {
-        let viewer = match access.workspace.via {
-            Via::Support { .. } => Viewer::Support,
-            Via::Organization => Viewer::Owner,
-            Via::Member => match db::workspaces::member_role(
-                &state.db,
-                access.workspace.workspace_id,
-                access.workspace.user.id(),
-            )
-            .await?
-            {
-                Some(WorkspaceRoleEnum::Owner) => Viewer::Owner,
-                Some(WorkspaceRoleEnum::Admin) => Viewer::Admin,
-                _ => Viewer::Operator,
-            },
-        };
+        let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
         if !screenshots::allowed_off_air(access.switcher.preview_off_air, viewer) {
             return Err(ApiError::forbidden(
                 "preview_off_air",
