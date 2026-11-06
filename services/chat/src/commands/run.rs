@@ -102,6 +102,7 @@ fn failure(error: control::Error) -> Msg {
         control::Error::ObsUnreachable(_) => Msg::ObsTimeout,
         control::Error::NoRefreshScene => Msg::NoScene(SceneKind::Refresh),
         control::Error::AlreadyRefreshing => Msg::AlreadyRefreshing,
+        control::Error::Busy => Msg::Busy,
         control::Error::NoSceneIds => Msg::NoSceneIds,
         control::Error::SourceNotFound
         | control::Error::InputNotFound

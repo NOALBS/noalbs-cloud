@@ -295,6 +295,9 @@ msgstr "피드를 새로고침하는 중"
 msgid "Already refreshing"
 msgstr "이미 새로고침하고 있어요"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "다른 작업이 아직 진행 중이에요. 잠시 후 다시 시도해 주세요"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "피드를 복구하는 중, 다시 연결: {sources}"
 

@@ -296,6 +296,9 @@ msgstr "正在重新整理訊號"
 msgid "Already refreshing"
 msgstr "已在重新整理"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "另一個操作仍在進行中，請稍等幾秒後再試"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "正在修復訊號：重新連線 {sources}"
 

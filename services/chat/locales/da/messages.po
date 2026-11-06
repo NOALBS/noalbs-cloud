@@ -296,6 +296,9 @@ msgstr "Genstarter signalet"
 msgid "Already refreshing"
 msgstr "Genstarter allerede"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "En anden handling kører stadig; prøv igen om et par sekunder"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Fikser signalet: genopretter forbindelsen til {sources}"
 

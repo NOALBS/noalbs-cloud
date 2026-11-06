@@ -296,6 +296,9 @@ msgstr "Oppdaterer signalet"
 msgid "Already refreshing"
 msgstr "Oppdaterer allerede"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "En annen handling kjører fortsatt; prøv igjen om noen sekunder"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Reparerer signalet: kobler til {sources} på nytt"
 

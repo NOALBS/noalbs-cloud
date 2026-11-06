@@ -295,6 +295,9 @@ msgstr "フィードを更新しています"
 msgid "Already refreshing"
 msgstr "すでに更新中です"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "別の操作がまだ実行中です。数秒後にもう一度お試しください"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "フィードを修復しています：{sources} を再接続中"
 

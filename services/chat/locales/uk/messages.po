@@ -296,6 +296,9 @@ msgstr "Оновлюю сигнал"
 msgid "Already refreshing"
 msgstr "Оновлення вже триває"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Інша дія ще виконується; спробуйте знову за кілька секунд"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Виправляю сигнал: перепідключаю {sources}"
 

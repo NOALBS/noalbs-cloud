@@ -296,6 +296,9 @@ msgstr "Feed vernieuwen"
 msgid "Already refreshing"
 msgstr "Is al aan het vernieuwen"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Er loopt nog een andere actie; probeer het over een paar seconden opnieuw"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Feed repareren: {sources} maakt opnieuw verbinding"
 
