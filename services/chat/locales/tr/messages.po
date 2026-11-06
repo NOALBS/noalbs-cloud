@@ -296,6 +296,9 @@ msgstr "Yayın akışı yenileniyor"
 msgid "Already refreshing"
 msgstr "Zaten yenileniyor"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Başka bir işlem hâlâ sürüyor; birkaç saniye sonra tekrar deneyin"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Yayın akışı düzeltiliyor, yeniden bağlanıyor: {sources}"
 

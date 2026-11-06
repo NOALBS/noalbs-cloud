@@ -295,6 +295,9 @@ msgstr "正在刷新信号"
 msgid "Already refreshing"
 msgstr "已在刷新"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "另一个操作仍在进行中，请稍等几秒后重试"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "正在修复信号：重新连接 {sources}"
 

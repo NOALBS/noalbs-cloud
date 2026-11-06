@@ -296,6 +296,9 @@ msgstr "Aggiornamento del feed"
 msgid "Already refreshing"
 msgstr "Aggiornamento già in corso"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Un'altra azione è ancora in corso; riprova tra qualche secondo"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Riparazione del feed: riconnessione di {sources}"
 

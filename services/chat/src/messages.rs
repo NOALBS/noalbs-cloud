@@ -36,6 +36,8 @@ pub enum Msg {
     RecordingStopping,
     Refreshing,
     AlreadyRefreshing,
+    /// A fix or stream action is still running for this switcher.
+    Busy,
     /// `!fix` made these media sources reconnect.
     Fixed(Vec<String>),
     /// `!fix` found no network media source playing on this scene.
@@ -643,6 +645,10 @@ fn render(lang: &str, msg: &Msg) -> String {
         Msg::RecordingStopping => tr!(lang, "Recording stopped"),
         Msg::Refreshing => tr!(lang, "Refreshing the feed"),
         Msg::AlreadyRefreshing => tr!(lang, "Already refreshing"),
+        Msg::Busy => tr!(
+            lang,
+            "Another action is still running; try again in a few seconds"
+        ),
         Msg::Fixed(sources) => tr!(
             lang,
             "Fixing the feed: reconnecting {sources}",

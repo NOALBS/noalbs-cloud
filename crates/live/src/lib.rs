@@ -21,6 +21,7 @@
 //! | [`AudioUpdate`] | core subject [`audio_subject`] | obs-link: levels while demanded, mute/fader changes always |
 //! | levels wanted | core subject [`audio_demand_subject`] | API, every 5 s while a mixer is open |
 //! | [`PreviewWatching`] | core subject [`preview_watching_subject`] | API, every 3 s per viewer of the OBS preview; every API replica keeps the list |
+//! | action claims | KV bucket [`ACTIONS_BUCKET`], key `<action>.<switcher ID>` | API and chat service, while a mutating OBS action runs |
 
 mod audio;
 mod belabox;
@@ -262,6 +263,33 @@ pub fn connect_options(user: Option<&str>, password: Option<&str>) -> async_nats
     }
 }
 
+/// KV bucket of per-switcher action claims: `<action>.<switcher ID>` is set
+/// while a mutating OBS action (a fix, a stream start or stop) may still be in
+/// flight. `control` claims one to refuse a second, overlapping command.
+pub const ACTIONS_BUCKET: &str = "obs-action-claims";
+/// A claim lapses this long after it's last written, so a crashed caller's
+/// claim frees itself and a fix's media-source restarts (which outlive their
+/// replies) get a moment to settle. Callers renew it while their action runs.
+pub const ACTION_CLAIM_TTL: Duration = Duration::from_secs(10);
+
+/// Creates the action-claims bucket if it doesn't exist yet.
+pub async fn action_claims_bucket(js: &jetstream::Context) -> Result<kv::Store, async_nats::Error> {
+    if let Ok(store) = js.get_key_value(ACTIONS_BUCKET).await {
+        return Ok(store);
+    }
+
+    Ok(js
+        .create_key_value(kv::Config {
+            bucket: ACTIONS_BUCKET.to_owned(),
+            description: "One mutating OBS action per switcher at a time".to_owned(),
+            history: 1,
+            max_age: ACTION_CLAIM_TTL,
+            storage: jetstream::stream::StorageType::Memory,
+            ..Default::default()
+        })
+        .await?)
+}
+
 /// Creates the status bucket if it doesn't exist yet.
 pub async fn status_bucket(js: &jetstream::Context) -> Result<kv::Store, async_nats::Error> {
     if let Ok(store) = js.get_key_value(STATUS_BUCKET).await {
@@ -290,6 +318,7 @@ pub struct Stores {
     pub belabox: kv::Store,
     pub moblin: kv::Store,
     pub moblin_attempts: kv::Store,
+    pub actions: kv::Store,
     pub stats: stream::Stream,
 }
 
@@ -300,6 +329,7 @@ impl Stores {
             belabox: belabox_bucket(js).await?,
             moblin: moblin_bucket(js).await?,
             moblin_attempts: moblin_attempts_bucket(js).await?,
+            actions: action_claims_bucket(js).await?,
             stats: stats_stream(js).await?,
         })
     }

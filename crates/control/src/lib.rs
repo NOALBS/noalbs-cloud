@@ -12,7 +12,7 @@
 
 use std::time::Duration;
 
-use async_nats::jetstream::kv;
+use async_nats::jetstream::kv::{self, CreateErrorKind, UpdateErrorKind};
 use live::{
     BelaboxAction, BelaboxCommand, BelaboxDetails, BelaboxDetailsReply, BelaboxReply,
     BelaboxStatus, EventDetail, Intent, IntentAction, MoblinAction, MoblinCommand, MoblinReply,
@@ -27,6 +27,7 @@ use obs_actions::{
     sources::SourceItem,
 };
 use serde::de::DeserializeOwned;
+use tokio::{sync::oneshot, task::JoinHandle};
 use uuid::Uuid;
 
 mod obs_stats;
@@ -61,6 +62,10 @@ pub enum Error {
     NoRefreshScene,
     #[error("the Refresh scene is already on air")]
     AlreadyRefreshing,
+    /// A fix or stream action is already running for the switcher; it frees up
+    /// when the claim lapses (see [`live::ACTION_CLAIM_TTL`]).
+    #[error("another action is already running for this switcher")]
+    Busy,
     #[error("this OBS version doesn't report scene IDs")]
     NoSceneIds,
     #[error("that source isn't in the scene anymore")]
@@ -138,6 +143,8 @@ pub struct Control {
     pub belabox_kv: kv::Store,
     /// The Moblin status bucket obs-link writes ([`live::moblin_bucket`]).
     pub moblin_kv: kv::Store,
+    /// The action-claims bucket ([`live::action_claims_bucket`]).
+    pub actions_kv: kv::Store,
 }
 
 impl Control {
@@ -148,6 +155,27 @@ impl Control {
             status_kv: stores.status.clone(),
             belabox_kv: stores.belabox.clone(),
             moblin_kv: stores.moblin.clone(),
+            actions_kv: stores.actions.clone(),
+        }
+    }
+
+    /// Claims `what` for the switcher ([`live::ACTIONS_BUCKET`]): `Busy` while
+    /// another one holds it. A claim-store hiccup doesn't stop the action (the
+    /// guard is best-effort).
+    async fn action_claim(&self, switcher_id: Uuid, what: &str) -> Result<ActionClaim> {
+        let key = format!("{what}.{switcher_id}");
+        let make = |revision| ActionClaim {
+            store: self.actions_kv.clone(),
+            key: key.clone(),
+            revision,
+        };
+        match self.actions_kv.create(&key, "".into()).await {
+            Ok(revision) => Ok(make(Some(revision))),
+            Err(error) if error.kind() == CreateErrorKind::AlreadyExists => Err(Error::Busy),
+            Err(error) => {
+                tracing::warn!(%error, %switcher_id, "Couldn't claim an action; running it anyway");
+                Ok(make(None))
+            }
         }
     }
 
@@ -349,12 +377,18 @@ impl Control {
         Ok(())
     }
 
-    /// Starts (`active`) or stops the stream.
+    /// Starts (`active`) or stops the stream. A start and a stop (or two of
+    /// either) may not interleave, so the claim lasts the call (renewed for a
+    /// slow one): a stop right after a start still goes through.
     pub async fn stream(&self, switcher_id: Uuid, active: bool, by: &str) -> Result<()> {
         let obs = self.controllable_obs(switcher_id).await?;
+        let claim = self.action_claim(switcher_id, "stream").await?;
         self.announce(switcher_id, IntentAction::Stream { active }, by)
             .await;
-        obs.stream(active).await?;
+        let renewal = claim.renewing();
+        let result = obs.stream(active).await;
+        renewal.stop().await.release().await;
+        result?;
         Ok(())
     }
 
@@ -370,14 +404,32 @@ impl Control {
     /// Fixes a frozen feed like NOALBS's `!fix`: the network media sources
     /// playing on the scene on air reconnect (see [`obs_actions::fix`]). Returns
     /// the scene on air and the sources fixed, and logs them in the activity feed.
+    ///
+    /// The restarts it begins outlive its replies, so one fix at a time per
+    /// switcher until the claim lapses: a second one landing on a source that's
+    /// still mid-restart can wedge it. The claim is renewed while the fix runs
+    /// (walking a scene's sources can outlast the TTL) and a fix that
+    /// restarted nothing frees it for a retry.
     pub async fn fix(&self, switcher_id: Uuid, by: &str) -> Result<(String, Vec<String>)> {
         let obs = self.controllable_obs(switcher_id).await?;
-        let outcome = obs.fix_media_sources().await?;
+        let claim = self.action_claim(switcher_id, "fix").await?;
+        let renewal = claim.renewing();
+        let outcome = obs.fix_media_sources().await;
+        let claim = renewal.stop().await;
+        let outcome = match outcome {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                claim.release().await;
+                return Err(error.into());
+            }
+        };
         let mut failed = outcome.failed.into_iter();
-        if outcome.fixed.is_empty()
-            && let Some((_, error)) = failed.next()
-        {
-            return Err(error.into());
+        if outcome.fixed.is_empty() {
+            // Nothing was restarted; free the claim so a retry can run.
+            claim.release().await;
+            if let Some((_, error)) = failed.next() {
+                return Err(error.into());
+            }
         }
         for (source, error) in failed {
             tracing::warn!(%error, %switcher_id, source, "Couldn't fix a media source");
@@ -880,6 +932,96 @@ impl Control {
             }
         });
         Ok(())
+    }
+}
+
+/// A held action claim ([`Control::action_claim`]). Dropped, it lapses at
+/// [`live::ACTION_CLAIM_TTL`]; [`release`](Self::release) frees it early.
+struct ActionClaim {
+    store: kv::Store,
+    key: String,
+    /// `None` when no claim was taken (the guard is best-effort): nothing to free.
+    revision: Option<u64>,
+}
+
+impl ActionClaim {
+    async fn release(self) {
+        let Some(revision) = self.revision else {
+            return;
+        };
+        if let Err(error) = self
+            .store
+            .delete_expect_revision(self.key, Some(revision))
+            .await
+        {
+            tracing::debug!(%error, "Claim already gone");
+        }
+    }
+
+    /// Renews the claim; `false` when it already lapsed or someone took it.
+    async fn renew(&mut self) -> bool {
+        let Some(revision) = self.revision else {
+            return true;
+        };
+        match self.store.update(&self.key, "".into(), revision).await {
+            Ok(new_revision) => {
+                self.revision = Some(new_revision);
+                true
+            }
+            Err(error) if error.kind() == UpdateErrorKind::WrongLastRevision => false,
+            Err(error) => {
+                tracing::warn!(%error, "Couldn't renew an action claim");
+                false
+            }
+        }
+    }
+
+    /// Renewed every half TTL by a spawned task until the returned [`Renewal`]
+    /// is stopped, so a slow action can't lose its claim mid-flight.
+    fn renewing(self) -> Renewal {
+        let (stop, mut stop_rx) = oneshot::channel::<()>();
+        let renewal = Renewal {
+            stop,
+            store: self.store.clone(),
+            key: self.key.clone(),
+            done: tokio::spawn(async move {
+                let mut claim = self;
+                let mut every = tokio::time::interval(live::ACTION_CLAIM_TTL / 2);
+                every.tick().await; // the first tick is immediate; skip it
+                loop {
+                    tokio::select! {
+                        _ = every.tick() => if !claim.renew().await { break },
+                        _ = &mut stop_rx => break,
+                    }
+                }
+                claim
+            }),
+        };
+        renewal
+    }
+}
+
+/// A claim being kept fresh by [`ActionClaim::renewing`], back to an
+/// [`ActionClaim`] on [`stop`](Self::stop).
+struct Renewal {
+    stop: oneshot::Sender<()>,
+    done: JoinHandle<ActionClaim>,
+    /// The claim's home, to build a lapsed one if the renewal task is gone.
+    store: kv::Store,
+    key: String,
+}
+
+impl Renewal {
+    async fn stop(self) -> ActionClaim {
+        let _ = self.stop.send(());
+        self.done.await.unwrap_or_else(|error| {
+            tracing::warn!(%error, "Claim renewal task ended early");
+            ActionClaim {
+                store: self.store,
+                key: self.key,
+                revision: None,
+            }
+        })
     }
 }
 

@@ -296,6 +296,9 @@ msgstr "Uppdaterar flödet"
 msgid "Already refreshing"
 msgstr "Uppdaterar redan"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "En annan åtgärd körs fortfarande; försök igen om några sekunder"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Fixar flödet: återansluter {sources}"
 

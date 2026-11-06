@@ -393,6 +393,11 @@ pub fn control_error(error: control::Error) -> ApiError {
             "already_refreshing",
             "The Refresh scene is already on air.",
         ),
+        control::Error::Busy => ApiError::new(
+            StatusCode::CONFLICT,
+            "busy",
+            "Another action is already running for this switcher. Try again in a few seconds.",
+        ),
         control::Error::NoSceneIds => ApiError::new(
             StatusCode::BAD_GATEWAY,
             "obs_error",

@@ -296,6 +296,9 @@ msgstr "Rafraîchissement du flux"
 msgid "Already refreshing"
 msgstr "Rafraîchissement déjà en cours"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Une autre action est encore en cours ; réessayez dans quelques secondes"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Réparation du flux : reconnexion de {sources}"
 

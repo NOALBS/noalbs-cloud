@@ -28,6 +28,7 @@
             rustToolchain
             pkgs.rust-analyzer
             pkgs.cargo-machete
+            pkgs.gh
 
             pkgs.nats-server
             # `stripe listen` forwards test webhooks to a local API.

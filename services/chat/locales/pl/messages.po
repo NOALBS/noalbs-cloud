@@ -296,6 +296,9 @@ msgstr "Odświeżanie obrazu"
 msgid "Already refreshing"
 msgstr "Odświeżanie już trwa"
 
+msgid "Another action is still running; try again in a few seconds"
+msgstr "Trwa już inna akcja; spróbuj ponownie za kilka sekund"
+
 msgid "Fixing the feed: reconnecting {sources}"
 msgstr "Naprawianie obrazu: ponowne łączenie {sources}"
 
