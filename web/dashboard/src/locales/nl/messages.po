@@ -3081,6 +3081,10 @@ msgstr "Klant verwijderen"
 msgid "Delete clients"
 msgstr "Klanten verwijderen"
 
+#: src/components/connect-settings.tsx
+msgid "Delete log"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Delete my account"
 msgstr "Mijn account verwijderen"

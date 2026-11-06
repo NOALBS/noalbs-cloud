@@ -3081,6 +3081,10 @@ msgstr "Müşteriyi sil"
 msgid "Delete clients"
 msgstr "Müşterileri sil"
 
+#: src/components/connect-settings.tsx
+msgid "Delete log"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Delete my account"
 msgstr "Hesabımı sil"

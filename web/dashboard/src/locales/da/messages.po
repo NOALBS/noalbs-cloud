@@ -3081,6 +3081,10 @@ msgstr "Slet kunde"
 msgid "Delete clients"
 msgstr "Slet kunder"
 
+#: src/components/connect-settings.tsx
+msgid "Delete log"
+msgstr ""
+
 #: src/routes/_app/$workspace/account.tsx
 msgid "Delete my account"
 msgstr "Slet min konto"

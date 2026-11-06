@@ -1024,8 +1024,13 @@ function ConnectLogRow({
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Trans>Delete</Trans>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label={t`Delete log`}
+              title={t`Delete log`}
+            >
+              <Trash2 />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
