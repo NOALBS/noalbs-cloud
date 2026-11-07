@@ -2127,6 +2127,7 @@ msgstr "Kaldırılamıyor: {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -2502,6 +2503,7 @@ msgstr "Ödemen onaylanıyor… birkaç saniye sürer."
 msgid "Connect"
 msgstr "Bağlan"
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
 msgstr "Connect · {connectDeviceName}"
@@ -2528,9 +2530,14 @@ msgstr "BELABOX Cloud’u bağla"
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "Platform sorduğunda kendi hesabınla değil, bot hesabıyla giriş yaparak bağlan."
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connect bilgisayarı"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect controls"
+msgstr "Connect denetimleri"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
@@ -2564,6 +2571,11 @@ msgstr "Sahneleri seçmek için OBS’i bağla."
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
 msgstr "Connect izinleri değişti"
+
+#: src/components/app-shell.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect settings"
+msgstr "Connect ayarları"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect the channel you stream on so its chat can run commands."
@@ -4617,6 +4629,7 @@ msgstr "Günlük yükleniyor…"
 msgid "Loading logs…"
 msgstr "Günlükler yükleniyor…"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "Programlar yükleniyor…"
@@ -5584,6 +5597,7 @@ msgstr "Henüz fiyatı yok, bu yüzden Plan sayfasında yakında olarak görün�
 msgid "No price: it’s the free plan."
 msgstr "Fiyat yok: bu ücretsiz plan."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "No programs have been added yet."
 msgstr "Henüz program eklenmedi."
@@ -5707,6 +5721,11 @@ msgstr "Bir bakışta NOALBS Cloud."
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
 msgstr "NOALBS Cloud Connect"
+
+#. placeholder {0}: pcObsLabel(obs)
+#: src/components/connect-controls.tsx
+msgid "NOALBS Cloud Connect · {0}"
+msgstr "NOALBS Cloud Connect · {0}"
 
 #: src/components/belabox-settings.tsx
 msgid "NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX. BELABOX is a trademark of its owner."
@@ -6064,6 +6083,7 @@ msgstr "Duyurular"
 msgid "now"
 msgstr "şimdi"
 
+#: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS"
 msgstr "OBS"
@@ -7051,6 +7071,7 @@ msgstr "Program başlatıldı"
 msgid "Program stopped"
 msgstr "Program durduruldu"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Programs"
 msgstr "Programlar"
@@ -7481,7 +7502,7 @@ msgstr "İstek başarısız oldu ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "Connect üzerinden bir OBS günlüğü istendi"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr "OBS’i yeniden başlat"
@@ -7490,12 +7511,11 @@ msgstr "OBS’i yeniden başlat"
 msgid "Restart OBS and go live again"
 msgstr "OBS’i yeniden başlat ve tekrar canlı yayına geç"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Restart OBS on {0}?"
-msgstr "{0} üzerinde OBS yeniden başlatılsın mı?"
+#: src/components/connect-controls.tsx
+msgid "Restart OBS on {deviceName}?"
+msgstr "{deviceName} üzerinde OBS yeniden başlatılsın mı?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Restart OBS?"
 msgstr "OBS yeniden başlatılsın mı?"
 
@@ -7643,6 +7663,7 @@ msgstr "RTT ölçeği: LOW {0}, BRB {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT tetikleri 1 ile 60.000 ms arasında olmalı."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Running"
 msgstr "Çalışıyor"
@@ -8418,7 +8439,7 @@ msgstr "Yalnızca personel"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "Personel: <0>Yönetici bölümünde bu çalışma alanı</0> (planını ayarla, faturalandırmasını gör)."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "Başlat"
@@ -8439,7 +8460,7 @@ msgstr "Hotspot’u başlat"
 msgid "Start Moblin with the OBS stream"
 msgstr "Moblin’i OBS yayınıyla başlat"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Start OBS"
 msgstr "OBS’i başlat"
@@ -8543,7 +8564,7 @@ msgid "Stealth on"
 msgstr "Gizli mod açık"
 
 #: src/components/admin/products.tsx
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8574,16 +8595,15 @@ msgstr "Moblin’i durdur"
 msgid "Stop Moblin with the OBS stream"
 msgstr "Moblin’i OBS yayınıyla durdur"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS"
 msgstr "OBS’i durdur"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Stop OBS on {0}?"
-msgstr "{0} üzerinde OBS durdurulsun mu?"
+#: src/components/connect-controls.tsx
+msgid "Stop OBS on {deviceName}?"
+msgstr "{deviceName} üzerinde OBS durdurulsun mu?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS?"
 msgstr "OBS durdurulsun mu?"
 
@@ -8647,6 +8667,7 @@ msgstr "OBS ile durdur"
 msgid "Stop, and restart when shown"
 msgstr "Durdur ve gösterildiğinde yeniden başlat"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Stopped"
 msgstr "Durduruldu"
@@ -9531,7 +9552,7 @@ msgstr "OBS’i, bir yayın sunucusunu ve sahnelerini bağlamak için adım adı
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "Kendi switcher’larının yayın geçmişi, istatistikleri, işaretçileri ve etkinlik günlüğü, satır başına bir JSON nesnesi. Büyük olabilir."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "Yayın canlı ve OBS durursa kesilecek. Devam etmek istiyor musun?"
 
@@ -10649,6 +10670,10 @@ msgstr "Bu kuruluşta bunu yapma iznin yok"
 #: src/lib/api-messages.ts
 msgid "You do not have permission to do this in this workspace"
 msgstr "Bu çalışma alanında bunu yapma iznin yok"
+
+#: src/components/connect-controls.tsx
+msgid "You don’t have access to control this computer."
+msgstr "Bu bilgisayarı denetleme erişiminiz yok."
 
 #. placeholder {0}: describeAddon(owned, addon.unit)
 #. placeholder {1}: !forSale && t` You can keep or lower it, but not add more for now.`

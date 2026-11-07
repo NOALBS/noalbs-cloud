@@ -59,6 +59,7 @@ import {
 import { hasUnseenPosts, WhatsNewCard } from "@/components/whats-new-card";
 import { missingCardReminder } from "@/lib/billing";
 import { botDetail, revokedOwnBots, speakingBot, switchersToReconnect } from "@/lib/chat";
+import { canControlConnect, canManageConnectPrograms } from "@/lib/connect";
 import { lastSwitcherId } from "@/lib/last-switcher";
 import { currentLocale } from "@/lib/locale";
 import { type Actor, actorOf, can, isSupport, roleLabels } from "@/lib/permissions";
@@ -68,6 +69,7 @@ import { supportLevelLabels } from "@/lib/support";
 import { type ThemePreference, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { WHATS_NEW_PATH } from "@/lib/whats-new";
+import { ConnectDialog } from "./connect-controls";
 import { CreateSwitcherDialog } from "./create-switcher-dialog";
 import { LanguageMenu } from "./language-menu";
 import { ObsStatsPopover } from "./live/obs-stats-popover";
@@ -241,6 +243,9 @@ export function AppShell({
             <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
           </button>
           <div className="flex items-center gap-2.5">
+            {inSwitcher && current && (
+              <ConnectChip workspace={workspace} switcher={current} actor={actor} />
+            )}
             {inSwitcher && current && <ObsChip workspaceId={workspace.id} switcher={current} />}
             <UserMenu me={me} workspaceSlug={workspace.url_slug} compact />
           </div>
@@ -468,6 +473,53 @@ export function AppShell({
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+/**
+ * The paired Connect computer, for the mobile app bar; opens its OBS and
+ * program controls. Its name is the user's own, so it's cut short here.
+ */
+function ConnectChip({
+  workspace,
+  switcher,
+  actor,
+}: {
+  workspace: Workspace;
+  switcher: SwitcherSummary;
+  actor: Actor;
+}) {
+  const details = useQuery(switcherQuery(workspace.id, switcher.id));
+  const pc = switcher.status?.pc;
+  if (!pc || !details.data) return null;
+  const connectDeviceName = pc.device_name ?? t`Connect computer`;
+  return (
+    <ConnectDialog
+      path={{ workspace_id: workspace.id, switcher_id: switcher.id }}
+      deviceName={connectDeviceName}
+      obs={pc.obs}
+      streaming={Boolean(switcher.status?.streaming)}
+      canControlObs={canControlConnect(details.data.connect_obs_control, actor)}
+      canControlPrograms={canManageConnectPrograms(details.data.connect_programs, actor)}
+      settingsLink={
+        <Link
+          to="/$workspace/s/$switcher/obs"
+          params={{ workspace: workspace.url_slug, switcher: switcher.id }}
+          className="font-semibold text-primary hover:underline"
+        >
+          <Trans>Connect settings</Trans>
+        </Link>
+      }
+    >
+      <button
+        type="button"
+        title={t`Connect · ${connectDeviceName}`}
+        className="flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-xs text-muted-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+      >
+        <Monitor className="size-3.5 shrink-0" />
+        <span className="max-w-20 truncate">{connectDeviceName}</span>
+      </button>
+    </ConnectDialog>
   );
 }
 

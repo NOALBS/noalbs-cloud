@@ -2127,6 +2127,7 @@ msgstr "無法移除：{blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -2502,6 +2503,7 @@ msgstr "正在確認你的付款… 這需要幾秒鐘。"
 msgid "Connect"
 msgstr "連接"
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
 msgstr "Connect · {connectDeviceName}"
@@ -2528,9 +2530,14 @@ msgstr "連接 BELABOX Cloud"
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "平台要求時，請以機器人帳號（不是你自己的帳號）登入來連接。"
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connect 電腦"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect controls"
+msgstr "Connect 控制"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
@@ -2564,6 +2571,11 @@ msgstr "連接 OBS 以選擇場景。"
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
 msgstr "Connect 權限已變更"
+
+#: src/components/app-shell.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect settings"
+msgstr "Connect 設定"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect the channel you stream on so its chat can run commands."
@@ -4617,6 +4629,7 @@ msgstr "正在載入記錄檔…"
 msgid "Loading logs…"
 msgstr "正在載入記錄檔清單…"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "正在載入程式…"
@@ -5584,6 +5597,7 @@ msgstr "尚未設定價格，因此方案頁面會顯示為即將推出"
 msgid "No price: it’s the free plan."
 msgstr "無價格：這是免費方案。"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "No programs have been added yet."
 msgstr "尚未新增任何程式。"
@@ -5707,6 +5721,11 @@ msgstr "NOALBS Cloud 一覽。"
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
 msgstr "NOALBS Cloud Connect"
+
+#. placeholder {0}: pcObsLabel(obs)
+#: src/components/connect-controls.tsx
+msgid "NOALBS Cloud Connect · {0}"
+msgstr "NOALBS Cloud Connect · {0}"
 
 #: src/components/belabox-settings.tsx
 msgid "NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX. BELABOX is a trademark of its owner."
@@ -6064,6 +6083,7 @@ msgstr "公告"
 msgid "now"
 msgstr "現在"
 
+#: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS"
 msgstr "OBS"
@@ -7051,6 +7071,7 @@ msgstr "已啟動程式"
 msgid "Program stopped"
 msgstr "已停止程式"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Programs"
 msgstr "程式"
@@ -7481,7 +7502,7 @@ msgstr "請求失敗（{0}）"
 msgid "Requested an OBS log through Connect"
 msgstr "透過 Connect 要求了 OBS 記錄檔"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr "重新啟動 OBS"
@@ -7490,12 +7511,11 @@ msgstr "重新啟動 OBS"
 msgid "Restart OBS and go live again"
 msgstr "重新啟動 OBS 並重新開台"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Restart OBS on {0}?"
-msgstr "要重新啟動 {0} 上的 OBS 嗎？"
+#: src/components/connect-controls.tsx
+msgid "Restart OBS on {deviceName}?"
+msgstr "要重新啟動 {deviceName} 上的 OBS 嗎？"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Restart OBS?"
 msgstr "要重新啟動 OBS 嗎？"
 
@@ -7643,6 +7663,7 @@ msgstr "RTT 刻度：LOW 在 {0}，BRB 在 {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT 觸發值必須介於 1 到 60,000 ms 之間。"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Running"
 msgstr "執行中"
@@ -8418,7 +8439,7 @@ msgstr "僅限工作人員"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "工作人員：<0>管理員專區中的這個工作區</0>（設定方案、查看帳務）。"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "開始"
@@ -8439,7 +8460,7 @@ msgstr "啟動熱點"
 msgid "Start Moblin with the OBS stream"
 msgstr "隨 OBS 實況啟動 Moblin"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Start OBS"
 msgstr "啟動 OBS"
@@ -8543,7 +8564,7 @@ msgid "Stealth on"
 msgstr "隱身已開啟"
 
 #: src/components/admin/products.tsx
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8574,16 +8595,15 @@ msgstr "停止 Moblin"
 msgid "Stop Moblin with the OBS stream"
 msgstr "隨 OBS 實況停止 Moblin"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS"
 msgstr "停止 OBS"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Stop OBS on {0}?"
-msgstr "要停止 {0} 上的 OBS 嗎？"
+#: src/components/connect-controls.tsx
+msgid "Stop OBS on {deviceName}?"
+msgstr "要停止 {deviceName} 上的 OBS 嗎？"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS?"
 msgstr "要停止 OBS 嗎？"
 
@@ -8647,6 +8667,7 @@ msgstr "隨 OBS 停止"
 msgid "Stop, and restart when shown"
 msgstr "停止，顯示時重新開始"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Stopped"
 msgstr "已停止"
@@ -9531,7 +9552,7 @@ msgstr "連接 OBS、串流伺服器和場景的逐步檢查清單。"
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "你自己的切換器的實況歷史紀錄、統計資料、標記和活動紀錄，每行一個 JSON 物件。檔案可能很大。"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "目前正在開台，OBS 停止後直播會中斷。要繼續嗎？"
 
@@ -10649,6 +10670,10 @@ msgstr "你沒有權限在這個組織中執行此操作"
 #: src/lib/api-messages.ts
 msgid "You do not have permission to do this in this workspace"
 msgstr "你沒有權限在這個工作區中執行此操作"
+
+#: src/components/connect-controls.tsx
+msgid "You don’t have access to control this computer."
+msgstr "你沒有控制這台電腦的權限。"
 
 #. placeholder {0}: describeAddon(owned, addon.unit)
 #. placeholder {1}: !forSale && t` You can keep or lower it, but not add more for now.`
