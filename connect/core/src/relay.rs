@@ -410,7 +410,9 @@ async fn connect_once(
                     }
                     if let Some(socket) = obs.as_mut() {
                         socket.send(Message::Text(request.to_string().into())).await?;
-                        config.activity.fetch_add(1, Ordering::Relaxed);
+                        if changes_obs(&request) {
+                            config.activity.fetch_add(1, Ordering::Relaxed);
+                        }
                     }
                 }
                 if let Some(command) = value.get("connectCommand") {
@@ -642,6 +644,33 @@ fn extract_request_id(value: &Value) -> Option<&str> {
         .or_else(|| value.get("requestId"))
         .or_else(|| value.get("request_id"))
         .and_then(Value::as_str)
+}
+
+/// Whether a forwarded dashboard request does something to OBS, so it counts
+/// as activity for the idle timeout. An open dashboard keeps polling `Get*`
+/// requests (preview, stats, status) and re-identifies for audio levels; those
+/// only read, so they must not keep an unattended OBS awake.
+fn changes_obs(request: &Value) -> bool {
+    let changes = |request_type: Option<&Value>| {
+        request_type
+            .and_then(Value::as_str)
+            .is_none_or(|request_type| !request_type.starts_with("Get"))
+    };
+    match request.get("op").and_then(Value::as_u64) {
+        // Reidentify
+        Some(3) => false,
+        Some(6) => changes(request.pointer("/d/requestType")),
+        // RequestBatch
+        Some(8) => request
+            .pointer("/d/requests")
+            .and_then(Value::as_array)
+            .is_none_or(|requests| {
+                requests
+                    .iter()
+                    .any(|request| changes(request.get("requestType")))
+            }),
+        _ => true,
+    }
 }
 
 fn collect_volume_meters(pending: &mut HashMap<String, Vec<Vec<f64>>>, event: &Value) {
@@ -899,9 +928,36 @@ mod tests {
 
     use super::{
         Arc, AtomicU64, ConnectLogUpload, Duration, LinkConfig, PcObsState, RelayError,
-        collect_volume_meters, connect_obs, extract_obs_config, get_obs_version, hash_base64,
-        identify_payload, parse_watchdog, run_link, take_volume_meters,
+        changes_obs, collect_volume_meters, connect_obs, extract_obs_config, get_obs_version,
+        hash_base64, identify_payload, parse_watchdog, run_link, take_volume_meters,
     };
+
+    #[test]
+    fn only_requests_that_change_obs_count_as_activity() {
+        let request = |request_type: &str| json!({"op": 6, "d": {"requestType": request_type, "requestId": "1"}});
+        let batch = |types: &[&str]| {
+            let requests = types
+                .iter()
+                .map(|request_type| json!({"requestType": request_type}))
+                .collect::<Vec<_>>();
+            json!({"op": 8, "d": {"requestId": "1", "requests": requests}})
+        };
+
+        assert!(!changes_obs(&request("GetSourceScreenshot")));
+        assert!(!changes_obs(&request("GetStats")));
+        assert!(!changes_obs(
+            &json!({"op": 3, "d": {"eventSubscriptions": 65535}})
+        ));
+        assert!(!changes_obs(&batch(&[
+            "GetStreamStatus",
+            "GetRecordStatus"
+        ])));
+
+        assert!(changes_obs(&request("SetCurrentProgramScene")));
+        assert!(changes_obs(&request("StartStream")));
+        assert!(changes_obs(&batch(&["GetSceneList", "SetInputMute"])));
+        assert!(changes_obs(&json!({"op": 6, "d": {}})));
+    }
 
     #[test]
     fn connect_state_uses_the_live_wire_values() {
