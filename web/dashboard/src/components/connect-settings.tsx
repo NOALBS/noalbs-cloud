@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, Download, Pencil, Play, Plus, Square, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, apiWithTimeout, unwrap } from "@/api/client";
@@ -14,6 +14,14 @@ import type {
   PcObsState,
   Watchdog,
 } from "@/api/types";
+import {
+  ConnectObsButtons,
+  type ConnectProgramDto,
+  ConnectProgramToggle,
+  connectProgramsKey,
+  useConnectProgramControl,
+  useConnectPrograms,
+} from "@/components/connect-controls";
 import { Section } from "@/components/page";
 import { StatusDot } from "@/components/switcher-status";
 import {
@@ -38,14 +46,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type ConnectObsAction, useConnectObsCommand } from "@/hooks/use-connect-obs-command";
 import { useSwitcher } from "@/hooks/use-switcher";
 import {
   canControlConnect,
   canManageConnectPrograms,
   canViewConnectLogs,
   connectAccessOptions,
-  connectObsActionAvailability,
   pcObsLabel,
   watchdogOptions,
 } from "@/lib/connect";
@@ -58,18 +64,6 @@ import { errorMessage } from "@/lib/errors";
 import { isOwner, isSupport } from "@/lib/permissions";
 import { redactLog } from "@/lib/redact-log";
 import { formatRelative } from "@/lib/time";
-
-type ConnectProgramDto = {
-  id: string;
-  name: string;
-  path: string;
-  args: string[];
-  start_with_obs: boolean;
-  stop_with_obs: boolean;
-  close_when_idle: boolean;
-  added_from_dashboard_by: string | null;
-};
-type ConnectProgramStatusDto = { program: ConnectProgramDto; running: boolean };
 
 export function ConnectSettings() {
   const { workspace, switcher, actor, canManage, path } = useSwitcher();
@@ -427,20 +421,10 @@ function ConnectProgramsCard({
   const [removeProgramId, setRemoveProgramId] = useState<string | null>(null);
   const [editingExisting, setEditingExisting] = useState(false);
   const [editingRefused, setEditingRefused] = useState(false);
-  const queryKey = [...queryKeys.connectDevices(path.workspace_id, path.switcher_id), "programs"];
-  const programs = useQuery({
-    queryKey,
-    queryFn: async () =>
-      (await unwrap(
-        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs", {
-          params: { path },
-        }),
-      )) as ConnectProgramStatusDto[],
-    refetchInterval: 2_000,
-  });
+  const programs = useConnectPrograms(path);
   const refresh = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({ queryKey: connectProgramsKey(path) }),
       queryClient.invalidateQueries({
         queryKey: queryKeys.switchers(path.workspace_id),
       }),
@@ -491,17 +475,7 @@ function ConnectProgramsCard({
     },
     onError: mutationError,
   });
-  const control = useMutation({
-    mutationFn: ({ programId, action }: { programId: string; action: "start" | "stop" }) =>
-      unwrap(
-        apiWithTimeout(70_000).POST(
-          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/programs/{program_id}/{action}",
-          { params: { path: { ...path, program_id: programId, action } } },
-        ),
-      ),
-    onSuccess: refresh,
-    onError: mutationError,
-  });
+  const control = useConnectProgramControl(path, mutationError);
 
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-divider p-4">
@@ -575,24 +549,11 @@ function ConnectProgramsCard({
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!online || control.isPending || running}
-              onClick={() => control.mutate({ programId: program.id, action: "start" })}
-            >
-              <Play />
-              <Trans>Start</Trans>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!online || control.isPending || !running}
-              onClick={() => control.mutate({ programId: program.id, action: "stop" })}
-            >
-              <Square />
-              <Trans>Stop</Trans>
-            </Button>
+            <ConnectProgramToggle
+              running={running}
+              disabled={!online || control.isPending}
+              onToggle={(action) => control.mutate({ programId: program.id, action })}
+            />
             <Button
               size="sm"
               variant="outline"
@@ -793,9 +754,6 @@ function ConnectDeviceRow({
 }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(device.name);
-  const [confirmAction, setConfirmAction] = useState<"stop" | "restart" | null>(null);
-  const obsCommand = useConnectObsCommand(path);
-  const obsActions = connectObsActionAvailability(onlineObs);
   const changed = name.trim() !== device.name;
   const rename = useMutation({
     mutationFn: () =>
@@ -905,75 +863,14 @@ function ConnectDeviceRow({
           </AlertDialog>
         </div>
       )}
-      {canControlObs && obsActions.visible && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!obsActions.canStart || obsCommand.isPending}
-            onClick={() => obsCommand.mutate("start")}
-          >
-            <Trans>Start OBS</Trans>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!obsActions.canStopOrRestart || obsCommand.isPending}
-            onClick={() => setConfirmAction("stop")}
-          >
-            <Trans>Stop OBS</Trans>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!obsActions.canStopOrRestart || obsCommand.isPending}
-            onClick={() => setConfirmAction("restart")}
-          >
-            <Trans>Restart OBS</Trans>
-          </Button>
-        </div>
+      {canControlObs && onlineObs && (
+        <ConnectObsButtons
+          path={path}
+          obs={onlineObs}
+          deviceName={device.name}
+          streaming={streaming}
+        />
       )}
-      <AlertDialog
-        open={confirmAction !== null}
-        onOpenChange={(open) => !open && setConfirmAction(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmAction === "stop" ? t`Stop OBS?` : t`Restart OBS?`}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {streaming ? (
-                <Trans>
-                  The stream is live and will drop if OBS stops. Do you want to continue?
-                </Trans>
-              ) : confirmAction === "stop" ? (
-                <Trans>Stop OBS on {device.name}?</Trans>
-              ) : (
-                <Trans>Restart OBS on {device.name}?</Trans>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={obsCommand.isPending}>
-              <Trans>Cancel</Trans>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={obsCommand.isPending}
-              onClick={(event) => {
-                event.preventDefault();
-                if (confirmAction) {
-                  obsCommand.mutate(confirmAction satisfies ConnectObsAction, {
-                    onSuccess: () => setConfirmAction(null),
-                  });
-                }
-              }}
-            >
-              {confirmAction === "stop" ? <Trans>Stop OBS</Trans> : <Trans>Restart OBS</Trans>}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

@@ -2127,6 +2127,7 @@ msgstr "제거할 수 없어요: {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -2502,6 +2503,7 @@ msgstr "결제를 확인하는 중이에요… 몇 초 걸려요."
 msgid "Connect"
 msgstr "연결"
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
 msgstr "Connect · {connectDeviceName}"
@@ -2528,9 +2530,14 @@ msgstr "BELABOX Cloud 연결"
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "플랫폼에서 요청하면 본인 계정이 아닌 봇 계정으로 로그인해 연결하세요."
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connect 컴퓨터"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect controls"
+msgstr "Connect 제어"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
@@ -2564,6 +2571,11 @@ msgstr "장면을 선택하려면 OBS를 연결하세요."
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
 msgstr "Connect 권한 변경됨"
+
+#: src/components/app-shell.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect settings"
+msgstr "Connect 설정"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect the channel you stream on so its chat can run commands."
@@ -4617,6 +4629,7 @@ msgstr "로그를 불러오는 중…"
 msgid "Loading logs…"
 msgstr "로그 목록을 불러오는 중…"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "프로그램을 불러오는 중…"
@@ -5584,6 +5597,7 @@ msgstr "아직 가격이 없어 플랜 페이지에 출시 예정으로 표시�
 msgid "No price: it’s the free plan."
 msgstr "가격 없음: 무료 플랜이에요."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "No programs have been added yet."
 msgstr "아직 추가된 프로그램이 없어요."
@@ -5707,6 +5721,11 @@ msgstr "NOALBS Cloud를 한눈에 보세요."
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
 msgstr "NOALBS Cloud Connect"
+
+#. placeholder {0}: pcObsLabel(obs)
+#: src/components/connect-controls.tsx
+msgid "NOALBS Cloud Connect · {0}"
+msgstr "NOALBS Cloud Connect · {0}"
 
 #: src/components/belabox-settings.tsx
 msgid "NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX. BELABOX is a trademark of its owner."
@@ -6064,6 +6083,7 @@ msgstr "공지"
 msgid "now"
 msgstr "지금"
 
+#: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS"
 msgstr "OBS"
@@ -7051,6 +7071,7 @@ msgstr "프로그램 시작됨"
 msgid "Program stopped"
 msgstr "프로그램 중지됨"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Programs"
 msgstr "프로그램"
@@ -7481,7 +7502,7 @@ msgstr "요청에 실패했어요 ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "Connect로 OBS 로그를 요청했어요"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr "OBS 다시 시작"
@@ -7490,12 +7511,11 @@ msgstr "OBS 다시 시작"
 msgid "Restart OBS and go live again"
 msgstr "OBS 다시 시작하고 방송 재개"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Restart OBS on {0}?"
-msgstr "{0}에서 OBS를 다시 시작할까요?"
+#: src/components/connect-controls.tsx
+msgid "Restart OBS on {deviceName}?"
+msgstr "{deviceName}에서 OBS를 다시 시작할까요?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Restart OBS?"
 msgstr "OBS를 다시 시작할까요?"
 
@@ -7643,6 +7663,7 @@ msgstr "RTT 구간: LOW {0}, BRB {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT 트리거는 1~60,000 ms 사이여야 해요."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Running"
 msgstr "실행 중"
@@ -8418,7 +8439,7 @@ msgstr "스태프 전용"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "스태프: <0>관리자 페이지의 이 워크스페이스</0>(플랜 설정, 결제 확인)."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "시작"
@@ -8439,7 +8460,7 @@ msgstr "핫스팟 시작"
 msgid "Start Moblin with the OBS stream"
 msgstr "OBS 방송과 함께 Moblin 시작"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Start OBS"
 msgstr "OBS 시작"
@@ -8543,7 +8564,7 @@ msgid "Stealth on"
 msgstr "스텔스 켜짐"
 
 #: src/components/admin/products.tsx
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8574,16 +8595,15 @@ msgstr "Moblin 중지"
 msgid "Stop Moblin with the OBS stream"
 msgstr "OBS 방송과 함께 Moblin 중지"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS"
 msgstr "OBS 중지"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Stop OBS on {0}?"
-msgstr "{0}에서 OBS를 중지할까요?"
+#: src/components/connect-controls.tsx
+msgid "Stop OBS on {deviceName}?"
+msgstr "{deviceName}에서 OBS를 중지할까요?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS?"
 msgstr "OBS를 중지할까요?"
 
@@ -8647,6 +8667,7 @@ msgstr "OBS와 함께 중지"
 msgid "Stop, and restart when shown"
 msgstr "정지하고 보이면 처음부터 재생"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Stopped"
 msgstr "중지됨"
@@ -9531,7 +9552,7 @@ msgstr "OBS, 스트림 서버, 장면을 연결하는 단계별 체크리스트�
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "내 스위처의 방송 기록, 통계, 마커, 활동 로그를 한 줄에 JSON 객체 하나로 제공해요. 용량이 클 수 있어요."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "방송 중이라 OBS가 중지되면 방송이 끊겨요. 계속할까요?"
 
@@ -10649,6 +10670,10 @@ msgstr "이 조직에서 이 작업을 할 권한이 없어요"
 #: src/lib/api-messages.ts
 msgid "You do not have permission to do this in this workspace"
 msgstr "이 워크스페이스에서 이 작업을 할 권한이 없어요"
+
+#: src/components/connect-controls.tsx
+msgid "You don’t have access to control this computer."
+msgstr "이 컴퓨터를 제어할 권한이 없습니다."
 
 #. placeholder {0}: describeAddon(owned, addon.unit)
 #. placeholder {1}: !forSale && t` You can keep or lower it, but not add more for now.`

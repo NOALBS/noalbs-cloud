@@ -2127,6 +2127,7 @@ msgstr "Нельзя удалить: {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -2502,6 +2503,7 @@ msgstr "Подтверждаем платёж… это займёт неско�
 msgid "Connect"
 msgstr "Подключить"
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
 msgstr "Connect · {connectDeviceName}"
@@ -2528,9 +2530,14 @@ msgstr "Подключить BELABOX Cloud"
 msgid "Connect by signing in as the bot account (not your own) when the platform asks."
 msgstr "Подключи, войдя как бот-аккаунт (не как свой), когда платформа попросит."
 
+#: src/components/app-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Компьютер с Connect"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect controls"
+msgstr "Управление Connect"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
@@ -2564,6 +2571,11 @@ msgstr "Подключи OBS, чтобы выбрать сцены."
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
 msgstr "Разрешения Connect изменены"
+
+#: src/components/app-shell.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Connect settings"
+msgstr "Настройки Connect"
 
 #: src/components/chat/chat-links.tsx
 msgid "Connect the channel you stream on so its chat can run commands."
@@ -4617,6 +4629,7 @@ msgstr "Загрузка лога…"
 msgid "Loading logs…"
 msgstr "Загрузка логов…"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "Загрузка программ…"
@@ -5584,6 +5597,7 @@ msgstr "Цены пока нет, поэтому на странице «Тар�
 msgid "No price: it’s the free plan."
 msgstr "Без цены: это бесплатный тариф."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "No programs have been added yet."
 msgstr "Программы пока не добавлены."
@@ -5707,6 +5721,11 @@ msgstr "NOALBS Cloud с первого взгляда."
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
 msgstr "NOALBS Cloud Connect"
+
+#. placeholder {0}: pcObsLabel(obs)
+#: src/components/connect-controls.tsx
+msgid "NOALBS Cloud Connect · {0}"
+msgstr "NOALBS Cloud Connect · {0}"
 
 #: src/components/belabox-settings.tsx
 msgid "NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX. BELABOX is a trademark of its owner."
@@ -6064,6 +6083,7 @@ msgstr "Объявления"
 msgid "now"
 msgstr "сейчас"
 
+#: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS"
 msgstr "OBS"
@@ -7051,6 +7071,7 @@ msgstr "Программа запущена"
 msgid "Program stopped"
 msgstr "Программа остановлена"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Programs"
 msgstr "Программы"
@@ -7481,7 +7502,7 @@ msgstr "Запрос не выполнен ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "Запрошен лог OBS через Connect"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
 msgstr "Перезапустить OBS"
@@ -7490,12 +7511,11 @@ msgstr "Перезапустить OBS"
 msgid "Restart OBS and go live again"
 msgstr "Перезапустить OBS и снова выйти в эфир"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Restart OBS on {0}?"
-msgstr "Перезапустить OBS на {0}?"
+#: src/components/connect-controls.tsx
+msgid "Restart OBS on {deviceName}?"
+msgstr "Перезапустить OBS на {deviceName}?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Restart OBS?"
 msgstr "Перезапустить OBS?"
 
@@ -7643,6 +7663,7 @@ msgstr "Шкала RTT: LOW на {0}, BRB на {1} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "Триггеры RTT должны быть от 1 до 60 000 ms."
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Running"
 msgstr "Работает"
@@ -8418,7 +8439,7 @@ msgstr "Только для сотрудников"
 msgid "Staff: <0>this workspace in Admin</0> (set its plan, see its billing)."
 msgstr "Сотрудникам: <0>это рабочее пространство в разделе администратора</0> (задать тариф, посмотреть оплату)."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 msgid "Start"
 msgstr "Запустить"
@@ -8439,7 +8460,7 @@ msgstr "Запустить точку доступа"
 msgid "Start Moblin with the OBS stream"
 msgstr "Запускать Moblin вместе со стримом OBS"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Start OBS"
 msgstr "Запустить OBS"
@@ -8543,7 +8564,7 @@ msgid "Stealth on"
 msgstr "Стелс вкл."
 
 #: src/components/admin/products.tsx
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Stop"
@@ -8574,16 +8595,15 @@ msgstr "Остановить Moblin"
 msgid "Stop Moblin with the OBS stream"
 msgstr "Останавливать Moblin вместе со стримом OBS"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS"
 msgstr "Остановить OBS"
 
-#. placeholder {0}: device.name
-#: src/components/connect-settings.tsx
-msgid "Stop OBS on {0}?"
-msgstr "Остановить OBS на {0}?"
+#: src/components/connect-controls.tsx
+msgid "Stop OBS on {deviceName}?"
+msgstr "Остановить OBS на {deviceName}?"
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "Stop OBS?"
 msgstr "Остановить OBS?"
 
@@ -8647,6 +8667,7 @@ msgstr "Останавливать вместе с OBS"
 msgid "Stop, and restart when shown"
 msgstr "Останавливать и запускать заново при показе"
 
+#: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 msgid "Stopped"
 msgstr "Остановлена"
@@ -9531,7 +9552,7 @@ msgstr "Пошаговый список для подключения OBS, ст�
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "История стримов, статистика, маркеры и журнал активности твоих собственных свитчеров, один объект JSON на строку. Файл может быть большим."
 
-#: src/components/connect-settings.tsx
+#: src/components/connect-controls.tsx
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "Трансляция идёт в эфире и прервётся, если OBS остановится. Продолжить?"
 
@@ -10649,6 +10670,10 @@ msgstr "У тебя нет разрешения делать это в этой 
 #: src/lib/api-messages.ts
 msgid "You do not have permission to do this in this workspace"
 msgstr "У тебя нет разрешения делать это в этом рабочем пространстве"
+
+#: src/components/connect-controls.tsx
+msgid "You don’t have access to control this computer."
+msgstr "У вас нет доступа к управлению этим компьютером."
 
 #. placeholder {0}: describeAddon(owned, addon.unit)
 #. placeholder {1}: !forSale && t` You can keep or lower it, but not add more for now.`

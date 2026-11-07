@@ -6,6 +6,7 @@ import { MonitorPlay, PauseCircle, PlugZap, Radio, WifiOff } from "lucide-react"
 import type { ComponentProps, ReactNode } from "react";
 import { streamServersQuery, switchersQuery } from "@/api/queries";
 import type { SwitcherStatus } from "@/api/types";
+import { ConnectDialog } from "@/components/connect-controls";
 import { ActivityFeed } from "@/components/live/activity-feed";
 import { AudioMixer } from "@/components/live/audio-mixer";
 import { BelaboxCard } from "@/components/live/belabox-card";
@@ -31,7 +32,12 @@ import { Button } from "@/components/ui/button";
 import { useConnectObsCommand } from "@/hooks/use-connect-obs-command";
 import { useNow } from "@/hooks/use-now";
 import { useSwitcher } from "@/hooks/use-switcher";
-import { canControlConnect, connectObsActionAvailability, pcObsLabel } from "@/lib/connect";
+import {
+  canControlConnect,
+  canManageConnectPrograms,
+  connectObsActionAvailability,
+  pcObsLabel,
+} from "@/lib/connect";
 import { formatKbps, formatUptime } from "@/lib/live-format";
 import { can, isOwner, isSupport, seesPreviewOffAir } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -78,10 +84,34 @@ function LivePage() {
       description={`${switcher.name} · ${activeServer ? activeServer.name : t`No stream server`} → OBS`}
       actions={
         <div className="hidden flex-wrap items-center gap-2.5 lg:flex">
-          <Health
-            ok={Boolean(status?.browser_source)}
-            label={status?.pc ? t`Connect · ${connectDeviceName}` : t`Browser source`}
-          />
+          {status?.pc ? (
+            <ConnectDialog
+              path={path}
+              deviceName={connectDeviceName}
+              obs={status.pc.obs}
+              streaming={status.streaming}
+              canControlObs={canControlConnectObs}
+              canControlPrograms={canManageConnectPrograms(switcher.connect_programs, actor)}
+              settingsLink={
+                <Link
+                  to="/$workspace/s/$switcher/obs"
+                  params={params}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  <Trans>Connect settings</Trans>
+                </Link>
+              }
+            >
+              <Health
+                ok={Boolean(status.browser_source)}
+                label={t`Connect · ${connectDeviceName}`}
+                title={t`Connect controls`}
+                interactive
+              />
+            </ConnectDialog>
+          ) : (
+            <Health ok={Boolean(status?.browser_source)} label={t`Browser source`} />
+          )}
           <ObsStatsPopover
             path={path}
             connected={Boolean(status?.obs_connected)}
@@ -185,42 +215,47 @@ function LivePage() {
       )}
 
       {status && !status.obs_connected && !feedDown && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-low/40 bg-low/10 p-4">
-          <PlugZap className="size-5 text-low" />
-          {status.pc ? (
-            <>
-              <p className="flex-1 text-sm">
+        // Text gets the full width on phones, with the actions below it (lined up
+        // with the text); side by side from `sm`. The device name is the user's own.
+        <div className="flex flex-col gap-3 rounded-2xl border border-low/40 bg-low/10 p-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <PlugZap className="mt-px size-5 shrink-0 text-low" />
+            <p className="min-w-0 flex-1 text-sm [overflow-wrap:anywhere]">
+              {status.pc ? (
                 <Trans>
                   <strong>{connectDeviceName} is connected, but OBS isn’t.</strong>{" "}
                   {pcObsLabel(status.pc.obs)}.
                 </Trans>
-              </p>
-              {canControlConnectObs && connectObsActionAvailability(status.pc.obs).canStart && (
-                <Button
-                  size="sm"
-                  disabled={obsCommand.isPending}
-                  onClick={() => obsCommand.mutate("start")}
-                >
-                  <Trans>Start OBS</Trans>
-                </Button>
-              )}
-              <Link
-                to="/$workspace/s/$switcher/obs"
-                params={params}
-                className="text-sm font-semibold text-primary hover:underline"
-              >
-                <Trans>Open settings</Trans>
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className="flex-1 text-sm">
+              ) : (
                 <Trans>
                   <strong>The browser source can’t reach OBS.</strong> Check that WebSocket is on in
                   OBS (Tools → WebSocket Server Settings) and that the port and password match
                   Setup.
                 </Trans>
-              </p>
+              )}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pl-8 sm:pl-0">
+            {status.pc ? (
+              <>
+                {canControlConnectObs && connectObsActionAvailability(status.pc.obs).canStart && (
+                  <Button
+                    size="sm"
+                    disabled={obsCommand.isPending}
+                    onClick={() => obsCommand.mutate("start")}
+                  >
+                    <Trans>Start OBS</Trans>
+                  </Button>
+                )}
+                <Link
+                  to="/$workspace/s/$switcher/obs"
+                  params={params}
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
+                  <Trans>Open settings</Trans>
+                </Link>
+              </>
+            ) : (
               <Link
                 to="/$workspace/s/$switcher/setup"
                 params={params}
@@ -228,8 +263,8 @@ function LivePage() {
               >
                 <Trans>Open Setup</Trans>
               </Link>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -545,8 +580,9 @@ function Health({
 }: { ok: boolean; label: string; interactive?: boolean } & ComponentProps<"button">) {
   const content = (
     <>
-      <span className={cn("size-1.5 rounded-full", ok ? "bg-live" : "bg-offline")} />
-      {label}
+      <span className={cn("size-1.5 shrink-0 rounded-full", ok ? "bg-live" : "bg-offline")} />
+      {/* Labels can carry a user-chosen computer name. */}
+      <span className="max-w-56 truncate">{label}</span>
       <span className="sr-only">{ok ? t`connected` : t`not connected`}</span>
     </>
   );
