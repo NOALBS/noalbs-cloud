@@ -55,6 +55,16 @@ struct LinkSession {
     command_consumer: tauri::async_runtime::JoinHandle<()>,
 }
 
+impl LinkSession {
+    fn active_obs_state(&self) -> Option<PcObsState> {
+        (*self.cloud_state.borrow() != CloudLinkState::TakenOver).then(|| *self.state.borrow())
+    }
+
+    fn watchdog_restarts(&self) -> bool {
+        self.active_obs_state().is_some() && *self.watchdog.borrow() != WatchdogMode::Off
+    }
+}
+
 struct AppState {
     config: Mutex<AppConfig>,
     startup_error: Option<String>,
@@ -187,7 +197,7 @@ fn build_ui_state_with(
             .map(|setup| {
                 let link_state = sessions
                     .get(&setup.id)
-                    .map(|session| *session.state.borrow());
+                    .and_then(LinkSession::active_obs_state);
                 let process_state = link_state.map_or_else(
                     || supervisor.state_with(setup, process_snapshot.system()),
                     |_| PcObsState::Unknown,
@@ -1502,7 +1512,7 @@ fn tray_setup_labels(state: &AppState) -> Vec<(String, String)> {
             .map(|setup| {
                 let link_state = sessions
                     .get(&setup.id)
-                    .map(|session| *session.state.borrow());
+                    .and_then(LinkSession::active_obs_state);
                 let process_state = link_state.map_or_else(
                     || supervisor.state_with(setup, snapshot.system()),
                     |_| PcObsState::Unknown,
@@ -2175,9 +2185,7 @@ fn start_ui_state_monitor(app: &tauri::AppHandle) {
                     .lock()
                     .ok()
                     .and_then(|sessions| {
-                        sessions
-                            .get(&setup_id)
-                            .map(|session| *session.watchdog.borrow() != WatchdogMode::Off)
+                        sessions.get(&setup_id).map(LinkSession::watchdog_restarts)
                     })
                     .unwrap_or(false);
                 let action = programs::lifecycle_for_transition(
@@ -2441,7 +2449,7 @@ mod tests {
                 cloud_state,
                 state: watch::channel(PcObsState::Connected).0,
                 programs: watch::channel(Vec::new()).0,
-                watchdog: watch::channel(WatchdogMode::Off).1,
+                watchdog: watch::channel(WatchdogMode::Restart).1,
                 effective_obs: watch::channel(None).1,
                 activity: Arc::new(AtomicU64::new(0)),
                 task: task(),
@@ -2457,7 +2465,18 @@ mod tests {
             cloud.send_replace(next);
             let summary = &build_ui_state(&state).setups[0];
             assert_eq!(summary.cloud_state, Some(next));
-            assert_eq!(summary.obs_state, PcObsState::Connected);
+            assert_eq!(
+                summary.obs_state,
+                if next == CloudLinkState::TakenOver {
+                    PcObsState::NotRunning
+                } else {
+                    PcObsState::Connected
+                }
+            );
+            assert_eq!(
+                state.link_sessions.lock().unwrap()[&id].watchdog_restarts(),
+                next != CloudLinkState::TakenOver
+            );
             assert!(
                 tray_setup_labels(&state)[0]
                     .1
@@ -3127,6 +3146,17 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn clearing_pairing_falls_back_to_the_running_obs_state() {
+        assert_inactive_link_uses_process_state(false).await;
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn takeover_keeps_live_obs_state_and_stops_programs_with_obs() {
+        assert_inactive_link_uses_process_state(true).await;
+    }
+
+    #[cfg(unix)]
+    async fn assert_inactive_link_uses_process_state(taken_over: bool) {
         use std::os::unix::fs::PermissionsExt;
 
         let test_dir =
@@ -3142,9 +3172,23 @@ mod tests {
         permissions.set_mode(0o755);
         std::fs::set_permissions(&obs_binary, permissions).unwrap();
 
+        let program_binary = test_dir.join("sidecar");
+        std::fs::copy("/bin/sleep", &program_binary).unwrap();
+        let program = common::programs::Program {
+            id: uuid::Uuid::new_v4(),
+            name: "Sidecar".into(),
+            path: program_binary,
+            args: vec!["300".into()],
+            start_with_obs: false,
+            stop_with_obs: true,
+            close_when_idle: false,
+            added_from_dashboard_by: None,
+        };
+
         let mut setup = Setup::new("Rejected pairing".into());
         setup.obs.install_kind = connect_core::config::InstallKind::CustomBinary;
         setup.obs.binary_path = Some(obs_binary);
+        setup.programs.push(program.clone());
         setup.pairing = Some(connect_core::config::Pairing {
             device_id: uuid::Uuid::new_v4(),
             switcher_id: uuid::Uuid::new_v4(),
@@ -3177,14 +3221,15 @@ mod tests {
             assert_eq!(supervisor.state(&setup), PcObsState::Connected);
         }
         let (state_tx, _) = watch::channel(PcObsState::Connected);
+        let (cloud, cloud_state) = watch::channel(CloudLinkState::Connected);
         let (_, effective_obs) = watch::channel(None);
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
                 state: state_tx,
-                cloud_state: watch::channel(CloudLinkState::Connected).1,
+                cloud_state,
                 programs: watch::channel(Vec::new()).0,
-                watchdog: watch::channel(WatchdogMode::Off).1,
+                watchdog: watch::channel(WatchdogMode::Restart).1,
                 effective_obs,
                 activity: Arc::new(AtomicU64::new(0)),
                 task: tauri::async_runtime::JoinHandle::Tokio(tokio::spawn(
@@ -3199,16 +3244,49 @@ mod tests {
             },
         );
 
-        clear_pairing_state(&state, setup_id, false).unwrap();
+        programs::start(&program).unwrap();
+        if taken_over {
+            cloud.send_replace(CloudLinkState::TakenOver);
+            stop_taken_over_session(&state, setup_id);
+            assert!(state.config.lock().unwrap().setups[0].pairing.is_some());
+        } else {
+            clear_pairing_state(&state, setup_id, false).unwrap();
+        }
+        let before = build_ui_state(&state).setups.remove(0);
+        assert_eq!(before.obs_state, PcObsState::Starting);
+        assert!(before.programs[0].running);
         let mut supervisor = state.supervisor.lock().unwrap();
         assert_eq!(supervisor.state(&setup), PcObsState::Starting);
         assert!(supervisor.owns_running_process(&setup));
         supervisor.stop(&setup).unwrap();
         drop(supervisor);
-        assert_eq!(
-            build_ui_state(&state).setups[0].obs_state,
-            PcObsState::NotRunning
-        );
+        let after = build_ui_state(&state).setups.remove(0);
+        assert_eq!(after.obs_state, PcObsState::NotRunning);
+        let watchdog_restarts = state
+            .link_sessions
+            .lock()
+            .unwrap()
+            .get(&setup_id)
+            .is_some_and(LinkSession::watchdog_restarts);
+        for stopped_state in [after.obs_state, PcObsState::Crashed] {
+            assert_eq!(
+                programs::lifecycle_for_transition(
+                    Some(programs::obs_is_running(&before.obs_state)),
+                    &stopped_state,
+                    watchdog_restarts
+                ),
+                Some(ObsLifecycleAction::Stop)
+            );
+        }
+        for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
+            programs::stop(program, Duration::from_secs(1)).unwrap();
+        }
+        assert!(!build_ui_state(&state).setups[0].programs[0].running);
+        if taken_over {
+            assert_eq!(after.cloud_state, Some(CloudLinkState::TakenOver));
+            assert!(tray_setup_labels(&state)[0].1.contains("OBS not running"));
+            remove_link_session(&state, setup_id, true).unwrap();
+        }
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
