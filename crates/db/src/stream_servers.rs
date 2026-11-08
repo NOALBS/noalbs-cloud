@@ -307,14 +307,36 @@ pub async fn set_overrides(
     Ok(stream_server)
 }
 
+/// Deletes the server and the server combinations (scene rules) it is in, so
+/// e.g. "S1 + S3" doesn't quietly become a rule for S1 alone.
 #[tracing::instrument(skip(pool))]
 pub async fn delete(pool: &PgPool, switcher_id: Uuid, stream_server_id: Uuid) -> Result<bool> {
+    let mut tx = pool.begin().await?;
+
+    // Like a rule save, so a save can't add this server to a rule between
+    // the two deletes (the cascade would then leave the rule without it).
+    if !crate::scene_rules::lock_switcher(&mut tx, switcher_id).await? {
+        return Ok(false);
+    }
+    sqlx::query(
+        "
+        DELETE FROM scene_rules
+        WHERE switcher_id = $2 AND id IN (
+            SELECT scene_rule_id FROM scene_rule_servers WHERE stream_server_id = $1
+        )
+        ",
+    )
+    .bind(stream_server_id)
+    .bind(switcher_id)
+    .execute(&mut *tx)
+    .await?;
     let result = sqlx::query("DELETE FROM stream_servers WHERE id = $1 AND switcher_id = $2")
         .bind(stream_server_id)
         .bind(switcher_id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
 
+    tx.commit().await?;
     Ok(result.rows_affected() > 0)
 }
 

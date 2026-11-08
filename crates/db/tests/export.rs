@@ -26,6 +26,8 @@ const EXPORTED: &[&str] = &[
     "organization_invites",
     "organization_members",
     "organizations",
+    "scene_rule_servers",
+    "scene_rules",
     "staff_actions",
     "stream_markers",
     "stream_servers",

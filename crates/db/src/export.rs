@@ -219,6 +219,9 @@ pub struct Switcher {
     /// its encrypted password and API key.
     #[cfg_attr(feature = "openapi", schema(value_type = Vec<Object>))]
     pub stream_servers: serde_json::Value,
+    /// Each server combination as stored, with its servers' IDs.
+    #[cfg_attr(feature = "openapi", schema(value_type = Vec<Object>))]
+    pub scene_rules: serde_json::Value,
     #[cfg_attr(feature = "openapi", schema(value_type = Vec<LinkedChannel>))]
     pub chat_channels: Json<Vec<LinkedChannel>>,
     #[cfg_attr(feature = "openapi", schema(value_type = Vec<CommandOverride>))]
@@ -711,6 +714,17 @@ async fn switchers(pool: &PgPool, workspace_id: Uuid) -> Result<Vec<Switcher>> {
                         ORDER BY servers.priority)
                     FROM stream_servers AS servers WHERE servers.switcher_id = switchers.id
                 ), '[]') AS stream_servers,
+                COALESCE((
+                    SELECT jsonb_agg(
+                        to_jsonb(rules) - 'switcher_id'
+                            || jsonb_build_object('server_ids', COALESCE((
+                                SELECT jsonb_agg(members.stream_server_id)
+                                FROM scene_rule_servers AS members
+                                WHERE members.scene_rule_id = rules.id
+                            ), '[]'))
+                        ORDER BY rules.priority)
+                    FROM scene_rules AS rules WHERE rules.switcher_id = switchers.id
+                ), '[]') AS scene_rules,
                 COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
                         'platform', channels.platform,

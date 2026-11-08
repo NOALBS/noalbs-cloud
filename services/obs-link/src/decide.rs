@@ -9,6 +9,9 @@
 //! ([`Reading::Previous`]) keeps the LIVE or LOW scene we were on. After
 //! `offline_timeout` on a BRB scene with no feed, or `ending_timeout` on the
 //! Ending scene, it stops the stream.
+//!
+//! On top of NOALBS, [`Rule`]s (server combinations) swap in their own scenes
+//! while all of their servers have a feed; the first matching rule wins.
 
 use std::{
     collections::HashMap,
@@ -64,6 +67,16 @@ pub struct Server {
     pub delay_live_recovery: bool,
 }
 
+/// A server combination: while every one of `servers` has a feed (whatever
+/// else does too), its scenes are used instead of the in-use server's. LIVE or
+/// LOW is still the highest-priority server's feed.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Rule {
+    pub id: Uuid,
+    pub servers: Vec<Uuid>,
+    pub scenes: RoleScenes,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     pub auto_switch: bool,
@@ -78,6 +91,8 @@ pub struct Config {
     pub switch_to_live: bool,
     /// Enabled servers, highest priority first.
     pub servers: Vec<Server>,
+    /// Enabled server combinations, first match wins.
+    pub rules: Vec<Rule>,
     /// Stop the stream after this long on a BRB scene with no feed, while the
     /// switcher is in charge (NOALBS's offline timeout).
     pub offline_timeout: Option<Duration>,
@@ -115,12 +130,30 @@ pub struct Memory {
     same: u32,
     /// The server last in use; its offline scene applies while all are offline.
     last_server: Option<Uuid>,
+    /// The rule matched at the last check: a change must hold like a new feed.
+    seen_rule: Option<Uuid>,
+    /// The rule last in use; its offline scene applies before the server's.
+    last_rule: Option<Uuid>,
     /// The LIVE or LOW scene last aimed for, for [`Reading::Previous`].
     previous_scene: Option<Uuid>,
     /// Since when the stream has been on a BRB scene with no feed.
     offline_since: Option<Instant>,
     /// Since when the stream has been on the Ending scene.
     ending_since: Option<Instant>,
+    /// A scene the previous run (before a config change) owned, and its role
+    /// then, while it stays on air. Lets the switcher leave e.g. the scene of a
+    /// combination that was just turned off.
+    handed_over: Option<(Uuid, FeedState)>,
+}
+
+impl Memory {
+    /// Memory for a run that starts while `scene` (playing `role`) is on air.
+    pub fn handed_over(scene: Uuid, role: FeedState) -> Self {
+        Self {
+            handed_over: Some((scene, role)),
+            ..Self::default()
+        }
+    }
 }
 
 /// Why the stream is to stop.
@@ -136,6 +169,10 @@ pub struct Outcome {
     pub state: FeedState,
     /// The server whose feed is being used.
     pub active_server: Option<Uuid>,
+    /// The server combination whose scenes are on air: the one last switched
+    /// for, while OBS shows one of its scenes. Not one that only matches (e.g.
+    /// while holding, or on a scene of the streamer's own).
+    pub active_rule: Option<Uuid>,
     /// Switch to this scene now.
     pub switch_to: Option<Uuid>,
     /// A timeout ran out: stop the stream.
@@ -183,12 +220,41 @@ pub fn evaluate(config: &Config, readings: &HashMap<Uuid, Reading>) -> (Feed, Op
     (Feed::Offline, None)
 }
 
-fn scene_for(config: &Config, state: FeedState, server: Option<Uuid>) -> Option<Uuid> {
+/// The first rule whose servers all have a feed.
+pub fn matching_rule<'a>(
+    config: &'a Config,
+    readings: &HashMap<Uuid, Reading>,
+) -> Option<&'a Rule> {
+    config.rules.iter().find(|rule| {
+        !rule.servers.is_empty()
+            && rule.servers.iter().all(|server| {
+                matches!(
+                    readings.get(server),
+                    Some(Reading::Live | Reading::Low | Reading::Previous)
+                )
+            })
+    })
+}
+
+/// The rule's scene for `state`, else the server's override, else the
+/// switcher's.
+fn scene_for(
+    config: &Config,
+    state: FeedState,
+    rule: Option<Uuid>,
+    server: Option<Uuid>,
+) -> Option<Uuid> {
+    let rule = rule
+        .and_then(|id| config.rules.iter().find(|r| r.id == id))
+        .map(|r| r.scenes)
+        .unwrap_or_default();
     let overrides = server
         .and_then(|id| config.servers.iter().find(|s| s.id == id))
         .map(|s| s.overrides)
         .unwrap_or_default();
-    overrides.get(state).or(config.scenes.get(state))
+    rule.get(state)
+        .or(overrides.get(state))
+        .or(config.scenes.get(state))
 }
 
 /// Which automatic role a scene plays, if any.
@@ -201,25 +267,70 @@ fn role_of(config: &Config, scene: Uuid) -> Option<FeedState> {
                     .servers
                     .iter()
                     .any(|server| server.overrides.get(state) == Some(scene))
+                || config
+                    .rules
+                    .iter()
+                    .any(|rule| rule.scenes.get(state) == Some(scene))
         })
 }
 
-/// Scenes the switcher may leave: the role scenes (overrides included), and
-/// Starting when `switch_to_live` is on. Never e.g. "Just Chatting".
-fn switchable(config: &Config, scene: Uuid) -> bool {
-    role_of(config, scene).is_some() || (config.switch_to_live && config.starting == Some(scene))
+/// Which automatic role a scene plays, counting the scene handed over by the
+/// previous run.
+pub fn owned_role(config: &Config, memory: &Memory, scene: Uuid) -> Option<FeedState> {
+    role_of(config, scene).or(memory
+        .handed_over
+        .filter(|&(handed, _)| handed == scene)
+        .map(|(_, role)| role))
+}
+
+/// Scenes the switcher may leave: the role scenes (overrides included), the
+/// scene handed over, and Starting when `switch_to_live` is on. Never e.g.
+/// "Just Chatting".
+fn switchable(config: &Config, memory: &Memory, scene: Uuid) -> bool {
+    owned_role(config, memory, scene).is_some()
+        || (config.switch_to_live && config.starting == Some(scene))
 }
 
 /// Decides whether to switch now, updating `memory` for the next check.
 pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -> Outcome {
+    let mut outcome = decide_switch(config, observation, memory);
+    outcome.active_rule = applied_rule(config, memory, observation.current_scene);
+    outcome
+}
+
+/// The rule last switched for, while OBS shows one of its LIVE, LOW or BRB
+/// scenes (blank ones falling back as when switching).
+fn applied_rule(config: &Config, memory: &Memory, current: Option<Uuid>) -> Option<Uuid> {
+    let rule = memory.last_rule?;
+    let current = current?;
+    if !config.rules.iter().any(|candidate| candidate.id == rule) {
+        return None;
+    }
+    [FeedState::Live, FeedState::Low, FeedState::Offline]
+        .into_iter()
+        .any(|state| scene_for(config, state, Some(rule), memory.last_server) == Some(current))
+        .then_some(rule)
+}
+
+/// Everything but `Outcome::active_rule`, which depends on the memory after it.
+fn decide_switch(config: &Config, observation: &Observation, memory: &mut Memory) -> Outcome {
     let (mut feed, server) = evaluate(config, observation.readings);
+    let rule = matching_rule(config, observation.readings).map(|rule| rule.id);
     let current = observation.current_scene;
+
+    // The handed-over scene only counts until OBS leaves it.
+    if memory
+        .handed_over
+        .is_some_and(|(scene, _)| Some(scene) != current)
+    {
+        memory.handed_over = None;
+    }
 
     // After a restart, holding goes back to the LIVE or LOW scene on air.
     if memory.previous_scene.is_none()
         && let Some(scene) = current
         && matches!(
-            role_of(config, scene),
+            owned_role(config, memory, scene),
             Some(FeedState::Live | FeedState::Low)
         )
     {
@@ -232,7 +343,7 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
         Feed::Offline => FeedState::Offline,
         Feed::Previous => match memory
             .previous_scene
-            .and_then(|scene| role_of(config, scene))
+            .and_then(|scene| owned_role(config, memory, scene))
         {
             Some(FeedState::Low) => FeedState::Low,
             _ => FeedState::Live,
@@ -245,6 +356,7 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
             FeedState::Idle
         },
         active_server: server,
+        active_rule: None,
         switch_to: None,
         stop: None,
     };
@@ -260,7 +372,8 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
     let dead_air = observation.streaming
         && allowed
         && feed == Feed::Offline
-        && current.is_some_and(|scene| role_of(config, scene) == Some(FeedState::Offline));
+        && current
+            .is_some_and(|scene| owned_role(config, memory, scene) == Some(FeedState::Offline));
     let ending = observation.streaming && current.is_some() && current == config.ending;
     let now = observation.now;
     if timed_out(
@@ -275,7 +388,8 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
         outcome.stop = Some(Stop::EndingTimeout);
     }
 
-    let Some(current) = current.filter(|&scene| allowed && switchable(config, scene)) else {
+    let Some(current) = current.filter(|&scene| allowed && switchable(config, memory, scene))
+    else {
         return outcome;
     };
 
@@ -291,10 +405,13 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
         && memory.last_feed != Feed::Live
         && in_use.is_some_and(|s| s.delay_live_recovery);
     let mut force = (recover || degrade) && !delay_live;
-    if feed == memory.last_feed {
+    // Moving onto or off a rule holds like a feed change, so a flapping second
+    // uplink doesn't flip the layout back and forth.
+    if feed == memory.last_feed && rule == memory.seen_rule {
         memory.same += 1;
     } else {
         memory.last_feed = feed;
+        memory.seen_rule = rule;
         memory.same = 0;
     }
     // Holding on another server than the one last in use: that server is
@@ -309,9 +426,14 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
     memory.same = 0;
 
     let target = match feed {
-        Feed::Live => scene_for(config, FeedState::Live, server),
-        Feed::Low => scene_for(config, FeedState::Low, server),
-        Feed::Offline => scene_for(config, FeedState::Offline, memory.last_server),
+        Feed::Live => scene_for(config, FeedState::Live, rule, server),
+        Feed::Low => scene_for(config, FeedState::Low, rule, server),
+        Feed::Offline => scene_for(
+            config,
+            FeedState::Offline,
+            memory.last_rule,
+            memory.last_server,
+        ),
         Feed::Previous => memory.previous_scene,
     };
     if matches!(feed, Feed::Live | Feed::Low) && target.is_some() {
@@ -319,6 +441,7 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
     }
     if feed != Feed::Offline {
         memory.last_server = server;
+        memory.last_rule = rule;
     }
 
     let leaving_starting_for_brb = feed == Feed::Offline && config.starting == Some(current);
@@ -378,6 +501,7 @@ mod tests {
                     ..Server::default()
                 },
             ],
+            rules: Vec::new(),
             offline_timeout: None,
             ending: Some(id(ENDING)),
             ending_timeout: None,
@@ -962,5 +1086,210 @@ mod tests {
             stops(&config, ENDING, &offline, &mut memory, later, 61),
             vec![60]
         );
+    }
+
+    const CAM3: u128 = 102;
+    const CAMS_LIVE: u128 = 9;
+    const CAMS_BRB: u128 = 10;
+    const ALL_LIVE: u128 = 11;
+    const BOTH_RULE: u128 = 200;
+    const ALL_RULE: u128 = 201;
+    const HOME_CAM3_RULE: u128 = 202;
+
+    /// BELABOX + HOME: its own LIVE and BRB scenes, LOW left to the server.
+    fn both() -> Rule {
+        Rule {
+            id: id(BOTH_RULE),
+            servers: vec![id(BELABOX), id(HOME)],
+            scenes: RoleScenes {
+                live: Some(id(CAMS_LIVE)),
+                offline: Some(id(CAMS_BRB)),
+                ..RoleScenes::default()
+            },
+        }
+    }
+
+    fn all() -> Rule {
+        Rule {
+            id: id(ALL_RULE),
+            servers: vec![id(BELABOX), id(HOME), id(CAM3)],
+            scenes: RoleScenes {
+                live: Some(id(ALL_LIVE)),
+                ..RoleScenes::default()
+            },
+        }
+    }
+
+    /// The usual config plus a third server and these rules, in this order.
+    fn with_rules(rules: Vec<Rule>) -> Config {
+        let mut config = config();
+        config.servers.push(Server {
+            id: id(CAM3),
+            ..Server::default()
+        });
+        config.rules = rules;
+        config
+    }
+
+    fn rule_of(config: &Config, readings: &HashMap<Uuid, Reading>) -> Option<Uuid> {
+        matching_rule(config, readings).map(|rule| rule.id)
+    }
+
+    #[test]
+    fn a_rule_applies_while_all_its_servers_have_a_feed() {
+        let config = with_rules(vec![both()]);
+        let belabox = readings(&[(BELABOX, Reading::Live)]);
+        let pair = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+
+        // The second server comes up: its scenes after retry_attempts, like a
+        // feed change, so a flapping uplink can't flip the layout.
+        let mut memory = settled(&config, LIVE, &belabox);
+        // Matching isn't "in use": not while holding on the old scene.
+        assert_eq!(
+            run(&config, LIVE, true, &pair, &mut memory, 1).active_rule,
+            None
+        );
+        assert_eq!(
+            switches_at(&config, LIVE, &pair, &mut memory),
+            Some((3, id(CAMS_LIVE)))
+        );
+        assert_eq!(
+            run(&config, CAMS_LIVE, true, &pair, &mut memory, 1).active_rule,
+            Some(id(BOTH_RULE))
+        );
+        // Nor on a scene of the streamer's own.
+        assert_eq!(
+            run(&config, CHATTING, true, &pair, &mut memory, 1).active_rule,
+            None
+        );
+
+        // It goes away again: back to the server's scene, after as long.
+        assert_eq!(
+            switches_at(&config, CAMS_LIVE, &belabox, &mut memory),
+            Some((4, id(LIVE)))
+        );
+
+        // Both back from offline at once: at once, with instant_recover.
+        let mut memory = settled(&config, BRB, &readings(&[]));
+        assert_eq!(
+            switches_at(&config, BRB, &pair, &mut memory),
+            Some((1, id(CAMS_LIVE)))
+        );
+
+        // A publisher with no bitrate yet counts as a feed; offline doesn't.
+        let holding = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Previous)]);
+        assert_eq!(rule_of(&config, &holding), Some(id(BOTH_RULE)));
+        let down = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Offline)]);
+        assert_eq!(rule_of(&config, &down), None);
+    }
+
+    #[test]
+    fn rules_match_with_more_servers_live_and_the_first_match_wins() {
+        let three = readings(&[
+            (BELABOX, Reading::Live),
+            (HOME, Reading::Live),
+            (CAM3, Reading::Live),
+        ]);
+        let two = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+
+        let config = with_rules(vec![both()]);
+        assert_eq!(rule_of(&config, &three), Some(id(BOTH_RULE)));
+
+        let config = with_rules(vec![both(), all()]);
+        assert_eq!(rule_of(&config, &three), Some(id(BOTH_RULE)));
+
+        let config = with_rules(vec![all(), both()]);
+        assert_eq!(rule_of(&config, &three), Some(id(ALL_RULE)));
+        assert_eq!(rule_of(&config, &two), Some(id(BOTH_RULE)));
+    }
+
+    #[test]
+    fn the_top_server_decides_live_or_low_and_blank_rule_scenes_fall_back() {
+        let config = with_rules(vec![both()]);
+        let pair = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+        let low = readings(&[(BELABOX, Reading::Low), (HOME, Reading::Live)]);
+
+        // BELABOX goes low while HOME is fine: LOW, and the rule has none, so
+        // the switcher's LOW scene.
+        let mut memory = settled(&config, CAMS_LIVE, &pair);
+        assert_eq!(
+            switches_at(&config, CAMS_LIVE, &low, &mut memory),
+            Some((4, id(LOW)))
+        );
+
+        // No LIVE scene on the rule: the in-use server's override comes next.
+        let config = with_rules(vec![Rule {
+            id: id(HOME_CAM3_RULE),
+            servers: vec![id(HOME), id(CAM3)],
+            scenes: RoleScenes {
+                offline: Some(id(CAMS_BRB)),
+                ..RoleScenes::default()
+            },
+        }]);
+        let home_cam3 = readings(&[(HOME, Reading::Live), (CAM3, Reading::Live)]);
+        let mut memory = settled(&config, BRB, &readings(&[]));
+        assert_eq!(
+            switches_at(&config, BRB, &home_cam3, &mut memory),
+            Some((1, id(HOME_LIVE)))
+        );
+    }
+
+    #[test]
+    fn offline_uses_the_last_rules_brb_scene() {
+        let config = with_rules(vec![both()]);
+        let pair = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+        let mut memory = settled(&config, CAMS_LIVE, &pair);
+        assert_eq!(
+            switches_at(&config, CAMS_LIVE, &readings(&[]), &mut memory),
+            Some((4, id(CAMS_BRB)))
+        );
+
+        // And back from there: the switcher owns the rule's BRB scene too.
+        assert_eq!(
+            switches_at(&config, CAMS_BRB, &pair, &mut memory),
+            Some((1, id(CAMS_LIVE)))
+        );
+    }
+
+    #[test]
+    fn a_scene_handed_over_by_the_last_run_can_still_be_left() {
+        // On the combination's scene when it is turned off: the restarted
+        // switcher no longer knows the scene from its config.
+        let before = with_rules(vec![both()]);
+        let pair = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+        let memory = settled(&before, CAMS_LIVE, &pair);
+        assert_eq!(
+            owned_role(&before, &memory, id(CAMS_LIVE)),
+            Some(FeedState::Live)
+        );
+
+        let after = with_rules(Vec::new());
+        assert_eq!(
+            switches_at(&after, CAMS_LIVE, &pair, &mut Memory::default()),
+            None
+        );
+        let mut handed = Memory::handed_over(id(CAMS_LIVE), FeedState::Live);
+        assert_eq!(
+            switches_at(&after, CAMS_LIVE, &pair, &mut handed).map(|(_, scene)| scene),
+            Some(id(LIVE))
+        );
+
+        // Its BRB scene too, so the switcher comes back from it.
+        let mut handed = Memory::handed_over(id(CAMS_BRB), FeedState::Offline);
+        let belabox = readings(&[(BELABOX, Reading::Live)]);
+        assert_eq!(
+            switches_at(&after, CAMS_BRB, &belabox, &mut handed).map(|(_, scene)| scene),
+            Some(id(LIVE))
+        );
+    }
+
+    #[test]
+    fn a_handed_over_scene_stops_counting_once_obs_leaves_it() {
+        let config = with_rules(Vec::new());
+        let live = readings(&[(BELABOX, Reading::Live)]);
+        let mut memory = Memory::handed_over(id(CAMS_LIVE), FeedState::Live);
+        // The streamer moves to a scene of their own, then back.
+        run(&config, CHATTING, true, &live, &mut memory, 1);
+        assert_eq!(switches_at(&config, CAMS_LIVE, &live, &mut memory), None);
     }
 }

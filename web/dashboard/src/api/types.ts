@@ -28,6 +28,7 @@ export type Behaviour = Schemas["BehaviourDto"];
 export type Scenes = Schemas["ScenesDto"];
 export type StreamServer = Schemas["StreamServerDto"];
 export type StreamServerKind = Schemas["StreamServerKindDto"];
+export type SceneRule = Schemas["SceneRuleDto"];
 export type Chat = Schemas["ChatDto"];
 export type ChatSettings = Schemas["ChatSettingsDto"];
 export type ChatCommand = Schemas["ChatCommandDto"];

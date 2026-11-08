@@ -3335,6 +3335,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a switcher's server combinations, first tried first. */
+        get: operations["list_scene_rules"];
+        put?: never;
+        /** Add a server combination at the end of the order. */
+        post: operations["create_scene_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the order server combinations are tried in. */
+        put: operations["reorder_scene_rules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules/{scene_rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace a server combination's servers, scenes and whether it is used. */
+        put: operations["update_scene_rule"];
+        post?: never;
+        /** Remove a server combination. */
+        delete: operations["delete_scene_rule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/scenes": {
         parameters: {
             query?: never;
@@ -6707,6 +6760,10 @@ export interface components {
         RenameSwitcher: {
             name: string;
         };
+        ReorderSceneRules: {
+            /** @description Every combination of the switcher, first tried first. */
+            ids: string[];
+        };
         ReorderStreamServers: {
             /** @description Every stream server of the switcher, in the order to try them. */
             ids: string[];
@@ -6726,6 +6783,12 @@ export interface components {
             /** Format: uuid */
             workspace_id?: string | null;
             workspace_name?: string | null;
+        };
+        SaveSceneRule: {
+            enabled?: boolean;
+            scenes: components["schemas"]["OverridesDto"];
+            /** @description Two or more of the switcher's stream servers. */
+            server_ids: string[];
         };
         SavedSourceDto: {
             /** @description Its name, trimmed. */
@@ -6749,6 +6812,20 @@ export interface components {
              * @description `null` on OBS versions that don't report scene UUIDs.
              */
             uuid?: string | null;
+        };
+        SceneRuleDto: {
+            enabled: boolean;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description 0 is tried first.
+             */
+            priority: number;
+            /** @description `null` falls back to the in-use server's override, then the switcher's scene. */
+            scenes: components["schemas"]["OverridesDto"];
+            /** @description The servers that must all have a feed, in their priority order. */
+            server_ids: string[];
         };
         /** @description OBS scene UUIDs for each role. `null` means not set. */
         ScenesDto: {
@@ -7326,6 +7403,8 @@ export interface components {
             /** Format: date-time */
             last_seen_at?: string | null;
             name: string;
+            /** @description Each server combination as stored, with its servers' IDs. */
+            scene_rules: Record<string, never>[];
             /**
              * @description Every setting as stored (scenes by ID, triggers, behaviour, chat, BELABOX
              *     and Moblin options), without its secrets.
@@ -7400,6 +7479,12 @@ export interface components {
         };
         /** @description The latest known state of a switcher's browser source and OBS. */
         SwitcherStatus: {
+            /**
+             * Format: uuid
+             * @description The server combination whose scenes are on air, if any: switched to by
+             *     the switcher, not merely matching.
+             */
+            active_scene_rule_id?: string | null;
             /**
              * Format: uuid
              * @description The stream server the switcher is using, if any.
@@ -15761,6 +15846,198 @@ export interface operations {
             };
             /** @description `owner_only` */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_scene_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRuleDto"][];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_scene_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSceneRule"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRuleDto"];
+                };
+            };
+            /** @description `too_few_servers`, `unknown_server` or `too_many_combinations` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `duplicate_combination` when another combination has the same servers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    reorder_scene_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderSceneRules"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRuleDto"][];
+                };
+            };
+            /** @description `invalid_order` unless `ids` is every combination once */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_scene_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                scene_rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSceneRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRuleDto"];
+                };
+            };
+            /** @description `too_few_servers` or `unknown_server` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `duplicate_combination` when another combination has the same servers */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_scene_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+                scene_rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

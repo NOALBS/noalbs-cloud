@@ -13,7 +13,7 @@ use crate::{
         ErrorBody, admin, admin_actions, admin_organizations, admin_status, auth, belabox, billing,
         chat, chat_bots, connect, feed, history, invites, markers, me, members, moblin,
         my_workspaces, notices, organization_audit, organization_ops, organizations, plans,
-        stream_servers, support, switchers, workspaces,
+        scene_rules, stream_servers, support, switchers, workspaces,
     },
 };
 
@@ -205,6 +205,7 @@ fn api_router() -> OpenApiRouter<ApiState> {
         .merge(billing::router())
         .merge(switchers::router())
         .merge(stream_servers::router())
+        .merge(scene_rules::router())
         .merge(chat::router())
         .merge(chat_bots::router())
         .merge(feed::router())

@@ -3,13 +3,14 @@ import { Trans } from "@lingui/react/macro";
 import { type UseQueryResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MonitorPlay, RotateCw } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
-import { obsScenesQuery, queryKeys, streamServersQuery } from "@/api/queries";
-import type { ObsScenes, Scenes, StreamServer, Switcher } from "@/api/types";
+import { obsScenesQuery, queryKeys, sceneRulesQuery, streamServersQuery } from "@/api/queries";
+import type { ObsScenes, SceneRule, Scenes, StreamServer, Switcher } from "@/api/types";
 import { Section } from "@/components/page";
 import { ScenePicker } from "@/components/scene-picker";
+import { SceneRulesSection } from "@/components/scene-rules-section";
 import { SaveBar } from "@/components/settings";
 import { SwitcherPage } from "@/components/switcher-page";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { useNow } from "@/hooks/use-now";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
 import { SCENE_ROLES } from "@/lib/scene-roles";
+import { ruleLabel } from "@/lib/scene-rules";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +91,7 @@ function ScenesPage() {
   const queryClient = useQueryClient();
   const obs = useQuery(obsScenesQuery(workspace.id, switcher.id));
   const servers = useQuery(streamServersQuery(workspace.id, switcher.id));
+  const rules = useQuery(sceneRulesQuery(workspace.id, switcher.id));
   const [form, setForm] = useState<Scenes>(switcher.scenes);
   const [base, setBase] = useState<Scenes>(switcher.scenes);
 
@@ -149,44 +152,52 @@ function ScenesPage() {
               description: t`Only used when you or a mod asks for them.`,
               rows: onCommand(),
             },
-          ].map((group) => (
-            <Section key={group.title} title={group.title} description={group.description}>
-              <ul>
-                {group.rows.map((row) => (
-                  <li
-                    key={row.key}
-                    className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-divider px-5 py-3"
-                  >
-                    <span
-                      className={cn("h-9 w-2.5 shrink-0 rounded", row.dot)}
-                      aria-hidden="true"
-                    />
-                    <span className="flex min-w-40 flex-1 flex-col gap-0.5">
-                      <span className="text-sm font-semibold">{row.label}</span>
-                      <span className="text-sm text-muted-foreground">{row.description}</span>
-                    </span>
-                    {row.command && (
-                      <Badge variant="secondary" className="hidden font-mono sm:inline-flex">
-                        {prefix}
-                        {row.command}
-                      </Badge>
-                    )}
-                    <ScenePicker
-                      label={row.label}
-                      value={form[row.key] ?? null}
-                      obs={obs.data}
-                      disabled={!editable}
-                      onChange={(uuid) => setForm({ ...form, [row.key]: uuid })}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </Section>
+          ].map((group, index) => (
+            <Fragment key={group.title}>
+              {index === 1 && <SceneRulesSection obs={obs.data} servers={servers.data ?? []} />}
+              <Section title={group.title} description={group.description}>
+                <ul>
+                  {group.rows.map((row) => (
+                    <li
+                      key={row.key}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-divider px-5 py-3"
+                    >
+                      <span
+                        className={cn("h-9 w-2.5 shrink-0 rounded", row.dot)}
+                        aria-hidden="true"
+                      />
+                      <span className="flex min-w-40 flex-1 flex-col gap-0.5">
+                        <span className="text-sm font-semibold">{row.label}</span>
+                        <span className="text-sm text-muted-foreground">{row.description}</span>
+                      </span>
+                      {row.command && (
+                        <Badge variant="secondary" className="hidden font-mono sm:inline-flex">
+                          {prefix}
+                          {row.command}
+                        </Badge>
+                      )}
+                      <ScenePicker
+                        label={row.label}
+                        value={form[row.key] ?? null}
+                        obs={obs.data}
+                        disabled={!editable}
+                        onChange={(uuid) => setForm({ ...form, [row.key]: uuid })}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            </Fragment>
           ))}
         </div>
 
         <div className="flex flex-col gap-4 lg:col-span-4">
-          <ObsSceneList obs={obs.data} scenes={form} servers={servers.data ?? []} />
+          <ObsSceneList
+            obs={obs.data}
+            scenes={form}
+            servers={servers.data ?? []}
+            rules={rules.data ?? []}
+          />
           <OverridesNote servers={servers.data ?? []} obs={obs.data} />
         </div>
       </div>
@@ -227,10 +238,12 @@ function ObsSceneList({
   obs,
   scenes,
   servers,
+  rules,
 }: {
   obs: ObsScenes | undefined;
   scenes: Scenes;
   servers: StreamServer[];
+  rules: SceneRule[];
 }) {
   if (!obs) return null;
 
@@ -242,7 +255,10 @@ function ObsSceneList({
     const overrides = servers
       .filter((server) => Object.values(server.overrides).includes(uuid))
       .map((server) => t`Override · ${server.name}`);
-    return [...roles, ...overrides];
+    const combinations = rules
+      .filter((rule) => Object.values(rule.scenes).includes(uuid))
+      .map((rule) => t`Combination · ${ruleLabel(rule, servers)}`);
+    return [...roles, ...overrides, ...combinations];
   };
 
   return (
@@ -262,9 +278,9 @@ function ObsSceneList({
           return (
             <li
               key={scene.uuid ?? scene.name}
-              className="flex min-h-11 items-center justify-between gap-3 border-t border-divider px-5 py-2"
+              className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-0.5 border-t border-divider px-5 py-2"
             >
-              <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+              <span className="flex max-w-full min-w-0 items-center gap-2 text-sm font-medium">
                 {onAir && (
                   <span className="size-2 shrink-0 rounded-full bg-offline">
                     <span className="sr-only">
@@ -274,7 +290,7 @@ function ObsSceneList({
                 )}
                 <span className="truncate">{scene.name}</span>
               </span>
-              <span className="text-right text-xs text-muted-foreground">
+              <span className="ml-auto text-right text-xs text-muted-foreground">
                 {uses.length ? uses.join(" · ") : "—"}
               </span>
             </li>

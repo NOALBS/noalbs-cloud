@@ -102,6 +102,14 @@ msgstr "· приховано"
 msgid "“{0}”"
 msgstr "«{0}»"
 
+#: src/components/scene-rules-section.tsx
+msgid "“Server’s scene” keeps what the top server would use: its override, or your scene above."
+msgstr "«Сцена сервера» залишає те, що використав би верхній сервер: його перевизначення або вашу сцену вище."
+
+#: src/components/scene-rules-section.tsx
+msgid "(off)"
+msgstr "(вимк.)"
+
 #: src/components/server-details-fields.tsx
 msgid "(optional)"
 msgstr "(необов’язково)"
@@ -311,10 +319,20 @@ msgstr "{0, plural, one {Посилання-запрошення для # клі
 msgid "{0, plural, one {It happened # more time.} other {It happened # more times.}}"
 msgstr "{0, plural, one {Це сталося ще # раз.} few {Це сталося ще # рази.} many {Це сталося ще # разів.} other {Це сталося ще # раза.}}"
 
+#. placeholder {0}: off.length
+#: src/components/scene-rules-section.tsx
+msgid "{0, plural, one {Not used while {offNames} is turned off.} other {Not used while {offNames} are turned off.}}"
+msgstr "{0, plural, one {Не використовується, доки {offNames} вимкнено.} few {Не використовується, доки {offNames} вимкнено.} many {Не використовується, доки {offNames} вимкнено.} other {Не використовується, доки {offNames} вимкнено.}}"
+
 #. placeholder {0}: result.sessions
 #: src/routes/_app/admin/users/$user.tsx
 msgid "{0, plural, one {Signed out of # session} other {Signed out of # sessions}}"
 msgstr "{0, plural, one {Виконано вихід із # сеансу} few {Виконано вихід із # сеансів} many {Виконано вихід із # сеансів} other {Виконано вихід із # сеансу}}"
+
+#. placeholder {0}: goingRules.length
+#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+msgid "{0, plural, one {The server combination it is in goes too:} other {The # server combinations it is in go too:}}"
+msgstr "{0, plural, one {Вилучиться й комбінація серверів, до якої він входить:} few {Вилучаться й # комбінації серверів, до яких він входить:} many {Вилучаться й # комбінацій серверів, до яких він входить:} other {Вилучаться й # комбінації серверів, до яких він входить:}}"
 
 #. placeholder {0}: result.links
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -444,6 +462,11 @@ msgstr "{0} видалено, {1} не вдалося"
 #: src/routes/_app/admin/status.tsx
 msgid "{0} event subscriptions (recorded {1})."
 msgstr "Підписок на події: {0} (записано {1})."
+
+#. placeholder {0}: SCENE_ROLES[role].label
+#: src/components/scene-rules-section.tsx
+msgid "{0} for this combination"
+msgstr "{0} для цієї комбінації"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -1270,6 +1293,10 @@ msgstr "Додай джерело <0>Browser</0> на сцену, яка зав�
 msgid "Add a network by name…"
 msgstr "Додати мережу за назвою…"
 
+#: src/components/scene-rules-section.tsx
+msgid "Add a second stream server to use combinations, e.g. a two-camera layout while both are live."
+msgstr "Додайте другий стрім-сервер, щоб використовувати комбінації, наприклад розкладку з двома камерами, поки обидві в ефірі."
+
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
 msgstr "Додати джерело"
@@ -1287,6 +1314,10 @@ msgstr "Додати світчер"
 #: src/routes/_app/welcome.tsx
 msgid "Add a workspace"
 msgstr "Додати робочий простір"
+
+#: src/components/scene-rules-section.tsx
+msgid "Add combination"
+msgstr "Додати комбінацію"
 
 #: src/components/live/quick-actions.tsx
 msgid "Add marker"
@@ -1308,6 +1339,10 @@ msgstr "Додати сцену"
 #: src/routes/_app/add-server.tsx
 msgid "Add server"
 msgstr "Додати сервер"
+
+#: src/components/scene-rules-section.tsx
+msgid "Add server combination"
+msgstr "Додати комбінацію серверів"
 
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-list.tsx
@@ -1578,6 +1613,7 @@ msgstr "Адреса srt://, rtmp://, rist://, udp:// або https://."
 msgid "Announce raids"
 msgstr "Оголошувати рейди"
 
+#: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "another scene"
 msgstr "інша сцена"
@@ -2134,6 +2170,7 @@ msgstr "Не вдається вилучити: {blockedBy}"
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/support-access.tsx
 #: src/components/support/break-glass-dialog.tsx
 #: src/components/type-to-confirm.tsx
@@ -2447,6 +2484,11 @@ msgstr "Код"
 #: src/components/live/source-editor.tsx
 msgid "Color"
 msgstr "Колір"
+
+#. placeholder {0}: ruleLabel(rule, servers)
+#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+msgid "Combination · {0}"
+msgstr "Комбінація · {0}"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -3347,6 +3389,10 @@ msgstr "Редагувати"
 msgid "Edit {0}"
 msgstr "Редагувати {0}"
 
+#: src/components/scene-rules-section.tsx
+msgid "Edit {label}"
+msgstr "Змінити {label}"
+
 #: src/components/live/source-editor.tsx
 msgid "Edit {name}"
 msgstr "Редагувати {name}"
@@ -3358,6 +3404,10 @@ msgstr "Редагувати оголошення"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "Редагувати програму"
+
+#: src/components/scene-rules-section.tsx
+msgid "Edit server combination"
+msgstr "Змінити комбінацію серверів"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -4019,6 +4069,7 @@ msgstr "в OBS"
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "В OBS відкрий <0>Tools → WebSocket Server Settings</0>, увімкни сервер WebSocket і введи тут його порт і пароль (<1>Show Connect Info</1> показує обидва)."
 
+#: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "in use"
 msgstr "використовується"
@@ -5170,6 +5221,10 @@ msgstr "Інші налаштування"
 msgid "Move {0}"
 msgstr "Перемістити {0}"
 
+#: src/components/scene-rules-section.tsx
+msgid "Move {label}"
+msgstr "Перемістити {label}"
+
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
 msgstr "Перейти на Free"
@@ -5336,6 +5391,11 @@ msgstr "ніколи не підключався"
 #: src/components/switcher-status.tsx
 msgid "Never connected"
 msgstr "Ніколи не підключався"
+
+#. placeholder {0}: ruleLabel(shadowed, servers)
+#: src/components/scene-rules-section.tsx
+msgid "Never used: {0} is above it and always matches first."
+msgstr "Ніколи не використовується: {0} стоїть вище й завжди спрацьовує першою."
 
 #: src/components/app-shell.tsx
 msgid "New"
@@ -5856,6 +5916,10 @@ msgstr "Поки немає"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "None yet."
 msgstr "Поки немає."
+
+#: src/components/scene-rules-section.tsx
+msgid "None yet. Add one for, say, a two-camera layout while two servers are live."
+msgstr "Поки немає. Додайте, наприклад, для розкладки з двома камерами, поки два сервери в ефірі."
 
 #: src/lib/moblin.ts
 msgid "Normal"
@@ -6876,6 +6940,10 @@ msgstr "Вибирати APN автоматично"
 msgid "Pick the server your encoder streams to and OBS plays from. Not sure which one you have? See the <0>list of servers</0>."
 msgstr "Вибери сервер, на який стрімить твій енкодер і з якого відтворює OBS. Не знаєш, який у тебе? Дивись <0>список серверів</0>."
 
+#: src/components/scene-rules-section.tsx
+msgid "Pick two or more."
+msgstr "Виберіть два або більше."
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Вибери сцени LIVE, LOW і BRB"
@@ -7273,6 +7341,7 @@ msgstr "Перезавантажувати, коли його сцена вих�
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -7300,6 +7369,10 @@ msgstr "Вилучити {0} з {1}?"
 #: src/components/chat/chat-links.tsx
 msgid "Remove {0}?"
 msgstr "Вилучити {0}?"
+
+#: src/components/scene-rules-section.tsx
+msgid "Remove {label}"
+msgstr "Вилучити {label}"
 
 #: src/components/admin/products.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -7383,6 +7456,10 @@ msgstr "Вилучено {0}"
 #: src/components/live/source-list.tsx
 msgid "Removed {0} from {1}"
 msgstr "{0} вилучено з {1}"
+
+#: src/components/scene-rules-section.tsx
+msgid "Removed {label}"
+msgstr "{label} вилучено"
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -7705,6 +7782,10 @@ msgstr "Зберегти"
 msgid "save {saving}%"
 msgstr "заощадь {saving}%"
 
+#: src/components/scene-rules-section.tsx
+msgid "Save combination"
+msgstr "Зберегти комбінацію"
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Save hotspot"
 msgstr "Зберегти точку доступу"
@@ -7726,6 +7807,7 @@ msgstr "Зберегти сервер"
 #: src/components/moblin-settings.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -7777,6 +7859,7 @@ msgstr "Збереження одразу змінює його в OBS."
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -7831,6 +7914,7 @@ msgid "Scene switches"
 msgstr "Перемикання сцен"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -7957,6 +8041,10 @@ msgstr "Продавати {name} щороку за ціною, створено
 msgid "Server"
 msgstr "Сервер"
 
+#: src/components/scene-rules-section.tsx
+msgid "Server combinations"
+msgstr "Комбінації серверів"
+
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server details"
 msgstr "Дані сервера"
@@ -7972,6 +8060,18 @@ msgstr "Порядок серверів"
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server type"
 msgstr "Тип сервера"
+
+#: src/components/scene-rules-section.tsx
+msgid "server’s scene"
+msgstr "сцена сервера"
+
+#: src/components/scene-rules-section.tsx
+msgid "Server’s scene"
+msgstr "Сцена сервера"
+
+#: src/components/scene-rules-section.tsx
+msgid "Servers"
+msgstr "Сервери"
 
 #: src/components/admin/products.tsx
 msgid "Servers each"
@@ -9622,6 +9722,10 @@ msgstr "потім немає"
 msgid "Then switch to LIVE"
 msgstr "Потім перемкнути на LIVE"
 
+#: src/components/scene-rules-section.tsx
+msgid "There is already a combination of these servers."
+msgstr "Комбінація цих серверів уже є."
+
 #: src/lib/api-messages.ts
 msgid "There's no card on file for this workspace. Add one under Manage billing first."
 msgstr "Для цього робочого простору немає збереженої картки. Спочатку додай її в розділі «Керування оплатою»."
@@ -10140,6 +10244,10 @@ msgstr "URL має містити від 3 до 50 символів"
 msgid "Use {0}"
 msgstr "Використати {0}"
 
+#: src/components/scene-rules-section.tsx
+msgid "Use {label}"
+msgstr "Використовувати {label}"
+
 #: src/lib/api-messages.ts
 msgid "Use 2–30 lowercase letters, digits and dashes."
 msgstr "Використовуй 2–30 малих літер, цифр і дефісів."
@@ -10172,6 +10280,10 @@ msgstr "Використовувати апаратне декодування, 
 msgid "Use my own password"
 msgstr "Використати власний пароль"
 
+#: src/components/scene-rules-section.tsx
+msgid "Use other scenes while certain servers are live together, like a two-camera layout while both cameras stream. If more than one matches, the highest one wins."
+msgstr "Використовуйте інші сцени, доки певні сервери в ефірі одночасно, наприклад розкладку з двома камерами, доки обидві камери транслюють. Якщо підходить кілька, спрацьовує найвища."
+
 #: src/lib/api-messages.ts
 msgid "Use your own account page for your own sessions."
 msgstr "Для власних сеансів використовуй сторінку свого облікового запису."
@@ -10187,6 +10299,10 @@ msgstr "Застосовується з наступного запуску (з�
 #: src/components/admin/products.tsx
 msgid "Used in URLs and billing; can't be changed later."
 msgstr "Використовується в URL та оплаті; згодом змінити не можна."
+
+#: src/components/scene-rules-section.tsx
+msgid "Used while all the servers you pick are live, even if others are too."
+msgstr "Використовується, доки всі вибрані сервери в ефірі, навіть якщо в ефірі й інші."
 
 #: src/routes/_app/admin/audit.tsx
 msgid "user"
@@ -10437,6 +10553,10 @@ msgstr "Які бондинг-підключення використовує Mo
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
 msgstr "Поки його не видно"
+
+#: src/components/scene-rules-section.tsx
+msgid "While these servers are live, NOALBS goes back to using the top server’s scenes."
+msgstr "Доки ці сервери в ефірі, NOALBS знову використовує сцени верхнього сервера."
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."

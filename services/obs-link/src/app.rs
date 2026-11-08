@@ -396,6 +396,8 @@ struct Session {
     attribution: SharedAttribution,
     /// See `switcher::Deps::paused_by_scene_control`.
     paused_by_scene_control: Arc<AtomicBool>,
+    /// See `switcher::Deps::handover`.
+    handover: Arc<std::sync::Mutex<Option<(Uuid, live::FeedState)>>>,
     obs_connected: bool,
     /// Over the plan's switcher limit: stays connected, but no switcher runs.
     paused: bool,
@@ -883,6 +885,7 @@ impl Connection {
             status,
             attribution,
             paused_by_scene_control: Arc::default(),
+            handover: Arc::default(),
             obs_connected: false,
             paused,
             tasks,
@@ -990,6 +993,7 @@ impl Connection {
             inner_comm: self.inner_comm.clone(),
             attribution: session.attribution.clone(),
             paused_by_scene_control: session.paused_by_scene_control.clone(),
+            handover: session.handover.clone(),
             data_key: self.shared.data_key.clone(),
             belabox: session.belabox.as_ref().map(belabox::Link::handle),
         };
@@ -1243,6 +1247,7 @@ impl Connection {
                     session.status.update(|status| {
                         status.state = live::FeedState::Idle;
                         status.active_server_id = None;
+                        status.active_scene_rule_id = None;
                     });
                 }
             } else if obs_connected {

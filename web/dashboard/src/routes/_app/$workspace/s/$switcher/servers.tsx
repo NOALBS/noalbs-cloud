@@ -22,7 +22,13 @@ import { GripVertical, Info, Plus, Server } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
-import { obsScenesQuery, queryKeys, streamServersQuery, workspacePlanQuery } from "@/api/queries";
+import {
+  obsScenesQuery,
+  queryKeys,
+  sceneRulesQuery,
+  streamServersQuery,
+  workspacePlanQuery,
+} from "@/api/queries";
 import type { StreamServer, StreamServerKind } from "@/api/types";
 import { DocsLink } from "@/components/docs-link";
 import { ScenePicker } from "@/components/scene-picker";
@@ -67,6 +73,7 @@ import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
 import { formatKbps } from "@/lib/live-format";
 import { SCENE_ROLES } from "@/lib/scene-roles";
+import { ruleLabel, rulesWithServer } from "@/lib/scene-rules";
 import { maskUrl } from "@/lib/secret-url";
 import { kindInfo, streamServerKinds } from "@/lib/stream-server-kinds";
 import { cn } from "@/lib/utils";
@@ -457,6 +464,11 @@ function ServerEditor({
   const [details, setDetails] = useState(savedDetails);
   const detailsChanged = !sameDetails(details, savedDetails);
   const obs = useQuery(obsScenesQuery(path.workspace_id, path.switcher_id));
+  const servers = useQuery(streamServersQuery(path.workspace_id, path.switcher_id));
+  const rules = useQuery(sceneRulesQuery(path.workspace_id, path.switcher_id));
+  const goingRules = rulesWithServer(rules.data ?? [], server.id).map((rule) =>
+    ruleLabel(rule, servers.data ?? []),
+  );
   const toggle = useToggleServer(server, path);
   const info = kindInfo(server.kind);
   const serverPath = { ...path, stream_server_id: server.id };
@@ -472,6 +484,9 @@ function ServerEditor({
         queryKey: queryKeys.streamServers(path.workspace_id, path.switcher_id),
       }),
       queryClient.invalidateQueries({ queryKey: queryKeys.switchers(path.workspace_id) }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sceneRules(path.workspace_id, path.switcher_id),
+      }),
     ]);
 
   const update = useMutation({
@@ -658,6 +673,17 @@ function ServerEditor({
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   <Trans>NOALBS stops reading this server’s stats.</Trans>
+                  {goingRules.length > 0 && (
+                    <>
+                      {" "}
+                      <Plural
+                        value={goingRules.length}
+                        one="The server combination it is in goes too:"
+                        other="The # server combinations it is in go too:"
+                      />{" "}
+                      {goingRules.join(", ")}.
+                    </>
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
