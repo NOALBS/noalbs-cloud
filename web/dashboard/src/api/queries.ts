@@ -57,6 +57,8 @@ export const queryKeys = {
     ["workspaces", workspaceId, "switchers", switcherId] as const,
   streamServers: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "stream-servers"] as const,
+  sceneRules: (workspaceId: string, switcherId: string) =>
+    ["workspaces", workspaceId, "switchers", switcherId, "scene-rules"] as const,
   chat: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "chat"] as const,
   chatBots: (workspaceId: string) => ["workspaces", workspaceId, "chat-bots"] as const,
@@ -276,6 +278,17 @@ export const streamServersQuery = (workspaceId: string, switcherId: string) =>
     queryFn: () =>
       unwrap(
         api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/stream-servers", {
+          params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
+        }),
+      ),
+  });
+
+export const sceneRulesQuery = (workspaceId: string, switcherId: string) =>
+  queryOptions({
+    queryKey: queryKeys.sceneRules(workspaceId, switcherId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules", {
           params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
         }),
       ),

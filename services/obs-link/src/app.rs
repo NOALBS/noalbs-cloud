@@ -1243,6 +1243,7 @@ impl Connection {
                     session.status.update(|status| {
                         status.state = live::FeedState::Idle;
                         status.active_server_id = None;
+                        status.active_scene_rule_id = None;
                     });
                 }
             } else if obs_connected {

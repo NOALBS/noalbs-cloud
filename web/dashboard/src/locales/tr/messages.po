@@ -102,6 +102,14 @@ msgstr "· gizli"
 msgid "“{0}”"
 msgstr "“{0}”"
 
+#: src/components/scene-rules-section.tsx
+msgid "“Server’s scene” keeps what the top server would use: its override, or your scene above."
+msgstr "“Sunucunun sahnesi”, en üstteki sunucunun kullanacağını korur: onun özel sahnesini ya da yukarıdaki sahneni."
+
+#: src/components/scene-rules-section.tsx
+msgid "(off)"
+msgstr "(kapalı)"
+
 #: src/components/server-details-fields.tsx
 msgid "(optional)"
 msgstr "(isteğe bağlı)"
@@ -311,10 +319,20 @@ msgstr "{0, plural, one {# müşteri için davet bağlantıları} other {# müş
 msgid "{0, plural, one {It happened # more time.} other {It happened # more times.}}"
 msgstr "{0, plural, one {# kez daha oldu.} other {# kez daha oldu.}}"
 
+#. placeholder {0}: off.length
+#: src/components/scene-rules-section.tsx
+msgid "{0, plural, one {Not used while {offNames} is turned off.} other {Not used while {offNames} are turned off.}}"
+msgstr "{0, plural, one {{offNames} kapalıyken kullanılmaz.} other {{offNames} kapalıyken kullanılmaz.}}"
+
 #. placeholder {0}: result.sessions
 #: src/routes/_app/admin/users/$user.tsx
 msgid "{0, plural, one {Signed out of # session} other {Signed out of # sessions}}"
 msgstr "{0, plural, one {# oturumdan çıkış yapıldı} other {# oturumdan çıkış yapıldı}}"
+
+#. placeholder {0}: goingRules.length
+#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+msgid "{0, plural, one {The server combination it is in goes too:} other {The # server combinations it is in go too:}}"
+msgstr "{0, plural, one {İçinde bulunduğu sunucu kombinasyonu da kaldırılır:} other {İçinde bulunduğu # sunucu kombinasyonu da kaldırılır:}}"
 
 #. placeholder {0}: result.links
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -444,6 +462,11 @@ msgstr "{0} silindi, {1} silinemedi"
 #: src/routes/_app/admin/status.tsx
 msgid "{0} event subscriptions (recorded {1})."
 msgstr "{0} etkinlik aboneliği (kayıtlı: {1})."
+
+#. placeholder {0}: SCENE_ROLES[role].label
+#: src/components/scene-rules-section.tsx
+msgid "{0} for this combination"
+msgstr "Bu kombinasyon için {0}"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -1270,6 +1293,10 @@ msgstr "Her zaman açık olan bir sahneye bir <0>Browser</0> kaynağı ekle (gö
 msgid "Add a network by name…"
 msgstr "Ada göre ağ ekle…"
 
+#: src/components/scene-rules-section.tsx
+msgid "Add a second stream server to use combinations, e.g. a two-camera layout while both are live."
+msgstr "Kombinasyon kullanmak için ikinci bir yayın sunucusu ekle; örneğin ikisi de canlıyken iki kameralı bir düzen."
+
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
 msgstr "Kaynak ekle"
@@ -1287,6 +1314,10 @@ msgstr "Switcher ekle"
 #: src/routes/_app/welcome.tsx
 msgid "Add a workspace"
 msgstr "Çalışma alanı ekle"
+
+#: src/components/scene-rules-section.tsx
+msgid "Add combination"
+msgstr "Kombinasyon ekle"
 
 #: src/components/live/quick-actions.tsx
 msgid "Add marker"
@@ -1308,6 +1339,10 @@ msgstr "Sahne ekle"
 #: src/routes/_app/add-server.tsx
 msgid "Add server"
 msgstr "Sunucu ekle"
+
+#: src/components/scene-rules-section.tsx
+msgid "Add server combination"
+msgstr "Sunucu kombinasyonu ekle"
 
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-list.tsx
@@ -1578,6 +1613,7 @@ msgstr "srt://, rtmp://, rist://, udp:// veya https:// adresi."
 msgid "Announce raids"
 msgstr "Raid’leri duyur"
 
+#: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "another scene"
 msgstr "başka bir sahne"
@@ -2134,6 +2170,7 @@ msgstr "Kaldırılamıyor: {blockedBy}"
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/support-access.tsx
 #: src/components/support/break-glass-dialog.tsx
 #: src/components/type-to-confirm.tsx
@@ -2447,6 +2484,11 @@ msgstr "Kod"
 #: src/components/live/source-editor.tsx
 msgid "Color"
 msgstr "Renk"
+
+#. placeholder {0}: ruleLabel(rule, servers)
+#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+msgid "Combination · {0}"
+msgstr "Kombinasyon · {0}"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
@@ -3347,6 +3389,10 @@ msgstr "Düzenle"
 msgid "Edit {0}"
 msgstr "{0} düzenle"
 
+#: src/components/scene-rules-section.tsx
+msgid "Edit {label}"
+msgstr "{label} düzenle"
+
 #: src/components/live/source-editor.tsx
 msgid "Edit {name}"
 msgstr "{name} öğesini düzenle"
@@ -3358,6 +3404,10 @@ msgstr "Duyuruyu düzenle"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "Programı düzenle"
+
+#: src/components/scene-rules-section.tsx
+msgid "Edit server combination"
+msgstr "Sunucu kombinasyonunu düzenle"
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -4019,6 +4069,7 @@ msgstr "OBS’te"
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "OBS’te <0>Tools → WebSocket Server Settings</0> menüsünü aç, WebSocket sunucusunu etkinleştir ve portunu ve şifresini buraya gir (<1>Show Connect Info</1> ikisini de gösterir)."
 
+#: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "in use"
 msgstr "kullanımda"
@@ -5170,6 +5221,10 @@ msgstr "Daha fazla ayar"
 msgid "Move {0}"
 msgstr "Taşı: {0}"
 
+#: src/components/scene-rules-section.tsx
+msgid "Move {label}"
+msgstr "{label} taşı"
+
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
 msgstr "Free planına geç"
@@ -5336,6 +5391,11 @@ msgstr "hiç bağlanmadı"
 #: src/components/switcher-status.tsx
 msgid "Never connected"
 msgstr "Hiç bağlanmadı"
+
+#. placeholder {0}: ruleLabel(shadowed, servers)
+#: src/components/scene-rules-section.tsx
+msgid "Never used: {0} is above it and always matches first."
+msgstr "Hiç kullanılmaz: {0} üstte ve her zaman önce eşleşir."
 
 #: src/components/app-shell.tsx
 msgid "New"
@@ -5856,6 +5916,10 @@ msgstr "Henüz yok"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "None yet."
 msgstr "Henüz yok."
+
+#: src/components/scene-rules-section.tsx
+msgid "None yet. Add one for, say, a two-camera layout while two servers are live."
+msgstr "Henüz yok. Örneğin iki sunucu canlıyken iki kameralı bir düzen için bir tane ekle."
 
 #: src/lib/moblin.ts
 msgid "Normal"
@@ -6876,6 +6940,10 @@ msgstr "APN’yi otomatik seç"
 msgid "Pick the server your encoder streams to and OBS plays from. Not sure which one you have? See the <0>list of servers</0>."
 msgstr "Kodlayıcının yayın gönderdiği ve OBS’in oynattığı sunucuyu seç. Hangisine sahip olduğundan emin değil misin? <0>Sunucu listesine</0> bak."
 
+#: src/components/scene-rules-section.tsx
+msgid "Pick two or more."
+msgstr "İki veya daha fazla seç."
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "LIVE, LOW ve BRB sahnelerini seç"
@@ -7273,6 +7341,7 @@ msgstr "Sahnesi yayına girdiğinde yeniden yükle"
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -7300,6 +7369,10 @@ msgstr "{0}, {1} sahnesinden kaldırılsın mı?"
 #: src/components/chat/chat-links.tsx
 msgid "Remove {0}?"
 msgstr "{0} kaldırılsın mı?"
+
+#: src/components/scene-rules-section.tsx
+msgid "Remove {label}"
+msgstr "{label} kaldır"
 
 #: src/components/admin/products.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
@@ -7383,6 +7456,10 @@ msgstr "Kaldırıldı: {0}"
 #: src/components/live/source-list.tsx
 msgid "Removed {0} from {1}"
 msgstr "{0}, {1} sahnesinden kaldırıldı"
+
+#: src/components/scene-rules-section.tsx
+msgid "Removed {label}"
+msgstr "{label} kaldırıldı"
 
 #: src/lib/org-audit.ts
 msgid "Removed {subject}"
@@ -7705,6 +7782,10 @@ msgstr "Kaydet"
 msgid "save {saving}%"
 msgstr "%{saving} tasarruf"
 
+#: src/components/scene-rules-section.tsx
+msgid "Save combination"
+msgstr "Kombinasyonu kaydet"
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Save hotspot"
 msgstr "Hotspot’u kaydet"
@@ -7726,6 +7807,7 @@ msgstr "Sunucuyu kaydet"
 #: src/components/moblin-settings.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -7777,6 +7859,7 @@ msgstr "Kaydetmek onu OBS’te hemen değiştirir."
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -7831,6 +7914,7 @@ msgid "Scene switches"
 msgstr "Sahne geçişleri"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
@@ -7957,6 +8041,10 @@ msgstr "{name} için Stripe Dashboard’da oluşturduğun bir fiyatla yıllık s
 msgid "Server"
 msgstr "Sunucu"
 
+#: src/components/scene-rules-section.tsx
+msgid "Server combinations"
+msgstr "Sunucu kombinasyonları"
+
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server details"
 msgstr "Sunucu bilgileri"
@@ -7972,6 +8060,18 @@ msgstr "Sunucu sırası"
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server type"
 msgstr "Sunucu türü"
+
+#: src/components/scene-rules-section.tsx
+msgid "server’s scene"
+msgstr "sunucunun sahnesi"
+
+#: src/components/scene-rules-section.tsx
+msgid "Server’s scene"
+msgstr "Sunucunun sahnesi"
+
+#: src/components/scene-rules-section.tsx
+msgid "Servers"
+msgstr "Sunucular"
 
 #: src/components/admin/products.tsx
 msgid "Servers each"
@@ -9622,6 +9722,10 @@ msgstr "sonra yok"
 msgid "Then switch to LIVE"
 msgstr "Sonra LIVE sahnesine geç"
 
+#: src/components/scene-rules-section.tsx
+msgid "There is already a combination of these servers."
+msgstr "Bu sunucuların bir kombinasyonu zaten var."
+
 #: src/lib/api-messages.ts
 msgid "There's no card on file for this workspace. Add one under Manage billing first."
 msgstr "Bu çalışma alanı için kayıtlı kart yok. Önce Faturalandırmayı yönet bölümünden bir kart ekle."
@@ -10140,6 +10244,10 @@ msgstr "URL 3 ile 50 karakter arasında olmalı"
 msgid "Use {0}"
 msgstr "{0} kullan"
 
+#: src/components/scene-rules-section.tsx
+msgid "Use {label}"
+msgstr "{label} kullan"
+
 #: src/lib/api-messages.ts
 msgid "Use 2–30 lowercase letters, digits and dashes."
 msgstr "2–30 küçük harf, rakam ve tire kullan."
@@ -10172,6 +10280,10 @@ msgstr "Mümkün olduğunda donanım kod çözmeyi kullan"
 msgid "Use my own password"
 msgstr "Kendi şifremi kullan"
 
+#: src/components/scene-rules-section.tsx
+msgid "Use other scenes while certain servers are live together, like a two-camera layout while both cameras stream. If more than one matches, the highest one wins."
+msgstr "Belirli sunucular aynı anda canlıyken başka sahneler kullan; örneğin iki kamera da yayındayken iki kameralı bir düzen. Birden fazlası eşleşirse en üstteki kazanır."
+
 #: src/lib/api-messages.ts
 msgid "Use your own account page for your own sessions."
 msgstr "Kendi oturumların için kendi hesap sayfanı kullan."
@@ -10187,6 +10299,10 @@ msgstr "Bir sonraki başlatmadan itibaren kullanılır (buradan, sohbetten veya 
 #: src/components/admin/products.tsx
 msgid "Used in URLs and billing; can't be changed later."
 msgstr "URL’lerde ve faturalandırmada kullanılır; sonradan değiştirilemez."
+
+#: src/components/scene-rules-section.tsx
+msgid "Used while all the servers you pick are live, even if others are too."
+msgstr "Seçtiğin sunucuların hepsi canlıyken kullanılır; başkaları da canlı olsa bile."
 
 #: src/routes/_app/admin/audit.tsx
 msgid "user"
@@ -10437,6 +10553,10 @@ msgstr "Moblin’in hangi bonding bağlantılarını kullandığı ve hangilerin
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
 msgstr "Gösterilmediği sürece"
+
+#: src/components/scene-rules-section.tsx
+msgid "While these servers are live, NOALBS goes back to using the top server’s scenes."
+msgstr "Bu sunucular canlıyken NOALBS yeniden en üstteki sunucunun sahnelerini kullanır."
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."

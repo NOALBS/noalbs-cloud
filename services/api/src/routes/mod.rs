@@ -21,6 +21,7 @@ pub mod organization_audit;
 pub mod organization_ops;
 pub mod organizations;
 pub mod plans;
+pub mod scene_rules;
 pub mod stream_servers;
 pub mod support;
 pub mod switchers;

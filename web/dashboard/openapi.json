@@ -12026,6 +12026,327 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules": {
+      "get": {
+        "tags": [
+          "stream servers"
+        ],
+        "summary": "List a switcher's server combinations, first tried first.",
+        "operationId": "list_scene_rules",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SceneRuleDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stream servers"
+        ],
+        "summary": "Add a server combination at the end of the order.",
+        "operationId": "create_scene_rule",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSceneRule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneRuleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`too_few_servers`, `unknown_server` or `too_many_combinations`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`duplicate_combination` when another combination has the same servers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules/order": {
+      "put": {
+        "tags": [
+          "stream servers"
+        ],
+        "summary": "Set the order server combinations are tried in.",
+        "operationId": "reorder_scene_rules",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderSceneRules"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SceneRuleDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_order` unless `ids` is every combination once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/scene-rules/{scene_rule_id}": {
+      "put": {
+        "tags": [
+          "stream servers"
+        ],
+        "summary": "Replace a server combination's servers, scenes and whether it is used.",
+        "operationId": "update_scene_rule",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "scene_rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSceneRule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SceneRuleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`too_few_servers` or `unknown_server`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`duplicate_combination` when another combination has the same servers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "stream servers"
+        ],
+        "summary": "Remove a server combination.",
+        "operationId": "delete_scene_rule",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "scene_rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/scenes": {
       "put": {
         "tags": [
@@ -22556,6 +22877,22 @@
           }
         }
       },
+      "ReorderSceneRules": {
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Every combination of the switcher, first tried first."
+          }
+        }
+      },
       "ReorderStreamServers": {
         "type": "object",
         "required": [
@@ -22616,6 +22953,29 @@
           }
         }
       },
+      "SaveSceneRule": {
+        "type": "object",
+        "required": [
+          "server_ids",
+          "scenes"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "scenes": {
+            "$ref": "#/components/schemas/OverridesDto"
+          },
+          "server_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Two or more of the switcher's stream servers."
+          }
+        }
+      },
       "SavedSourceDto": {
         "type": "object",
         "required": [
@@ -22672,6 +23032,42 @@
             ],
             "format": "uuid",
             "description": "`null` on OBS versions that don't report scene UUIDs."
+          }
+        }
+      },
+      "SceneRuleDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "priority",
+          "enabled",
+          "server_ids",
+          "scenes"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0 is tried first."
+          },
+          "scenes": {
+            "$ref": "#/components/schemas/OverridesDto",
+            "description": "`null` falls back to the in-use server's override, then the switcher's scene."
+          },
+          "server_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The servers that must all have a feed, in their priority order."
           }
         }
       },
@@ -24327,6 +24723,7 @@
           "has_belabox_remote_key",
           "has_moblin_password",
           "stream_servers",
+          "scene_rules",
           "chat_channels",
           "command_overrides",
           "command_aliases",
@@ -24383,6 +24780,13 @@
           },
           "name": {
             "type": "string"
+          },
+          "scene_rules": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Each server combination as stored, with its servers' IDs."
           },
           "settings": {
             "type": "object",
@@ -24568,6 +24972,14 @@
           "state"
         ],
         "properties": {
+          "active_scene_rule_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The server combination whose scenes the switcher is using, if any."
+          },
           "active_server_id": {
             "type": [
               "string",

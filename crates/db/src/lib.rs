@@ -15,6 +15,7 @@ pub mod organization_audit;
 pub mod organizations;
 pub mod plans;
 pub mod prices;
+pub mod scene_rules;
 pub mod sessions;
 pub mod staff_actions;
 pub mod stream_markers;

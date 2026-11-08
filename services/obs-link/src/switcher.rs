@@ -150,10 +150,11 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
         .into_iter()
         .filter(|server| server.enabled)
         .collect();
+    let rules = db::scene_rules::by_switcher_id(&deps.db, switcher_id).await?;
 
     let mut runtime = Runtime {
         obs: ObsClient::new(InnerCommSender(deps.inner_comm.clone()), switcher_id),
-        config: decide_config(&settings, &servers),
+        config: decide_config(&settings, &servers, &rules),
         memory: Memory::default(),
         stats: HashMap::new(),
         scene_names: HashMap::new(),
@@ -200,7 +201,11 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
     }
 }
 
-fn decide_config(settings: &db::switchers::Switcher, servers: &[StreamServer]) -> decide::Config {
+fn decide_config(
+    settings: &db::switchers::Switcher,
+    servers: &[StreamServer],
+    rules: &[db::scene_rules::SceneRule],
+) -> decide::Config {
     decide::Config {
         auto_switch: settings.bitrate_switcher_enabled,
         only_while_streaming: settings.only_switch_when_streaming,
@@ -225,6 +230,27 @@ fn decide_config(settings: &db::switchers::Switcher, servers: &[StreamServer]) -
                 },
                 instant_degrade: ss::pushes_stats(server.kind),
                 delay_live_recovery: ss::pushes_stats(server.kind),
+            })
+            .collect(),
+        // Already in order. A rule with a disabled server never matches (that
+        // server has no feed), so it's left out.
+        rules: rules
+            .iter()
+            .filter(|rule| {
+                rule.enabled
+                    && rule
+                        .server_ids
+                        .iter()
+                        .all(|id| servers.iter().any(|server| server.id == *id))
+            })
+            .map(|rule| decide::Rule {
+                id: rule.id,
+                servers: rule.server_ids.clone(),
+                scenes: RoleScenes {
+                    live: rule.scene_live,
+                    low: rule.scene_low,
+                    offline: rule.scene_offline,
+                },
             })
             .collect(),
         offline_timeout: timeout_duration(settings.offline_timeout),
@@ -442,6 +468,7 @@ impl Runtime {
         self.deps.status.update(|status| {
             status.state = outcome.state;
             status.active_server_id = outcome.active_server;
+            status.active_scene_rule_id = outcome.active_rule;
         });
         if self.streaming
             && let Some(flush) = self
