@@ -102,6 +102,15 @@ pub enum RelayError {
 
 type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CloudLinkState {
+    Connected,
+    #[default]
+    Reconnecting,
+    TakenOver,
+}
+
 pub async fn run_link(
     config: LinkConfig,
     obs_state: watch::Receiver<PcObsState>,
@@ -114,19 +123,41 @@ pub async fn run_link(
 }
 
 pub async fn run_link_with_programs(
+    config: LinkConfig,
+    obs_state: watch::Receiver<PcObsState>,
+    programs: watch::Receiver<Vec<ProgramStatus>>,
+    watchdog: watch::Sender<WatchdogMode>,
+) -> Result<(), RelayError> {
+    let (link_state, _) = watch::channel(CloudLinkState::Reconnecting);
+    run_link_with_programs_and_state(config, obs_state, programs, watchdog, link_state).await
+}
+
+pub async fn run_link_with_programs_and_state(
     mut config: LinkConfig,
     mut obs_state: watch::Receiver<PcObsState>,
     mut programs: watch::Receiver<Vec<ProgramStatus>>,
     watchdog: watch::Sender<WatchdogMode>,
+    link_state: watch::Sender<CloudLinkState>,
 ) -> Result<(), RelayError> {
     crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     let mut backoff = Duration::from_millis(500);
     loop {
-        if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) =
-            connect_once(&mut config, &mut obs_state, &mut programs, &watchdog).await
+        link_state.send_replace(CloudLinkState::Reconnecting);
+        if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) = connect_once(
+            &mut config,
+            &mut obs_state,
+            &mut programs,
+            &watchdog,
+            &link_state,
+        )
+        .await
         {
+            if matches!(error, RelayError::TakenOver) {
+                link_state.send_replace(CloudLinkState::TakenOver);
+            }
             return Err(error);
         }
+        link_state.send_replace(CloudLinkState::Reconnecting);
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(Duration::from_secs(10));
     }
@@ -137,6 +168,7 @@ async fn connect_once(
     obs_state: &mut watch::Receiver<PcObsState>,
     programs: &mut watch::Receiver<Vec<ProgramStatus>>,
     watchdog: &watch::Sender<WatchdogMode>,
+    link_state: &watch::Sender<CloudLinkState>,
 ) -> Result<(), RelayError> {
     crate::install_crypto_provider();
     let mut obs_port = if config.use_dashboard_obs_settings {
@@ -193,7 +225,10 @@ async fn connect_once(
     } else {
         None
     };
-    let (mut upstream, _) = connect_async(&config.link_url).await?;
+    let (mut upstream, _) =
+        tokio::time::timeout(Duration::from_secs(15), connect_async(&config.link_url))
+            .await
+            .map_err(|_| link_timeout("upstream connection timed out"))??;
     upstream
         .send(Message::Text(
             identify_payload(config, obs_version.as_deref())
@@ -254,8 +289,19 @@ async fn connect_once(
     let _ = config.telemetry_tx.send(telemetry.clone());
     let mut identified = false;
     let mut request_error_kind = None;
+    let mut last_received = tokio::time::Instant::now();
+    let mut ping_tick = tokio::time::interval_at(
+        last_received + Duration::from_secs(15),
+        Duration::from_secs(15),
+    );
     loop {
         tokio::select! {
+            _ = tokio::time::sleep_until(last_received + Duration::from_secs(45)) => {
+                return Err(link_timeout("no upstream frames received for 45 seconds"));
+            }
+            _ = ping_tick.tick() => {
+                upstream.send(Message::Ping(Vec::new().into())).await?;
+            }
             _ = obs_retry.tick(), if obs.is_none() && obs_port.is_some() => {
                 if let Some(port) = obs_port
                     && let Ok(Ok(socket)) = tokio::time::timeout(
@@ -362,8 +408,12 @@ async fn connect_once(
             message = upstream.next() => {
                 let Some(message) = message else { return Ok(()); };
                 let message = message?;
+                last_received = tokio::time::Instant::now();
                 let Message::Text(text) = message else { continue; };
                 let value: Value = serde_json::from_str(&text)?;
+                if value.get("identifyAck").and_then(Value::as_bool) == Some(true) {
+                    link_state.send_replace(CloudLinkState::Connected);
+                }
                 if let Some(kind) = value.pointer("/requestError/kind").and_then(Value::as_str) {
                     request_error_kind = Some(kind.to_owned());
                 }
@@ -904,6 +954,12 @@ fn hash_base64(value: &[u8]) -> String {
     STANDARD.encode(Sha256::digest(value))
 }
 
+fn link_timeout(message: &str) -> RelayError {
+    RelayError::WebSocket(tokio_tungstenite::tungstenite::Error::Io(
+        std::io::Error::new(std::io::ErrorKind::TimedOut, message),
+    ))
+}
+
 fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
     json!({
         "token": config.device_token,
@@ -911,7 +967,7 @@ fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
             "token": config.device_token,
             "version": config.version,
             "client": "connect",
-            "capabilities": ["obs_process", "obs_control", "obs_logs", "programs"],
+            "capabilities": ["obs_process", "obs_control", "obs_logs", "programs", "keepalive"],
             "os": config.os,
             "obsVersion": obs_version
         }
@@ -1044,7 +1100,7 @@ mod tests {
                     "token":"device-token",
                     "version":"0.1.0",
                     "client":"connect",
-                    "capabilities":["obs_process","obs_control","obs_logs","programs"],
+                    "capabilities":["obs_process","obs_control","obs_logs","programs","keepalive"],
                     "os":"linux",
                     "obsVersion":"31.0.0"
                 }
@@ -1054,6 +1110,149 @@ mod tests {
             identify_payload(&config, None).pointer("/identify/obsVersion"),
             Some(&serde_json::Value::Null)
         );
+    }
+
+    fn idle_link_config(port: u16) -> LinkConfig {
+        LinkConfig {
+            link_url: format!("ws://127.0.0.1:{port}"),
+            device_token: "test-device".into(),
+            version: "test".into(),
+            os: "linux".into(),
+            obs_port: None,
+            obs_password: String::new(),
+            use_dashboard_obs_settings: false,
+            state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
+            telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
+            effective_obs_tx: tokio::sync::watch::channel(None).0,
+            commands: tokio::sync::mpsc::unbounded_channel().0,
+            unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
+            activity: Arc::new(AtomicU64::new(0)),
+        }
+    }
+
+    async fn idle_connection(
+        config: &mut LinkConfig,
+        link: &tokio::sync::watch::Sender<super::CloudLinkState>,
+    ) -> Result<(), super::RelayError> {
+        let (_state_tx, mut state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
+        let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
+        super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link).await
+    }
+
+    #[tokio::test]
+    async fn upstream_handshake_has_a_deadline() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(listener.local_addr().unwrap().port());
+        let server = tokio::spawn(async move {
+            let (_socket, _) = listener.accept().await.unwrap();
+            tokio::time::sleep(Duration::from_secs(20)).await;
+        });
+        let (link, _) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+        let result =
+            tokio::time::timeout(Duration::from_secs(17), idle_connection(&mut config, &link))
+                .await
+                .unwrap();
+        assert!(
+            matches!(result, Err(super::RelayError::WebSocket(tokio_tungstenite::tungstenite::Error::Io(error))) if error.kind() == std::io::ErrorKind::TimedOut)
+        );
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn upstream_silence_has_a_deadline() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(listener.local_addr().unwrap().port());
+        let server = tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            let mut socket = tokio_tungstenite::accept_async(socket).await.unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"identifyAck":true}).to_string().into(),
+                ))
+                .await
+                .unwrap();
+            tokio::time::sleep(Duration::from_secs(50)).await;
+        });
+        let (link, state) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+        let result =
+            tokio::time::timeout(Duration::from_secs(48), idle_connection(&mut config, &link))
+                .await
+                .unwrap();
+        assert!(
+            matches!(result, Err(super::RelayError::WebSocket(tokio_tungstenite::tungstenite::Error::Io(error))) if error.kind() == std::io::ErrorKind::TimedOut)
+        );
+        assert_eq!(*state.borrow(), super::CloudLinkState::Connected);
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn automatic_pongs_keep_an_idle_identified_link_alive() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(listener.local_addr().unwrap().port());
+        let pings = Arc::new(AtomicU64::new(0));
+        let received = pings.clone();
+        let server = tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            let mut socket = tokio_tungstenite::accept_async(socket).await.unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"identifyAck":true}).to_string().into(),
+                ))
+                .await
+                .unwrap();
+            while let Some(Ok(message)) = socket.next().await {
+                if matches!(message, Message::Ping(_)) {
+                    received.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                }
+            }
+        });
+        let (link, state) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+        assert!(
+            tokio::time::timeout(Duration::from_secs(47), idle_connection(&mut config, &link))
+                .await
+                .is_err()
+        );
+        assert_eq!(*state.borrow(), super::CloudLinkState::Connected);
+        assert_eq!(pings.load(std::sync::atomic::Ordering::Relaxed), 3);
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn takeover_is_terminal_and_preserves_cloud_state() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let config = idle_link_config(listener.local_addr().unwrap().port());
+        let server = tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            let mut socket = tokio_tungstenite::accept_async(socket).await.unwrap();
+            for _ in 0..3 {
+                socket.next().await.unwrap().unwrap();
+            }
+            for frame in [
+                json!({"identifyAck":true}),
+                json!({"requestError":{"kind":"ALREADY_CONNECTED"}}),
+                json!({"identifyAck":false}),
+            ] {
+                socket
+                    .send(Message::Text(frame.to_string().into()))
+                    .await
+                    .unwrap();
+            }
+            while let Some(Ok(_)) = socket.next().await {}
+        });
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_programs_tx, programs_rx) = tokio::sync::watch::channel(Vec::new());
+        let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
+        let (link, state) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+        let result = tokio::time::timeout(
+            Duration::from_secs(3),
+            super::run_link_with_programs_and_state(config, state_rx, programs_rx, watchdog, link),
+        )
+        .await
+        .unwrap();
+        assert!(matches!(result, Err(super::RelayError::TakenOver)));
+        assert_eq!(*state.borrow(), super::CloudLinkState::TakenOver);
+        server.await.unwrap();
     }
 
     #[tokio::test]
@@ -1137,7 +1336,14 @@ mod tests {
         let relay = tokio::spawn(async move {
             let mut state_rx = state_rx;
             let mut config = config;
-            super::connect_once(&mut config, &mut state_rx, &mut programs_rx, &watchdog_tx).await
+            super::connect_once(
+                &mut config,
+                &mut state_rx,
+                &mut programs_rx,
+                &watchdog_tx,
+                &tokio::sync::watch::channel(super::CloudLinkState::Reconnecting).0,
+            )
+            .await
         });
 
         let command = tokio::time::timeout(Duration::from_secs(5), commands_rx.recv())
