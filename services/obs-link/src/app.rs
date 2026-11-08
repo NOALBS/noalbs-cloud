@@ -443,6 +443,7 @@ impl Connection {
         let mut prune = tokio::time::interval(Duration::from_secs(10));
         let identify_deadline = tokio::time::sleep(IDENTIFY_TIMEOUT);
         tokio::pin!(identify_deadline);
+        let mut last_received = Instant::now();
 
         loop {
             tokio::select! {
@@ -451,19 +452,29 @@ impl Connection {
                     self.websocket.close(None).await?;
                     return Ok(());
                 }
-                message = self.websocket.next() => match message {
-                    Some(Ok(Message::Text(text))) => match self.handle_message(&text).await {
-                        Ok(Flow::Continue) => {}
-                        Ok(Flow::Close) => return self.close().await,
-                        Err(error) => tracing::warn!(%error, "Error handling message"),
-                    },
-                    Some(Ok(Message::Close(_))) | None => {
-                        tracing::info!("WebSocket connection closed by client");
-                        return Ok(());
+                message = self.websocket.next() => {
+                    last_received = Instant::now();
+                    match message {
+                        Some(Ok(Message::Text(text))) => match self.handle_message(&text).await {
+                            Ok(Flow::Continue) => {}
+                            Ok(Flow::Close) => return self.close().await,
+                            Err(error) => tracing::warn!(%error, "Error handling message"),
+                        },
+                        Some(Ok(Message::Close(_))) | None => {
+                            tracing::info!("WebSocket connection closed by client");
+                            return Ok(());
+                        }
+                        Some(Ok(_)) => {}
+                        Some(Err(error)) => return Err(error.into()),
                     }
-                    Some(Ok(_)) => {}
-                    Some(Err(error)) => return Err(error.into()),
                 },
+                _ = tokio::time::sleep_until((last_received + Duration::from_secs(60)).into()),
+                    if self.session.as_ref().is_some_and(|session| {
+                        expects_keepalive(session.is_connect, &session.connect_capabilities)
+                    }) => {
+                    tracing::info!("Connect keepalive timed out; closing WebSocket connection");
+                    return Ok(());
+                }
                 Some(message) = inner_comm_rx.recv() => self.forward_to_browser(message).await?,
                 Some(control) = control_rx.recv() => {
                     if let Flow::Close = self.handle_control(control).await? {
@@ -1322,6 +1333,10 @@ impl Connection {
     }
 }
 
+fn expects_keepalive(is_connect: bool, capabilities: &[String]) -> bool {
+    is_connect && capabilities.iter().any(|cap| cap == "keepalive")
+}
+
 /// Starts the BELABOX Cloud link, if the switcher has a remote key.
 fn start_belabox(shared: &Shared, switcher: &db::switchers::Switcher) -> Option<belabox::Link> {
     let encrypted = switcher.belabox_remote_key.as_deref()?;
@@ -1620,6 +1635,15 @@ mod tests {
             response.response,
             ResponseKind::ProgramsState(programs) if programs.is_empty()
         ));
+    }
+
+    #[test]
+    fn only_capable_connect_sessions_require_keepalive() {
+        assert!(super::expects_keepalive(true, &["keepalive".into()]));
+        assert!(!super::expects_keepalive(true, &[]));
+        assert!(!super::expects_keepalive(true, &["obs_control".into()]));
+        assert!(!super::expects_keepalive(false, &["keepalive".into()]));
+        assert!(!super::expects_keepalive(false, &[]));
     }
 
     #[test]

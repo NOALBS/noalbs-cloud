@@ -26,6 +26,7 @@ type Setup = {
 	id: string;
 	name: string;
 	paired: boolean;
+	cloud_state: "connected" | "reconnecting" | "taken_over" | null;
 	switcher_id: string | null;
 	obs_state: string;
 	obs_label: string;
@@ -77,6 +78,12 @@ type Pairing = {
 type Tone = "ok" | "busy" | "bad" | "off";
 
 const SETTINGS = "settings";
+
+const CLOUD_LABELS = {
+	connected: "Connected",
+	reconnecting: "Reconnecting",
+	taken_over: "Taken over",
+};
 
 const OBS_TONES: Record<string, Tone> = {
 	connected: "ok",
@@ -330,6 +337,7 @@ function App() {
 			| "restart_obs"
 			| "unpair_setup"
 			| "enable_websocket"
+			| "reconnect_link"
 			| "remove_setup",
 		id: string,
 	) => run(() => invoke<State>(command, { setupId: id }));
@@ -427,6 +435,8 @@ function App() {
 										<span className="item-text">
 											<span className="item-title">{s.name}</span>
 											<span className="item-sub">
+												{s.cloud_state &&
+													`Cloud: ${CLOUD_LABELS[s.cloud_state]} · `}
 												{s.paired || label === "OBS is running"
 													? label
 													: "Not paired"}
@@ -682,6 +692,7 @@ function SetupDetail({
 			| "restart_obs"
 			| "unpair_setup"
 			| "enable_websocket"
+			| "reconnect_link"
 			| "remove_setup",
 	) => void;
 	onPair: () => void;
@@ -729,9 +740,33 @@ function SetupDetail({
 		<>
 			<h1>{setup.name}</h1>
 			<p className="status-line">
-				<Dot tone={setup.paired ? "ok" : "off"} />
-				{setup.paired ? "Paired with NOALBS Cloud" : "Not paired"}
+				<Dot
+					tone={
+						setup.cloud_state === "connected"
+							? "ok"
+							: setup.cloud_state === "taken_over"
+								? "bad"
+								: setup.paired
+									? "busy"
+									: "off"
+					}
+				/>
+				{setup.cloud_state
+					? `NOALBS Cloud: ${CLOUD_LABELS[setup.cloud_state]}`
+					: "Not paired"}
 			</p>
+			{setup.cloud_state === "taken_over" && (
+				<section className="group">
+					<p className="group-note">
+						Another computer or browser source took over this switcher.
+					</p>
+					<div className="group-footer buttons">
+						<button type="button" onClick={() => onAction("reconnect_link")}>
+							Reconnect
+						</button>
+					</div>
+				</section>
+			)}
 
 			<h2>OBS</h2>
 			<section className="group">
