@@ -393,7 +393,8 @@ pub struct SwitcherStatus {
     pub state: FeedState,
     /// The stream server the switcher is using, if any.
     pub active_server_id: Option<Uuid>,
-    /// The server combination whose scenes the switcher is using, if any.
+    /// The server combination whose scenes are on air, if any: switched to by
+    /// the switcher, not merely matching.
     #[serde(default)]
     pub active_scene_rule_id: Option<Uuid>,
     /// Over the workspace plan's switcher limit: connected, but not switching.

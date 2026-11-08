@@ -163,7 +163,10 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
             .handover
             .lock()
             .ok()
-            .and_then(|mut handover| handover.take())
+            // Read, not taken: if this run fails before its first check (e.g.
+            // reading OBS times out), the next one still needs it. Each check
+            // replaces it.
+            .and_then(|handover| *handover)
         {
             Some((scene, role)) => Memory::handed_over(scene, role),
             None => Memory::default(),

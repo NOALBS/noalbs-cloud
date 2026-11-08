@@ -7481,7 +7481,8 @@ export interface components {
         SwitcherStatus: {
             /**
              * Format: uuid
-             * @description The server combination whose scenes the switcher is using, if any.
+             * @description The server combination whose scenes are on air, if any: switched to by
+             *     the switcher, not merely matching.
              */
             active_scene_rule_id?: string | null;
             /**

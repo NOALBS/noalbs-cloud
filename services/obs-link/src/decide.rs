@@ -169,7 +169,9 @@ pub struct Outcome {
     pub state: FeedState,
     /// The server whose feed is being used.
     pub active_server: Option<Uuid>,
-    /// The server combination whose scenes are being used.
+    /// The server combination whose scenes are on air: the one last switched
+    /// for, while OBS shows one of its scenes. Not one that only matches (e.g.
+    /// while holding, or on a scene of the streamer's own).
     pub active_rule: Option<Uuid>,
     /// Switch to this scene now.
     pub switch_to: Option<Uuid>,
@@ -291,6 +293,27 @@ fn switchable(config: &Config, memory: &Memory, scene: Uuid) -> bool {
 
 /// Decides whether to switch now, updating `memory` for the next check.
 pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -> Outcome {
+    let mut outcome = decide_switch(config, observation, memory);
+    outcome.active_rule = applied_rule(config, memory, observation.current_scene);
+    outcome
+}
+
+/// The rule last switched for, while OBS shows one of its LIVE, LOW or BRB
+/// scenes (blank ones falling back as when switching).
+fn applied_rule(config: &Config, memory: &Memory, current: Option<Uuid>) -> Option<Uuid> {
+    let rule = memory.last_rule?;
+    let current = current?;
+    if !config.rules.iter().any(|candidate| candidate.id == rule) {
+        return None;
+    }
+    [FeedState::Live, FeedState::Low, FeedState::Offline]
+        .into_iter()
+        .any(|state| scene_for(config, state, Some(rule), memory.last_server) == Some(current))
+        .then_some(rule)
+}
+
+/// Everything but `Outcome::active_rule`, which depends on the memory after it.
+fn decide_switch(config: &Config, observation: &Observation, memory: &mut Memory) -> Outcome {
     let (mut feed, server) = evaluate(config, observation.readings);
     let rule = matching_rule(config, observation.readings).map(|rule| rule.id);
     let current = observation.current_scene;
@@ -333,7 +356,7 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
             FeedState::Idle
         },
         active_server: server,
-        active_rule: rule,
+        active_rule: None,
         switch_to: None,
         stop: None,
     };
@@ -1121,13 +1144,23 @@ mod tests {
         // The second server comes up: its scenes after retry_attempts, like a
         // feed change, so a flapping uplink can't flip the layout.
         let mut memory = settled(&config, LIVE, &belabox);
+        // Matching isn't "in use": not while holding on the old scene.
+        assert_eq!(
+            run(&config, LIVE, true, &pair, &mut memory, 1).active_rule,
+            None
+        );
         assert_eq!(
             switches_at(&config, LIVE, &pair, &mut memory),
-            Some((4, id(CAMS_LIVE)))
+            Some((3, id(CAMS_LIVE)))
         );
         assert_eq!(
             run(&config, CAMS_LIVE, true, &pair, &mut memory, 1).active_rule,
             Some(id(BOTH_RULE))
+        );
+        // Nor on a scene of the streamer's own.
+        assert_eq!(
+            run(&config, CHATTING, true, &pair, &mut memory, 1).active_rule,
+            None
         );
 
         // It goes away again: back to the server's scene, after as long.

@@ -24978,7 +24978,7 @@
               "null"
             ],
             "format": "uuid",
-            "description": "The server combination whose scenes the switcher is using, if any."
+            "description": "The server combination whose scenes are on air, if any: switched to by\nthe switcher, not merely matching."
           },
           "active_server_id": {
             "type": [
