@@ -140,6 +140,20 @@ pub struct Memory {
     offline_since: Option<Instant>,
     /// Since when the stream has been on the Ending scene.
     ending_since: Option<Instant>,
+    /// A scene the previous run (before a config change) owned, and its role
+    /// then, while it stays on air. Lets the switcher leave e.g. the scene of a
+    /// combination that was just turned off.
+    handed_over: Option<(Uuid, FeedState)>,
+}
+
+impl Memory {
+    /// Memory for a run that starts while `scene` (playing `role`) is on air.
+    pub fn handed_over(scene: Uuid, role: FeedState) -> Self {
+        Self {
+            handed_over: Some((scene, role)),
+            ..Self::default()
+        }
+    }
 }
 
 /// Why the stream is to stop.
@@ -258,10 +272,21 @@ fn role_of(config: &Config, scene: Uuid) -> Option<FeedState> {
         })
 }
 
-/// Scenes the switcher may leave: the role scenes (overrides included), and
-/// Starting when `switch_to_live` is on. Never e.g. "Just Chatting".
-fn switchable(config: &Config, scene: Uuid) -> bool {
-    role_of(config, scene).is_some() || (config.switch_to_live && config.starting == Some(scene))
+/// Which automatic role a scene plays, counting the scene handed over by the
+/// previous run.
+pub fn owned_role(config: &Config, memory: &Memory, scene: Uuid) -> Option<FeedState> {
+    role_of(config, scene).or(memory
+        .handed_over
+        .filter(|&(handed, _)| handed == scene)
+        .map(|(_, role)| role))
+}
+
+/// Scenes the switcher may leave: the role scenes (overrides included), the
+/// scene handed over, and Starting when `switch_to_live` is on. Never e.g.
+/// "Just Chatting".
+fn switchable(config: &Config, memory: &Memory, scene: Uuid) -> bool {
+    owned_role(config, memory, scene).is_some()
+        || (config.switch_to_live && config.starting == Some(scene))
 }
 
 /// Decides whether to switch now, updating `memory` for the next check.
@@ -270,11 +295,19 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
     let rule = matching_rule(config, observation.readings).map(|rule| rule.id);
     let current = observation.current_scene;
 
+    // The handed-over scene only counts until OBS leaves it.
+    if memory
+        .handed_over
+        .is_some_and(|(scene, _)| Some(scene) != current)
+    {
+        memory.handed_over = None;
+    }
+
     // After a restart, holding goes back to the LIVE or LOW scene on air.
     if memory.previous_scene.is_none()
         && let Some(scene) = current
         && matches!(
-            role_of(config, scene),
+            owned_role(config, memory, scene),
             Some(FeedState::Live | FeedState::Low)
         )
     {
@@ -287,7 +320,7 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
         Feed::Offline => FeedState::Offline,
         Feed::Previous => match memory
             .previous_scene
-            .and_then(|scene| role_of(config, scene))
+            .and_then(|scene| owned_role(config, memory, scene))
         {
             Some(FeedState::Low) => FeedState::Low,
             _ => FeedState::Live,
@@ -316,7 +349,8 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
     let dead_air = observation.streaming
         && allowed
         && feed == Feed::Offline
-        && current.is_some_and(|scene| role_of(config, scene) == Some(FeedState::Offline));
+        && current
+            .is_some_and(|scene| owned_role(config, memory, scene) == Some(FeedState::Offline));
     let ending = observation.streaming && current.is_some() && current == config.ending;
     let now = observation.now;
     if timed_out(
@@ -331,7 +365,8 @@ pub fn decide(config: &Config, observation: &Observation, memory: &mut Memory) -
         outcome.stop = Some(Stop::EndingTimeout);
     }
 
-    let Some(current) = current.filter(|&scene| allowed && switchable(config, scene)) else {
+    let Some(current) = current.filter(|&scene| allowed && switchable(config, memory, scene))
+    else {
         return outcome;
     };
 
@@ -1181,5 +1216,47 @@ mod tests {
             switches_at(&config, CAMS_BRB, &pair, &mut memory),
             Some((1, id(CAMS_LIVE)))
         );
+    }
+
+    #[test]
+    fn a_scene_handed_over_by_the_last_run_can_still_be_left() {
+        // On the combination's scene when it is turned off: the restarted
+        // switcher no longer knows the scene from its config.
+        let before = with_rules(vec![both()]);
+        let pair = readings(&[(BELABOX, Reading::Live), (HOME, Reading::Live)]);
+        let memory = settled(&before, CAMS_LIVE, &pair);
+        assert_eq!(
+            owned_role(&before, &memory, id(CAMS_LIVE)),
+            Some(FeedState::Live)
+        );
+
+        let after = with_rules(Vec::new());
+        assert_eq!(
+            switches_at(&after, CAMS_LIVE, &pair, &mut Memory::default()),
+            None
+        );
+        let mut handed = Memory::handed_over(id(CAMS_LIVE), FeedState::Live);
+        assert_eq!(
+            switches_at(&after, CAMS_LIVE, &pair, &mut handed).map(|(_, scene)| scene),
+            Some(id(LIVE))
+        );
+
+        // Its BRB scene too, so the switcher comes back from it.
+        let mut handed = Memory::handed_over(id(CAMS_BRB), FeedState::Offline);
+        let belabox = readings(&[(BELABOX, Reading::Live)]);
+        assert_eq!(
+            switches_at(&after, CAMS_BRB, &belabox, &mut handed).map(|(_, scene)| scene),
+            Some(id(LIVE))
+        );
+    }
+
+    #[test]
+    fn a_handed_over_scene_stops_counting_once_obs_leaves_it() {
+        let config = with_rules(Vec::new());
+        let live = readings(&[(BELABOX, Reading::Live)]);
+        let mut memory = Memory::handed_over(id(CAMS_LIVE), FeedState::Live);
+        // The streamer moves to a scene of their own, then back.
+        run(&config, CHATTING, true, &live, &mut memory, 1);
+        assert_eq!(switches_at(&config, CAMS_LIVE, &live, &mut memory), None);
     }
 }

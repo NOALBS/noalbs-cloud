@@ -98,6 +98,10 @@ pub struct Deps {
     /// only we undo it. Kept by the connection like `attribution`: a settings save
     /// restarts the switcher, which must still be able to undo its own pause.
     pub paused_by_scene_control: Arc<AtomicBool>,
+    /// The scene on air when the last run stopped, if it owned it, and its role.
+    /// Kept by the connection: a config change (e.g. turning a server combination
+    /// off) restarts the switcher, which must still be able to leave that scene.
+    pub handover: Arc<std::sync::Mutex<Option<(Uuid, FeedState)>>>,
     /// Decrypts stream server secrets (e.g. a MediaMTX password).
     pub data_key: common::crypto::DataKey,
     /// The BELABOX Cloud link, when the switcher has a remote key.
@@ -155,7 +159,15 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
     let mut runtime = Runtime {
         obs: ObsClient::new(InnerCommSender(deps.inner_comm.clone()), switcher_id),
         config: decide_config(&settings, &servers, &rules),
-        memory: Memory::default(),
+        memory: match deps
+            .handover
+            .lock()
+            .ok()
+            .and_then(|mut handover| handover.take())
+        {
+            Some((scene, role)) => Memory::handed_over(scene, role),
+            None => Memory::default(),
+        },
         stats: HashMap::new(),
         scene_names: HashMap::new(),
         current_scene: None,
@@ -465,6 +477,15 @@ impl Runtime {
             readings: &readings,
         };
         let outcome = decide::decide(&self.config, &observation, &mut self.memory);
+        // Kept current every check (not when this run is dropped: an aborted run
+        // can drop after the next one starts), so the next run can leave the
+        // scene on air even if a config change takes it out of the config.
+        let owned = observation.current_scene.and_then(|scene| {
+            decide::owned_role(&self.config, &self.memory, scene).map(|role| (scene, role))
+        });
+        if let Ok(mut handover) = self.deps.handover.lock() {
+            *handover = owned;
+        }
         self.deps.status.update(|status| {
             status.state = outcome.state;
             status.active_server_id = outcome.active_server;

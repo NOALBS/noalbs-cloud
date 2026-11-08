@@ -313,6 +313,11 @@ pub async fn set_overrides(
 pub async fn delete(pool: &PgPool, switcher_id: Uuid, stream_server_id: Uuid) -> Result<bool> {
     let mut tx = pool.begin().await?;
 
+    // Like a rule save, so a save can't add this server to a rule between
+    // the two deletes (the cascade would then leave the rule without it).
+    if !crate::scene_rules::lock_switcher(&mut tx, switcher_id).await? {
+        return Ok(false);
+    }
     sqlx::query(
         "
         DELETE FROM scene_rules

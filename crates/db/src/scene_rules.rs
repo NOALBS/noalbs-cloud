@@ -162,8 +162,9 @@ fn sorted(ids: &[Uuid]) -> Vec<Uuid> {
 }
 
 /// Locks the switcher row, so concurrent saves can't add the same set twice
-/// or go over the limit.
-async fn lock_switcher(conn: &mut PgConnection, switcher_id: Uuid) -> Result<bool> {
+/// or go over the limit, and a server deletion can't interleave with a save
+/// (see [`crate::stream_servers::delete`]). Returns `false` if it doesn't exist.
+pub(crate) async fn lock_switcher(conn: &mut PgConnection, switcher_id: Uuid) -> Result<bool> {
     let found = sqlx::query_scalar::<_, Uuid>("SELECT id FROM switchers WHERE id = $1 FOR UPDATE")
         .bind(switcher_id)
         .fetch_optional(conn)
