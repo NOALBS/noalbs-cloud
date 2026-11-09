@@ -46,13 +46,13 @@ class ReconnectingWebSocket {
 		}
 		const socket = new WebSocket(this.url);
 		this.socket = socket;
-		const timers = { connect: null, idle: null, lastMessageAt: Date.now() };
+		const timers = { connect: null, idle: null, lastMessageAt: Date.now(), receivedFirstMessage: false };
 		this.socketTimers.set(socket, timers);
 
 		if (this.connectTimeout !== null) {
 			timers.connect = setTimeout(() => {
 				timers.connect = null;
-				if (this.socket === socket && socket.readyState === WebSocket.CONNECTING) {
+				if (this.socket === socket && !timers.receivedFirstMessage) {
 					this.abandon(socket);
 				}
 			}, this.connectTimeout);
@@ -60,7 +60,6 @@ class ReconnectingWebSocket {
 
 		socket.onopen = () => {
 			if (this.socket !== socket || attemptId !== this.attempt) return;
-			this.clearConnectTimer(socket);
 			timers.lastMessageAt = Date.now();
 			this.reconnectDelay = this.initialReconnectDelay;
 			this.updateState('connected');
@@ -73,6 +72,8 @@ class ReconnectingWebSocket {
 
 		socket.onmessage = (event) => {
 			if (this.socket !== socket || attemptId !== this.attempt) return;
+			timers.receivedFirstMessage = true;
+			this.clearConnectTimer(socket);
 			timers.lastMessageAt = Date.now();
 			this.onMessage?.(event, socket);
 		};

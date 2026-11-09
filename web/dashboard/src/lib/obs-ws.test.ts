@@ -140,6 +140,52 @@ describe("ReconnectingWebSocket", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("abandons an open socket that receives no message", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const onClose = vi.fn();
+    const connection = track(
+      new ReconnectingWebSocket({
+        url: "ws://test/link",
+        connectTimeout: 10000,
+        onClose,
+      }),
+    );
+
+    connection.start();
+    const silentSocket = socketAt(0);
+    silentSocket.open();
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(silentSocket.close).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(silentSocket.close).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+  });
+
+  it("clears the connect timeout after the first message", async () => {
+    const onClose = vi.fn();
+    const connection = track(
+      new ReconnectingWebSocket({
+        url: "ws://test/link",
+        connectTimeout: 10000,
+        onClose,
+      }),
+    );
+
+    connection.start();
+    const socket = socketAt(0);
+    socket.open();
+    await vi.advanceTimersByTimeAsync(9000);
+    socket.receive("first message");
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(socket.close).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
   it("only arms the idle watchdog after requested and resets it on traffic", async () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const onClose = vi.fn();
@@ -154,6 +200,7 @@ describe("ReconnectingWebSocket", () => {
     connection.start();
     const socket = socketAt(0);
     socket.open();
+    socket.receive("initial handshake");
     await vi.advanceTimersByTimeAsync(180000);
     expect(onClose).not.toHaveBeenCalled();
 
