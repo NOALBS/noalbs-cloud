@@ -56,6 +56,8 @@ const SWITCHER_RESTART_DELAY: Duration = Duration::from_secs(5);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 /// How long a browser source has to identify (it does so as soon as it connects).
 const IDENTIFY_TIMEOUT: Duration = Duration::from_secs(10);
+/// How often to send a keepalive to a browser source.
+const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(15);
 /// The largest message we take from a client. Replies go on over NATS, which
 /// takes 1 MB at most anyway; this only has to fit the biggest OBS answer.
 const MAX_MESSAGE_SIZE: usize = 4 << 20;
@@ -441,6 +443,10 @@ impl Connection {
         mut control_rx: mpsc::UnboundedReceiver<Control>,
     ) -> Result<()> {
         let mut prune = tokio::time::interval(Duration::from_secs(10));
+        let mut keepalive = tokio::time::interval_at(
+            tokio::time::Instant::now() + KEEPALIVE_INTERVAL,
+            KEEPALIVE_INTERVAL,
+        );
         let identify_deadline = tokio::time::sleep(IDENTIFY_TIMEOUT);
         tokio::pin!(identify_deadline);
         let mut last_received = Instant::now();
@@ -472,8 +478,12 @@ impl Connection {
                     if self.session.as_ref().is_some_and(|session| {
                         expects_keepalive(session.is_connect, &session.connect_capabilities)
                     }) => {
-                    tracing::info!("Connect keepalive timed out; closing WebSocket connection");
+                    tracing::info!("WebSocket keepalive timed out; closing connection");
                     return Ok(());
+                }
+                _ = keepalive.tick(), if self.session.as_ref().is_some_and(|session| !session.is_connect) => {
+                    self.websocket.send(Message::Ping(Vec::new().into())).await?;
+                    self.send_request(RequestKind::Keepalive(()), None).await?;
                 }
                 Some(message) = inner_comm_rx.recv() => self.forward_to_browser(message).await?,
                 Some(control) = control_rx.recv() => {
@@ -817,6 +827,9 @@ impl Connection {
             None,
         )
         .await?;
+        if !is_connect {
+            self.send_request(RequestKind::Keepalive(()), None).await?;
+        }
         db::switchers::touch_last_seen(&self.shared.db, switcher_id).await?;
         let paused = db::switchers::is_paused(&self.shared.db, switcher_id).await?;
         if paused {
@@ -1334,7 +1347,7 @@ impl Connection {
 }
 
 fn expects_keepalive(is_connect: bool, capabilities: &[String]) -> bool {
-    is_connect && capabilities.iter().any(|cap| cap == "keepalive")
+    !is_connect || capabilities.iter().any(|cap| cap == "keepalive")
 }
 
 /// Starts the BELABOX Cloud link, if the switcher has a remote key.
@@ -1521,6 +1534,7 @@ struct Request {
 #[serde(rename_all = "camelCase")]
 enum RequestKind {
     IdentifyAck(bool),
+    Keepalive(()),
     RequestError(RequestError),
     Settings(Settings),
     ObsRawRequest(String),
@@ -1638,12 +1652,25 @@ mod tests {
     }
 
     #[test]
-    fn only_capable_connect_sessions_require_keepalive() {
+    fn browser_sources_and_capable_connect_sessions_require_keepalive() {
         assert!(super::expects_keepalive(true, &["keepalive".into()]));
         assert!(!super::expects_keepalive(true, &[]));
         assert!(!super::expects_keepalive(true, &["obs_control".into()]));
-        assert!(!super::expects_keepalive(false, &["keepalive".into()]));
-        assert!(!super::expects_keepalive(false, &[]));
+        assert!(super::expects_keepalive(false, &["keepalive".into()]));
+        assert!(super::expects_keepalive(false, &[]));
+    }
+
+    #[test]
+    fn keepalive_request_matches_wire_shape() {
+        let request = Request {
+            token: None,
+            request: RequestKind::Keepalive(()),
+        };
+
+        assert_eq!(
+            serde_json::to_string(&request).unwrap(),
+            r#"{"keepalive":null}"#
+        );
     }
 
     #[test]

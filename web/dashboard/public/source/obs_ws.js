@@ -1,5 +1,5 @@
 class ReconnectingWebSocket {
-	constructor({ url, onOpen, onMessage, onStateChange, onClose, onError, onConnectedPayload, reconnectDelay = 500, maxReconnectDelay = 10000 }) {
+	constructor({ url, onOpen, onMessage, onStateChange, onClose, onError, onConnectedPayload, reconnectDelay = 500, maxReconnectDelay = 10000, connectTimeout = 10000, idleTimeout = null }) {
 		this.url = url;
 		this.onOpen = onOpen;
 		this.onMessage = onMessage;
@@ -13,6 +13,9 @@ class ReconnectingWebSocket {
 		this.reconnectDelay = reconnectDelay;
 		this.initialReconnectDelay = reconnectDelay;
 		this.maxReconnectDelay = maxReconnectDelay;
+		this.connectTimeout = connectTimeout;
+		this.idleTimeout = idleTimeout;
+		this.socketTimers = new WeakMap();
 		this.attempt = 0;
 	}
 
@@ -38,11 +41,26 @@ class ReconnectingWebSocket {
 		this.clearReconnectTimer();
 		this.updateState(this.attempt > 0 ? 'reconnecting' : 'connecting');
 		const attemptId = ++this.attempt;
+		if (this.socket) {
+			this.clearSocketTimers(this.socket);
+		}
 		const socket = new WebSocket(this.url);
 		this.socket = socket;
+		const timers = { connect: null, idle: null, lastMessageAt: Date.now(), receivedFirstMessage: false };
+		this.socketTimers.set(socket, timers);
+
+		if (this.connectTimeout !== null) {
+			timers.connect = setTimeout(() => {
+				timers.connect = null;
+				if (this.socket === socket && !timers.receivedFirstMessage) {
+					this.abandon(socket);
+				}
+			}, this.connectTimeout);
+		}
 
 		socket.onopen = () => {
 			if (this.socket !== socket || attemptId !== this.attempt) return;
+			timers.lastMessageAt = Date.now();
 			this.reconnectDelay = this.initialReconnectDelay;
 			this.updateState('connected');
 			this.onOpen?.(socket);
@@ -54,19 +72,16 @@ class ReconnectingWebSocket {
 
 		socket.onmessage = (event) => {
 			if (this.socket !== socket || attemptId !== this.attempt) return;
+			timers.receivedFirstMessage = true;
+			this.clearConnectTimer(socket);
+			timers.lastMessageAt = Date.now();
 			this.onMessage?.(event, socket);
 		};
 
 		socket.onclose = (event) => {
-			if (this.socket === socket) {
-				this.socket = null;
-			}
-			this.onClose?.(event, socket);
-			if (this.shouldReconnect) {
-				this.scheduleReconnect();
-			} else {
-				this.updateState('disconnected');
-			}
+			if (this.socket !== socket) return;
+			this.socket = null;
+			this.handleClosed(socket, event);
 		};
 
 		socket.onerror = (event) => {
@@ -78,13 +93,74 @@ class ReconnectingWebSocket {
 	scheduleReconnect() {
 		if (!this.shouldReconnect) return;
 		this.clearReconnectTimer();
-		const delay = this.reconnectDelay;
+		const baseDelay = this.reconnectDelay;
+		const delay = baseDelay / 2 + Math.random() * baseDelay / 2;
 		this.updateState('reconnecting', delay);
 		this.reconnectTimer = setTimeout(() => {
 			this.reconnectTimer = null;
 			this.connect();
 		}, delay);
-		this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+		this.reconnectDelay = Math.min(baseDelay * 2, this.maxReconnectDelay);
+	}
+
+	handleClosed(socket, event) {
+		this.clearSocketTimers(socket);
+		this.onClose?.(event, socket);
+		if (this.shouldReconnect) {
+			this.scheduleReconnect();
+		} else {
+			this.updateState('disconnected');
+		}
+	}
+
+	abandon(socket) {
+		if (socket !== this.socket) return;
+		this.socket = null;
+		this.clearSocketTimers(socket);
+		socket.onopen = null;
+		socket.onmessage = null;
+		socket.onclose = null;
+		socket.onerror = null;
+		try {
+			socket.close();
+		} catch {}
+		this.handleClosed(socket, { code: 1006, reason: 'abandoned', wasClean: false });
+	}
+
+	armIdleWatchdog() {
+		const socket = this.socket;
+		if (!socket || this.idleTimeout === null) return;
+		const timers = this.socketTimers.get(socket);
+		if (!timers || timers.idle !== null) return;
+		timers.lastMessageAt = Date.now();
+		timers.idle = setInterval(() => {
+			if (this.socket !== socket) {
+				this.clearIdleWatchdog(socket);
+				return;
+			}
+			if (Date.now() - timers.lastMessageAt > this.idleTimeout) {
+				this.abandon(socket);
+			}
+		}, 5000);
+	}
+
+	clearConnectTimer(socket) {
+		const timers = this.socketTimers.get(socket);
+		if (!timers || timers.connect === null) return;
+		clearTimeout(timers.connect);
+		timers.connect = null;
+	}
+
+	clearIdleWatchdog(socket) {
+		const timers = this.socketTimers.get(socket);
+		if (!timers || timers.idle === null) return;
+		clearInterval(timers.idle);
+		timers.idle = null;
+	}
+
+	clearSocketTimers(socket) {
+		this.clearConnectTimer(socket);
+		this.clearIdleWatchdog(socket);
 	}
 
 	stop() {
@@ -98,6 +174,7 @@ class ReconnectingWebSocket {
 		const socket = this.socket;
 		this.socket = null;
 		if (socket) {
+			this.clearSocketTimers(socket);
 			try {
 				socket.close();
 			} catch {}
@@ -140,8 +217,6 @@ class ObsWsRelayAppCore {
 		};
 		this.obsReady = false;
 		this.upReady = false;
-		this.upstreamIdentifySent = false;
-		this.identifyAckFailed = false;
 		this.obsPort = this.options.obsPort;
 		this.obsPassword = this.options.obsPassword;
 		this.obsConnection = null;
@@ -316,7 +391,6 @@ class ObsWsRelayAppCore {
 	}
 
 	disableReconnect() {
-		this.identifyAckFailed = true;
 		if (this.upConnection && this.upConnection instanceof ReconnectingWebSocket) {
 			this.upConnection.shouldReconnect = false;
 		}
@@ -355,14 +429,18 @@ class ObsWsRelayAppCore {
 	}
 
 	restartObsConnection() {
+		const wasReady = this.obsReady;
+		if (wasReady) {
+			this.sendToUpstream({ obsWsConnected: false });
+		}
 		if (this.obsConnection) {
 			this.obsConnection.stop();
 			this.obsConnection = null;
 		}
+		this.obsReady = false;
 		if (!this.hasObsConfig) {
 			return;
 		}
-		this.obsReady = false;
 		this.obsConnection = this.createObsConnection();
 		this.obsConnection.start();
 	}
@@ -371,16 +449,20 @@ class ObsWsRelayAppCore {
 	createUpstreamConnection() {
 		return new ReconnectingWebSocket({
 			url: this.upstreamUrl,
+			idleTimeout: 45000,
 			onStateChange: (state) => this.log('[up state]', state),
 			onOpen: () => {
 				this.upReady = true;
 				this.log('[up]', 'connected');
-				this.upstreamIdentifySent = true;
 				this.sendToUpstream(this.buildIdentifyPayload());
 			},
 			onMessage: (event) => {
-				this.log('[up <-]', event.data);
 				const msg = this.parseMaybeJson(event.data);
+				if (msg && typeof msg === 'object' && Object.prototype.hasOwnProperty.call(msg, 'keepalive')) {
+					this.upConnection?.armIdleWatchdog();
+					return;
+				}
+				this.log('[up <-]', event.data);
 
 				if (msg && typeof msg === 'object' && (Object.prototype.hasOwnProperty.call(msg, 'obsRawRequest') || Object.prototype.hasOwnProperty.call(msg, 'obs_raw_request'))) {
 					this.forwardObsRawRequest(msg);
@@ -403,7 +485,6 @@ class ObsWsRelayAppCore {
 			},
 			onClose: () => {
 				this.upReady = false;
-				this.upstreamIdentifySent = false;
 				this.obsRequestTokens.clear();
 				this.obsReady = false;
 				if (this.obsConnection) {
@@ -493,7 +574,6 @@ class ObsWsRelayAppCore {
 		}
 		this.obsReady = false;
 		this.upReady = false;
-		this.upstreamIdentifySent = false;
 	}
 
 	sendToObs(payload) {
