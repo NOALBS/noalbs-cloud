@@ -827,6 +827,9 @@ impl Connection {
             None,
         )
         .await?;
+        if !is_connect {
+            self.send_request(RequestKind::Keepalive(()), None).await?;
+        }
         db::switchers::touch_last_seen(&self.shared.db, switcher_id).await?;
         let paused = db::switchers::is_paused(&self.shared.db, switcher_id).await?;
         if paused {
