@@ -2787,7 +2787,8 @@
                   "description": "Which connected switchers the overview lists.",
                   "enum": [
                     "live",
-                    "obs"
+                    "obs",
+                    "attention"
                   ]
                 },
                 {
@@ -4267,7 +4268,8 @@
                   "description": "Which connected switchers the overview lists.",
                   "enum": [
                     "live",
-                    "obs"
+                    "obs",
+                    "attention"
                   ]
                 },
                 {
@@ -11966,6 +11968,126 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/preferences": {
+      "get": {
+        "tags": [
+          "switchers"
+        ],
+        "operationId": "get_preferences",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitcherPreferencesDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "switchers"
+        ],
+        "operationId": "put_preferences",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwitcherPreferencesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/preview": {
       "put": {
         "tags": [
@@ -13443,6 +13565,7 @@
       "AccountExport": {
         "type": "object",
         "required": [
+          "switcher_preferences",
           "account",
           "connections",
           "sessions",
@@ -13531,12 +13654,53 @@
             },
             "description": "NOALBS support access you gave (or, as staff, opened)."
           },
+          "switcher_preferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Preferences"
+            }
+          },
           "workspaces": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Workspace"
             },
             "description": "Workspaces you're in or created. Switchers are listed for your own (see\n`switchers`), billing for those you own."
+          }
+        }
+      },
+      "ActiveServerDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ],
+        "properties": {
+          "bitrate": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StreamServerKindDto"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rtt": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
           }
         }
       },
@@ -14896,6 +15060,14 @@
           "bottom_left",
           "bottom",
           "bottom_right"
+        ]
+      },
+      "Attention": {
+        "type": "string",
+        "enum": [
+          "no_feed",
+          "low",
+          "obs_lost"
         ]
       },
       "AudioUpdate": {
@@ -20450,6 +20622,7 @@
           "clients",
           "switchers",
           "connected",
+          "attention",
           "obs_connected",
           "live",
           "low",
@@ -20458,6 +20631,10 @@
           "paused"
         ],
         "properties": {
+          "attention": {
+            "type": "integer",
+            "format": "int64"
+          },
           "clients": {
             "type": "integer",
             "format": "int64"
@@ -20515,8 +20692,35 @@
           "state"
         ],
         "properties": {
+          "attention": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Attention"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attention_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
           "obs_connected": {
             "type": "boolean"
+          },
+          "obs_lost": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ObsLost"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "paused": {
             "type": "boolean"
@@ -20531,8 +20735,32 @@
             ],
             "description": "The scene on air."
           },
+          "server": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ActiveServerDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "state": {
             "$ref": "#/components/schemas/FeedState"
+          },
+          "state_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "stops_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           },
           "stream_started_at": {
             "type": [
@@ -21200,6 +21428,7 @@
           "workspaces",
           "switchers",
           "connected",
+          "attention",
           "obs_connected",
           "live",
           "low",
@@ -21208,6 +21437,10 @@
           "paused"
         ],
         "properties": {
+          "attention": {
+            "type": "integer",
+            "format": "int64"
+          },
           "connected": {
             "type": "integer",
             "format": "int64",
@@ -21252,6 +21485,8 @@
       "MyLiveDto": {
         "type": "object",
         "required": [
+          "offline",
+          "offline_total",
           "counts",
           "items",
           "total",
@@ -21268,6 +21503,16 @@
               "$ref": "#/components/schemas/MyLiveSwitcherDto"
             },
             "description": "Connected switchers on this page, live ones first."
+          },
+          "offline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfflineSwitcherDto"
+            }
+          },
+          "offline_total": {
+            "type": "integer",
+            "format": "int64"
           },
           "page": {
             "type": "integer",
@@ -21301,8 +21546,35 @@
           "state"
         ],
         "properties": {
+          "attention": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Attention"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attention_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
           "obs_connected": {
             "type": "boolean"
+          },
+          "obs_lost": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ObsLost"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "paused": {
             "type": "boolean"
@@ -21321,8 +21593,32 @@
             ],
             "description": "The scene on air."
           },
+          "server": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ActiveServerDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "state": {
             "$ref": "#/components/schemas/FeedState"
+          },
+          "state_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "stops_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           },
           "stream_started_at": {
             "type": [
@@ -21679,6 +21975,25 @@
           }
         }
       },
+      "ObsLost": {
+        "type": "object",
+        "required": [
+          "since"
+        ],
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stream_started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "ObsSceneDto": {
         "type": "object",
         "required": [
@@ -21902,6 +22217,56 @@
           "this_stream": {
             "type": "boolean",
             "description": "`rendering` and `encoding` count this stream's frames; otherwise since\nOBS started."
+          }
+        }
+      },
+      "OfflineSwitcherDto": {
+        "type": "object",
+        "required": [
+          "switcher_id",
+          "switcher_name",
+          "workspace_id",
+          "workspace_name",
+          "workspace_slug",
+          "paused"
+        ],
+        "properties": {
+          "last_seen_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "switcher_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "switcher_name": {
+            "type": "string"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_name": {
+            "type": "string"
+          },
+          "workspace_slug": {
+            "type": "string"
           }
         }
       },
@@ -22153,6 +22518,8 @@
       "OrganizationLiveDto": {
         "type": "object",
         "required": [
+          "offline",
+          "offline_total",
           "counts",
           "items",
           "total",
@@ -22169,6 +22536,16 @@
               "$ref": "#/components/schemas/LiveSwitcherDto"
             },
             "description": "Connected switchers on this page, live ones first."
+          },
+          "offline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfflineSwitcherDto"
+            }
+          },
+          "offline_total": {
+            "type": "integer",
+            "format": "int64"
           },
           "page": {
             "type": "integer",
@@ -22648,6 +23025,25 @@
         "properties": {
           "device_code": {
             "type": "string"
+          }
+        }
+      },
+      "Preferences": {
+        "type": "object",
+        "required": [
+          "switcher_id",
+          "preferences",
+          "updated_at"
+        ],
+        "properties": {
+          "preferences": {},
+          "switcher_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -24958,6 +25354,22 @@
           }
         ]
       },
+      "SwitcherPreferencesDto": {
+        "type": "object",
+        "required": [
+          "preferences"
+        ],
+        "properties": {
+          "preferences": {},
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "SwitcherStatus": {
         "type": "object",
         "description": "The latest known state of a switcher's browser source and OBS.",
@@ -25010,6 +25422,16 @@
             "type": "boolean",
             "description": "The browser source is connected to OBS's websocket."
           },
+          "obs_lost": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ObsLost"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "paused": {
             "type": "boolean",
             "description": "Over the workspace plan's switcher limit: connected, but not switching."
@@ -25040,6 +25462,20 @@
           },
           "state": {
             "$ref": "#/components/schemas/FeedState"
+          },
+          "state_since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "stops_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           },
           "stream_frames": {
             "oneOf": [
@@ -25107,6 +25543,16 @@
             "type": "integer",
             "format": "int64",
             "description": "Linked channels the bot lost access to; someone has to connect them again."
+          },
+          "server": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ActiveServerDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "status": {
             "oneOf": [

@@ -140,6 +140,7 @@ pub struct Memory {
     offline_since: Option<Instant>,
     /// Since when the stream has been on the Ending scene.
     ending_since: Option<Instant>,
+    deadline: Option<(Instant, chrono::DateTime<chrono::Utc>)>,
     /// A scene the previous run (before a config change) owned, and its role
     /// then, while it stays on air. Lets the switcher leave e.g. the scene of a
     /// combination that was just turned off.
@@ -147,6 +148,32 @@ pub struct Memory {
 }
 
 impl Memory {
+    pub fn stops_at(&mut self, config: &Config) -> Option<chrono::DateTime<chrono::Utc>> {
+        let deadline = self
+            .offline_since
+            .zip(config.offline_timeout)
+            .into_iter()
+            .chain(self.ending_since.zip(config.ending_timeout))
+            .map(|(since, timeout)| since + timeout)
+            .min();
+        match deadline {
+            Some(deadline) => {
+                if self.deadline.is_none_or(|(instant, _)| instant != deadline) {
+                    let remaining = deadline.saturating_duration_since(Instant::now());
+                    self.deadline = Some((
+                        deadline,
+                        chrono::Utc::now() + chrono::Duration::from_std(remaining).unwrap(),
+                    ));
+                }
+                self.deadline.map(|(_, wall)| wall)
+            }
+            None => {
+                self.deadline = None;
+                None
+            }
+        }
+    }
+
     /// Memory for a run that starts while `scene` (playing `role`) is on air.
     pub fn handed_over(scene: Uuid, role: FeedState) -> Self {
         Self {
@@ -869,6 +896,28 @@ mod tests {
             offline_timeout: Some(Duration::from_secs(minutes * 60)),
             ..config()
         }
+    }
+
+    #[test]
+    fn deadlines_are_stable_and_clear_with_the_countdowns() {
+        let config = Config {
+            ending_timeout: Some(Duration::from_secs(120)),
+            ..with_timeout(1)
+        };
+        let now = Instant::now();
+        let mut memory = Memory::default();
+        assert_eq!(memory.stops_at(&config), None);
+        memory.offline_since = Some(now);
+        let deadline = memory.stops_at(&config).unwrap();
+        assert_eq!(memory.stops_at(&config), Some(deadline));
+        memory.ending_since = Some(now);
+        assert_eq!(memory.stops_at(&config), Some(deadline));
+        memory.offline_since = None;
+        let ending = memory.stops_at(&config).unwrap();
+        assert!(ending > deadline);
+        assert_eq!(memory.stops_at(&config), Some(ending));
+        memory.ending_since = None;
+        assert_eq!(memory.stops_at(&config), None);
     }
 
     #[test]

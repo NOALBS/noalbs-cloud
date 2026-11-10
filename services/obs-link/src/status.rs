@@ -22,6 +22,9 @@ impl StatusHandle {
         self.0.send_if_modified(|status| {
             let before = status.clone();
             change(status);
+            if status.state != before.state {
+                status.state_since = Some(Utc::now());
+            }
             let changed = *status != before;
             if changed {
                 status.updated_at = Utc::now();
@@ -100,6 +103,21 @@ pub async fn publish<T: Published>(
 mod tests {
     use super::StatusHandle;
     use live::SwitcherStatus;
+
+    #[test]
+    fn state_since_changes_only_with_state() {
+        let handle = StatusHandle::new(SwitcherStatus::connected(true));
+        let mut receiver = handle.subscribe();
+        handle.update(|status| status.state = live::FeedState::Offline);
+        let since = receiver.borrow_and_update().state_since;
+        assert!(since.is_some());
+        handle.update(|status| status.state = live::FeedState::Offline);
+        assert!(!receiver.has_changed().unwrap());
+        assert_eq!(receiver.borrow().state_since, since);
+        handle.update(|status| status.state = live::FeedState::Idle);
+        assert!(receiver.has_changed().unwrap());
+        assert!(receiver.borrow().state_since.is_some());
+    }
 
     #[test]
     fn only_real_changes_notify() {

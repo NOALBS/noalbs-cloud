@@ -17,6 +17,7 @@ pub mod members;
 pub mod moblin;
 pub mod my_workspaces;
 pub mod notices;
+pub mod operator_live;
 pub mod organization_audit;
 pub mod organization_ops;
 pub mod organizations;

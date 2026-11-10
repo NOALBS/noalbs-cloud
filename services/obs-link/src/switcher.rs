@@ -489,7 +489,9 @@ impl Runtime {
         if let Ok(mut handover) = self.deps.handover.lock() {
             *handover = owned;
         }
+        let stops_at = self.memory.stops_at(&self.config);
         self.deps.status.update(|status| {
+            status.stops_at = stops_at;
             status.state = outcome.state;
             status.active_server_id = outcome.active_server;
             status.active_scene_rule_id = outcome.active_rule;

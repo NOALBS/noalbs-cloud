@@ -444,6 +444,8 @@ pub async fn list_summaries_page(
 /// A switcher in a workspace the user is a member of, named for lists across them.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct MemberSwitcher {
+    pub last_seen_at: Option<DateTime<Utc>>,
+    pub paused: bool,
     pub workspace_id: Uuid,
     pub workspace_name: String,
     pub workspace_slug: String,
@@ -466,9 +468,15 @@ pub async fn member_switchers(
     let switchers = sqlx::query_as::<_, MemberSwitcher>(
         "SELECT workspaces.id AS workspace_id, workspaces.name AS workspace_name,
                 workspaces.url_slug AS workspace_slug, members.role,
-                switchers.id AS switcher_id, switchers.name AS switcher_name
+                switchers.id AS switcher_id, switchers.name AS switcher_name,
+                switchers.last_seen_at,
+                (workspaces.organization_id IS NULL AND
+                    (SELECT count(*) FROM switchers ranked WHERE ranked.workspace_id = workspaces.id
+                     AND (ranked.created_at, ranked.id) <= (switchers.created_at, switchers.id)) > plans.max_switchers)
+                    OR plans.suspended_at IS NOT NULL AS paused
          FROM switchers
          JOIN workspaces ON workspaces.id = switchers.workspace_id
+         JOIN workspace_plans plans ON plans.workspace_id = workspaces.id
          JOIN workspace_members AS members
            ON members.workspace_id = workspaces.id AND members.user_id = $1
          WHERE ($2::uuid[] IS NULL OR workspaces.id = ANY($2))

@@ -391,6 +391,12 @@ pub struct SwitcherStatus {
     /// Automatic switching is on (`bitrate_switcher_enabled`).
     pub auto_switch: bool,
     pub state: FeedState,
+    #[serde(default)]
+    pub state_since: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub stops_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub obs_lost: Option<ObsLost>,
     /// The stream server the switcher is using, if any.
     pub active_server_id: Option<Uuid>,
     /// The server combination whose scenes are on air, if any: switched to by
@@ -482,6 +488,9 @@ impl SwitcherStatus {
             current_scene: None,
             auto_switch,
             state: FeedState::Idle,
+            state_since: None,
+            stops_at: None,
+            obs_lost: None,
             active_server_id: None,
             active_scene_rule_id: None,
             paused: false,
@@ -489,6 +498,13 @@ impl SwitcherStatus {
             pc: None,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
+pub struct ObsLost {
+    pub since: DateTime<Utc>,
+    pub stream_started_at: Option<DateTime<Utc>>,
 }
 
 /// One stream server's numbers at one moment.
@@ -1103,6 +1119,19 @@ mod tests {
             serde_json::to_string(&PcObsState::NotResponding).unwrap(),
             "\"not_responding\""
         );
+    }
+
+    #[test]
+    fn operator_status_fields_are_optional_for_old_entries() {
+        let mut value = serde_json::to_value(SwitcherStatus::connected(false)).unwrap();
+        for field in ["state_since", "stops_at", "obs_lost"] {
+            assert!(value[field].is_null());
+            value.as_object_mut().unwrap().remove(field);
+        }
+        let status: SwitcherStatus = serde_json::from_value(value).unwrap();
+        assert!(status.state_since.is_none());
+        assert!(status.stops_at.is_none());
+        assert!(status.obs_lost.is_none());
     }
 
     #[test]

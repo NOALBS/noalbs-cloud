@@ -5,6 +5,22 @@ use uuid::Uuid;
 
 use crate::error::Result;
 
+#[derive(Debug, sqlx::FromRow)]
+pub struct ServerName {
+    pub id: Uuid,
+    pub name: String,
+    pub kind: StreamServerKind,
+}
+
+pub async fn names(pool: &PgPool, ids: &[Uuid]) -> Result<Vec<ServerName>> {
+    Ok(
+        sqlx::query_as("SELECT id, name, kind FROM stream_servers WHERE id = ANY($1)")
+            .bind(ids)
+            .fetch_all(pool)
+            .await?,
+    )
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "stream_server_kind", rename_all = "UPPERCASE")]
 pub enum StreamServerKind {

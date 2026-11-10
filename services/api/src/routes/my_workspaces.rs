@@ -22,7 +22,7 @@ use crate::{
     permissions::CurrentUser,
     routes::{
         ApiResult, ErrorBody,
-        organization_ops::{LiveFilter, LiveQuery},
+        organization_ops::LiveQuery,
         organizations::{ClientSort, ClientState, live_statuses},
         workspaces::{WorkspaceDto, WorkspaceRole},
     },
@@ -31,7 +31,7 @@ use crate::{
 /// Workspaces per page.
 const PER_PAGE: i64 = 25;
 /// Rows per page of the live overview.
-const LIVE_PER_PAGE: usize = 25;
+const LIVE_PER_PAGE: usize = 50;
 
 pub fn router() -> OpenApiRouter<ApiState> {
     OpenApiRouter::new()
@@ -177,6 +177,7 @@ pub struct MyLiveCountsDto {
     pub switchers: i64,
     /// Switchers whose browser source is connected.
     pub connected: i64,
+    pub attention: i64,
     pub obs_connected: i64,
     pub live: i64,
     /// Live and on the LOW scene.
@@ -203,12 +204,20 @@ pub struct MyLiveSwitcherDto {
     pub paused: bool,
     pub state: FeedState,
     pub stream_started_at: Option<DateTime<Utc>>,
+    pub state_since: Option<DateTime<Utc>>,
+    pub stops_at: Option<DateTime<Utc>>,
+    pub obs_lost: Option<live::ObsLost>,
+    pub attention: Option<super::operator_live::Attention>,
+    pub attention_since: Option<DateTime<Utc>>,
+    pub server: Option<super::operator_live::ActiveServerDto>,
     /// The scene on air.
     pub scene: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MyLiveDto {
+    pub offline: Vec<super::operator_live::OfflineSwitcherDto>,
+    pub offline_total: i64,
     pub counts: MyLiveCountsDto,
     /// Connected switchers on this page, live ones first.
     pub items: Vec<MyLiveSwitcherDto>,
@@ -239,6 +248,8 @@ async fn my_live(
         db::workspaces::list_summaries_page(&state.db, user.id(), MemberFilter::default(), 1, 0)
             .await?;
 
+    let servers = super::operator_live::servers(&state, &statuses).await?;
+    let mut offline = Vec::new();
     let mut counts = MyLiveCountsDto {
         workspaces,
         switchers: switchers.len() as i64,
@@ -247,8 +258,20 @@ async fn my_live(
     let mut connected: Vec<MyLiveSwitcherDto> = Vec::new();
     for switcher in switchers {
         let Some(status) = statuses.get(&switcher.switcher_id) else {
+            offline.push(super::operator_live::OfflineSwitcherDto {
+                switcher_id: switcher.switcher_id,
+                switcher_name: switcher.switcher_name,
+                workspace_id: switcher.workspace_id,
+                workspace_name: switcher.workspace_name,
+                workspace_slug: switcher.workspace_slug,
+                role: Some(switcher.role.into()),
+                last_seen_at: switcher.last_seen_at,
+                paused: switcher.paused,
+            });
             continue;
         };
+        let (attention, attention_since) = super::operator_live::attention(status);
+        counts.attention += i64::from(attention.is_some());
         let add = |yes: bool| i64::from(yes);
         counts.connected += 1;
         counts.obs_connected += add(status.obs_connected);
@@ -270,6 +293,12 @@ async fn my_live(
             paused: status.paused,
             state: status.state,
             stream_started_at: status.stream_started_at,
+            state_since: status.state_since,
+            stops_at: status.stops_at,
+            obs_lost: status.obs_lost.clone(),
+            attention,
+            attention_since,
+            server: servers.get(&switcher.switcher_id).cloned(),
             scene: status
                 .current_scene
                 .as_ref()
@@ -284,11 +313,12 @@ async fn my_live(
         .filter(|q| !q.is_empty())
         .map(str::to_lowercase);
     connected.retain(|item| {
-        let by_filter = match query.filter {
-            Some(LiveFilter::Live) => item.streaming,
-            Some(LiveFilter::Obs) => item.obs_connected,
-            None => true,
-        };
+        let by_filter = super::operator_live::matches_filter(
+            query.filter,
+            item.streaming,
+            item.obs_connected,
+            item.attention,
+        );
         let by_search = search.as_ref().is_none_or(|search| {
             [
                 &item.workspace_name,
@@ -300,20 +330,24 @@ async fn my_live(
         });
         by_filter && by_search
     });
-    // Live first (longest-running first), then with OBS, then by name.
     connected.sort_by(|a, b| {
-        (
-            !a.streaming,
-            a.stream_started_at,
-            !a.obs_connected,
-            &a.workspace_name,
-        )
-            .cmp(&(
-                !b.streaming,
+        super::operator_live::compare(
+            (
+                a.attention,
+                a.attention_since,
+                a.streaming,
+                a.stream_started_at,
+                &a.switcher_name,
+            ),
+            (
+                b.attention,
+                b.attention_since,
+                b.streaming,
                 b.stream_started_at,
-                !b.obs_connected,
-                &b.workspace_name,
-            ))
+                &b.switcher_name,
+            ),
+        )
+        .then_with(|| a.switcher_id.cmp(&b.switcher_id))
     });
     let total = connected.len() as i64;
     let page = query.page.unwrap_or(1).max(1);
@@ -323,7 +357,10 @@ async fn my_live(
         .take(LIVE_PER_PAGE)
         .collect();
 
+    let offline_total = super::operator_live::offline_page(&mut offline, query.q.as_deref());
     Ok(Json(MyLiveDto {
+        offline,
+        offline_total,
         counts,
         items,
         total,

@@ -3313,6 +3313,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_preferences"];
+        put: operations["put_preferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/preview": {
         parameters: {
             query?: never;
@@ -3654,11 +3670,22 @@ export interface components {
             staff_work: components["schemas"]["StaffWork"];
             /** @description NOALBS support access you gave (or, as staff, opened). */
             support_grants: components["schemas"]["SupportGrant"][];
+            switcher_preferences: components["schemas"]["Preferences"][];
             /**
              * @description Workspaces you're in or created. Switchers are listed for your own (see
              *     `switchers`), billing for those you own.
              */
             workspaces: components["schemas"]["Workspace"][];
+        };
+        ActiveServerDto: {
+            /** Format: int32 */
+            bitrate?: number | null;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["StreamServerKindDto"];
+            name: string;
+            /** Format: double */
+            rtt?: number | null;
         };
         AddAlias: {
             alias: string;
@@ -4082,6 +4109,8 @@ export interface components {
          * @enum {string}
          */
         Anchor: "top_left" | "top" | "top_right" | "left" | "center" | "right" | "bottom_left" | "bottom" | "bottom_right";
+        /** @enum {string} */
+        Attention: "no_feed" | "low" | "obs_lost";
         AudioUpdate: {
             inputs: components["schemas"]["InputLevels"][];
             /** @enum {string} */
@@ -5762,6 +5791,8 @@ export interface components {
         /** @description What the organization's switchers are doing, in all. */
         LiveCountsDto: {
             /** Format: int64 */
+            attention: number;
+            /** Format: int64 */
             clients: number;
             /**
              * Format: int64
@@ -5791,12 +5822,21 @@ export interface components {
         };
         /** @description A connected switcher of a client. */
         LiveSwitcherDto: {
+            attention?: components["schemas"]["Attention"] | null;
+            /** Format: date-time */
+            attention_since?: string | null;
             obs_connected: boolean;
+            obs_lost?: components["schemas"]["ObsLost"] | null;
             paused: boolean;
             recording: boolean;
             /** @description The scene on air. */
             scene?: string | null;
+            server?: components["schemas"]["ActiveServerDto"] | null;
             state: components["schemas"]["FeedState"];
+            /** Format: date-time */
+            state_since?: string | null;
+            /** Format: date-time */
+            stops_at?: string | null;
             /** Format: date-time */
             stream_started_at?: string | null;
             streaming: boolean;
@@ -6107,6 +6147,8 @@ export interface components {
         };
         /** @description What all the user's switchers are doing, in all. */
         MyLiveCountsDto: {
+            /** Format: int64 */
+            attention: number;
             /**
              * Format: int64
              * @description Switchers whose browser source is connected.
@@ -6139,6 +6181,9 @@ export interface components {
             counts: components["schemas"]["MyLiveCountsDto"];
             /** @description Connected switchers on this page, live ones first. */
             items: components["schemas"]["MyLiveSwitcherDto"][];
+            offline: components["schemas"]["OfflineSwitcherDto"][];
+            /** Format: int64 */
+            offline_total: number;
             /** Format: int64 */
             page: number;
             /** Format: int64 */
@@ -6151,14 +6196,23 @@ export interface components {
         };
         /** @description A connected switcher of one of the user's workspaces. */
         MyLiveSwitcherDto: {
+            attention?: components["schemas"]["Attention"] | null;
+            /** Format: date-time */
+            attention_since?: string | null;
             obs_connected: boolean;
+            obs_lost?: components["schemas"]["ObsLost"] | null;
             paused: boolean;
             recording: boolean;
             /** @description Your role in the workspace. */
             role: components["schemas"]["WorkspaceRole"];
             /** @description The scene on air. */
             scene?: string | null;
+            server?: components["schemas"]["ActiveServerDto"] | null;
             state: components["schemas"]["FeedState"];
+            /** Format: date-time */
+            state_since?: string | null;
+            /** Format: date-time */
+            stops_at?: string | null;
             /** Format: date-time */
             stream_started_at?: string | null;
             streaming: boolean;
@@ -6306,6 +6360,12 @@ export interface components {
              */
             settings: components["schemas"]["SourceSettings"];
         };
+        ObsLost: {
+            /** Format: date-time */
+            since: string;
+            /** Format: date-time */
+            stream_started_at?: string | null;
+        };
         ObsSceneDto: {
             name: string;
             /**
@@ -6409,6 +6469,19 @@ export interface components {
              */
             this_stream: boolean;
         };
+        OfflineSwitcherDto: {
+            /** Format: date-time */
+            last_seen_at?: string | null;
+            paused: boolean;
+            role?: components["schemas"]["WorkspaceRole"] | null;
+            /** Format: uuid */
+            switcher_id: string;
+            switcher_name: string;
+            /** Format: uuid */
+            workspace_id: string;
+            workspace_name: string;
+            workspace_slug: string;
+        };
         Organization: {
             /** Format: uuid */
             id: string;
@@ -6507,6 +6580,9 @@ export interface components {
             counts: components["schemas"]["LiveCountsDto"];
             /** @description Connected switchers on this page, live ones first. */
             items: components["schemas"]["LiveSwitcherDto"][];
+            offline: components["schemas"]["OfflineSwitcherDto"][];
+            /** Format: int64 */
+            offline_total: number;
             /** Format: int64 */
             page: number;
             /** Format: int64 */
@@ -6684,6 +6760,13 @@ export interface components {
         };
         PollPairing: {
             device_code: string;
+        };
+        Preferences: {
+            preferences: unknown;
+            /** Format: uuid */
+            switcher_id: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         /**
          * @description Who may watch the OBS preview while the switcher isn't streaming. While it
@@ -7477,6 +7560,11 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        SwitcherPreferencesDto: {
+            preferences: unknown;
+            /** Format: date-time */
+            updated_at?: string | null;
+        };
         /** @description The latest known state of a switcher's browser source and OBS. */
         SwitcherStatus: {
             /**
@@ -7497,6 +7585,7 @@ export interface components {
             current_scene?: components["schemas"]["SceneRef"] | null;
             /** @description The browser source is connected to OBS's websocket. */
             obs_connected: boolean;
+            obs_lost?: components["schemas"]["ObsLost"] | null;
             /** @description Over the workspace plan's switcher limit: connected, but not switching. */
             paused?: boolean;
             pc?: components["schemas"]["PcStatus"] | null;
@@ -7505,6 +7594,10 @@ export interface components {
             /** Format: date-time */
             recording_started_at?: string | null;
             state: components["schemas"]["FeedState"];
+            /** Format: date-time */
+            state_since?: string | null;
+            /** Format: date-time */
+            stops_at?: string | null;
             stream_frames?: components["schemas"]["ObsFrames"] | null;
             /** Format: date-time */
             stream_started_at?: string | null;
@@ -7534,6 +7627,7 @@ export interface components {
              * @description Linked channels the bot lost access to; someone has to connect them again.
              */
             revoked_channel_count: number;
+            server?: components["schemas"]["ActiveServerDto"] | null;
             status?: components["schemas"]["SwitcherStatus"] | null;
             /** Format: int64 */
             stream_server_count: number;
@@ -9826,7 +9920,7 @@ export interface operations {
                 /** @description 1-based. */
                 page?: number | null;
                 /** @description Every connected switcher when left out. */
-                filter?: ("live" | "obs") | null;
+                filter?: ("live" | "obs" | "attention") | null;
             };
             header?: never;
             path?: never;
@@ -10717,7 +10811,7 @@ export interface operations {
                 /** @description 1-based. */
                 page?: number | null;
                 /** @description Every connected switcher when left out. */
-                filter?: ("live" | "obs") | null;
+                filter?: ("live" | "obs" | "attention") | null;
             };
             header?: never;
             path: {
@@ -15811,6 +15905,86 @@ export interface operations {
             };
             /** @description `obs_offline` */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitcherPreferencesDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    put_preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": unknown;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitcherPreferencesDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };

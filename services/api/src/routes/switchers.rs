@@ -32,9 +32,83 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(set_belabox_interface_labels))
         .routes(routes!(set_moblin))
         .routes(routes!(moblin_connection))
+        .routes(routes!(get_preferences, put_preferences))
 }
 
 const MAX_RETRY_ATTEMPTS: i32 = 100;
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SwitcherPreferencesDto {
+    pub preferences: serde_json::Value,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+fn validate_preferences(value: &serde_json::Value) -> ApiResult<()> {
+    if !value.is_object() {
+        return Err(ApiError::bad_request(
+            "invalid_preferences",
+            "Preferences must be a JSON object",
+        ));
+    }
+    if serde_json::to_vec(value)
+        .map_err(|_| ApiError::internal())?
+        .len()
+        > 16 * 1024
+    {
+        return Err(ApiError::new(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "preferences_too_large",
+            "Preferences must not exceed 16 KiB",
+        ));
+    }
+    Ok(())
+}
+
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/preferences", tag = "switchers",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses((status = OK, body = SwitcherPreferencesDto), (status = FORBIDDEN, body = ErrorBody)))]
+async fn get_preferences(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> ApiResult<Json<SwitcherPreferencesDto>> {
+    let access = authorized.into_access();
+    let row =
+        db::switcher_preferences::get(&state.db, access.workspace.user.id(), access.switcher.id)
+            .await?;
+    Ok(Json(row.map_or(
+        SwitcherPreferencesDto {
+            preferences: serde_json::json!({}),
+            updated_at: None,
+        },
+        |row| SwitcherPreferencesDto {
+            preferences: row.preferences,
+            updated_at: Some(row.updated_at),
+        },
+    )))
+}
+
+#[utoipa::path(put, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/preferences", tag = "switchers",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)), request_body = serde_json::Value,
+    responses((status = OK, body = SwitcherPreferencesDto), (status = BAD_REQUEST, body = ErrorBody), (status = PAYLOAD_TOO_LARGE, body = ErrorBody), (status = FORBIDDEN, body = ErrorBody)))]
+async fn put_preferences(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+    Json(value): Json<serde_json::Value>,
+) -> ApiResult<Json<SwitcherPreferencesDto>> {
+    validate_preferences(&value)?;
+    let access = authorized.into_access();
+    let row = db::switcher_preferences::put(
+        &state.db,
+        access.workspace.user.id(),
+        access.switcher.id,
+        &value,
+    )
+    .await?;
+    Ok(Json(SwitcherPreferencesDto {
+        preferences: row.preferences,
+        updated_at: Some(row.updated_at),
+    }))
+}
 /// A day, in minutes.
 const MAX_TIMEOUT_MINUTES: i32 = 1440;
 const MAX_PASSWORD_LEN: usize = 256;
@@ -49,6 +123,7 @@ const MOBLIN_PASSWORD_LEN: std::ops::RangeInclusive<usize> = 8..=128;
 /// A switcher as listed in its workspace.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SwitcherSummaryDto {
+    pub server: Option<super::operator_live::ActiveServerDto>,
     pub id: Uuid,
     pub name: String,
     /// When a browser source last connected; `null` if it never has.
@@ -77,6 +152,7 @@ impl SwitcherSummaryDto {
         }
         Self {
             id: switcher.id,
+            server: None,
             name: switcher.name,
             last_seen_at: switcher.last_seen_at,
             stream_server_count: switcher.stream_server_count,
@@ -451,6 +527,14 @@ async fn list_switchers(
         list.push(SwitcherSummaryDto::new(switcher, status, can_view_programs));
     }
 
+    let statuses = list
+        .iter()
+        .filter_map(|item| item.status.clone().map(|status| (item.id, status)))
+        .collect();
+    let servers = super::operator_live::servers(&state, &statuses).await?;
+    for item in &mut list {
+        item.server = servers.get(&item.id).cloned();
+    }
     Ok(Json(list))
 }
 
@@ -970,7 +1054,27 @@ mod tests {
         TriggersDto, has_duplicate_scene_ids, interface_labels_from, moblin_password_from,
         remote_key_from, validate_triggers,
     };
+    use serde_json::json;
     use uuid::Uuid;
+
+    #[test]
+    fn preferences_require_small_objects() {
+        assert!(super::validate_preferences(&json!({})).is_ok());
+        assert!(super::validate_preferences(&json!({"panels": ["stats"]})).is_ok());
+        for value in [json!(null), json!([]), json!("text"), json!(42)] {
+            assert_eq!(
+                super::validate_preferences(&value).unwrap_err().code(),
+                "invalid_preferences"
+            );
+        }
+        assert_eq!(
+            super::validate_preferences(&json!({"x": "a".repeat(16 * 1024)}))
+                .unwrap_err()
+                .code(),
+            "preferences_too_large"
+        );
+        assert!(super::validate_preferences(&json!({"x": "a".repeat(16 * 1024 - 8)})).is_ok());
+    }
 
     fn labels(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
         pairs

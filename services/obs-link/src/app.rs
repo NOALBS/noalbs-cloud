@@ -252,10 +252,25 @@ enum Flow {
 }
 
 fn reset_obs_status(status: &mut SwitcherStatus) {
+    let state_since = status.state_since;
+    let lost = live::ObsLost {
+        since: chrono::Utc::now(),
+        stream_started_at: status
+            .streaming
+            .then_some(status.stream_started_at)
+            .flatten(),
+    };
     let (auto_switch, paused, pc) = (status.auto_switch, status.paused, status.pc.clone());
     *status = SwitcherStatus::connected(auto_switch);
     status.paused = paused;
     status.pc = pc;
+    status.obs_lost = Some(lost);
+    status.state_since = state_since;
+}
+
+fn reconnect_obs_status(status: &mut SwitcherStatus) {
+    status.obs_connected = true;
+    status.obs_lost = None;
 }
 
 fn set_pc_device_name(status: &mut SwitcherStatus, name: &str) -> bool {
@@ -957,7 +972,7 @@ impl Connection {
         let switcher_id = session.switcher_id;
 
         if connected {
-            session.status.update(|status| status.obs_connected = true);
+            session.status.update(reconnect_obs_status);
             if !session.paused {
                 self.start_switcher();
             }
@@ -1270,6 +1285,7 @@ impl Connection {
                 if let Some(session) = self.session.as_ref() {
                     session.status.update(|status| {
                         status.state = live::FeedState::Idle;
+                        status.stops_at = None;
                         status.active_server_id = None;
                         status.active_scene_rule_id = None;
                     });
@@ -1834,6 +1850,28 @@ mod tests {
                 programs: Vec::new(),
             })
         );
+    }
+
+    #[test]
+    fn losing_obs_preserves_the_lost_stream_and_clears_countdown() {
+        let mut status = SwitcherStatus::connected(true);
+        let started = chrono::Utc::now();
+        status.streaming = true;
+        status.stream_started_at = Some(started);
+        status.stops_at = Some(started);
+        reset_obs_status(&mut status);
+        assert_eq!(
+            status.obs_lost.as_ref().unwrap().stream_started_at,
+            Some(started)
+        );
+        assert!(status.stops_at.is_none());
+        assert!(!status.streaming);
+        super::reconnect_obs_status(&mut status);
+        assert!(status.obs_connected);
+        assert!(status.obs_lost.is_none());
+        let mut idle = SwitcherStatus::connected(true);
+        reset_obs_status(&mut idle);
+        assert_eq!(idle.obs_lost.unwrap().stream_started_at, None);
     }
 
     #[test]

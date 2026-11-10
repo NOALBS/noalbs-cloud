@@ -58,6 +58,7 @@ macro_rules! your_switchers {
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct AccountExport {
+    pub switcher_preferences: Vec<crate::switcher_preferences::Preferences>,
     pub account: Account,
     /// The Twitch, Kick and YouTube accounts you sign in with.
     pub connections: Vec<Connection>,
@@ -499,6 +500,7 @@ pub async fn account(pool: &PgPool, user_id: Uuid) -> Result<Option<AccountExpor
     }
 
     Ok(Some(AccountExport {
+        switcher_preferences: crate::switcher_preferences::for_user(pool, user_id).await?,
         account,
         connections: all(
             pool,

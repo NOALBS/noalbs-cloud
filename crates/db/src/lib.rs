@@ -23,6 +23,7 @@ pub mod stream_servers;
 pub mod streams;
 pub mod support;
 pub mod switcher_events;
+pub mod switcher_preferences;
 pub mod switchers;
 pub mod users;
 pub mod workspaces;

@@ -1093,6 +1093,8 @@ pub async fn client_switchers(
 /// A switcher of a client workspace, named for lists across the organization.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct ClientSwitcher {
+    pub last_seen_at: Option<DateTime<Utc>>,
+    pub paused: bool,
     pub workspace_id: Uuid,
     pub workspace_name: String,
     pub workspace_slug: String,
@@ -1110,9 +1112,11 @@ pub async fn named_client_switchers(
         "
         SELECT workspaces.id AS workspace_id, workspaces.name AS workspace_name,
                workspaces.url_slug AS workspace_slug,
-               switchers.id AS switcher_id, switchers.name AS switcher_name
+               switchers.id AS switcher_id, switchers.name AS switcher_name,
+               switchers.last_seen_at, plans.suspended_at IS NOT NULL AS paused
         FROM switchers
         JOIN workspaces ON workspaces.id = switchers.workspace_id
+        JOIN workspace_plans plans ON plans.workspace_id = workspaces.id
         WHERE workspaces.organization_id = $1
         ",
     )
