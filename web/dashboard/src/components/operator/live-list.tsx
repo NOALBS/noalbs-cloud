@@ -1,7 +1,7 @@
 import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { Pager, SearchBox } from "@/components/admin/list-controls";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,15 @@ import { CompactLive } from "./compact-live";
 import { offlineSummary, problemLine, stateChip, streamingMetrics, timeAgo } from "./format";
 import { type BitrateHistory, useBitrateHistory } from "./history";
 import {
+  canUseRowActions,
   type Group,
   groupItems,
   type OperatorCounts,
   type OperatorData,
   type OperatorItem,
 } from "./model";
+import { OperatorName } from "./operator-name";
+import { PhoneRow } from "./phone-row";
 import { type OperatorPin, pinOf, useOperatorPins } from "./pins";
 import { RowActions } from "./row-actions";
 import { Sparkline } from "./sparkline";
@@ -83,10 +86,12 @@ export function LiveList({
 }: LiveListProps) {
   const now = useNow();
   const desktop = useMediaQuery("(min-width: 64rem)");
+  const phone = useMediaQuery("(max-width: 47.999rem)");
+  const [searchExpanded, setSearchExpanded] = useState(Boolean(search.q));
   const { pins, save } = useOperatorPins();
   const wide = useMediaQuery("(min-width: 1921px)");
   const [choice, setChoice] = useState(savedView);
-  const view = choice ?? (wide ? "tiles" : "rows");
+  const view = phone ? "rows" : (choice ?? (wide ? "tiles" : "rows"));
   const [showOffline, setShowOffline] = useState(false);
   const items = data?.items ?? EMPTY_ITEMS;
   const openWorkspace =
@@ -141,74 +146,131 @@ export function LiveList({
         aria-label={t`Live switchers`}
         className="@container flex w-full min-w-0 flex-col gap-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 xl:flex-nowrap">
-          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
-            <h2 className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight">
-              {nothingConnected
-                ? t`Nothing is connected`
-                : data
-                  ? plural(data.counts.streaming, { one: "# streaming", other: "# streaming" })
-                  : t`Live switchers`}
-            </h2>
-            {data && (
+        {phone ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-xl font-extrabold">
+                {nothingConnected ? t`Nothing is connected` : t`Switchers`}
+                {!nothingConnected && data && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    {data.counts.connected}
+                  </span>
+                )}
+              </h2>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={t`Find a switcher`}
+                aria-expanded={searchExpanded}
+                aria-controls="operator-search"
+                onClick={() => setSearchExpanded(!searchExpanded)}
+              >
+                <Search className="size-4" />
+              </Button>
+            </div>
+            {nothingConnected && data && (
               <p className="text-xs text-muted-foreground">
-                {nothingConnected
-                  ? offlineSummary(data.offlineTotal, data.counts)
-                  : summary(data.counts)}
+                {offlineSummary(data.offlineTotal, data.counts)}
               </p>
             )}
-          </div>
-          <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:flex-nowrap">
-            <div className="w-full sm:w-48 xl:min-w-44">
-              <SearchBox
-                value={search.q ?? ""}
-                onSearch={onSearch}
-                placeholder={t`Find a switcher`}
-              />
-            </div>
-            <fieldset
-              aria-label={t`Show`}
-              className="flex max-w-full flex-wrap rounded-lg bg-muted p-0.5"
-            >
-              {filters.map((filter) => (
+            {searchExpanded && (
+              <div id="operator-search">
+                <SearchBox
+                  value={search.q ?? ""}
+                  onSearch={onSearch}
+                  placeholder={t`Find a switcher`}
+                />
+              </div>
+            )}
+            <fieldset aria-label={t`Show`} className="grid grid-cols-3 rounded-lg bg-muted p-0.5">
+              {[
+                { value: undefined, label: t`All ${data?.counts.connected ?? 0}` },
+                { value: "live" as const, label: t`Streaming ${data?.counts.streaming ?? 0}` },
+                { value: "attention" as const, label: t`Attention ${data?.counts.attention ?? 0}` },
+              ].map((filter) => (
                 <Button
                   key={filter.label}
                   size="sm"
                   variant={search.show === filter.value ? "secondary" : "ghost"}
                   aria-pressed={search.show === filter.value}
                   onClick={() => onShow(filter.value)}
-                  className="text-xs"
+                  className="px-1 text-xs"
                 >
                   {filter.label}
                 </Button>
               ))}
-              {search.show === "obs" && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  aria-pressed
-                  onClick={() => onShow(undefined)}
-                >
-                  <Trans>OBS connected</Trans>
-                </Button>
-              )}
-            </fieldset>
-            <fieldset aria-label={t`List view`} className="flex rounded-lg bg-muted p-0.5">
-              {views.map((option) => (
-                <Button
-                  key={option.value}
-                  size="sm"
-                  variant={view === option.value ? "secondary" : "ghost"}
-                  aria-pressed={view === option.value}
-                  onClick={() => choose(option.value)}
-                  className="text-xs"
-                >
-                  {option.label}
-                </Button>
-              ))}
             </fieldset>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4 xl:flex-nowrap">
+            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
+              <h2 className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight">
+                {nothingConnected
+                  ? t`Nothing is connected`
+                  : data
+                    ? plural(data.counts.streaming, { one: "# streaming", other: "# streaming" })
+                    : t`Live switchers`}
+              </h2>
+              {data && (
+                <p className="text-xs text-muted-foreground">
+                  {nothingConnected
+                    ? offlineSummary(data.offlineTotal, data.counts)
+                    : summary(data.counts)}
+                </p>
+              )}
+            </div>
+            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:flex-nowrap">
+              <div className="w-full sm:w-48 xl:min-w-44">
+                <SearchBox
+                  value={search.q ?? ""}
+                  onSearch={onSearch}
+                  placeholder={t`Find a switcher`}
+                />
+              </div>
+              <fieldset
+                aria-label={t`Show`}
+                className="flex max-w-full flex-wrap rounded-lg bg-muted p-0.5"
+              >
+                {filters.map((filter) => (
+                  <Button
+                    key={filter.label}
+                    size="sm"
+                    variant={search.show === filter.value ? "secondary" : "ghost"}
+                    aria-pressed={search.show === filter.value}
+                    onClick={() => onShow(filter.value)}
+                    className="text-xs"
+                  >
+                    {filter.label}
+                  </Button>
+                ))}
+                {search.show === "obs" && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    aria-pressed
+                    onClick={() => onShow(undefined)}
+                  >
+                    <Trans>OBS connected</Trans>
+                  </Button>
+                )}
+              </fieldset>
+              <fieldset aria-label={t`List view`} className="flex rounded-lg bg-muted p-0.5">
+                {views.map((option) => (
+                  <Button
+                    key={option.value}
+                    size="sm"
+                    variant={view === option.value ? "secondary" : "ghost"}
+                    aria-pressed={view === option.value}
+                    onClick={() => choose(option.value)}
+                    className="text-xs"
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </fieldset>
+            </div>
+          </div>
+        )}
         {nothingConnected && (
           <p className="text-sm text-muted-foreground">
             <Trans>
@@ -222,7 +284,12 @@ export function LiveList({
           </p>
         )}
         {view === "side-by-side" ? (
-          <OperatorColumns items={items} pins={pins} onChange={save} />
+          <OperatorColumns
+            items={items}
+            pins={pins}
+            onChange={save}
+            singleWorkspace={scope === "workspace"}
+          />
         ) : (
           <div
             className={cn(
@@ -246,6 +313,7 @@ export function LiveList({
                           view={view === "tiles" ? "tiles" : "rows"}
                           now={now}
                           history={history}
+                          phone={phone}
                         />
                       ),
                   )}
@@ -325,6 +393,7 @@ export function LiveList({
                 className="hidden min-w-0 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
               >
                 <CompactLive
+                  singleWorkspace={scope === "workspace"}
                   pin={panel}
                   pinned={pins.some((pin) => pin.switcher === panel.switcher)}
                   canPin={pins.length < 4}
@@ -346,9 +415,24 @@ export function LiveList({
   );
 }
 
-function GroupHeading({ title, count, hint }: { title: string; count: number; hint?: string }) {
+function GroupHeading({
+  title,
+  count,
+  hint,
+  phone,
+}: {
+  title: string;
+  count: number;
+  hint?: string;
+  phone?: boolean;
+}) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-divider px-4 py-2.5 text-xs">
+    <header
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-2 py-2.5 text-xs",
+        phone ? "px-1 text-muted-foreground" : "border-b border-divider px-4",
+      )}
+    >
       <h3 className="font-semibold">
         {title}
         <span className="ml-2 font-normal text-muted-foreground">{count}</span>
@@ -365,6 +449,7 @@ function LiveGroup({
   multi,
   now,
   history,
+  phone,
 }: {
   group: Exclude<Group, "offline">;
   items: OperatorItem[];
@@ -372,6 +457,7 @@ function LiveGroup({
   multi: boolean;
   now: number;
   history: BitrateHistory;
+  phone: boolean;
 }) {
   const title =
     group === "attention"
@@ -388,25 +474,37 @@ function LiveGroup({
   return (
     <section
       aria-label={title}
-      className={cn(view === "rows" && "overflow-hidden rounded-xl border bg-card shadow-tile")}
+      className={cn(
+        !phone && view === "rows" && "overflow-hidden rounded-xl border bg-card shadow-tile",
+      )}
     >
-      <GroupHeading title={title} count={items.length} hint={hint} />
+      <GroupHeading
+        title={title}
+        count={items.length}
+        hint={phone ? undefined : hint}
+        phone={phone}
+      />
       <ul
         className={cn(
+          phone && "overflow-hidden rounded-xl border bg-card",
           view === "tiles" &&
             "mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] items-start gap-3",
         )}
       >
-        {items.map((item) => (
-          <LiveItem
-            key={item.switcher_id}
-            item={item}
-            tile={view === "tiles"}
-            multi={multi}
-            now={now}
-            history={history}
-          />
-        ))}
+        {items.map((item) =>
+          phone ? (
+            <PhoneRow key={item.switcher_id} item={item} multi={multi} now={now} />
+          ) : (
+            <LiveItem
+              key={item.switcher_id}
+              item={item}
+              tile={view === "tiles"}
+              multi={multi}
+              now={now}
+              history={history}
+            />
+          ),
+        )}
       </ul>
     </section>
   );
@@ -434,14 +532,7 @@ function ItemName({ item, multi }: { item: OperatorItem; multi: boolean }) {
       }}
       className="font-semibold after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
     >
-      {multi ? (
-        <>
-          {item.workspace_name}
-          <span className="font-normal text-muted-foreground"> / {item.switcher_name}</span>
-        </>
-      ) : (
-        item.switcher_name
-      )}
+      <OperatorName workspace={item.workspace_name} switcher={item.switcher_name} multi={multi} />
     </Link>
   );
 }
@@ -463,7 +554,7 @@ function LiveItem({
   const selected = useContext(Selection).selected === item.switcher_id;
   const problem = problemLine(item, now);
   const role = item.role ? roleLabels()[item.role] : null;
-  const actions = item.can_control && !item.paused && item.obs_connected;
+  const actions = canUseRowActions(item);
   const { bitrate, rtt: serverRtt } = streamingMetrics(item);
   const points =
     item.streaming && !item.paused && item.obs_connected ? history[item.switcher_id] : [];
@@ -514,9 +605,9 @@ function LiveItem({
     </span>
   );
   const actionClass = cn(
-    "relative z-10",
+    "z-10",
     !item.attention &&
-      "@min-[1100px]:opacity-0 @min-[1100px]:group-hover:opacity-100 @min-[1100px]:group-focus-within:opacity-100 has-[[data-state=open]]:opacity-100",
+      "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 has-[[data-state=open]]:opacity-100",
   );
   if (tile)
     return (
@@ -578,20 +669,20 @@ function LiveItem({
   return (
     <li
       className={cn(
-        "group relative grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2 border-b border-divider border-l-2 border-l-transparent px-4 py-3 last:border-b-0 hover:bg-surface-2/30 @min-[1100px]:grid-cols-[78px_minmax(140px,2.5fr)_minmax(90px,1.3fr)_minmax(60px,.8fr)_54px_minmax(70px,1.1fr)_76px_30px_174px_12px] @min-[1100px]:gap-x-3",
+        "group relative grid grid-cols-[78px_minmax(0,2fr)_minmax(0,1fr)_58px_58px_30px_12px] items-center gap-x-2 gap-y-2 border-b border-divider border-l-2 border-l-transparent px-3 py-3 last:border-b-0 hover:bg-surface-2/30 @min-[1100px]:grid-cols-[78px_minmax(140px,2.5fr)_minmax(90px,1.3fr)_minmax(60px,.8fr)_54px_minmax(70px,1.1fr)_76px_30px_174px_12px] @min-[1100px]:gap-x-3",
         selected && "border-l-primary bg-primary-soft",
       )}
     >
       <div>{status}</div>
-      <div className="min-w-0 text-sm">
+      <div className="min-w-0 truncate text-sm">
         <ItemName item={item} multi={multi} />
         {(problem || role || item.paused) && (
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {problem ?? (item.paused ? t`Over the plan’s switcher limit` : role)}
           </p>
         )}
       </div>
-      <div className="hidden min-w-0 text-xs @min-[1100px]:block">
+      <div className="min-w-0 text-xs">
         <p className="truncate font-medium">{item.scene ?? t`Unknown scene`}</p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">
           {item.streaming ? t`On air` : t`In OBS`}
@@ -604,19 +695,21 @@ function LiveItem({
         now={now}
         className={cn("hidden h-7 w-full @min-[1100px]:block", colour)}
       />
-      <div className="hidden text-right @min-[1100px]:block">{uptime}</div>
-      <div className="hidden @min-[1100px]:block">{rec}</div>
+      <div className="text-right">{uptime}</div>
+      <div>{rec}</div>
       <div
         className={cn(
-          "col-span-full flex min-h-0 items-center gap-3 @min-[1100px]:col-span-1 @min-[1100px]:min-h-8 @min-[1100px]:justify-end",
+          "flex items-center justify-end @min-[1100px]:static @min-[1100px]:col-span-1 @min-[1100px]:col-start-auto @min-[1100px]:row-auto @min-[1100px]:min-h-8 @min-[1100px]:translate-y-0",
+          item.attention
+            ? "col-span-5 col-start-2 row-start-2 justify-start"
+            : "absolute right-8 top-1/2 -translate-y-1/2 bg-card",
           actions && actionClass,
         )}
       >
         {actions && <RowActions item={item} />}
-        <span className="@min-[1100px]:hidden">{rec}</span>
       </div>
       <ChevronRight
-        className="col-start-4 row-start-1 size-3 text-muted-foreground @min-[1100px]:col-start-auto @min-[1100px]:row-start-auto"
+        className="col-start-7 row-start-1 size-3 text-muted-foreground @min-[1100px]:col-start-auto @min-[1100px]:row-start-auto"
         aria-hidden="true"
       />
     </li>

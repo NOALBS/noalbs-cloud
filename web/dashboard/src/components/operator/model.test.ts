@@ -125,6 +125,7 @@ describe("operator model", () => {
     expect(normalizeMyLive(mine).items[1]?.connected).toBe(false);
     const org: OrganizationLive = { ...base, counts: { ...base.counts, clients: 1 } };
     expect(normalizeOrganizationLive(org, "member").items[0]?.can_control).toBe(true);
+    expect(normalizeOrganizationLive(org, "member").items[0]?.organization_role).toBe("member");
     expect(normalizeOrganizationLive(org, null).items[0]?.can_control).toBe(false);
     expect(normalizeOrganizationLive(org, null).counts.clients).toBe(1);
   });

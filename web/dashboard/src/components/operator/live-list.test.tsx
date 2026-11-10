@@ -7,9 +7,10 @@ import { LiveList } from "./live-list";
 import type { OperatorData } from "./model";
 import { PINS_KEY } from "./pins";
 
-const media = vi.hoisted(() => ({ desktop: true }));
+const media = vi.hoisted(() => ({ desktop: true, phone: false }));
 vi.mock("@/hooks/use-media-query", () => ({
-  useMediaQuery: (query: string) => (query.includes("64rem") ? media.desktop : false),
+  useMediaQuery: (query: string) =>
+    query.includes("64rem") ? media.desktop : query.includes("max-width") ? media.phone : false,
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -33,6 +34,15 @@ vi.mock("./compact-live", () => ({
         Pin
       </button>
     </section>
+  ),
+}));
+vi.mock("./phone-sheet", () => ({
+  PhoneSheet: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Phone actions">
+      <button type="button" onClick={onClose}>
+        Close
+      </button>
+    </div>
   ),
 }));
 
@@ -63,6 +73,7 @@ let container: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   media.desktop = true;
+  media.phone = false;
   localStorage.clear();
   container = document.createElement("div");
   document.body.append(container);
@@ -72,6 +83,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 async function render(search = {}, onOpen = vi.fn()) {
   await act(async () =>
@@ -93,6 +105,80 @@ async function render(search = {}, onOpen = vi.fn()) {
   return onOpen;
 }
 describe("operator selection and saved layouts", () => {
+  it("forces phone rows regardless of saved columns, with counts and expandable search", async () => {
+    media.phone = true;
+    media.desktop = false;
+    localStorage.setItem("noalbs-operator-view", "side-by-side");
+    await render();
+    expect(container.querySelector('[aria-label="List view"]')).toBeNull();
+    expect(container.textContent).toContain("All 1");
+    expect(container.textContent).toContain("Streaming 1");
+    expect(container.querySelector("input")).toBeNull();
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Find a switcher"]')?.click(),
+    );
+    expect(container.querySelector("input")).not.toBeNull();
+    expect(localStorage.getItem("noalbs-operator-view")).toBe("side-by-side");
+  });
+  it("opens phone controls after 450ms and suppresses the hold's navigation click", async () => {
+    vi.useFakeTimers();
+    media.phone = true;
+    media.desktop = false;
+    await render();
+    const link = container.querySelector("a");
+    await act(async () => {
+      link?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
+      vi.advanceTimersByTime(449);
+    });
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+    const click = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 });
+    await act(async () => {
+      link?.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+      link?.dispatchEvent(click);
+    });
+    expect(click.defaultPrevented).toBe(true);
+  });
+  it("cancels a hold on movement, scrolling and pointer cancellation; overflow remains accessible", async () => {
+    vi.useFakeTimers();
+    media.phone = true;
+    media.desktop = false;
+    await render();
+    const link = container.querySelector("a");
+    for (const kind of ["pointermove", "scroll", "pointercancel"]) {
+      await act(async () => {
+        link?.dispatchEvent(
+          new MouseEvent("pointerdown", { bubbles: true, button: 0, clientX: 10, clientY: 10 }),
+        );
+        if (kind === "scroll") window.dispatchEvent(new Event("scroll"));
+        else link?.dispatchEvent(new MouseEvent(kind, { bubbles: true, clientX: 22, clientY: 10 }));
+        vi.advanceTimersByTime(500);
+      });
+      expect(container.querySelector('[role="dialog"]')).toBeNull();
+    }
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('[aria-label="Actions for Studio / Main"]')
+        ?.click(),
+    );
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+  it("supports context-menu actions without navigating", async () => {
+    media.phone = true;
+    media.desktop = false;
+    await render();
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    await act(async () => {
+      container.querySelector("a")?.dispatchEvent(event);
+    });
+    expect(event.defaultPrevented).toBe(true);
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click(),
+    );
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
   it("opens desktop links as panels and preserves modified-link navigation", async () => {
     const onOpen = await render();
     const link = container.querySelector("a");

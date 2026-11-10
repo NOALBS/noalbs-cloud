@@ -35,6 +35,7 @@ import { useSwitcherLive } from "@/live/use-switcher-live";
 import { compactAvailability } from "./compact-state";
 import { problemLine, stateChip } from "./format";
 import { classifyAttention, type OperatorItem } from "./model";
+import { OperatorName } from "./operator-name";
 import type { OperatorPin } from "./pins";
 
 interface Props {
@@ -44,6 +45,7 @@ interface Props {
   onPin: () => void;
   onClose: () => void;
   column?: boolean;
+  singleWorkspace?: boolean;
 }
 
 export function CompactLive(props: Props) {
@@ -84,6 +86,7 @@ function CompactBody({
   onPin,
   onClose,
   column,
+  singleWorkspace,
   workspace,
   me,
 }: Props & { workspace: Workspace; me: Me }) {
@@ -140,11 +143,12 @@ function CompactBody({
     >
       <header className="flex flex-wrap items-center gap-2 border-b border-divider pb-3">
         <h2 className="min-w-0 flex-1 text-sm font-semibold">
-          {item.switcher_name}
-          <span className="font-normal text-muted-foreground">
-            {" "}
-            / {workspace.name} · {role}
-          </span>
+          <OperatorName
+            workspace={workspace.name}
+            switcher={item.switcher_name}
+            multi={!singleWorkspace}
+          />
+          <span className="font-normal text-muted-foreground"> · {role}</span>
         </h2>
         <Button asChild variant="ghost" size="sm">
           <Link

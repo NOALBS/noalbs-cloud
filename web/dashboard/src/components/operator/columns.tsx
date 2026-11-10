@@ -9,10 +9,12 @@ export function OperatorColumns({
   items,
   pins,
   onChange,
+  singleWorkspace,
 }: {
   items: OperatorItem[];
   pins: OperatorPin[];
   onChange: (pins: OperatorPin[]) => void;
+  singleWorkspace?: boolean;
 }) {
   return (
     <section aria-label={t`Side by side`} className="flex min-w-0 flex-col gap-4">
@@ -80,6 +82,7 @@ export function OperatorColumns({
                 key={`${pin.workspace}/${pin.switcher}`}
                 pin={pin}
                 column
+                singleWorkspace={singleWorkspace}
                 pinned
                 canPin={false}
                 onPin={() => {}}

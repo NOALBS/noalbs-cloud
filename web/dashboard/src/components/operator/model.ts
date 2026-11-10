@@ -16,6 +16,7 @@ export type Attention = components["schemas"]["Attention"];
 export type OperatorItem = LiveSwitcher & {
   connected: boolean;
   role?: WorkspaceRole | null;
+  organization_role?: OrganizationRole | null;
   last_seen_at?: string | null;
   can_control: boolean;
 };
@@ -35,6 +36,9 @@ export type OperatorData = {
   offlineTotal: number;
 };
 export type Group = "attention" | "streaming" | "idle" | "offline";
+export function canUseRowActions(item: OperatorItem): boolean {
+  return item.connected && item.can_control && item.obs_connected && !item.paused;
+}
 
 export function classifyAttention(
   status: Pick<SwitcherStatus, "streaming" | "state" | "state_since" | "obs_lost">,
@@ -101,9 +105,13 @@ export function normalizeOrganizationLive(
   data: OrganizationLive,
   role: OrganizationRole | null,
 ): OperatorData {
-  return liveData(data, () =>
+  const normalized = liveData(data, () =>
     can({ role: null, organization: role, staff: false }, "switcher.control"),
   );
+  return {
+    ...normalized,
+    items: normalized.items.map((item) => ({ ...item, organization_role: role })),
+  };
 }
 
 export function normalizeWorkspace(
