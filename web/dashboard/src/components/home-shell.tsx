@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WhatsNewCard } from "@/components/whats-new-card";
-import { Wordmark } from "@/components/wordmark";
 import { WorkspaceTile } from "@/components/workspace-tile";
 
 export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
@@ -108,10 +107,7 @@ export function HomeShell({ me, children }: { me: Me; children: ReactNode }) {
         right={<UserMenu me={me} workspaceSlug={accountWorkspace} compact />}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-15 items-center justify-between gap-3 border-b border-divider bg-background/95 px-4 backdrop-blur md:hidden">
-          <Link to="/" aria-label={t`Home`} className="flex min-h-11 items-center">
-            <Wordmark className="text-base" />
-          </Link>
+        <header className="sticky top-0 z-20 flex h-15 items-center justify-end gap-3 border-b border-divider bg-background/95 px-4 backdrop-blur md:hidden">
           <UserMenu me={me} workspaceSlug={accountWorkspace} compact />
         </header>
         <NoticeBanners />
