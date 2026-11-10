@@ -12,7 +12,7 @@ import { formatKbps, formatUptime } from "@/lib/live-format";
 import type { LiveSearch } from "@/lib/organizations";
 import { roleLabels } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { problemLine, stateChip, timeAgo } from "./format";
+import { offlineSummary, problemLine, stateChip, streamingMetrics, timeAgo } from "./format";
 import { type BitrateHistory, useBitrateHistory } from "./history";
 import {
   type Group,
@@ -113,26 +113,37 @@ export function LiveList({
       : t`Never connected`;
 
   return (
-    <section aria-label={t`Live switchers`} className="@container flex min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h2 className="font-display text-2xl font-extrabold tracking-tight">
+    <section
+      aria-label={t`Live switchers`}
+      className="@container mx-auto flex w-full min-w-0 max-w-[1800px] flex-col gap-4"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 xl:flex-nowrap">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h2 className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight">
             {nothingConnected
               ? t`Nothing is connected`
               : data
                 ? plural(data.counts.streaming, { one: "# streaming", other: "# streaming" })
                 : t`Live switchers`}
           </h2>
-          {data && <p className="text-xs text-muted-foreground">{summary(data.counts)}</p>}
+          {data && (
+            <p className="text-xs text-muted-foreground">
+              {nothingConnected
+                ? offlineSummary(data.offlineTotal, data.counts)
+                : summary(data.counts)}
+            </p>
+          )}
         </div>
-        <div className="flex w-full flex-wrap items-center gap-2 2xl:w-auto">
-          <SearchBox
-            value={search.q ?? ""}
-            onSearch={onSearch}
-            placeholder={
-              scope === "workspace" ? t`Find a switcher` : t`Search by workspace or switcher`
-            }
-          />
+        <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:flex-nowrap">
+          <div className="w-full sm:w-56 xl:w-40 2xl:w-48">
+            <SearchBox
+              value={search.q ?? ""}
+              onSearch={onSearch}
+              placeholder={
+                scope === "workspace" ? t`Find a switcher` : t`Search by workspace or switcher`
+              }
+            />
+          </div>
           <fieldset
             aria-label={t`Show`}
             className="flex max-w-full flex-wrap rounded-lg bg-muted p-0.5"
@@ -330,7 +341,7 @@ function LiveGroup({
       <ul
         className={cn(
           view === "tiles" &&
-            "mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] gap-3",
+            "mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] items-start gap-3",
         )}
       >
         {items.map((item) => (
@@ -384,7 +395,9 @@ function LiveItem({
   const problem = problemLine(item, now);
   const role = item.role ? roleLabels()[item.role] : null;
   const actions = item.can_control && !item.paused && item.obs_connected;
-  const bitrate = item.server?.bitrate;
+  const { bitrate, rtt: serverRtt } = streamingMetrics(item);
+  const points =
+    item.streaming && !item.paused && item.obs_connected ? history[item.switcher_id] : [];
   const colour =
     item.streaming && item.state === "live"
       ? "text-live"
@@ -428,7 +441,7 @@ function LiveItem({
   );
   const rtt = (
     <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-      {item.server?.rtt != null ? t`${Math.round(item.server.rtt)} ms` : "—"}
+      {serverRtt != null ? t`${Math.round(serverRtt)} ms` : "—"}
     </span>
   );
   const actionClass = cn(
@@ -440,7 +453,7 @@ function LiveItem({
     return (
       <li
         className={cn(
-          "group relative flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 shadow-tile",
+          "group relative flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-3 shadow-tile",
           item.attention === "no_feed"
             ? "border-offline/30"
             : item.attention
@@ -463,9 +476,9 @@ function LiveItem({
               {rtt}
             </div>
             <Sparkline
-              points={history[item.switcher_id]}
+              points={points}
               now={now}
-              className={cn("h-12 w-full", colour)}
+              className={cn("w-full shrink-0", item.streaming ? "h-10" : "h-3", colour)}
             />
           </>
         )}
@@ -512,7 +525,7 @@ function LiveItem({
       <div className="text-right">{numbers}</div>
       <div className="hidden text-right @min-[1100px]:block">{rtt}</div>
       <Sparkline
-        points={history[item.switcher_id]}
+        points={points}
         now={now}
         className={cn("hidden h-7 w-full @min-[1100px]:block", colour)}
       />
@@ -537,30 +550,35 @@ function LiveItem({
 
 function OfflineRow({ item, multi, now }: { item: OperatorItem; multi: boolean; now: number }) {
   return (
-    <li className="relative flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-divider px-4 py-4 text-sm last:border-b-0 hover:bg-surface-2/30">
-      <span className="w-16 text-xs text-muted-foreground">
+    <li className="relative grid grid-cols-[64px_minmax(0,1fr)_auto_12px] items-center gap-x-3 gap-y-2 border-b border-divider px-4 py-4 text-sm last:border-b-0 hover:bg-surface-2/30 @min-[1100px]:grid-cols-[78px_minmax(140px,2.5fr)_minmax(90px,1.3fr)_minmax(60px,.8fr)_54px_minmax(70px,1.1fr)_76px_30px_174px_12px]">
+      <span className="text-xs text-muted-foreground">
         <Trans>Offline</Trans>
       </span>
-      <div className="min-w-0 flex-1 basis-40">
+      <div className="min-w-0">
         <ItemName item={item} multi={multi} />
         {item.role && (
           <p className="mt-0.5 text-xs text-muted-foreground">{roleLabels()[item.role]}</p>
         )}
       </div>
-      <span className="text-xs text-muted-foreground">
+      <span className="col-span-2 col-start-2 row-start-2 text-xs text-muted-foreground @min-[1100px]:col-span-5 @min-[1100px]:col-start-3 @min-[1100px]:row-start-1">
         {item.last_seen_at ? t`Last seen ${timeAgo(item.last_seen_at, now)}` : t`Never connected`}
       </span>
-      {!item.last_seen_at && (
-        <Button asChild size="sm" variant="secondary" className="relative z-10">
-          <Link
-            to="/$workspace/s/$switcher/setup"
-            params={{ workspace: item.workspace_slug, switcher: item.switcher_id }}
-          >
-            <Trans>Set up</Trans>
-          </Link>
-        </Button>
-      )}
-      <ChevronRight className="size-3 text-muted-foreground" aria-hidden="true" />
+      <div className="relative z-10 col-start-3 row-start-1 justify-self-end @min-[1100px]:col-span-2 @min-[1100px]:col-start-8">
+        {!item.last_seen_at && (
+          <Button asChild size="sm" variant="secondary" className="relative z-10">
+            <Link
+              to="/$workspace/s/$switcher/setup"
+              params={{ workspace: item.workspace_slug, switcher: item.switcher_id }}
+            >
+              <Trans>Set up</Trans>
+            </Link>
+          </Button>
+        )}
+      </div>
+      <ChevronRight
+        className="col-start-4 row-start-1 size-3 text-muted-foreground @min-[1100px]:col-start-10"
+        aria-hidden="true"
+      />
     </li>
   );
 }

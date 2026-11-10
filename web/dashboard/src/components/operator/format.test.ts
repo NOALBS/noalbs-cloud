@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { problemLine, stateChip } from "./format";
+import { offlineSummary, problemLine, stateChip, streamingMetrics } from "./format";
 import type { OperatorItem } from "./model";
 
 const base: OperatorItem = {
@@ -18,6 +18,37 @@ const base: OperatorItem = {
 };
 const now = Date.parse("2026-01-01T12:00:00Z");
 describe("operator state text", () => {
+  it("summarizes offline totals for each scope, including singular and empty lists", () => {
+    const counts = { attention: 0, connected: 0, recording: 0, streaming: 0 };
+    expect(offlineSummary(12, { ...counts, workspaces: 3 })).toBe(
+      "12 switchers in 3 workspaces · all offline",
+    );
+    expect(offlineSummary(1, { ...counts, clients: 1 })).toBe(
+      "1 switcher in 1 client · all offline",
+    );
+    expect(offlineSummary(12, { ...counts, clients: 3 })).toBe(
+      "12 switchers in 3 clients · all offline",
+    );
+    expect(offlineSummary(1, { ...counts, workspaces: 1 })).toBe(
+      "1 switcher in 1 workspace · all offline",
+    );
+    expect(offlineSummary(1, counts)).toBe("1 switcher · all offline");
+    expect(offlineSummary(0, counts)).toBe("0 switchers · all offline");
+  });
+  it("only exposes metrics while streaming with OBS connected and not paused", () => {
+    const row = {
+      ...base,
+      server: { id: "server", name: "Main", kind: "belabox" as const, bitrate: 0, rtt: 120 },
+    };
+    expect(streamingMetrics(row)).toEqual({ bitrate: 0, rtt: 120 });
+    expect(streamingMetrics({ ...base, server: null })).toEqual({
+      bitrate: undefined,
+      rtt: undefined,
+    });
+    for (const inactive of [{ streaming: false }, { paused: true }, { obs_connected: false }]) {
+      expect(streamingMetrics({ ...row, ...inactive })).toEqual({ bitrate: null, rtt: null });
+    }
+  });
   it("ticks attention and stop durations, clamping expired countdowns", () => {
     const row = {
       ...base,

@@ -1,6 +1,25 @@
 import { plural, t } from "@lingui/core/macro";
 import { formatUptime } from "@/lib/live-format";
-import type { OperatorItem } from "./model";
+import type { OperatorCounts, OperatorItem } from "./model";
+
+export function streamingMetrics(item: OperatorItem) {
+  const active = item.streaming && !item.paused && item.obs_connected;
+  return { bitrate: active ? item.server?.bitrate : null, rtt: active ? item.server?.rtt : null };
+}
+
+export function offlineSummary(total: number, counts: OperatorCounts): string {
+  if (counts.workspaces != null)
+    return plural(total, {
+      one: `# switcher in ${plural(counts.workspaces, { one: "# workspace", other: "# workspaces" })} · all offline`,
+      other: `# switchers in ${plural(counts.workspaces, { one: "# workspace", other: "# workspaces" })} · all offline`,
+    });
+  if (counts.clients != null)
+    return plural(total, {
+      one: `# switcher in ${plural(counts.clients, { one: "# client", other: "# clients" })} · all offline`,
+      other: `# switchers in ${plural(counts.clients, { one: "# client", other: "# clients" })} · all offline`,
+    });
+  return plural(total, { one: "# switcher · all offline", other: "# switchers · all offline" });
+}
 
 export function timeAgo(at: string, now: number): string {
   const seconds = Math.max(0, Math.floor((now - Date.parse(at)) / 1000));

@@ -10,12 +10,18 @@ export function Sparkline({
   now: number;
   className?: string;
 }) {
-  const visible = points.filter((point) => point.at >= now - HISTORY_MS && point.at <= now);
+  const visible = points.filter(
+    (point) =>
+      point.at >= now - HISTORY_MS &&
+      point.at <= now &&
+      Number.isFinite(point.bitrate) &&
+      point.bitrate >= 0,
+  );
   const max = Math.max(1, ...visible.map((point) => point.bitrate));
   const line = visible
     .map(
       (point) =>
-        `${Math.max(0, (point.at - now + HISTORY_MS) / HISTORY_MS) * 200},${38 - (point.bitrate / max) * 32}`,
+        `${Math.max(0, (point.at - now + HISTORY_MS) / HISTORY_MS) * 200},${36 - (point.bitrate / max) * 30}`,
     )
     .join(" ");
   return (
@@ -26,7 +32,12 @@ export function Sparkline({
       aria-label={t`Bitrate over the last two minutes`}
       className={className}
     >
-      <path d="M0 39 H200" stroke="var(--divider)" strokeWidth="1" />
+      <path
+        d="M0 36 H200"
+        stroke="var(--divider)"
+        strokeWidth="1"
+        vectorEffect="non-scaling-stroke"
+      />
       {visible.length > 1 && (
         <polyline
           points={line}
