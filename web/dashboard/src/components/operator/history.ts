@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { OperatorItem } from "./model";
 
-export type BitratePoint = { at: number; bitrate: number };
+export type BitratePoint = { at: number; bitrate: number; server?: string };
 export type BitrateHistory = Record<string, BitratePoint[]>;
 export const HISTORY_MS = 120_000;
 
@@ -18,8 +18,10 @@ export function collectBitrates(
   for (const item of items) {
     const bitrate = item.server?.bitrate;
     if (!item.connected || bitrate == null || !Number.isFinite(bitrate) || bitrate < 0) continue;
-    const points = next[item.switcher_id] ?? [];
-    if (!points.some((point) => point.at === at)) points.push({ at, bitrate });
+    const server = item.server?.id;
+    // A switch to another server starts a new line rather than joining two servers' numbers.
+    const points = (next[item.switcher_id] ?? []).filter((point) => point.server === server);
+    if (!points.some((point) => point.at === at)) points.push({ at, bitrate, server });
     next[item.switcher_id] = points;
   }
   return next;

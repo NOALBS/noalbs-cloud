@@ -23,12 +23,19 @@ describe("rolling bitrate history", () => {
     expect(collectBitrates({}, [], 1000)).toEqual({});
     const first = collectBitrates({}, [row(0)], 1000);
     const next = collectBitrates(first, [row(100)], 6000);
-    expect(first.one).toEqual([{ at: 1000, bitrate: 0 }]);
+    expect(first.one).toEqual([{ at: 1000, bitrate: 0, server: "s" }]);
     expect(next.one).toEqual([
-      { at: 1000, bitrate: 0 },
-      { at: 6000, bitrate: 100 },
+      { at: 1000, bitrate: 0, server: "s" },
+      { at: 6000, bitrate: 100, server: "s" },
     ]);
     expect(collectBitrates(next, [row(100)], 6000)).toEqual(next);
+  });
+  it("starts over when the switcher moves to another server", () => {
+    const first = collectBitrates({}, [row(4000)], 1000);
+    const other = { ...row(900), server: { id: "t", name: "Backup", kind: "srt", bitrate: 900 } };
+    expect(collectBitrates(first, [other as OperatorItem], 6000).one).toEqual([
+      { at: 6000, bitrate: 900, server: "t" },
+    ]);
   });
   it("keeps only the last two minutes, including across paging and absent samples", () => {
     const history = {
