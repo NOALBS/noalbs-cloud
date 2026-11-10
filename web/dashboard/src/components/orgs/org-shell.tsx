@@ -7,7 +7,7 @@ import {
   Bot,
   Building2,
   Check,
-  ChevronsUpDown,
+  ChevronDown,
   LayoutList,
   Link2,
   Plus,
@@ -20,14 +20,13 @@ import { organizationChatBotsQuery, organizationsQuery, workspacesQuery } from "
 import type { Me, Organization } from "@/api/types";
 import {
   ChatAccessBanner,
-  NAV_LINK,
   RECONNECT_LINK,
-  SECTION_LABEL,
   standingLabel,
   TAB_CLASS,
   UserMenu,
 } from "@/components/app-shell";
 import { NoticeBanners } from "@/components/notice-banner";
+import { TOP_TAB_CLASS, TopBar } from "@/components/top-bar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +36,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WorkspaceTile } from "@/components/workspace-tile";
-import { organizationRoleLabels } from "@/lib/organizations";
 import { menuWorkspaces, recentWorkspaceIds } from "@/lib/recent-workspaces";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -64,59 +62,39 @@ export function OrgShell({
   const isAdmin = organization.role === "admin";
 
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-66 shrink-0 flex-col gap-5 overflow-y-auto border-r border-divider bg-sunken px-3 py-3.5 md:flex">
-        <OrganizationSwitcher organization={organization} />
-
-        <nav aria-label={t`Organization`} className="flex flex-col gap-0.5">
-          <span className={SECTION_LABEL}>
-            <Trans>ORGANIZATION</Trans>
-          </span>
-          <Link to="/orgs/$organization/clients" params={params} className={NAV_LINK}>
-            <Warehouse className="size-4" />
-            <span className="flex-1">
+    <div className="flex min-h-dvh flex-col">
+      <TopBar
+        pill={<OrganizationSwitcher organization={organization} />}
+        tabsLabel={t`Organization`}
+        tabs={
+          <>
+            <Link to="/orgs/$organization/clients" params={params} className={TOP_TAB_CLASS}>
               <Trans>Clients</Trans>
-            </span>
-            <span className="font-mono text-[11px] tabular text-muted-foreground">
-              {organization.usage.clients}
-            </span>
-          </Link>
-          <Link to="/orgs/$organization/live" params={params} className={NAV_LINK}>
-            <Radio className="size-4" />
-            <span className="flex-1">
-              <Trans>Live</Trans>
-            </span>
-          </Link>
-          {isAdmin && (
-            <Link to="/orgs/$organization/activity" params={params} className={NAV_LINK}>
-              <Activity className="size-4" />
-              <span className="flex-1">
-                <Trans>Activity</Trans>
+              <span className="ml-1 font-mono text-[11px] tabular text-muted-foreground">
+                {organization.usage.clients}
               </span>
             </Link>
-          )}
-          <Link to="/orgs/$organization/chat" params={params} className={NAV_LINK}>
-            <Bot className="size-4" />
-            <span className="flex-1">
+            <Link to="/orgs/$organization/live" params={params} className={TOP_TAB_CLASS}>
+              <Trans>Live</Trans>
+            </Link>
+            {isAdmin && (
+              <Link to="/orgs/$organization/activity" params={params} className={TOP_TAB_CLASS}>
+                <Trans>Activity</Trans>
+              </Link>
+            )}
+            <Link to="/orgs/$organization/chat" params={params} className={TOP_TAB_CLASS}>
               <Trans>Chat bot</Trans>
-            </span>
-          </Link>
-          <Link to="/orgs/$organization/team" params={params} className={NAV_LINK}>
-            <Users className="size-4" />
-            <span className="flex-1">
+            </Link>
+            <Link to="/orgs/$organization/team" params={params} className={TOP_TAB_CLASS}>
               <Trans>Team</Trans>
-            </span>
-            <span className="font-mono text-[11px] tabular text-muted-foreground">
-              {organization.usage.team}
-            </span>
-          </Link>
-        </nav>
-
-        <div className="mt-auto border-t border-divider pt-3">
-          <UserMenu me={me} workspaceSlug={accountWorkspace} />
-        </div>
-      </aside>
-
+              <span className="ml-1 font-mono text-[11px] tabular text-muted-foreground">
+                {organization.usage.team}
+              </span>
+            </Link>
+          </>
+        }
+        right={<UserMenu me={me} workspaceSlug={accountWorkspace} compact />}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-15 items-center justify-between gap-3 border-b border-divider bg-background/95 px-4 backdrop-blur md:hidden">
           <OrganizationSwitcher organization={organization} compact />
@@ -141,7 +119,7 @@ export function OrgShell({
 
         <nav
           aria-label={t`Primary`}
-          className="fixed inset-x-0 bottom-0 z-20 grid grid-flow-col auto-cols-fr border-t border-divider bg-sunken pb-[env(safe-area-inset-bottom)] md:hidden"
+          className="fixed inset-x-0 bottom-0 z-20 grid grid-flow-col auto-cols-fr border-t border-divider bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         >
           <Link to="/orgs/$organization/clients" params={params} className={TAB_CLASS}>
             <Warehouse className="size-5.5" />
@@ -190,23 +168,16 @@ function OrganizationSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex shrink-0 items-center gap-2.5 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-surface-2",
-          compact ? "min-h-11 min-w-0" : "h-12 px-2.5 hover:bg-surface-2",
+          "flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-xl border bg-card pl-1.5 pr-3 text-left font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-accent",
+          compact && "max-w-52",
         )}
         aria-label={t`Switch organization or workspace`}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary-soft-foreground">
           <Building2 className="size-4" />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-semibold leading-tight">{organization.name}</span>
-          {organization.role && (
-            <span className="truncate text-xs text-muted-foreground">
-              {organizationRoleLabels()[organization.role]}
-            </span>
-          )}
-        </span>
-        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+        <span className="truncate text-sm">{organization.name}</span>
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-75">
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">

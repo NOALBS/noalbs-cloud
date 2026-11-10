@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0B0D10" />
+    <meta name="theme-color" content="#0E0F12" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Privacy policy · NOALBS Cloud</title>
     <meta name="description" content="What NOALBS Cloud keeps about you, why, for how long, and your rights." />
@@ -16,11 +16,21 @@
           const saved = localStorage.getItem("noalbs-theme");
           document.documentElement.dataset.theme =
             saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute(
+              "content",
+              document.documentElement.dataset.theme === "light" ? "#F5F5F7" : "#0E0F12",
+            );
         };
+        const textSize = localStorage.getItem("noalbs-text-size");
+        document.documentElement.dataset.textSize =
+          textSize === "large" || textSize === "larger" ? textSize : "default";
         apply();
         media.addEventListener("change", apply);
       } catch {
         document.documentElement.dataset.theme = "dark";
+        document.documentElement.dataset.textSize = "default";
       }
     </script>
   </head>

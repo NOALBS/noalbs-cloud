@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/manrope";
 @import "@fontsource-variable/geist-mono";
 
 /*
@@ -12,94 +13,104 @@
 :root {
   color-scheme: dark;
 
-  --background: #0b0d10;
-  --foreground: #e9ecf1;
-  --sunken: #0f1215;
-  --card: #121519;
-  --card-foreground: #e9ecf1;
-  --popover: #181c22;
-  --popover-foreground: #e9ecf1;
-  /* Hovers: a clear step up from both cards and popovers, like light mode's. */
-  --surface-2: #22272f;
-  --muted: #181c22;
-  --muted-foreground: #a3abb8;
-  --subtle-foreground: #808896;
+  --background: #0e0f12;
+  --foreground: #f1f2f4;
+  --sunken: #121317;
+  --card: #16171b;
+  --card-foreground: #f1f2f4;
+  --popover: #1d1f24;
+  --popover-foreground: #f1f2f4;
+  --surface-2: #262930;
+  --muted: #1d1f24;
+  --muted-foreground: #8d93a0;
+  --subtle-foreground: #7c8291;
 
-  --border: #242931;
-  --border-strong: #2f3540;
-  --divider: #1d2129;
-  --input: #2f3540;
+  --border: #24262c;
+  --border-strong: #30333a;
+  --divider: #202227;
+  --input: #30333a;
 
-  --primary: #a999ff;
-  --primary-strong: #8e7bff;
-  --primary-foreground: #0b0d10;
-  --primary-soft: #1a1733;
-  --primary-soft-border: #3a3270;
-  --primary-soft-foreground: #c7bdff;
-  --secondary: #181c22;
-  --secondary-foreground: #e9ecf1;
-  --accent: #22272f;
-  --accent-foreground: #e9ecf1;
-  --ring: #a999ff;
+  --primary: #6f7dff;
+  --primary-strong: #5a69f0;
+  --primary-foreground: #ffffff;
+  --primary-soft: #1e2140;
+  --primary-soft-border: #343a7a;
+  --primary-soft-foreground: #b3bbff;
+  --secondary: #1d1f24;
+  --secondary-foreground: #f1f2f4;
+  --accent: #262930;
+  --accent-foreground: #f1f2f4;
+  --ring: #6f7dff;
 
-  --destructive: #f43f5e;
-  --destructive-foreground: #fda4af;
+  --destructive: #ff5d5d;
+  --destructive-foreground: #ff9a9a;
 
-  /* Stream states: always paired with a text label, never colour alone. */
-  --live: #4ade80;
-  --low: #fbbf24;
-  --offline: #f43f5e;
-  --idle: #5b6472;
+  --live: #3ddc84;
+  --low: #f5b53f;
+  --offline: #ff5d5d;
+  --idle: #5d636e;
 
-  --radius: 0.75rem;
+  --radius: 0.875rem;
+  --tile-shadow: none;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --background: #f5f6f8;
-  --foreground: #11151b;
+  --background: #f5f5f7;
+  --foreground: #15171c;
   --sunken: #fafafb;
   --card: #ffffff;
-  --card-foreground: #11151b;
+  --card-foreground: #15171c;
   --popover: #ffffff;
-  --popover-foreground: #11151b;
-  --surface-2: #eef0f3;
-  --muted: #eef0f3;
-  --muted-foreground: #566070;
-  --subtle-foreground: #6b7482;
+  --popover-foreground: #15171c;
+  --surface-2: #eeeef2;
+  --muted: #f2f2f5;
+  --muted-foreground: #5f6573;
+  --subtle-foreground: #6f7582;
 
-  --border: #e1e5ea;
-  --border-strong: #d3d8df;
-  --divider: #e8ebef;
-  --input: #d3d8df;
+  --border: #e6e7eb;
+  --border-strong: #d6d8de;
+  --divider: #ececf0;
+  --input: #d6d8de;
 
-  --primary: #5b45e0;
-  --primary-strong: #5b45e0;
+  --primary: #4f5fe8;
+  --primary-strong: #4453d6;
   --primary-foreground: #ffffff;
-  --primary-soft: #f0edff;
-  --primary-soft-border: #c9c0ff;
-  --primary-soft-foreground: #4b36c9;
-  --secondary: #eef0f3;
-  --secondary-foreground: #11151b;
-  --accent: #eef0f3;
-  --accent-foreground: #11151b;
-  --ring: #5b45e0;
+  --primary-soft: #eef0ff;
+  --primary-soft-border: #c8cdfb;
+  --primary-soft-foreground: #3a48c9;
+  --secondary: #f2f2f5;
+  --secondary-foreground: #15171c;
+  --accent: #eeeef2;
+  --accent-foreground: #15171c;
+  --ring: #4f5fe8;
 
-  --destructive: #e11d48;
-  --destructive-foreground: #be123c;
+  --destructive: #df3d3d;
+  --destructive-foreground: #c42f2f;
 
-  --live: #16a34a;
-  --low: #d97706;
-  --offline: #e11d48;
-  --idle: #a0a8b4;
+  --live: #1ea85f;
+  --low: #c07a00;
+  --offline: #df3d3d;
+  --idle: #a1a6b1;
+  --tile-shadow: 0 1px 2px rgba(20, 22, 30, 0.05), 0 8px 24px -16px rgba(20, 22, 30, 0.12);
+}
+
+:root[data-text-size="large"] {
+  font-size: 112.5%;
+}
+
+:root[data-text-size="larger"] {
+  font-size: 125%;
 }
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
-  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Manrope Variable", "Inter Variable", sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --shadow-tile: var(--tile-shadow);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

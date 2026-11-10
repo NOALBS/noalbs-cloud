@@ -1270,7 +1270,6 @@ msgstr "Ativo hoje"
 msgid "Activity"
 msgstr "Atividade"
 
-#: src/components/home-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Add"
 msgstr "Adicionar"
@@ -1539,10 +1538,6 @@ msgstr "Todos os workspaces"
 #: src/components/orgs/org-shell.tsx
 msgid "All workspaces{0}"
 msgstr "Todos os workspaces{0}"
-
-#: src/components/home-shell.tsx
-msgid "ALL YOUR WORKSPACES"
-msgstr "TODOS OS SEUS WORKSPACES"
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Allocation"
@@ -1825,17 +1820,22 @@ msgstr "Média · {0}"
 msgid "Avg bitrate"
 msgstr "Bitrate médio"
 
+#. placeholder {0}: workspace.managed_by.name
+#: src/components/app-shell.tsx
+msgid "Back to {0}"
+msgstr ""
+
 #: src/components/support/support-gate.tsx
 msgid "Back to Admin"
 msgstr "Voltar para Administrador"
 
+#: src/components/admin/admin-shell.tsx
+msgid "Back to dashboard"
+msgstr ""
+
 #: src/routes/_app/welcome.tsx
 msgid "Back to my workspace"
 msgstr "Voltar ao meu workspace"
-
-#: src/components/admin/admin-shell.tsx
-msgid "Back to NOALBS"
-msgstr "Voltar ao NOALBS"
 
 #: src/routes/login.tsx
 msgid "Back to the site"
@@ -2656,6 +2656,7 @@ msgstr "Conecte seu servidor de stream"
 msgid "connected"
 msgstr "conectado"
 
+#: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -3095,6 +3096,10 @@ msgstr "Dias de histórico de stream"
 #: src/routes/_app/org-invite.$token.tsx
 msgid "Decline"
 msgstr "Recusar"
+
+#: src/components/app-shell.tsx
+msgid "Default"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -3926,6 +3931,7 @@ msgstr "Dias de histórico"
 #: src/components/app-shell.tsx
 #: src/components/home-shell.tsx
 #: src/components/minimal-header.tsx
+#: src/components/top-bar.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Home"
 msgstr "Início"
@@ -4431,6 +4437,14 @@ msgstr "Tipos:"
 msgid "Language"
 msgstr "Idioma"
 
+#: src/components/app-shell.tsx
+msgid "Large"
+msgstr ""
+
+#: src/components/app-shell.tsx
+msgid "Larger"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Last 2 min"
 msgstr "Últimos 2 min"
@@ -4875,7 +4889,6 @@ msgid "Manage switchers, stream servers and members"
 msgstr "Gerenciar switchers, servidores de stream e membros"
 
 #. placeholder {0}: candidate.managed_by.name
-#. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
 msgid "Managed by {0}"
 msgstr "Gerenciado por {0}"
@@ -6277,6 +6290,10 @@ msgstr "OBS não responde"
 msgid "OBS not running"
 msgstr "OBS não está em execução"
 
+#: src/components/app-shell.tsx
+msgid "OBS offline"
+msgstr ""
+
 #. placeholder {0}: switcher.obs.port
 #: src/components/settings-hub.tsx
 msgid "OBS port {0} · browser-source link · BELABOX Cloud"
@@ -6696,10 +6713,6 @@ msgstr "Ordem"
 msgid "Organization"
 msgstr "Organização"
 
-#: src/components/orgs/org-shell.tsx
-msgid "ORGANIZATION"
-msgstr "ORGANIZAÇÃO"
-
 #. placeholder {0}: organization.usage.clients
 #: src/components/app-shell.tsx
 msgid "Organization · {0, plural, one {# client} other {# clients}}"
@@ -6721,10 +6734,6 @@ msgstr "Organização não encontrada"
 #: src/routes/_app/admin/organizations/index.tsx
 msgid "Organizations"
 msgstr "Organizações"
-
-#: src/components/home-shell.tsx
-msgid "ORGANIZATIONS"
-msgstr "ORGANIZAÇÕES"
 
 #: src/components/live/source-position.tsx
 msgid "Original"
@@ -7087,6 +7096,7 @@ msgstr "ID do preço"
 #: src/components/app-shell.tsx
 #: src/components/home-shell.tsx
 #: src/components/orgs/org-shell.tsx
+#: src/components/top-bar.tsx
 msgid "Primary"
 msgstr "Principal"
 
@@ -9056,6 +9066,7 @@ msgid "Switch to yearly billing?"
 msgstr "Mudar para cobrança anual?"
 
 #: src/components/app-shell.tsx
+#: src/components/home-shell.tsx
 msgid "Switch workspace"
 msgstr "Trocar de workspace"
 
@@ -9107,10 +9118,6 @@ msgstr "Configurações do switcher"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Switchers"
 msgstr "Switchers"
-
-#: src/components/app-shell.tsx
-msgid "SWITCHERS"
-msgstr "SWITCHERS"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Switchers beyond Free’s limit pause then; they stay connected but don’t switch."
@@ -9199,6 +9206,10 @@ msgstr "Testou um servidor de stream"
 #: src/components/live/source-editor.tsx
 msgid "Text"
 msgstr "Texto"
+
+#: src/components/app-shell.tsx
+msgid "Text size"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
@@ -10650,10 +10661,6 @@ msgstr "workspace"
 #: src/routes/_app/connect.tsx
 msgid "Workspace"
 msgstr "Workspace"
-
-#: src/components/app-shell.tsx
-msgid "WORKSPACE"
-msgstr "WORKSPACE"
 
 #: src/routes/_app/welcome.tsx
 msgid "Workspace name"

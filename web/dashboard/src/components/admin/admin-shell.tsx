@@ -5,7 +5,6 @@ import {
   Activity,
   Bot,
   Building2,
-  ChevronLeft,
   Gauge,
   Megaphone,
   Package,
@@ -16,13 +15,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { NoticeBanners } from "@/components/notice-banner";
-import { cn } from "@/lib/utils";
+import { TOP_TAB_CLASS, TopBar } from "@/components/top-bar";
 
-const NAV_LINK =
-  "flex min-h-9.5 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground data-[status=active]:bg-surface-2 data-[status=active]:font-semibold data-[status=active]:text-foreground";
-
-const TAB =
-  "flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium text-muted-foreground data-[status=active]:bg-surface-2 data-[status=active]:text-foreground";
+const MOBILE_TAB =
+  "flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium text-muted-foreground data-[status=active]:bg-card data-[status=active]:text-primary";
 
 /** The admin section's pages, in menu order. */
 export const adminPages = () =>
@@ -41,31 +37,30 @@ export const adminPages = () =>
 /** The staff-only admin section: its own navigation, apart from any workspace. */
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-5 border-r border-divider bg-sunken px-3 py-3.5 md:flex">
-        <div className="flex items-center gap-2 px-2.5 pt-1 font-semibold">
-          <ShieldCheck className="size-5 text-primary" />
-          <Trans>Admin</Trans>
-        </div>
-        <nav aria-label={t`Admin`} className="flex flex-col gap-0.5">
-          {adminPages().map((page) => (
-            <Link
-              key={page.to}
-              to={page.to}
-              activeOptions={{ exact: page.exact }}
-              className={NAV_LINK}
-            >
-              <page.icon className="size-4" />
-              {page.label}
-            </Link>
-          ))}
-        </nav>
-        <Link to="/" className={cn(NAV_LINK, "mt-auto")}>
-          <ChevronLeft className="size-4" />
-          <Trans>Back to NOALBS</Trans>
-        </Link>
-      </aside>
-
+    <div className="flex min-h-dvh flex-col">
+      <TopBar
+        pill={
+          <span className="px-2 text-sm font-semibold">
+            <Trans>Admin</Trans>
+          </span>
+        }
+        tabsLabel={t`Admin`}
+        tabs={adminPages().map((page) => (
+          <Link
+            key={page.to}
+            to={page.to}
+            activeOptions={{ exact: page.exact }}
+            className={TOP_TAB_CLASS}
+          >
+            {page.label}
+          </Link>
+        ))}
+        right={
+          <Link to="/" className="text-sm font-semibold text-primary hover:underline">
+            <Trans>Back to dashboard</Trans>
+          </Link>
+        }
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex flex-col gap-2 border-b border-divider bg-background/95 px-4 pt-3 pb-2 backdrop-blur md:hidden">
           <div className="flex items-center justify-between">
@@ -74,7 +69,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <Trans>Admin</Trans>
             </span>
             <Link to="/" className="flex min-h-11 items-center text-sm font-medium text-primary">
-              <Trans>Back to NOALBS</Trans>
+              <Trans>Back to dashboard</Trans>
             </Link>
           </div>
           <nav aria-label={t`Admin`} className="-mx-1 flex gap-1 overflow-x-auto">
@@ -83,7 +78,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 key={page.to}
                 to={page.to}
                 activeOptions={{ exact: page.exact }}
-                className={TAB}
+                className={MOBILE_TAB}
               >
                 <page.icon className="size-4" />
                 {page.label}

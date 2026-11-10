@@ -42,7 +42,7 @@ function apply(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", theme === "light" ? "#F5F6F8" : "#0B0D10");
+    ?.setAttribute("content", theme === "light" ? "#F5F5F7" : "#0E0F12");
   for (const listener of listeners) listener();
 }
 

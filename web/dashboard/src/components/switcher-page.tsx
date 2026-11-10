@@ -66,7 +66,9 @@ export function SwitcherPage({
       {back}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-xl font-bold tracking-tight md:text-2xl">{title}</h1>
+          <h1 className="font-display text-xl font-extrabold tracking-tight md:text-2xl">
+            {title}
+          </h1>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}

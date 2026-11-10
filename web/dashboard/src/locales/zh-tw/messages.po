@@ -1270,7 +1270,6 @@ msgstr "今天活躍"
 msgid "Activity"
 msgstr "活動紀錄"
 
-#: src/components/home-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Add"
 msgstr "新增"
@@ -1539,10 +1538,6 @@ msgstr "所有工作區"
 #: src/components/orgs/org-shell.tsx
 msgid "All workspaces{0}"
 msgstr "所有工作區{0}"
-
-#: src/components/home-shell.tsx
-msgid "ALL YOUR WORKSPACES"
-msgstr "你的所有工作區"
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Allocation"
@@ -1825,17 +1820,22 @@ msgstr "平均 · {0}"
 msgid "Avg bitrate"
 msgstr "平均位元率"
 
+#. placeholder {0}: workspace.managed_by.name
+#: src/components/app-shell.tsx
+msgid "Back to {0}"
+msgstr ""
+
 #: src/components/support/support-gate.tsx
 msgid "Back to Admin"
 msgstr "返回管理員專區"
 
+#: src/components/admin/admin-shell.tsx
+msgid "Back to dashboard"
+msgstr ""
+
 #: src/routes/_app/welcome.tsx
 msgid "Back to my workspace"
 msgstr "返回我的工作區"
-
-#: src/components/admin/admin-shell.tsx
-msgid "Back to NOALBS"
-msgstr "返回 NOALBS"
 
 #: src/routes/login.tsx
 msgid "Back to the site"
@@ -2656,6 +2656,7 @@ msgstr "連接你的串流伺服器"
 msgid "connected"
 msgstr "已連線"
 
+#: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -3095,6 +3096,10 @@ msgstr "實況歷史紀錄天數"
 #: src/routes/_app/org-invite.$token.tsx
 msgid "Decline"
 msgstr "拒絕"
+
+#: src/components/app-shell.tsx
+msgid "Default"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -3926,6 +3931,7 @@ msgstr "歷史紀錄天數"
 #: src/components/app-shell.tsx
 #: src/components/home-shell.tsx
 #: src/components/minimal-header.tsx
+#: src/components/top-bar.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Home"
 msgstr "首頁"
@@ -4431,6 +4437,14 @@ msgstr "類型："
 msgid "Language"
 msgstr "語言"
 
+#: src/components/app-shell.tsx
+msgid "Large"
+msgstr ""
+
+#: src/components/app-shell.tsx
+msgid "Larger"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Last 2 min"
 msgstr "最近 2 分鐘"
@@ -4875,7 +4889,6 @@ msgid "Manage switchers, stream servers and members"
 msgstr "管理切換器、串流伺服器和成員"
 
 #. placeholder {0}: candidate.managed_by.name
-#. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
 msgid "Managed by {0}"
 msgstr "由 {0} 管理"
@@ -6277,6 +6290,10 @@ msgstr "OBS 沒有回應"
 msgid "OBS not running"
 msgstr "OBS 未執行"
 
+#: src/components/app-shell.tsx
+msgid "OBS offline"
+msgstr ""
+
 #. placeholder {0}: switcher.obs.port
 #: src/components/settings-hub.tsx
 msgid "OBS port {0} · browser-source link · BELABOX Cloud"
@@ -6696,10 +6713,6 @@ msgstr "排序"
 msgid "Organization"
 msgstr "組織"
 
-#: src/components/orgs/org-shell.tsx
-msgid "ORGANIZATION"
-msgstr "組織"
-
 #. placeholder {0}: organization.usage.clients
 #: src/components/app-shell.tsx
 msgid "Organization · {0, plural, one {# client} other {# clients}}"
@@ -6720,10 +6733,6 @@ msgstr "找不到這個組織"
 #: src/routes/_app/admin/organizations/$organization.tsx
 #: src/routes/_app/admin/organizations/index.tsx
 msgid "Organizations"
-msgstr "組織"
-
-#: src/components/home-shell.tsx
-msgid "ORGANIZATIONS"
 msgstr "組織"
 
 #: src/components/live/source-position.tsx
@@ -7087,6 +7096,7 @@ msgstr "價格 ID"
 #: src/components/app-shell.tsx
 #: src/components/home-shell.tsx
 #: src/components/orgs/org-shell.tsx
+#: src/components/top-bar.tsx
 msgid "Primary"
 msgstr "主要"
 
@@ -9056,6 +9066,7 @@ msgid "Switch to yearly billing?"
 msgstr "要改為年繳嗎？"
 
 #: src/components/app-shell.tsx
+#: src/components/home-shell.tsx
 msgid "Switch workspace"
 msgstr "切換工作區"
 
@@ -9106,10 +9117,6 @@ msgstr "切換器設定"
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "Switchers"
-msgstr "切換器"
-
-#: src/components/app-shell.tsx
-msgid "SWITCHERS"
 msgstr "切換器"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -9199,6 +9206,10 @@ msgstr "測試了串流伺服器"
 #: src/components/live/source-editor.tsx
 msgid "Text"
 msgstr "文字"
+
+#: src/components/app-shell.tsx
+msgid "Text size"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Thanks! Your payment went through."
@@ -10649,10 +10660,6 @@ msgstr "工作區"
 #: src/routes/_app/admin/workspaces/index.tsx
 #: src/routes/_app/connect.tsx
 msgid "Workspace"
-msgstr "工作區"
-
-#: src/components/app-shell.tsx
-msgid "WORKSPACE"
 msgstr "工作區"
 
 #: src/routes/_app/welcome.tsx

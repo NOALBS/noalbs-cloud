@@ -24,11 +24,20 @@ import { errorMessage, isApiError } from "@/lib/errors";
 export function CreateSwitcherDialog({
   workspace,
   children,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   workspace: Workspace;
-  children: ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setDialogOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setLocalOpen(next);
+    onOpenChange?.(next);
+  };
   const [name, setName] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -57,7 +66,7 @@ export function CreateSwitcherDialog({
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
         queryClient.invalidateQueries({ queryKey: queryKeys.workspacePlan(workspace.id) }),
       ]);
-      setOpen(false);
+      setDialogOpen(false);
       setName("");
       await navigate({
         to: "/$workspace/s/$switcher/setup",
@@ -75,11 +84,11 @@ export function CreateSwitcherDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        setOpen(next);
+        setDialogOpen(next);
         if (!next) create.reset();
       }}
     >
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-5">
           <DialogHeader>
@@ -113,7 +122,7 @@ export function CreateSwitcherDialog({
                   to="/$workspace/settings/plan"
                   params={{ workspace: workspace.url_slug }}
                   className="font-semibold underline"
-                  onClick={() => setOpen(false)}
+                  onClick={() => setDialogOpen(false)}
                 >
                   <Trans>See plans</Trans>
                 </Link>

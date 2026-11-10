@@ -7,8 +7,8 @@ import {
   AlertTriangle,
   Building2,
   Check,
+  ChevronDown,
   ChevronLeft,
-  ChevronsUpDown,
   Headset,
   History,
   House,
@@ -36,7 +36,7 @@ import {
   switchersQuery,
   workspacePlanQuery,
 } from "@/api/queries";
-import type { Me, SwitcherSummary, Workspace } from "@/api/types";
+import type { Me, Organization, SwitcherSummary, Workspace } from "@/api/types";
 import { NoticeBanners } from "@/components/notice-banner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,6 +66,7 @@ import { type Actor, actorOf, can, isSupport, roleLabels } from "@/lib/permissio
 import { menuWorkspaces, recentWorkspaceIds } from "@/lib/recent-workspaces";
 import { setupProgress } from "@/lib/setup";
 import { supportLevelLabels } from "@/lib/support";
+import { type TextSize, useTextSize } from "@/lib/text-size";
 import { type ThemePreference, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { WHATS_NEW_PATH } from "@/lib/whats-new";
@@ -75,18 +76,12 @@ import { LanguageMenu } from "./language-menu";
 import { ObsStatsPopover } from "./live/obs-stats-popover";
 import { SETTINGS_SEGMENTS, switcherPages } from "./switcher-page";
 import { StatusDot, switcherStatus } from "./switcher-status";
+import { TOP_TAB_CLASS, TopBar } from "./top-bar";
 import { providerLabel, UserAvatar } from "./user-avatar";
 import { WorkspaceTile } from "./workspace-tile";
 
-export const NAV_LINK =
-  "flex min-h-9.5 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground data-[status=active]:bg-surface-2 data-[status=active]:font-semibold data-[status=active]:text-foreground";
-
-export const SECTION_LABEL =
-  "px-2.5 pb-1 text-[11px] font-semibold tracking-wider text-subtle-foreground";
-
 export const TAB_CLASS =
-  "flex h-17 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground data-[status=active]:font-semibold data-[status=active]:text-foreground";
-const TAB_ACTIVE = "font-semibold text-foreground";
+  "flex h-17 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground data-[status=active]:font-semibold data-[status=active]:text-primary";
 
 /** What to call the viewer's standing in a workspace of the menu. */
 export function standingLabel(workspace: Workspace): string {
@@ -139,108 +134,66 @@ export function AppShell({
     (inSwitcher && SETTINGS_SEGMENTS.includes(segment)) || pathname.includes("/settings/");
 
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-66 shrink-0 flex-col gap-5 overflow-y-auto border-r border-divider bg-sunken px-3 py-3.5 md:flex">
-        <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
-
-        {workspace.managed_by && workspace.organization_role && (
-          <Link
-            to="/orgs/$organization/clients"
-            params={{ organization: workspace.managed_by.url_slug }}
-            className={cn(NAV_LINK, "-mt-2")}
-          >
-            <ChevronLeft className="size-4" />
-            <span className="truncate">{workspace.managed_by.name}</span>
-          </Link>
-        )}
-
-        <nav aria-label={t`Switchers`} className="flex flex-col gap-0.5">
-          <span className={cn(SECTION_LABEL, "flex items-center justify-between")}>
-            <Trans>SWITCHERS</Trans>
-            {canAddSwitcher && (
-              <CreateSwitcherDialog workspace={workspace}>
-                <button
-                  type="button"
-                  aria-label={t`Add switcher`}
-                  className="rounded p-0.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </CreateSwitcherDialog>
-            )}
-          </span>
-          {switchers.data?.map((switcher) => {
-            const status = switcherStatus(switcher);
-            return (
-              <Link
-                key={switcher.id}
-                to="/$workspace/s/$switcher"
-                params={{ ...params, switcher: switcher.id }}
-                className={NAV_LINK}
-              >
-                <StatusDot className={status.dot} />
-                <span className="flex-1 truncate">{switcher.name}</span>
-                <span className={cn("font-mono text-[11px] font-medium", status.tagClass)}>
-                  {status.tag}
-                </span>
+    <div className="flex min-h-dvh flex-col">
+      <TopBar
+        pill={
+          <WorkspaceMenu
+            workspace={workspace}
+            workspaces={workspaces}
+            organizations={organizations.data ?? []}
+            switchers={switchers.data ?? []}
+            current={current}
+            inSwitcher={inSwitcher}
+            canAddSwitcher={canAddSwitcher}
+            menu={menu}
+          />
+        }
+        tabsLabel={inSwitcher ? t`Switcher` : t`Workspace`}
+        tabs={
+          inSwitcher && current ? (
+            <SwitcherNav workspace={workspace} switcher={current} />
+          ) : (
+            <>
+              <Link to="/$workspace/overview" params={params} className={TOP_TAB_CLASS}>
+                <Trans>Overview</Trans>
               </Link>
-            );
-          })}
-          {switchers.data?.length === 0 && (
-            <span className="px-2.5 text-sm text-muted-foreground">
-              <Trans>None yet</Trans>
-            </span>
-          )}
-        </nav>
-
-        {current && <SwitcherNav workspace={workspace} switcher={current} />}
-
-        <nav aria-label={t`Workspace`} className="flex flex-col gap-0.5">
-          <span className={SECTION_LABEL}>
-            <Trans>WORKSPACE</Trans>
-          </span>
-          <Link to="/$workspace/settings/members" params={params} className={NAV_LINK}>
-            <Trans>Members &amp; invites</Trans>
-          </Link>
-          <Link to="/$workspace/settings/plan" params={params} className={NAV_LINK}>
-            <span className="flex-1">
-              <Trans>Plan</Trans>
-            </span>
-            <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-[11px] font-semibold text-primary-soft-foreground">
-              {workspace.plan_code.toUpperCase()}
-            </span>
-          </Link>
-        </nav>
-
-        <div className="mt-auto border-t border-divider pt-3">
-          <UserMenu me={me} workspaceSlug={workspace.url_slug} />
-        </div>
-      </aside>
-
+              <Link to="/$workspace/settings/members" params={params} className={TOP_TAB_CLASS}>
+                <Trans>Members</Trans>
+              </Link>
+              <Link to="/$workspace/settings/plan" params={params} className={TOP_TAB_CLASS}>
+                <Trans>Plan</Trans>
+              </Link>
+              <Link to="/$workspace/settings/general" params={params} className={TOP_TAB_CLASS}>
+                <Trans>Settings</Trans>
+              </Link>
+            </>
+          )
+        }
+        right={
+          <>
+            {inSwitcher && current && (
+              <ConnectChip desktop workspace={workspace} switcher={current} actor={actor} />
+            )}
+            {inSwitcher && current && (
+              <ObsChip desktop workspaceId={workspace.id} switcher={current} />
+            )}
+            <UserMenu me={me} workspaceSlug={workspace.url_slug} compact />
+          </>
+        }
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-15 items-center justify-between gap-3 border-b border-divider bg-background/95 px-4 backdrop-blur md:hidden">
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
-            className="flex min-h-11 min-w-0 items-center gap-2.5 text-left"
+            className="flex h-9 min-w-0 items-center gap-2 rounded-xl border bg-card pl-1.5 pr-3 text-left font-semibold"
             aria-label={t`Switch workspace`}
           >
-            <WorkspaceTile seed={workspace.url_slug} name={workspace.name} />
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-[15px] leading-tight font-semibold">
-                {workspace.name}
-              </span>
-              {inSwitcher && current ? (
-                <span className="truncate text-xs text-muted-foreground">{current.name}</span>
-              ) : (
-                workspace.managed_by && (
-                  <span className="truncate text-xs text-muted-foreground">
-                    <Trans>Managed by {workspace.managed_by.name}</Trans>
-                  </span>
-                )
-              )}
+            <WorkspaceTile seed={workspace.url_slug} name={workspace.name} size="sm" />
+            <span className="max-w-36 truncate text-sm">
+              {inSwitcher && current ? current.name : workspace.name}
             </span>
-            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
           </button>
           <div className="flex items-center gap-2.5">
             {inSwitcher && current && (
@@ -310,9 +263,7 @@ export function AppShell({
 
         <nav
           aria-label={t`Primary`}
-          className={cn(
-            "fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-divider bg-sunken pb-[env(safe-area-inset-bottom)] md:hidden",
-          )}
+          className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-divider bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         >
           {current ? (
             <>
@@ -335,7 +286,7 @@ export function AppShell({
               <Link
                 to="/$workspace/s/$switcher/triggers"
                 params={{ ...params, switcher: current.id }}
-                className={cn(TAB_CLASS, settingsActive && TAB_ACTIVE)}
+                className={cn(TAB_CLASS, settingsActive && "text-primary")}
               >
                 <Settings className="size-5.5" />
                 <Trans>Settings</Trans>
@@ -372,6 +323,40 @@ export function AppShell({
           </SheetHeader>
           <div className="flex min-h-0 flex-col gap-4 px-4 pb-6">
             <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto overscroll-contain">
+              {switchers.data && switchers.data.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="px-1 text-xs font-semibold text-muted-foreground">
+                    <Trans>Switchers</Trans>
+                  </span>
+                  {switchers.data.map((candidate) => {
+                    const status = switcherStatus(candidate);
+                    const isCurrent = candidate.id === current?.id;
+                    return (
+                      <Link
+                        key={candidate.id}
+                        to="/$workspace/s/$switcher/live"
+                        params={{ ...params, switcher: candidate.id }}
+                        onClick={() => setSheetOpen(false)}
+                        className={cn(
+                          "flex min-h-12 items-center gap-3 rounded-xl border px-3",
+                          isCurrent
+                            ? "border-primary-soft-border bg-primary-soft"
+                            : "border-divider bg-sunken",
+                        )}
+                      >
+                        <StatusDot className={status.dot} />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate font-semibold">{candidate.name}</span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {status.label}
+                          </span>
+                        </span>
+                        {isCurrent && <Check className="size-5 text-primary" />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
               {menu.shown.map((candidate) => {
                 const isCurrent = candidate.id === workspace.id;
                 return (
@@ -476,18 +461,17 @@ export function AppShell({
   );
 }
 
-/**
- * The paired Connect computer, for the mobile app bar; opens its OBS and
- * program controls. Its name is the user's own, so it's cut short here.
- */
+/** The paired Connect computer; opens its OBS and program controls. */
 function ConnectChip({
   workspace,
   switcher,
   actor,
+  desktop = false,
 }: {
   workspace: Workspace;
   switcher: SwitcherSummary;
   actor: Actor;
+  desktop?: boolean;
 }) {
   const details = useQuery(switcherQuery(workspace.id, switcher.id));
   const pc = switcher.status?.pc;
@@ -514,17 +498,30 @@ function ConnectChip({
       <button
         type="button"
         title={t`Connect · ${connectDeviceName}`}
-        className="flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-xs text-muted-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+        className={cn(
+          "flex min-w-0 items-center gap-1.5 border text-muted-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
+          desktop ? "h-9 rounded-xl px-3 text-[13px]" : "h-8 rounded-full px-2.5 text-xs",
+        )}
       >
-        <Monitor className="size-3.5 shrink-0" />
-        <span className="max-w-20 truncate">{connectDeviceName}</span>
+        <Monitor className={cn("shrink-0", desktop ? "size-4" : "size-3.5")} />
+        <span className={cn("truncate", desktop ? "max-w-40" : "max-w-20")}>
+          {connectDeviceName}
+        </span>
       </button>
     </ConnectDialog>
   );
 }
 
-/** Whether OBS is connected, for the mobile app bar; opens OBS's stats. */
-function ObsChip({ workspaceId, switcher }: { workspaceId: string; switcher: SwitcherSummary }) {
+/** Whether OBS is connected; opens OBS's stats. */
+function ObsChip({
+  workspaceId,
+  switcher,
+  desktop = false,
+}: {
+  workspaceId: string;
+  switcher: SwitcherSummary;
+  desktop?: boolean;
+}) {
   const connected = Boolean(switcher.status?.obs_connected);
   return (
     <ObsStatsPopover
@@ -534,127 +531,218 @@ function ObsChip({ workspaceId, switcher }: { workspaceId: string; switcher: Swi
       <button
         type="button"
         title={t`OBS stats`}
-        className="flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs text-muted-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+        className={cn(
+          "flex items-center gap-1.5 border text-muted-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
+          desktop ? "h-9 rounded-xl px-3 text-[13px]" : "h-8 rounded-full px-2.5 text-xs",
+        )}
       >
         <span className={cn("size-1.5 rounded-full", connected ? "bg-live" : "bg-offline")} />
-        <Trans>
-          OBS
-          <span className="sr-only">{connected ? t`connected` : t`not connected`}</span>
-        </Trans>
+        {desktop ? (
+          <>
+            {connected ? <Trans>Connected</Trans> : <Trans>OBS offline</Trans>}
+            <span className="sr-only">{connected ? t`connected` : t`not connected`}</span>
+          </>
+        ) : (
+          <Trans>
+            OBS
+            <span className="sr-only">{connected ? t`connected` : t`not connected`}</span>
+          </Trans>
+        )}
       </button>
     </ObsStatsPopover>
   );
 }
 
-/** The desktop workspace switcher: the current workspace, opening a menu. */
-function WorkspaceSwitcher({
+function WorkspaceMenu({
   workspace,
   workspaces,
+  organizations,
+  switchers,
+  current,
+  inSwitcher,
+  canAddSwitcher,
+  menu,
 }: {
   workspace: Workspace;
   workspaces: Workspace[];
+  organizations: Organization[];
+  switchers: SwitcherSummary[];
+  current: SwitcherSummary | undefined;
+  inSwitcher: boolean;
+  canAddSwitcher: boolean;
+  menu: { shown: Workspace[]; hidden: number };
 }) {
   const params = { workspace: workspace.url_slug };
-  const organizations = useQuery(organizationsQuery);
-  // With many workspaces the menu lists the recent ones; the rest are on All workspaces.
-  const menu = menuWorkspaces(workspaces, workspace.id, recentWorkspaceIds());
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-12 shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-left outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-surface-2">
-        <WorkspaceTile seed={workspace.url_slug} name={workspace.name} />
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-semibold leading-tight">{workspace.name}</span>
-          {workspace.managed_by && (
-            <span className="truncate text-xs text-muted-foreground">
-              <Trans>Managed by {workspace.managed_by.name}</Trans>
-            </span>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="flex h-9 shrink-0 items-center gap-2 rounded-xl border bg-card pl-1.5 pr-3 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-accent"
+          aria-label={t`Switch workspace`}
+        >
+          <WorkspaceTile seed={workspace.url_slug} name={workspace.name} size="sm" />
+          <span className="flex max-w-60 items-center gap-2 truncate text-sm">
+            <span className="truncate">{workspace.name}</span>
+            {inSwitcher && current && (
+              <>
+                <span className="text-muted-foreground">/</span>
+                <span className="truncate">{current.name}</span>
+              </>
+            )}
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-80">
+          {workspace.managed_by && workspace.organization_role && (
+            <DropdownMenuItem asChild>
+              <Link
+                to="/orgs/$organization/clients"
+                params={{ organization: workspace.managed_by.url_slug }}
+              >
+                <ChevronLeft />
+                <Trans>Back to {workspace.managed_by.name}</Trans>
+              </Link>
+            </DropdownMenuItem>
           )}
-        </span>
-        <ChevronsUpDown className="size-4 text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-75">
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          {menu.hidden > 0 ? t`Recent workspaces` : t`Workspaces`}
-        </DropdownMenuLabel>
-        {menu.shown.map((candidate) => (
-          <DropdownMenuItem key={candidate.id} asChild>
-            <Link
-              to="/$workspace"
-              params={{ workspace: candidate.url_slug }}
-              className="flex min-h-10 items-center gap-2.5"
-            >
-              <WorkspaceTile seed={candidate.url_slug} name={candidate.name} size="sm" />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-medium leading-tight">{candidate.name}</span>
-                {candidate.managed_by && (
-                  <span className="truncate text-xs text-muted-foreground">
-                    <Trans>Managed by {candidate.managed_by.name}</Trans>
-                  </span>
-                )}
-              </span>
-              <span className="text-xs text-muted-foreground">{standingLabel(candidate)}</span>
-              {candidate.id === workspace.id && <Check className="size-4 text-primary" />}
-            </Link>
-          </DropdownMenuItem>
-        ))}
-        {organizations.data && organizations.data.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-              <Trans>Organizations</Trans>
-            </DropdownMenuLabel>
-            {organizations.data.map((organization) => (
-              <DropdownMenuItem key={organization.id} asChild>
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            <Trans>Switchers</Trans>
+          </DropdownMenuLabel>
+          {switchers.map((switcher) => {
+            const status = switcherStatus(switcher);
+            return (
+              <DropdownMenuItem key={switcher.id} asChild>
                 <Link
-                  to="/orgs/$organization/clients"
-                  params={{ organization: organization.url_slug }}
+                  to="/$workspace/s/$switcher"
+                  params={{ ...params, switcher: switcher.id }}
                   className="flex min-h-10 items-center gap-2.5"
                 >
-                  <Building2 className="size-4" />
-                  <span className="flex-1 truncate font-medium">{organization.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>Clients</Trans>
+                  <StatusDot className={status.dot} />
+                  <span className="flex-1 truncate font-medium">{switcher.name}</span>
+                  <span className={cn("font-mono text-[11px] font-medium", status.tagClass)}>
+                    {status.tag}
                   </span>
+                  {switcher.id === current?.id && <Check className="size-4 text-primary" />}
                 </Link>
               </DropdownMenuItem>
-            ))}
-          </>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/workspaces">
-            <LayoutList />
-            <Trans>All workspaces{menu.hidden > 0 && ` (${workspaces.length})`}</Trans>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/welcome" search={{ mode: "create" }}>
-            <Plus />
-            <Trans>Create workspace</Trans>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/welcome" search={{ mode: "join" }}>
-            <Link2 />
-            <Trans>Join with invite link</Trans>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/$workspace/overview" params={params}>
-            <LayoutGrid />
-            <Trans>Workspace overview</Trans>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/$workspace/settings/general" params={params}>
-            <Settings />
-            <Trans>Workspace settings</Trans>
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            );
+          })}
+          {switchers.length === 0 && (
+            <span className="block px-2 py-1.5 text-sm text-muted-foreground">
+              <Trans>None yet</Trans>
+            </span>
+          )}
+          {canAddSwitcher && (
+            <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
+              <Plus />
+              <Trans>Add switcher</Trans>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            {menu.hidden > 0 ? t`Recent workspaces` : t`Workspaces`}
+          </DropdownMenuLabel>
+          {menu.shown.map((candidate) => (
+            <DropdownMenuItem key={candidate.id} asChild>
+              <Link
+                to="/$workspace"
+                params={{ workspace: candidate.url_slug }}
+                className="flex min-h-10 items-center gap-2.5"
+              >
+                <WorkspaceTile seed={candidate.url_slug} name={candidate.name} size="sm" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-medium leading-tight">{candidate.name}</span>
+                  {candidate.managed_by && (
+                    <span className="truncate text-xs text-muted-foreground">
+                      <Trans>Managed by {candidate.managed_by.name}</Trans>
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">{standingLabel(candidate)}</span>
+                {candidate.id === workspace.id && <Check className="size-4 text-primary" />}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+          {organizations.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                <Trans>Organizations</Trans>
+              </DropdownMenuLabel>
+              {organizations.map((organization) => (
+                <DropdownMenuItem key={organization.id} asChild>
+                  <Link
+                    to="/orgs/$organization/clients"
+                    params={{ organization: organization.url_slug }}
+                    className="flex min-h-10 items-center gap-2.5"
+                  >
+                    <Building2 className="size-4" />
+                    <span className="flex-1 truncate font-medium">{organization.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      <Trans>Clients</Trans>
+                    </span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/workspaces">
+              <LayoutList />
+              <Trans>All workspaces{menu.hidden > 0 && ` (${workspaces.length})`}</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/welcome" search={{ mode: "create" }}>
+              <Plus />
+              <Trans>Create workspace</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/welcome" search={{ mode: "join" }}>
+              <Link2 />
+              <Trans>Join with invite link</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/$workspace/overview" params={params}>
+              <LayoutGrid />
+              <Trans>Workspace overview</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/$workspace/settings/general" params={params}>
+              <Settings />
+              <Trans>Workspace settings</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/$workspace/settings/members" params={params}>
+              <Users />
+              <Trans>Members &amp; invites</Trans>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/$workspace/settings/plan" params={params}>
+              <Trans>Plan</Trans>
+              <span className="ml-auto rounded-md bg-primary-soft px-1.5 py-0.5 text-[11px] font-semibold text-primary-soft-foreground">
+                {workspace.plan_code.toUpperCase()}
+              </span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {canAddSwitcher && (
+        <CreateSwitcherDialog
+          workspace={workspace}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+        />
+      )}
+    </>
   );
 }
 
@@ -669,6 +757,7 @@ export function UserMenu({
   compact?: boolean;
 }) {
   const { preference, setPreference } = useTheme();
+  const { size, setSize } = useTextSize();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const profile = profileOf(me);
@@ -758,6 +847,20 @@ export function UserMenu({
             <Trans>Dark</Trans>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          <Trans>Text size</Trans>
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={size} onValueChange={(value) => setSize(value as TextSize)}>
+          <DropdownMenuRadioItem value="default" onSelect={(event) => event.preventDefault()}>
+            <Trans>Default</Trans>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="large" onSelect={(event) => event.preventDefault()}>
+            <Trans>Large</Trans>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="larger" onSelect={(event) => event.preventDefault()}>
+            <Trans>Larger</Trans>
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
         <LanguageMenu />
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut}>
@@ -785,27 +888,27 @@ function SwitcherNav({ workspace, switcher }: { workspace: Workspace; switcher: 
     : null;
 
   return (
-    <nav aria-label={t`Switcher`} className="flex flex-col gap-0.5">
+    <>
       {progress && !progress.complete && (
         <Link
           to="/$workspace/s/$switcher/setup"
           params={params}
-          className={cn(NAV_LINK, "mb-1 text-primary hover:text-primary")}
+          className={cn(TOP_TAB_CLASS, "text-primary hover:text-primary")}
         >
-          <span className="flex-1">
+          <span>
             <Trans>Finish setup</Trans>
-          </span>
+          </span>{" "}
           <span className="font-mono text-[11px] tabular">
             {progress.done}/{progress.total}
           </span>
         </Link>
       )}
       {switcherPages().map((page) => (
-        <Link key={page.to} to={page.to} params={params} className={NAV_LINK}>
+        <Link key={page.to} to={page.to} params={params} className={TOP_TAB_CLASS}>
           {page.label}
         </Link>
       ))}
-    </nav>
+    </>
   );
 }
 

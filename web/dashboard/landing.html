@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0B0D10" />
+    <meta name="theme-color" content="#0E0F12" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>NOALBS Cloud: your IRL stream, on autopilot</title>
     <meta
@@ -23,16 +23,26 @@
       // Apply the theme before first paint to avoid a flash (same as the dashboard): the
       // saved choice, or on Auto the browser's setting, following it when it changes.
       try {
+        const textSize = localStorage.getItem("noalbs-text-size");
+        document.documentElement.dataset.textSize =
+          textSize === "large" || textSize === "larger" ? textSize : "default";
         const media = window.matchMedia("(prefers-color-scheme: light)");
         const apply = () => {
           const saved = localStorage.getItem("noalbs-theme");
           document.documentElement.dataset.theme =
             saved === "light" || saved === "dark" ? saved : media.matches ? "light" : "dark";
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute(
+              "content",
+              document.documentElement.dataset.theme === "light" ? "#F5F5F7" : "#0E0F12",
+            );
         };
         apply();
         media.addEventListener("change", apply);
       } catch {
         document.documentElement.dataset.theme = "dark";
+        document.documentElement.dataset.textSize = "default";
       }
     </script>
   </head>
