@@ -28,7 +28,7 @@ export function liveState({
 }: LiveStateInput): LiveState {
   if (status === undefined) return "connecting";
   if (connection === "reconnecting") return "reconnecting";
-  if (setupProgress && !setupProgress.complete) return "firstRun";
+  if (setupProgress && !setupProgress.complete && !status?.streaming) return "firstRun";
   if (suspended) return "suspended";
   if (paused) return "paused";
   if (status === null) return "browserOffline";
