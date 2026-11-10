@@ -20,7 +20,7 @@ export function ActivityList({ events }: { events: OrganizationEvent[] }) {
               <time
                 dateTime={item.event.created_at}
                 title={when.toLocaleString(currentLocale())}
-                className="order-first shrink-0 font-display text-xs text-muted-foreground tabular-nums sm:order-none sm:w-32"
+                className="order-first shrink-0 font-display text-xs text-muted-foreground tabular-nums sm:order-none sm:w-24"
               >
                 {when.toLocaleString(currentLocale(), {
                   month: "short",
@@ -31,7 +31,7 @@ export function ActivityList({ events }: { events: OrganizationEvent[] }) {
                 })}
               </time>
             </span>
-            <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground wrap-anywhere sm:pl-36">
+            <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground wrap-anywhere sm:pl-28">
               <Link
                 to="/$workspace/s/$switcher/live"
                 params={{ workspace: item.workspace_slug, switcher: item.switcher_id }}

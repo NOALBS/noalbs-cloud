@@ -107,6 +107,7 @@ function ClientsPage() {
 
   return (
     <Page
+      className="max-w-6xl"
       title={t`Clients`}
       description={
         clients.data && !filtered
@@ -137,7 +138,7 @@ function ClientsPage() {
     >
       <LimitsCard organization={organization} />
 
-      <div className="flex flex-wrap items-center gap-2 [&>div:first-child]:sm:max-w-40">
+      <div className="flex flex-wrap items-center gap-2 [&>div:first-child]:sm:min-w-64 [&>div:first-child]:sm:flex-1 [&>div:first-child]:sm:max-w-none">
         <SearchBox value={q} onSearch={search} placeholder={t`Search by name, URL or ID`} />
         <SegmentedControl
           label={t`State`}

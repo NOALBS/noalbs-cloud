@@ -41,7 +41,7 @@ export function AuditLog({ organization }: { organization: Organization }) {
                   <time
                     dateTime={entry.created_at}
                     title={when.toLocaleString(currentLocale())}
-                    className="order-first shrink-0 font-display text-xs text-muted-foreground tabular-nums sm:order-none sm:w-32"
+                    className="order-first shrink-0 font-display text-xs text-muted-foreground tabular-nums sm:order-none sm:w-24"
                   >
                     {when.toLocaleString(currentLocale(), {
                       month: "short",
@@ -52,7 +52,7 @@ export function AuditLog({ organization }: { organization: Organization }) {
                     })}
                   </time>
                 </span>
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground wrap-anywhere sm:pl-36">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground wrap-anywhere sm:pl-28">
                   <span className="font-medium text-foreground">{actorLabel(entry)}</span>
                   {entry.actor === "staff" && (
                     <span>
