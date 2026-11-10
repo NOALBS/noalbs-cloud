@@ -21,18 +21,20 @@ export function ManagedPlan({ workspace }: { workspace: Workspace }) {
         {!plan.data ? (
           <Skeleton className="mx-5 mb-5 h-28" />
         ) : (
-          <div className="flex flex-col gap-4 px-5 pb-5">
-            <UsageBar
-              label={t`Switchers`}
-              used={plan.data.usage.switchers}
-              max={plan.data.plan.max_switchers}
-            />
-            <UsageBar
-              label={t`Members`}
-              used={plan.data.usage.members}
-              max={plan.data.plan.max_members}
-            />
-            <dl className="grid gap-2 text-sm sm:grid-cols-3">
+          <div className="flex flex-col">
+            <div className="grid gap-5 border-t border-divider px-5 py-3 sm:grid-cols-2">
+              <UsageBar
+                label={t`Switchers`}
+                used={plan.data.usage.switchers}
+                max={plan.data.plan.max_switchers}
+              />
+              <UsageBar
+                label={t`Members`}
+                used={plan.data.usage.members}
+                max={plan.data.plan.max_members}
+              />
+            </div>
+            <dl className="grid border-t border-divider px-5 py-3 text-sm sm:grid-cols-3 [&>div]:py-2 [&_dd]:font-display [&_dd]:tabular-nums">
               <div>
                 <dt className="text-muted-foreground">
                   <Trans>Stream history</Trans>

@@ -8,7 +8,8 @@ import { organizationChatBotsQuery, providersQuery, queryKeys } from "@/api/quer
 import type { ChatBot, ChatPlatform, Organization } from "@/api/types";
 import { ConfirmButton } from "@/components/billing/confirm-button";
 import { Section } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
+import { Row, RowList } from "@/components/row-list";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,7 +46,7 @@ export function OrganizationBotsSection({
       {!bots.data || !providers.data ? (
         <Skeleton className="mx-5 mb-5 h-14" />
       ) : (
-        <ul>
+        <RowList>
           {PLATFORMS.map((platform) => (
             <BotRow
               key={platform.path}
@@ -57,7 +58,7 @@ export function OrganizationBotsSection({
               isAdmin={isAdmin}
             />
           ))}
-        </ul>
+        </RowList>
       )}
     </Section>
   );
@@ -96,26 +97,30 @@ function BotRow({
   });
 
   return (
-    <li className="flex min-h-16 flex-wrap items-center gap-3 border-t border-divider px-5 py-3">
-      <Bot className="size-5 shrink-0 text-muted-foreground" />
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold">
+    <Row
+      lead={<Bot className="size-5 text-muted-foreground" />}
+      title={
+        <span>
           {label}
           {bot && `: ${bot.display_name}`}
         </span>
-        <span className="text-sm text-muted-foreground">
+      }
+      meta={
+        <>
           {!configured
             ? t`${label} sign-in isn’t configured on this server.`
             : bot
               ? t`Connected ${formatRelative(bot.connected_at)}`
               : t`Not connected: your ${label} clients get the shared NOALBS bot.`}
-        </span>
-      </span>
-      {bot?.status === "revoked" && (
-        <Badge className="bg-low/15 text-low">
-          <Trans>Needs reconnecting</Trans>
-        </Badge>
-      )}
+          {bot?.status === "revoked" && (
+            <>
+              {" "}
+              · <Trans>Needs reconnecting</Trans>
+            </>
+          )}
+        </>
+      }
+    >
       {isAdmin && configured && (
         <Button variant={bot ? "outline" : "default"} size="sm" asChild>
           <a href={organizationBotConnectUrl(organization.id, platform, window.location.pathname)}>
@@ -135,7 +140,7 @@ function BotRow({
           <Trans>Disconnect</Trans>
         </ConfirmButton>
       )}
-    </li>
+    </Row>
   );
 }
 
@@ -171,24 +176,27 @@ export function CustomerBotSetting({
       title={t`Customers’ own bots`}
       description={t`Lets a customer connect a bot account of their own on a client’s Chat page. It answers in their channels instead of yours. Turning it off keeps what they connected but stops it answering.`}
     >
-      <div className="flex items-center justify-between gap-4 px-5 pb-5">
-        <Label htmlFor="customer-bot" className="flex flex-col items-start gap-0.5">
-          <span>
-            <Trans>Customers can connect their own bot</Trans>
-          </span>
-          <span className="text-xs font-normal text-muted-foreground">
-            {allowed
-              ? t`On`
-              : t`Off: your bot, or the shared NOALBS bot, answers for every client.`}
-          </span>
-        </Label>
+      <SettingsRow
+        label={
+          <Label htmlFor="customer-bot" className="flex flex-col items-start gap-0.5">
+            <span>
+              <Trans>Customers can connect their own bot</Trans>
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {allowed
+                ? t`On`
+                : t`Off: your bot, or the shared NOALBS bot, answers for every client.`}
+            </span>
+          </Label>
+        }
+      >
         <Switch
           id="customer-bot"
           checked={allowed}
           disabled={!isAdmin || update.isPending}
           onCheckedChange={(next) => update.mutate(next)}
         />
-      </div>
+      </SettingsRow>
     </Section>
   );
 }

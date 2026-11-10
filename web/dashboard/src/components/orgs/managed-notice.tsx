@@ -14,7 +14,7 @@ export function ManagedNotice({ workspace }: { workspace: Workspace }) {
 
   return (
     <Section title={t`Managed workspace`}>
-      <div className="flex flex-col gap-2 px-5 pb-5 text-sm text-muted-foreground">
+      <div className="flex flex-col text-sm text-muted-foreground [&>*]:border-t [&>*]:border-divider [&>*]:px-5 [&>*]:py-3">
         {workspace.organization_role ? (
           <>
             <p>

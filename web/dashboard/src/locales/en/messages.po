@@ -480,8 +480,10 @@ msgstr "{0} for this combination"
 msgid "{0} hasn’t let NOALBS support in"
 msgstr "{0} hasn’t let NOALBS support in"
 
+#. placeholder {0}: organizationRoleLabels()[invite.role]
 #. placeholder {0}: roleLabels()[invite.role]
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "{0} invite"
 msgstr "{0} invite"
 
@@ -1460,6 +1462,10 @@ msgstr "Admin"
 #: src/routes/_app/admin/audit.tsx
 msgid "Admin actions"
 msgstr "Admin actions"
+
+#: src/components/orgs/customer-invite-dialog.tsx
+msgid "Admin invite"
+msgstr "Admin invite"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Admins"
@@ -5455,6 +5461,7 @@ msgid "New client"
 msgstr "New client"
 
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "New invite"
 msgstr "New invite"
 
@@ -7682,6 +7689,7 @@ msgstr "Review"
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "Revoke"
 msgstr "Revoke"
 

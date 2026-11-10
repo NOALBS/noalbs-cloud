@@ -54,7 +54,7 @@ function Failures({ items }: { items: { name: string; error?: BulkError | null }
   const failed = items.filter((item) => item.error);
   if (failed.length === 0) return null;
   return (
-    <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+    <ul className="flex max-h-40 flex-col overflow-y-auto text-sm text-destructive [&>li]:border-t [&>li]:border-divider [&>li]:py-3">
       {failed.map((item, index) => (
         // The same name can fail more than once, so the index is part of the key.
         // biome-ignore lint/suspicious/noArrayIndexKey: a static list of results
@@ -141,7 +141,10 @@ export function ImportClientsDialog({
             </DialogFooter>
           </div>
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-4">
+          <form
+            onSubmit={submit}
+            className="flex flex-col [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider"
+          >
             <DialogHeader>
               <DialogTitle>
                 <Trans>Import clients</Trans>
@@ -293,9 +296,12 @@ export function BulkInvitesDialog({
           </>
         ) : (
           <div className="flex flex-col gap-3">
-            <ul className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+            <ul className="flex max-h-72 flex-col overflow-y-auto">
               {links.map((item) => (
-                <li key={item.workspace_id} className="flex flex-col gap-1">
+                <li
+                  key={item.workspace_id}
+                  className="flex flex-col gap-2 border-t border-divider py-3"
+                >
                   <span className="text-sm font-semibold">{item.name}</span>
                   <CopyField
                     value={customerInviteUrl(origin, item.token ?? "")}
@@ -382,7 +388,7 @@ export function BulkAllocationDialog({
             event.preventDefault();
             update.mutate();
           }}
-          className="flex flex-col gap-4"
+          className="flex flex-col [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider"
         >
           <DialogHeader>
             <DialogTitle>

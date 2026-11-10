@@ -10,6 +10,7 @@ import { SearchBox } from "@/components/admin/list-controls";
 import { ActivityList } from "@/components/orgs/activity-list";
 import { AuditLog } from "@/components/orgs/audit-log";
 import { Page } from "@/components/page";
+import { SegmentedControl } from "@/components/segmented-control";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
@@ -62,26 +63,19 @@ function ActivityPage() {
           : t`What happened on your clients’ switchers, and who did it: the automatic switcher, your team, a customer or chat.`
       }
     >
-      <fieldset className="flex gap-1" aria-label={t`View`}>
-        {[
-          { value: undefined, label: t`Switchers` },
-          { value: "changes" as const, label: t`Changes` },
-        ].map((tab) => (
-          <Button
-            key={tab.label}
-            size="sm"
-            variant={view === tab.value ? "secondary" : "ghost"}
-            aria-pressed={view === tab.value}
-            onClick={() =>
-              void navigate({
-                search: tab.value ? { view: tab.value } : {},
-              })
-            }
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </fieldset>
+      <div>
+        <SegmentedControl
+          label={t`View`}
+          value={view ?? "switchers"}
+          options={[
+            { value: "switchers", label: t`Switchers` },
+            { value: "changes", label: t`Changes` },
+          ]}
+          onValueChange={(value) =>
+            void navigate({ search: value === "changes" ? { view: "changes" } : {} })
+          }
+        />
+      </div>
 
       {view === "changes" ? (
         <AuditLog organization={organization} />
@@ -89,29 +83,19 @@ function ActivityPage() {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <SearchBox value={q} onSearch={search} placeholder={t`Search by client or switcher`} />
-            <fieldset className="flex flex-wrap gap-1" aria-label={t`Show`}>
-              {activityPresets().map((preset) => {
-                const active = (show ?? "all") === preset.value;
-                return (
-                  <Button
-                    key={preset.value}
-                    size="sm"
-                    variant={active ? "secondary" : "ghost"}
-                    aria-pressed={active}
-                    onClick={() =>
-                      void navigate({
-                        search: (previous) => ({
-                          ...previous,
-                          show: preset.value === "all" ? undefined : preset.value,
-                        }),
-                      })
-                    }
-                  >
-                    {preset.label}
-                  </Button>
-                );
-              })}
-            </fieldset>
+            <SegmentedControl
+              label={t`Show`}
+              value={show ?? "all"}
+              options={activityPresets()}
+              onValueChange={(value) =>
+                void navigate({
+                  search: (previous) => ({
+                    ...previous,
+                    show: value === "all" ? undefined : value,
+                  }),
+                })
+              }
+            />
             {client && (
               <Button
                 size="sm"

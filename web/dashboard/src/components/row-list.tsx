@@ -11,12 +11,14 @@ export function Row({
   meta,
   children,
   className,
+  compactAction = false,
 }: {
   lead?: ReactNode;
   title: ReactNode;
   meta?: ReactNode;
   children?: ReactNode;
   className?: string;
+  compactAction?: boolean;
 }) {
   return (
     <li
@@ -26,12 +28,19 @@ export function Row({
       )}
     >
       {lead && <div className="shrink-0">{lead}</div>}
-      <div className="min-w-0 flex-1 basis-40">
+      <div className={cn("min-w-0 flex-1", !compactAction && "basis-40")}>
         <div className="text-sm font-semibold wrap-anywhere">{title}</div>
         {meta && <div className="mt-0.5 text-xs text-muted-foreground wrap-anywhere">{meta}</div>}
       </div>
       {children && (
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{children}</div>
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            compactAction ? "shrink-0" : "w-full sm:w-auto",
+          )}
+        >
+          {children}
+        </div>
       )}
     </li>
   );

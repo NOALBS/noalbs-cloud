@@ -480,8 +480,10 @@ msgstr "{0} для цієї комбінації"
 msgid "{0} hasn’t let NOALBS support in"
 msgstr "{0} не надає доступу підтримці NOALBS"
 
+#. placeholder {0}: organizationRoleLabels()[invite.role]
 #. placeholder {0}: roleLabels()[invite.role]
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "{0} invite"
 msgstr ""
 
@@ -1460,6 +1462,10 @@ msgstr "Адміністратор"
 #: src/routes/_app/admin/audit.tsx
 msgid "Admin actions"
 msgstr "Дії адміністратора"
+
+#: src/components/orgs/customer-invite-dialog.tsx
+msgid "Admin invite"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Admins"
@@ -5455,6 +5461,7 @@ msgid "New client"
 msgstr "Новий клієнт"
 
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "New invite"
 msgstr ""
 
@@ -7682,6 +7689,7 @@ msgstr "Переглянути"
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
+#: src/routes/_app/orgs/$organization/team.tsx
 msgid "Revoke"
 msgstr "Відкликати"
 

@@ -335,6 +335,7 @@ function Invites() {
         {invites.data?.map((invite) => (
           <Row
             key={invite.id}
+            compactAction
             title={t`${roleLabels()[invite.role]} invite`}
             meta={
               <Trans>

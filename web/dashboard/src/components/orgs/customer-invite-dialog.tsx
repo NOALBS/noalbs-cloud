@@ -8,6 +8,7 @@ import { api, unwrap } from "@/api/client";
 import { invitesQuery, queryKeys } from "@/api/queries";
 import type { Client, CreatedInvite } from "@/api/types";
 import { CopyField } from "@/components/copy-field";
+import { Row, RowList } from "@/components/row-list";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -93,7 +94,7 @@ export function CustomerInviteDialog({
         </DialogHeader>
 
         {created ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-divider bg-sunken p-3.5">
+          <div className="flex flex-col gap-2 border-t border-divider py-3">
             <p className="text-sm">
               <Trans>
                 Copy the link now: it won’t be shown again. It works once and expires{" "}
@@ -118,18 +119,19 @@ export function CustomerInviteDialog({
             <span className="text-sm font-semibold">
               <Trans>Open invites</Trans>
             </span>
-            <ul className="flex flex-col">
+            <RowList className="-mx-6">
               {invites.data.map((invite) => (
-                <li
+                <Row
                   key={invite.id}
-                  className="flex items-center justify-between gap-2 border-t border-divider py-2 text-sm"
-                >
-                  <span className="text-muted-foreground">
+                  compactAction
+                  title={t`Admin invite`}
+                  meta={
                     <Trans>
                       Created {formatRelative(invite.created_at)} · expires{" "}
                       {formatRelative(invite.expires_at)}
                     </Trans>
-                  </span>
+                  }
+                >
                   <Button
                     variant="ghost"
                     size="icon"
@@ -139,9 +141,9 @@ export function CustomerInviteDialog({
                   >
                     <X />
                   </Button>
-                </li>
+                </Row>
               ))}
-            </ul>
+            </RowList>
           </div>
         )}
       </DialogContent>

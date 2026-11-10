@@ -52,6 +52,28 @@ describe("settings primitives", () => {
     expect(renderToStaticMarkup(<SettingsRow label="URL" />)).toContain("URL");
   });
 
+  it("opts compact actions into inline phone layout without changing wide controls", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToStaticMarkup(
+      <RowList>
+        <Row title="Session" compactAction>
+          <button type="button">Sign out</button>
+        </Row>
+        <Row title="Member">
+          <select aria-label="Role">
+            <option>Admin</option>
+          </select>
+        </Row>
+        <Row title="Empty" compactAction />
+      </RowList>,
+    );
+    const rows = container.querySelectorAll("li");
+    expect(rows[0]?.lastElementChild?.className).toContain("shrink-0");
+    expect(rows[0]?.lastElementChild?.className).not.toContain("w-full");
+    expect(rows[1]?.lastElementChild?.className).toContain("w-full");
+    expect(rows[2]?.children).toHaveLength(1);
+  });
+
   it("uses independent native radio groups and calls the controlled change handler", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     const container = document.createElement("div");

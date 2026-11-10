@@ -18,9 +18,10 @@ import { EditClientDialog, NewClientDialog } from "@/components/orgs/client-dial
 import { CustomerInviteDialog } from "@/components/orgs/customer-invite-dialog";
 import { LimitsCard } from "@/components/orgs/limits-card";
 import { Page } from "@/components/page";
+import { Row, RowList } from "@/components/row-list";
+import { SegmentedControl } from "@/components/segmented-control";
 import { StatusDot } from "@/components/switcher-status";
 import { TypeToConfirm } from "@/components/type-to-confirm";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -136,35 +137,26 @@ function ClientsPage() {
     >
       <LimitsCard organization={organization} />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 [&>div:first-child]:sm:max-w-40">
         <SearchBox value={q} onSearch={search} placeholder={t`Search by name, URL or ID`} />
-        <Select
+        <SegmentedControl
+          label={t`State`}
           value={state ?? "any"}
           onValueChange={(value) =>
             filter({ state: CLIENT_STATES.find((candidate) => candidate === value) })
           }
-        >
-          <SelectTrigger className="w-40" aria-label={t`State`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">
-              <Trans>Any state</Trans>
-            </SelectItem>
-            {CLIENT_STATES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {clientStateLabels()[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={[
+            { value: "any", label: t`Any state` },
+            ...CLIENT_STATES.map((value) => ({ value, label: clientStateLabels()[value] })),
+          ]}
+        />
         <Select
           value={customer ?? "any"}
           onValueChange={(value) =>
             filter({ customer: value === "any" ? undefined : (value as ClientCustomer) })
           }
         >
-          <SelectTrigger className="w-44" aria-label={t`Customer`}>
+          <SelectTrigger className="w-auto" aria-label={t`Customer`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -179,7 +171,7 @@ function ClientsPage() {
           value={sort ?? "newest"}
           onValueChange={(value) => filter({ sort: value === "name" ? "name" : undefined })}
         >
-          <SelectTrigger className="w-40" aria-label={t`Sort`}>
+          <SelectTrigger className="w-auto" aria-label={t`Sort`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -218,8 +210,8 @@ function ClientsPage() {
               : t`No clients yet.`}
         </p>
       ) : (
-        <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
-          <label className="flex items-center gap-3 border-b border-divider px-4 py-2 text-xs text-muted-foreground">
+        <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-tile">
+          <label className="flex items-center gap-3 px-5 py-3 text-xs text-muted-foreground">
             <input
               type="checkbox"
               className={CHECKBOX}
@@ -229,7 +221,7 @@ function ClientsPage() {
             />
             <Trans>Select this page</Trans>
           </label>
-          <ul>
+          <RowList>
             {items.map((client) => (
               <ClientRow
                 key={client.id}
@@ -240,7 +232,7 @@ function ClientsPage() {
                 onSelect={(on) => toggle(client.id, on)}
               />
             ))}
-          </ul>
+          </RowList>
         </div>
       )}
       {clients.data && (
@@ -300,7 +292,7 @@ function BulkBar({
     <div
       role="toolbar"
       aria-label={t`Selected clients`}
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary-soft-border bg-primary-soft px-4 py-2.5 text-sm"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card px-5 py-3 text-sm shadow-tile"
     >
       <span className="mr-auto font-semibold">
         <Trans>{ids.length} selected</Trans>
@@ -384,40 +376,34 @@ function ClientRow({
   });
 
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-divider px-4 py-3 last:border-b-0">
-      <input
-        type="checkbox"
-        className={CHECKBOX}
-        checked={selected}
-        onChange={(event) => onSelect(event.target.checked)}
-        aria-label={t`Select ${client.name}`}
-      />
-      <span className="flex min-w-0 flex-1 basis-56 items-center gap-3">
-        <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[state])} />
-        <span className="flex min-w-0 flex-col">
-          <Link
-            to="/$workspace"
-            params={{ workspace: client.url_slug }}
-            className="truncate text-sm font-semibold hover:underline"
-          >
-            {client.name}
-          </Link>
-          <span className="truncate text-xs text-muted-foreground">
-            /{client.url_slug} · {clientStateLabels()[state]}
-          </span>
-        </span>
-      </span>
-
-      <span className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Badge variant={claimed ? "secondary" : "outline"}>
+    <Row
+      lead={
+        <input
+          type="checkbox"
+          className={CHECKBOX}
+          checked={selected}
+          onChange={(event) => onSelect(event.target.checked)}
+          aria-label={t`Select ${client.name}`}
+        />
+      }
+      title={
+        <Link to="/$workspace" params={{ workspace: client.url_slug }} className="hover:underline">
+          {client.name}
+        </Link>
+      }
+      meta={
+        <>
           {claimed ? t`Customer joined` : t`Not claimed`}
-        </Badge>
-        <span className="tabular font-mono">
-          {client.switchers} / {allocationLabel(client.switcher_allocation)}
-        </span>
+          {` · ${client.switchers} / ${allocationLabel(client.switcher_allocation)} · /${client.url_slug}`}
+        </>
+      }
+    >
+      <span className="mr-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[state])} />
+        {clientStateLabels()[state]}
       </span>
 
-      <span className="flex items-center gap-1">
+      <span className="flex flex-wrap items-center gap-1">
         <CustomerInviteDialog client={client}>
           <Button variant="outline" size="sm">
             <Link2 />
@@ -449,6 +435,6 @@ function ClientRow({
           </>
         )}
       </span>
-    </li>
+    </Row>
   );
 }

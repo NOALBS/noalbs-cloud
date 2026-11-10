@@ -17,8 +17,8 @@ export function LimitsCard({ organization }: { organization: Organization }) {
       title={t`Your limits`}
       description={t`Set by NOALBS for your organization. Get in touch to change them.`}
     >
-      <div className="flex flex-col gap-5 px-5 pb-5">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
+        <div className="flex flex-col gap-2 border-t border-divider px-5 py-3">
           <UsageBar label={t`Switchers in the pool`} used={pool.used} max={pool.max} />
           <p className="text-xs text-muted-foreground">
             <Trans>Shared by all your clients. A client can be given a share of it.</Trans>
@@ -29,11 +29,14 @@ export function LimitsCard({ organization }: { organization: Organization }) {
             </p>
           )}
         </div>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-divider pt-4 lg:grid-cols-4">
+        <dl className="grid sm:grid-cols-3">
           {otherLimits(organization.limits).map((limit) => (
-            <div key={limit.label} className="flex flex-col gap-0.5">
+            <div
+              key={limit.label}
+              className="flex flex-col gap-0.5 border-t border-divider px-5 py-3"
+            >
               <dt className="text-xs text-muted-foreground">{limit.label}</dt>
-              <dd className="text-sm font-semibold">{limit.value}</dd>
+              <dd className="font-display text-sm font-semibold tabular-nums">{limit.value}</dd>
               <dd className="text-xs text-muted-foreground">{limit.hint}</dd>
             </div>
           ))}

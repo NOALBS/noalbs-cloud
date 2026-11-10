@@ -406,6 +406,7 @@ function SessionRow({ session }: { session: Session }) {
   return (
     <Row
       lead={<Icon className="size-5 text-muted-foreground" />}
+      compactAction
       title={
         <span className="flex flex-wrap items-center gap-2">
           {device.label}

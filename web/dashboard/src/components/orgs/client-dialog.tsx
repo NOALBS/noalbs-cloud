@@ -122,9 +122,12 @@ export function NewClientDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
-        <form onSubmit={submit} className="flex flex-col gap-4">
+        <form
+          onSubmit={submit}
+          className="flex flex-col [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider"
+        >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="font-display">
               <Trans>New client</Trans>
             </DialogTitle>
             <DialogDescription>
@@ -226,9 +229,12 @@ export function EditClientDialog({
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
-        <form onSubmit={submit} className="flex flex-col gap-4">
+        <form
+          onSubmit={submit}
+          className="flex flex-col [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider"
+        >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="font-display">
               <Trans>Edit {client.name}</Trans>
             </DialogTitle>
             <DialogDescription>

@@ -12,6 +12,13 @@ import { Row, RowList } from "@/components/row-list";
 import { SegmentedControl } from "@/components/segmented-control";
 import { StatusDot } from "@/components/switcher-status";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceTile } from "@/components/workspace-tile";
 import { MEMBER_ROLES, parseWorkspacesSearch } from "@/lib/my-workspaces";
@@ -83,7 +90,7 @@ function WorkspacesPage() {
         </>
       }
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 [&>div:first-child]:sm:max-w-48">
         <SearchBox value={q} onSearch={search} placeholder={t`Search by name or URL`} />
         <SegmentedControl
           label={t`State`}
@@ -96,21 +103,39 @@ function WorkspacesPage() {
             ...CLIENT_STATES.map((value) => ({ value, label: clientStateLabels()[value] })),
           ]}
         />
-        <SegmentedControl
-          label={t`Your role`}
+        <Select
           value={role ?? "any"}
           onValueChange={(value) => filter({ role: MEMBER_ROLES.find((r) => r === value) })}
-          options={[
-            { value: "any", label: t`Any role` },
-            ...MEMBER_ROLES.map((value) => ({ value, label: roleLabels()[value] })),
-          ]}
-        />
-        <SegmentedControl
-          label={t`Sort`}
+        >
+          <SelectTrigger className="w-auto" aria-label={t`Your role`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="any">
+              <Trans>Any role</Trans>
+            </SelectItem>
+            {MEMBER_ROLES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {roleLabels()[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
           value={sort ?? "oldest"}
           onValueChange={(value) => filter({ sort: value === "name" ? "name" : undefined })}
-          options={sorts()}
-        />
+        >
+          <SelectTrigger className="w-auto" aria-label={t`Sort`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {sorts().map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {!workspaces.data ? (
