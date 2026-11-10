@@ -357,6 +357,9 @@ export function AppShell({
                   })}
                 </div>
               )}
+              <span className="px-1 pt-2 text-xs font-semibold text-muted-foreground">
+                <Trans>Workspaces</Trans>
+              </span>
               {menu.shown.map((candidate) => {
                 const isCurrent = candidate.id === workspace.id;
                 return (
@@ -893,7 +896,7 @@ function SwitcherNav({ workspace, switcher }: { workspace: Workspace; switcher: 
         <Link
           to="/$workspace/s/$switcher/setup"
           params={params}
-          className={cn(TOP_TAB_CLASS, "text-primary hover:text-primary")}
+          className={cn(TOP_TAB_CLASS, "gap-1.5 text-primary hover:text-primary")}
         >
           <span>
             <Trans>Finish setup</Trans>
