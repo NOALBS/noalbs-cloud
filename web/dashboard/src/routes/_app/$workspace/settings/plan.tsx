@@ -109,7 +109,12 @@ function PlanPage() {
     (addons.data?.some((addon) => addon.prices.length > 0) ?? false);
   const data = current.data;
   const subscription = data?.subscription;
-  const currentPrice = subscription && priceFor(data.plan.prices, subscription.interval);
+  const currentPrice =
+    subscription &&
+    priceFor(
+      plans.data?.find((plan) => plan.code === data.plan.code)?.prices ?? [],
+      subscription.interval,
+    );
   const status = subscription ? describeSubscription(subscription) : null;
   const manages = Boolean(data?.can_manage_billing && data.billing_enabled);
   const cardReminder = data?.can_manage_billing ? missingCardReminder(data) : null;
