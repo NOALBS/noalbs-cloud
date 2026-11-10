@@ -7,7 +7,7 @@ import { api, unwrap } from "@/api/client";
 import { supportAccessQuery, supportLogQuery } from "@/api/queries";
 import type { EmergencyAccess, SupportLevel, SupportLogEntry } from "@/api/types";
 import { Section } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -46,9 +46,9 @@ export function SupportAccess() {
       title={t`NOALBS support access`}
       description={t`Let NOALBS support into this workspace while they help you. They see your stream servers’ stats URLs, to help fix them, but never passwords or raw stats, and everything they do here is listed below.`}
     >
-      <div className="flex flex-col gap-5 px-5 pb-5">
+      <div className="flex flex-col">
         {grant ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-surface-2 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider px-5 py-3">
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="font-semibold">
                 <Trans>
@@ -75,7 +75,7 @@ export function SupportAccess() {
           </div>
         ) : (
           access.isSuccess && (
-            <p className="text-sm text-muted-foreground">
+            <p className="border-t border-divider px-5 py-3 text-xs text-muted-foreground">
               <Trans>
                 NOALBS support can’t open this workspace right now. Only in an emergency (abuse, a
                 legal obligation or a security problem) can staff look without your permission, for
@@ -136,43 +136,40 @@ function GrantForm({
   });
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={level} onValueChange={(next) => setLevel(next as SupportLevel)}>
-          <SelectTrigger className="w-48" aria-label={t`What support may do`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(["view", "control"] as const).map((option) => (
-              <SelectItem key={option} value={option}>
-                {supportLevelLabels()[option]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={String(hours)} onValueChange={(next) => setHours(Number(next))}>
-          <SelectTrigger className="w-32" aria-label={t`For how long`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {supportDurations().map((duration) => (
-              <SelectItem key={duration.hours} value={String(duration.hours)}>
-                {duration.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button onClick={() => grant.mutate()} disabled={grant.isPending}>
-          <Trans>Allow support access</Trans>
+    <SettingsRow label={t`Allow support access`} description={supportLevelDescriptions()[level]}>
+      <Select value={level} onValueChange={(next) => setLevel(next as SupportLevel)}>
+        <SelectTrigger className="w-48" aria-label={t`What support may do`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(["view", "control"] as const).map((option) => (
+            <SelectItem key={option} value={option}>
+              {supportLevelLabels()[option]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={String(hours)} onValueChange={(next) => setHours(Number(next))}>
+        <SelectTrigger className="w-32" aria-label={t`For how long`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {supportDurations().map((duration) => (
+            <SelectItem key={duration.hours} value={String(duration.hours)}>
+              {duration.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button onClick={() => grant.mutate()} disabled={grant.isPending}>
+        <Trans>Allow support access</Trans>
+      </Button>
+      {onCancel && (
+        <Button variant="ghost" onClick={onCancel}>
+          <Trans>Cancel</Trans>
         </Button>
-        {onCancel && (
-          <Button variant="ghost" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-        )}
-      </div>
-      <p className="text-sm text-muted-foreground">{supportLevelDescriptions()[level]}</p>
-    </div>
+      )}
+    </SettingsRow>
   );
 }
 
@@ -211,7 +208,7 @@ function AccessLog({ workspaceId }: { workspaceId: string }) {
   const entries = log.data?.pages.flat() ?? [];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 border-t border-divider px-5 py-3">
       <h3 className="text-sm font-semibold">
         <Trans>What staff did here</Trans>
       </h3>
@@ -222,7 +219,7 @@ function AccessLog({ workspaceId }: { workspaceId: string }) {
         </p>
       )}
       {entries.length > 0 && (
-        <ul className="flex flex-col divide-y divide-divider rounded-xl border">
+        <ul className="flex flex-col divide-y divide-divider">
           {entries.map((entry) => (
             <LogRow key={entry.id} entry={entry} />
           ))}
@@ -264,12 +261,7 @@ function LogRow({ entry }: { entry: SupportLogEntry }) {
           {new Date(entry.created_at).toLocaleString(currentLocale())}
         </span>
       </span>
-      <Badge
-        variant={basis.tone === "granted" ? "secondary" : "outline"}
-        className={basis.tone === "emergency" ? "border-low/50 text-low" : undefined}
-      >
-        {basis.label}
-      </Badge>
+      <span className="text-xs text-muted-foreground">{basis.label}</span>
     </li>
   );
 }
@@ -296,7 +288,7 @@ function EmergencyList({
   });
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-low/40 bg-low/5 px-4 py-3">
+    <div className="flex flex-col gap-2 border-t border-divider px-5 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">
           <Trans>Emergency access without your permission</Trans>

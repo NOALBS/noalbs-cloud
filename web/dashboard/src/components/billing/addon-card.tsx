@@ -3,7 +3,6 @@ import { Trans } from "@lingui/react/macro";
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Addon, BillingInterval, WorkspacePlan } from "@/api/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBillingChange, useStripeRedirect } from "@/hooks/use-billing";
 import {
@@ -72,23 +71,19 @@ export function AddonCard({
     : t`the end of the period`;
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border bg-card p-5.5">
+    <section className="flex min-w-0 flex-col gap-4 rounded-2xl border bg-card p-5 shadow-tile">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h3 className="text-lg font-semibold">{addon.name}</h3>
           <p className="text-sm text-muted-foreground">{addon.description}</p>
         </div>
-        {label && (
-          <Badge variant="secondary" className="shrink-0">
-            {label}
-          </Badge>
-        )}
+        {label && <span className="text-xs text-muted-foreground">{label}</span>}
       </div>
 
       {price && (
-        <p className="flex items-baseline gap-2 text-sm text-muted-foreground">
+        <p className="flex flex-wrap items-baseline gap-2 text-sm text-muted-foreground">
           <Trans>
-            <span className="font-mono text-xl font-semibold text-foreground tabular">
+            <span className="font-display text-xl font-bold text-foreground tabular">
               {formatPrice(price.amount, price.currency)}
             </span>
             per {addon.unit} / {intervalWord(shownInterval)}

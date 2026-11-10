@@ -171,8 +171,10 @@ msgstr "{0, plural, one {# день історії} few {# дні історії
 msgid "{0, plural, one {# day of stream history} other {# days of stream history}}"
 msgstr "{0, plural, one {# день історії стрімів} few {# дні історії стрімів} many {# днів історії стрімів} other {# дня історії стрімів}}"
 
+#. placeholder {0}: data.plan.history_days
 #. placeholder {0}: limits.history_days
 #: src/lib/organizations.ts
+#: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0, plural, one {# day} other {# days}}"
 msgstr "{0, plural, one {# день} few {# дні} many {# днів} other {# дня}}"
 
@@ -473,6 +475,11 @@ msgstr "{0} для цієї комбінації"
 msgid "{0} hasn’t let NOALBS support in"
 msgstr "{0} не надає доступу підтримці NOALBS"
 
+#. placeholder {0}: roleLabels()[invite.role]
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "{0} invite"
+msgstr ""
+
 #. placeholder {0}: formatPrice(planPrice.amount, planPrice.currency)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} is for the plan."
@@ -557,6 +564,12 @@ msgstr "Перевизначення: {0}"
 #: src/components/admin/products.tsx
 msgid "{0} paying"
 msgstr "Платять: {0}"
+
+#. placeholder {0}: formatPrice(currentPrice.amount, currentPrice.currency)
+#. placeholder {1}: intervalWord(subscription.interval)
+#: src/routes/_app/$workspace/settings/plan.tsx
+msgid "{0} per {1}"
+msgstr ""
 
 #. placeholder {0}: formatBytes(frame.bytes)
 #. placeholder {1}: bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())
@@ -964,6 +977,10 @@ msgstr "Бот {team}"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, one {# робочий простір. Персонал відкриває його як будь-який робочий простір: через його доступ підтримки.} few {# робочі простори. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.} many {# робочих просторів. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.} other {# робочого простору. Персонал відкриває кожен із них як будь-який робочий простір: через його доступ підтримки.}}"
+
+#: src/components/usage-bar.tsx
+msgid "{used} of {max}"
+msgstr ""
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -3921,6 +3938,7 @@ msgstr "Висока"
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
+#: src/routes/_app/$workspace/settings/plan.tsx
 msgid "History"
 msgstr "Історія"
 
@@ -4151,7 +4169,6 @@ msgstr "Посилання-запрошення"
 msgid "Invite link for {0}"
 msgstr "Посилання-запрошення для {0}"
 
-#: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/orgs/$organization/clients.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Invite links"
@@ -4175,6 +4192,10 @@ msgstr "Запросити кінцевого клієнта до {0}"
 #: src/lib/admin.ts
 msgid "Invited someone to the team of {target}"
 msgstr "Когось запрошено до команди {target}"
+
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "Invites"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Invites expire after 1 to 30 days"
@@ -5427,6 +5448,10 @@ msgstr "Новий псевдонім для {0}"
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "New client"
 msgstr "Новий клієнт"
+
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "New invite"
+msgstr ""
 
 #. placeholder {0}: organizationRoleLabels()[created.invite.role]
 #. placeholder {1}: formatRelative(created.invite.expires_at)

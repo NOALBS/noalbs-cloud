@@ -16,24 +16,23 @@ export function UsageBar({
 }) {
   if (max == null) {
     return (
-      <span className="flex justify-between text-sm">
-        <span className="font-semibold">{label}</span>
-        <span className="tabular font-mono text-muted-foreground">{used}</span>
+      <span className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular font-display text-sm font-bold text-foreground">{used}</span>
       </span>
     );
   }
-  const full = used >= max;
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="flex justify-between text-sm">
-        <span className="font-semibold">{label}</span>
-        <span className="tabular font-mono text-muted-foreground">
-          {used} / {max}
+      <span className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular font-display text-sm font-bold text-foreground">
+          {t`${used} of ${max}`}
         </span>
       </span>
       <Progress
         value={Math.min(100, (used / Math.max(max, 1)) * 100)}
-        className={full ? "[&>*]:bg-low" : "[&>*]:bg-primary"}
+        className="h-1 bg-muted [&>*]:bg-foreground/55"
         aria-label={t`${label}: ${used} of ${max}`}
       />
     </div>

@@ -11,7 +11,7 @@ import { AddonCard } from "@/components/billing/addon-card";
 import { ConfirmButton } from "@/components/billing/confirm-button";
 import { ManagedPlan } from "@/components/orgs/managed-plan";
 import { Page, Section } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
+import { SegmentedControl } from "@/components/segmented-control";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsageBar } from "@/components/usage-bar";
@@ -109,6 +109,7 @@ function PlanPage() {
     (addons.data?.some((addon) => addon.prices.length > 0) ?? false);
   const data = current.data;
   const subscription = data?.subscription;
+  const currentPrice = subscription && priceFor(data.plan.prices, subscription.interval);
   const status = subscription ? describeSubscription(subscription) : null;
   const manages = Boolean(data?.can_manage_billing && data.billing_enabled);
   const cardReminder = data?.can_manage_billing ? missingCardReminder(data) : null;
@@ -120,33 +121,38 @@ function PlanPage() {
   );
 
   return (
-    <Page
-      title={t`Plan`}
-      description={t`What this workspace can use.`}
-      actions={
-        manages &&
-        subscription && (
-          <Button
-            variant="outline"
-            onClick={() => portal.mutate("portal")}
-            disabled={portal.isPending}
-          >
-            <CreditCard />
-            <Trans>Manage billing</Trans>
-          </Button>
-        )
-      }
-    >
+    <Page title={t`Plan`} description={t`What this workspace can use.`}>
       <Section
         title={data ? t`${data.plan.name} plan` : t`Plan`}
+        className="[&_h2]:text-primary sm:[&>div:first-child>div]:flex-row sm:[&>div:first-child>div]:items-center sm:[&>div:first-child>div]:gap-3"
         description={
-          waitingSince != null
-            ? t`Confirming your payment… this takes a few seconds.`
-            : status && !status.warning
-              ? status.text
-              : undefined
+          waitingSince != null ? (
+            t`Confirming your payment… this takes a few seconds.`
+          ) : status && !status.warning ? (
+            <>
+              {currentPrice && (
+                <>
+                  {t`${formatPrice(currentPrice.amount, currentPrice.currency)} per ${intervalWord(subscription.interval)}`}{" "}
+                  ·{" "}
+                </>
+              )}
+              {status.text}
+            </>
+          ) : undefined
         }
-        actions={data && <Badge className="uppercase">{data.plan.code}</Badge>}
+        actions={
+          manages &&
+          subscription && (
+            <Button
+              variant="outline"
+              onClick={() => portal.mutate("portal")}
+              disabled={portal.isPending}
+            >
+              <CreditCard />
+              <Trans>Manage billing</Trans>
+            </Button>
+          )
+        }
       >
         {status?.warning && (
           <div className="mx-5 mb-4 flex flex-wrap items-start gap-2 rounded-xl border border-low/40 bg-low/10 px-3.5 py-2.5 text-sm">
@@ -178,7 +184,7 @@ function PlanPage() {
             </Trans>
           </p>
         )}
-        <div className="grid gap-5 px-5 pb-5 sm:grid-cols-2">
+        <div className="grid gap-5 border-t border-divider px-5 py-4 sm:grid-cols-3">
           {data ? (
             <>
               <UsageBar
@@ -187,6 +193,15 @@ function PlanPage() {
                 max={data.plan.max_switchers}
               />
               <UsageBar label={t`Members`} used={data.usage.members} max={data.plan.max_members} />
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>History</Trans>
+                </span>
+                <span className="font-display text-sm font-bold tabular">
+                  {plural(data.plan.history_days, { one: "# day", other: "# days" })}
+                </span>
+                <div className="h-1 rounded-full bg-foreground/55" />
+              </div>
             </>
           ) : (
             <Skeleton className="h-12 sm:col-span-2" />
@@ -206,25 +221,15 @@ function PlanPage() {
 
       {sold && (
         <div className="flex flex-wrap items-center gap-3">
-          <fieldset
-            aria-label={t`Billing period`}
-            className="flex rounded-full border bg-card p-1 text-sm font-medium"
-          >
-            {(["month", "year"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={interval === option}
-                onClick={() => setBillingInterval(option)}
-                className={cn(
-                  "min-h-8 rounded-full px-4 text-muted-foreground",
-                  interval === option && "bg-primary-soft text-primary-soft-foreground",
-                )}
-              >
-                {option === "month" ? t`Monthly` : t`Yearly`}
-              </button>
-            ))}
-          </fieldset>
+          <SegmentedControl
+            label={t`Billing period`}
+            value={interval}
+            onValueChange={setBillingInterval}
+            options={[
+              { value: "month", label: t`Monthly` },
+              { value: "year", label: t`Yearly` },
+            ]}
+          />
           {manages && subscription && !subscription.cancel_at_period_end && data && (
             <IntervalSwitch workspacePlan={data} plans={plans.data ?? []} target={interval} />
           )}
@@ -393,8 +398,8 @@ function PlanCard({
   return (
     <section
       className={cn(
-        "flex flex-col gap-5 rounded-2xl border p-5.5",
-        current ? "border-primary-soft-border bg-primary-soft" : "bg-card",
+        "flex min-w-0 flex-col gap-5 rounded-2xl border bg-card p-5 shadow-tile",
+        current && "border-primary-soft-border",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -403,12 +408,12 @@ function PlanCard({
           <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-muted-foreground">
             {price ? (
               <>
-                <span className="font-mono text-2xl font-semibold text-foreground tabular">
+                <span className="font-display text-2xl font-bold text-foreground tabular">
                   {formatPrice(price.amount, price.currency)}
                 </span>
                 / {interval === "month" ? t`month` : t`year`}
                 {interval === "year" && saving > 0 && (
-                  <span className="font-semibold text-live">
+                  <span className="font-semibold text-muted-foreground">
                     <Trans>save {saving}%</Trans>
                   </span>
                 )}
@@ -427,15 +432,15 @@ function PlanCard({
           </p>
         </div>
         {current && (
-          <Badge>
+          <span className="text-xs text-muted-foreground">
             <Trans>Current plan</Trans>
-          </Badge>
+          </span>
         )}
       </div>
       <ul className="flex flex-col gap-2.5 text-sm">
         {perks.map((perk) => (
           <li key={perk} className="flex items-center gap-2.5">
-            <Check className="size-4 text-live" />
+            <Check className="size-4 shrink-0 text-muted-foreground" />
             {perk}
           </li>
         ))}

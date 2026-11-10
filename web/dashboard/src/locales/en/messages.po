@@ -171,8 +171,10 @@ msgstr "{0, plural, one {# day of history} other {# days of history}}"
 msgid "{0, plural, one {# day of stream history} other {# days of stream history}}"
 msgstr "{0, plural, one {# day of stream history} other {# days of stream history}}"
 
+#. placeholder {0}: data.plan.history_days
 #. placeholder {0}: limits.history_days
 #: src/lib/organizations.ts
+#: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0, plural, one {# day} other {# days}}"
 msgstr "{0, plural, one {# day} other {# days}}"
 
@@ -473,6 +475,11 @@ msgstr "{0} for this combination"
 msgid "{0} hasn’t let NOALBS support in"
 msgstr "{0} hasn’t let NOALBS support in"
 
+#. placeholder {0}: roleLabels()[invite.role]
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "{0} invite"
+msgstr "{0} invite"
+
 #. placeholder {0}: formatPrice(planPrice.amount, planPrice.currency)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} is for the plan."
@@ -557,6 +564,12 @@ msgstr "{0} override"
 #: src/components/admin/products.tsx
 msgid "{0} paying"
 msgstr "{0} paying"
+
+#. placeholder {0}: formatPrice(currentPrice.amount, currentPrice.currency)
+#. placeholder {1}: intervalWord(subscription.interval)
+#: src/routes/_app/$workspace/settings/plan.tsx
+msgid "{0} per {1}"
+msgstr "{0} per {1}"
 
 #. placeholder {0}: formatBytes(frame.bytes)
 #. placeholder {1}: bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())
@@ -964,6 +977,10 @@ msgstr "{team}’s bot"
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
 msgstr "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
+
+#: src/components/usage-bar.tsx
+msgid "{used} of {max}"
+msgstr "{used} of {max}"
 
 #. placeholder {0}: entry.workspace_name
 #: src/lib/admin.ts
@@ -3921,6 +3938,7 @@ msgstr "High"
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
+#: src/routes/_app/$workspace/settings/plan.tsx
 msgid "History"
 msgstr "History"
 
@@ -4151,7 +4169,6 @@ msgstr "Invite link"
 msgid "Invite link for {0}"
 msgstr "Invite link for {0}"
 
-#: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/orgs/$organization/clients.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Invite links"
@@ -4175,6 +4192,10 @@ msgstr "Invite the customer to {0}"
 #: src/lib/admin.ts
 msgid "Invited someone to the team of {target}"
 msgstr "Invited someone to the team of {target}"
+
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "Invites"
+msgstr "Invites"
 
 #: src/lib/api-messages.ts
 msgid "Invites expire after 1 to 30 days"
@@ -5427,6 +5448,10 @@ msgstr "New alias for {0}"
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "New client"
 msgstr "New client"
+
+#: src/routes/_app/$workspace/settings/members.tsx
+msgid "New invite"
+msgstr "New invite"
 
 #. placeholder {0}: organizationRoleLabels()[created.invite.role]
 #. placeholder {1}: formatRelative(created.invite.expires_at)

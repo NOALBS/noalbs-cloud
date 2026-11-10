@@ -8,6 +8,7 @@ import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
 import { ManagedNotice } from "@/components/orgs/managed-notice";
 import { Page, Section } from "@/components/page";
+import { SettingsRow } from "@/components/settings-row";
 import { SupportAccess } from "@/components/support-access";
 import { TransferOwnership } from "@/components/transfer-ownership";
 import { TypeToConfirm } from "@/components/type-to-confirm";
@@ -79,12 +80,15 @@ function GeneralSettings() {
   return (
     <Page title={t`Settings`} description={t`The basics of this workspace.`}>
       <Section title={t`Workspace`}>
-        <form onSubmit={submit} className="flex flex-col gap-5 px-5 pb-5">
-          <div className="flex max-w-md flex-col gap-2">
-            <Label htmlFor="workspace-name">
-              <Trans>Name</Trans>
-            </Label>
-            <div className="flex gap-2">
+        <form onSubmit={submit}>
+          <SettingsRow
+            label={
+              <Label htmlFor="workspace-name">
+                <Trans>Name</Trans>
+              </Label>
+            }
+          >
+            <div className="flex min-w-0 flex-1 gap-2">
               <Input
                 id="workspace-name"
                 value={name}
@@ -104,46 +108,45 @@ function GeneralSettings() {
             {rename.error && (
               <p className="text-sm text-destructive">{errorMessage(rename.error)}</p>
             )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold">
-              <Trans>URL</Trans>
-            </span>
-            <span className="font-mono text-sm text-muted-foreground">
-              {window.location.host}/{workspace.url_slug}
-            </span>
-          </div>
+          </SettingsRow>
+          <SettingsRow
+            label={t`URL`}
+            description={
+              <span className="font-mono">
+                {window.location.host}/{workspace.url_slug}
+              </span>
+            }
+          />
         </form>
       </Section>
 
       <Section title={t`Your role`}>
-        <div className="flex flex-col gap-1 px-5 pb-5 text-sm">
-          <span className="font-semibold">
-            {workspace.role
+        <SettingsRow
+          label={
+            workspace.role
               ? roleLabels()[workspace.role]
               : workspace.organization_role
                 ? t`Team of ${workspace.managed_by?.name ?? "the organization"}`
-                : t`Staff (not a member)`}
-          </span>
-          <span className="text-muted-foreground">
-            {workspace.role
+                : t`Staff (not a member)`
+          }
+          description={
+            workspace.role
               ? roleDescriptions()[workspace.role]
               : workspace.organization_role
                 ? t`You run this workspace as part of the organization that owns it.`
-                : t`You're here as NOALBS support, with the workspace's permission or emergency access. Its owners and admins see everything you do here, and its secrets are hidden from you.`}
-          </span>
-        </div>
+                : t`You're here as NOALBS support, with the workspace's permission or emergency access. Its owners and admins see everything you do here, and its secrets are hidden from you.`
+          }
+        />
       </Section>
 
       <ManagedNotice workspace={workspace} />
 
       {workspace.role && workspace.role !== "owner" && (
-        <Section
-          title={t`Leave workspace`}
-          description={t`You’ll lose access until someone invites you again.`}
-          className="border-destructive/40"
-        >
-          <div className="px-5 pb-5">
+        <Section title={t`Leave workspace`}>
+          <SettingsRow
+            label={t`Leave ${workspace.name}`}
+            description={t`You’ll lose access until someone invites you again.`}
+          >
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -172,7 +175,7 @@ function GeneralSettings() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
+          </SettingsRow>
         </Section>
       )}
 
@@ -185,12 +188,11 @@ function GeneralSettings() {
       {can(actor, "workspace.transfer") && <TransferOwnership />}
 
       {can(actor, "workspace.delete") && (
-        <Section
-          title={t`Delete workspace`}
-          description={t`Deletes its switchers, stream history, members and invites. This can’t be undone.`}
-          className="border-destructive/40"
-        >
-          <div className="px-5 pb-5">
+        <Section title={t`Delete workspace`}>
+          <SettingsRow
+            label={t`Delete ${workspace.name}`}
+            description={t`Deletes its switchers, stream history, members and invites. This can’t be undone.`}
+          >
             <TypeToConfirm
               trigger={t`Delete ${workspace.name}`}
               title={t`Delete ${workspace.name}?`}
@@ -222,7 +224,7 @@ function GeneralSettings() {
                 toast.success(t`${workspace.name} deleted`);
               }}
             />
-          </div>
+          </SettingsRow>
         </Section>
       )}
     </Page>

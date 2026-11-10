@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { membersQuery, queryKeys, workspacePlanQuery } from "@/api/queries";
 import { Section } from "@/components/page";
+import { SettingsRow } from "@/components/settings-row";
 import { TypeToConfirm } from "@/components/type-to-confirm";
 import {
   Select,
@@ -45,15 +46,15 @@ export function TransferOwnership() {
   const planName = plan.data?.plan.name ?? "";
 
   return (
-    <Section
-      title={t`Transfer ownership`}
-      description={
-        actor.role !== "owner"
-          ? t`Make another member the owner. The current owner stays as an admin.`
-          : t`Make an admin the owner, for example so you can leave. You stay as an admin.`
-      }
-    >
-      <div className="flex flex-wrap items-center gap-2 px-5 pb-5">
+    <Section title={t`Transfer ownership`}>
+      <SettingsRow
+        label={t`New owner`}
+        description={
+          actor.role !== "owner"
+            ? t`Make another member the owner. The current owner stays as an admin.`
+            : t`Make an admin the owner, for example so you can leave. You stay as an admin.`
+        }
+      >
         {members.data && candidates.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             <Trans>
@@ -137,7 +138,7 @@ export function TransferOwnership() {
             />
           </>
         )}
-      </div>
+      </SettingsRow>
     </Section>
   );
 }

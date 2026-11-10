@@ -10,6 +10,8 @@ import { invitesQuery, membersQuery, queryKeys, workspacePlanQuery } from "@/api
 import type { CreatedInvite, Member, WorkspaceRole } from "@/api/types";
 import { CopyField } from "@/components/copy-field";
 import { Page, Section } from "@/components/page";
+import { Row, RowList } from "@/components/row-list";
+import { SegmentedControl } from "@/components/segmented-control";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +23,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -63,10 +64,12 @@ function MembersPage() {
       <Section
         title={t`Members`}
         actions={
-          limit && <span className="tabular font-mono text-xs text-muted-foreground">{limit}</span>
+          limit && (
+            <span className="tabular font-display text-xs text-muted-foreground">{limit}</span>
+          )
         }
       >
-        <ul className="flex flex-col">
+        <RowList>
           {members.isPending &&
             [0, 1, 2].map((index) => (
               <li
@@ -86,20 +89,20 @@ function MembersPage() {
               workspaceId={workspace.id}
             />
           ))}
-        </ul>
+        </RowList>
       </Section>
 
       {can(actor, "account.manage") && <Invites />}
 
       <Section title={t`Roles`}>
-        <dl className="grid gap-3 px-5 pb-5 text-sm sm:grid-cols-3">
+        <dl className="text-sm">
           {(["operator", "admin", "owner"] as const).map((role) => (
             <div
               key={role}
-              className="flex flex-col gap-1 rounded-xl border border-divider bg-sunken p-3.5"
+              className="flex flex-col gap-1 border-t border-divider px-5 py-3 sm:flex-row sm:gap-6"
             >
-              <dt className="font-semibold">{roleLabels()[role]}</dt>
-              <dd className="text-muted-foreground">{roleDescriptions()[role]}</dd>
+              <dt className="w-24 shrink-0 font-semibold">{roleLabels()[role]}</dt>
+              <dd className="text-xs text-muted-foreground">{roleDescriptions()[role]}</dd>
             </div>
           ))}
         </dl>
@@ -156,9 +159,9 @@ function MemberRow({
   });
 
   return (
-    <li className="flex flex-wrap items-center gap-3.5 border-t border-divider px-5 py-3">
-      <UserAvatar name={member.username} avatarUrl={member.avatar_url} className="size-9" />
-      <span className="flex min-w-0 flex-1 flex-col">
+    <Row
+      lead={<UserAvatar name={member.username} avatarUrl={member.avatar_url} className="size-9" />}
+      title={
         <span className="truncate text-sm font-semibold">
           {name}
           {isYou && (
@@ -168,13 +171,11 @@ function MemberRow({
             </span>
           )}
         </span>
-        <span className="text-xs text-muted-foreground">
-          {[providerLabel(member.provider), t`joined ${formatDate(member.joined_at)}`]
-            .filter(Boolean)
-            .join(" · ")}
-        </span>
-      </span>
-
+      }
+      meta={[providerLabel(member.provider), t`joined ${formatDate(member.joined_at)}`]
+        .filter(Boolean)
+        .join(" · ")}
+    >
       {roles.length > 0 ? (
         <Select
           value={member.role}
@@ -193,12 +194,7 @@ function MemberRow({
           </SelectContent>
         </Select>
       ) : (
-        <Badge
-          variant={member.role === "owner" ? "default" : "secondary"}
-          className="min-w-20 justify-center"
-        >
-          {roleLabels()[member.role]}
-        </Badge>
+        <span className="w-36 text-sm text-muted-foreground">{roleLabels()[member.role]}</span>
       )}
 
       {!isYou && canRemove(actor, false, member.role) ? (
@@ -232,7 +228,7 @@ function MemberRow({
       ) : (
         <span className="size-9" />
       )}
-    </li>
+    </Row>
   );
 }
 
@@ -283,55 +279,40 @@ function Invites() {
 
   return (
     <Section
-      title={t`Invite links`}
+      title={t`Invites`}
       description={t`Anyone with a link can join once, with the chosen role, until it expires.`}
     >
-      <div className="flex flex-wrap items-end gap-3 px-5 pb-5">
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="pb-1.5 text-sm font-semibold">
-            <Trans>Role</Trans>
-          </legend>
-          <div className="flex h-10 overflow-hidden rounded-lg border border-input">
-            {roles.map((option) => (
-              <label
-                key={option}
-                className="flex cursor-pointer items-center px-4 text-sm font-semibold text-muted-foreground hover:bg-surface-2 has-checked:bg-primary-soft has-checked:text-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring"
-              >
-                <input
-                  type="radio"
-                  name="invite-role"
-                  value={option}
-                  checked={role === option}
-                  onChange={() => setRole(option)}
-                  className="sr-only"
-                />
-                {roleLabels()[option]}
-              </label>
-            ))}
+      <RowList>
+        <Row title={t`New invite`}>
+          <SegmentedControl
+            label={t`Role`}
+            value={role}
+            onValueChange={setRole}
+            options={roles.map((option) => ({ value: option, label: roleLabels()[option] }))}
+          />
+          <div className="flex flex-col gap-1.5">
+            <span className="sr-only" id="invite-expiry">
+              <Trans>Expires</Trans>
+            </span>
+            <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
+              <SelectTrigger className="h-10 w-36" aria-labelledby="invite-expiry">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {expiryOptions().map((option) => (
+                  <SelectItem key={option.days} value={String(option.days)}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </fieldset>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold" id="invite-expiry">
-            <Trans>Expires</Trans>
-          </span>
-          <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
-            <SelectTrigger className="h-10 w-36" aria-labelledby="invite-expiry">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {expiryOptions().map((option) => (
-                <SelectItem key={option.days} value={String(option.days)}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button className="h-10" onClick={() => create.mutate()} disabled={create.isPending}>
-          <Link2 />
-          <Trans>Create link</Trans>
-        </Button>
-      </div>
+          <Button className="h-10" onClick={() => create.mutate()} disabled={create.isPending}>
+            <Link2 />
+            <Trans>Create link</Trans>
+          </Button>
+        </Row>
+      </RowList>
 
       {create.error && (
         <p className="mx-5 mb-5 text-sm text-destructive">
@@ -350,19 +331,18 @@ function Invites() {
 
       {created && <NewInviteLink invite={created} />}
 
-      <ul className="flex flex-col">
+      <RowList>
         {invites.data?.map((invite) => (
-          <li
+          <Row
             key={invite.id}
-            className="flex flex-wrap items-center gap-3 border-t border-divider px-5 py-3"
-          >
-            <Badge variant="secondary">{roleLabels()[invite.role]}</Badge>
-            <span className="flex-1 text-sm text-muted-foreground">
+            title={t`${roleLabels()[invite.role]} invite`}
+            meta={
               <Trans>
                 Created {formatRelative(invite.created_at)} · expires{" "}
                 {formatRelative(invite.expires_at)}
               </Trans>
-            </span>
+            }
+          >
             <Button
               variant="ghost"
               size="sm"
@@ -372,14 +352,14 @@ function Invites() {
             >
               <Trans>Revoke</Trans>
             </Button>
-          </li>
+          </Row>
         ))}
         {invites.data?.length === 0 && !created && (
           <li className="border-t border-divider px-5 py-4 text-sm text-muted-foreground">
             <Trans>No open invites.</Trans>
           </li>
         )}
-      </ul>
+      </RowList>
     </Section>
   );
 }
@@ -389,7 +369,7 @@ function NewInviteLink({ invite }: { invite: CreatedInvite }) {
   const url = `${window.location.origin}/invite/${invite.token}`;
 
   return (
-    <div className="mx-5 mb-5 flex flex-col gap-2.5 rounded-xl border border-live/30 bg-live/8 p-3.5">
+    <div className="flex flex-col gap-2.5 border-t border-divider px-5 py-3">
       <span className="text-sm font-semibold">
         <Trans>
           New invite ({roleLabels()[invite.invite.role]}). Copy it now: it won’t be shown again.
