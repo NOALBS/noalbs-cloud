@@ -91,10 +91,11 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
 }
 
 async fn refresh(state: &ApiState) -> Result<Snapshot, String> {
-    let connected: Vec<_> = switcher_statuses(state)
-        .await?
-        .into_iter()
-        .map(|(id, _)| id)
+    let statuses = switcher_statuses(state).await?;
+    let connected: Vec<_> = statuses.iter().map(|(id, _)| *id).collect();
+    let connected_devices: Vec<_> = statuses
+        .iter()
+        .filter_map(|(_, status)| status.pc.as_ref()?.device_id)
         .collect();
     let now = Utc::now();
     let mut snapshot = Snapshot::default();
@@ -105,7 +106,7 @@ async fn refresh(state: &ApiState) -> Result<Snapshot, String> {
         snapshot.users[index] = counts.users as u64;
         snapshot.switchers[index] = counts.switchers as u64;
     }
-    let devices = db::admin::device_counts(&state.db, now)
+    let devices = db::admin::device_counts(&state.db, now, &connected_devices)
         .await
         .map_err(|error| error.to_string())?;
     snapshot.devices = [

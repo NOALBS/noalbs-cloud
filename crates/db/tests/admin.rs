@@ -226,16 +226,34 @@ async fn rolling_metrics_use_activity_and_live_switchers(pool: PgPool) {
     );
     sqlx::query("INSERT INTO connect_devices (switcher_id, name, os, app_version, token_hash, last_seen_at) VALUES ($1, 'PC', 'linux', '1', 'hash', $2)")
         .bind(switcher.id).bind(now - TimeDelta::days(2)).execute(&pool).await.unwrap();
-    let devices = admin::device_counts(&pool, now).await.unwrap();
+    let devices = admin::device_counts(&pool, now, &[]).await.unwrap();
     assert_eq!(
         (devices.paired, devices.active_1d, devices.active_30d),
         (1, 0, 1)
     );
+    let device_id: Uuid =
+        sqlx::query_scalar("UPDATE connect_devices SET last_seen_at = $1 RETURNING id")
+            .bind(now - TimeDelta::days(31))
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let aged = admin::device_counts(&pool, now, &[]).await.unwrap();
+    assert_eq!((aged.active_1d, aged.active_30d), (0, 0));
+    let live = admin::device_counts(&pool, now, &[device_id, device_id])
+        .await
+        .unwrap();
+    assert_eq!((live.paired, live.active_1d, live.active_30d), (1, 1, 1));
     sqlx::query("UPDATE connect_devices SET revoked_at = now()")
         .execute(&pool)
         .await
         .unwrap();
-    assert_eq!(admin::device_counts(&pool, now).await.unwrap().paired, 0);
+    let revoked = admin::device_counts(&pool, now, &[device_id])
+        .await
+        .unwrap();
+    assert_eq!(
+        (revoked.paired, revoked.active_1d, revoked.active_30d),
+        (0, 0, 0)
+    );
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

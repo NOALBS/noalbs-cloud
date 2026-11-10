@@ -193,14 +193,19 @@ pub struct DeviceCounts {
     pub active_30d: i64,
 }
 
-pub async fn device_counts(pool: &PgPool, now: DateTime<Utc>) -> Result<DeviceCounts> {
+pub async fn device_counts(
+    pool: &PgPool,
+    now: DateTime<Utc>,
+    connected: &[Uuid],
+) -> Result<DeviceCounts> {
     Ok(sqlx::query_as(
         "SELECT count(*) AS paired,
-        count(*) FILTER (WHERE last_seen_at >= $1 - interval '1 day') AS active_1d,
-        count(*) FILTER (WHERE last_seen_at >= $1 - interval '30 days') AS active_30d
+        count(*) FILTER (WHERE last_seen_at >= $1 - interval '1 day' OR id = ANY($2)) AS active_1d,
+        count(*) FILTER (WHERE last_seen_at >= $1 - interval '30 days' OR id = ANY($2)) AS active_30d
         FROM connect_devices WHERE revoked_at IS NULL",
     )
     .bind(now)
+    .bind(connected)
     .fetch_one(pool)
     .await?)
 }

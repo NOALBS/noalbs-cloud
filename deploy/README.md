@@ -275,8 +275,9 @@ only when OTLP is configured:
 - `noalbs.switchers.active{window=1d|7d|30d}`: last seen since the cutoff, plus currently
   connected switchers (distinct). Last seen is touched on identify and disconnect.
 - `noalbs.connect.devices{state=paired|active_1d|active_30d}`: unrevoked devices,
-  optionally seen within the rolling window. Device last seen updates when a paired
-  device identifies, not on heartbeats; long-lived connections can age out.
+  optionally seen within the rolling window or currently connected. Device last seen
+  updates when a paired device identifies, not on heartbeats; live device IDs also count
+  toward both active windows so long-lived connections do not age out.
 
 Each API replica exports the same snapshot: use **max/last, not sum** across API
 replicas in Grafana. These deployment files use Compose and do not set a replica count.
