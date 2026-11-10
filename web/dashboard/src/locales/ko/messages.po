@@ -2091,6 +2091,7 @@ msgstr "BRB 장면"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "브라우저 소스"
 
@@ -2098,21 +2099,21 @@ msgstr "브라우저 소스"
 msgid "Browser source connected"
 msgstr "브라우저 소스 연결됨"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "브라우저 소스 연결됨: 방송 중인 스위처 먼저(방송 시간이 긴 순), 그다음 OBS 연결된 스위처."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "브라우저 소스는 연결됐고 OBS를 기다리는 중이에요. 위의 WebSocket 포트와 비밀번호를 확인하세요."
 
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr "브라우저 소스 또는 Connect 연결됨: 방송 중인 스위처 먼저(방송 시간이 긴 순), 그다음 OBS 연결된 스위처."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr "브라우저 소스 또는 Connect 연결됨"
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
-msgstr "브라우저 소스 연결됨"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
 msgstr "브라우저 소스 연결됨"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -2542,6 +2543,7 @@ msgstr "결제를 확인하는 중이에요… 몇 초 걸려요."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "연결"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "연결된 봇이 없어요"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "연결된 브라우저 소스가 없어요."
+msgid "No browser source or Connect client is connected."
+msgstr "연결된 브라우저 소스나 Connect 클라이언트가 없습니다."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

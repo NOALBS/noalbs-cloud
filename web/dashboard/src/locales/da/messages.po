@@ -2091,6 +2091,7 @@ msgstr "BRB-SCENE"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "Browserkilde"
 
@@ -2098,22 +2099,22 @@ msgstr "Browserkilde"
 msgid "Browser source connected"
 msgstr "Browserkilde forbundet"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "Browserkilde forbundet: live først (længst først), derefter med OBS."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "Browserkilden kører; venter på OBS. Tjek WebSocket-porten og adgangskoden ovenfor."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr "Browserkilde eller Connect forbundet: live først (længst først), derefter med OBS."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr "Browserkilde eller Connect forbundet"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
 msgstr "browserkilde kører"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
-msgstr "Browserkilde kører"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -2542,6 +2543,7 @@ msgstr "Bekræfter din betaling… det tager et par sekunder."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "Forbind"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "Ingen bot er forbundet"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "Ingen browserkilde er forbundet."
+msgid "No browser source or Connect client is connected."
+msgstr "Ingen browserkilde eller Connect-klient er forbundet."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

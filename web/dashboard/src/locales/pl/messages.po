@@ -2091,6 +2091,7 @@ msgstr "SCENA BRB"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "Źródło przeglądarki"
 
@@ -2098,22 +2099,22 @@ msgstr "Źródło przeglądarki"
 msgid "Browser source connected"
 msgstr "Połączono źródło przeglądarki"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "Źródło przeglądarki połączone: najpierw nadające (od najdłuższej transmisji), potem z OBS."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "Źródło przeglądarki działa; czekam na OBS. Sprawdź powyżej port i hasło WebSocket."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr "Źródło przeglądarki lub Connect połączone: najpierw nadające (od najdłuższej transmisji), potem z OBS."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr "Źródło przeglądarki lub Connect połączone"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
 msgstr "źródło przeglądarki działa"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
-msgstr "Źródło przeglądarki działa"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -2542,6 +2543,7 @@ msgstr "Potwierdzanie płatności… to potrwa kilka sekund."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "Połącz"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "Brak połączonego bota"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "Brak połączonego źródła przeglądarki."
+msgid "No browser source or Connect client is connected."
+msgstr "Nie jest połączone żadne źródło przeglądarki ani żaden klient Connect."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

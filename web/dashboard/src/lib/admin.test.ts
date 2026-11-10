@@ -58,6 +58,7 @@ describe("statusProblems", () => {
     switchers: {
       total: 3,
       connected: 2,
+      connect: 1,
       obs_connected: 2,
       streaming: 1,
       recording: 0,
@@ -184,6 +185,7 @@ describe("statusProblems", () => {
 describe("matchesConnected", () => {
   const switcher = (patch: Partial<ConnectedSwitcher>): ConnectedSwitcher => ({
     switcher_id: "s",
+    client: "browser_source",
     switcher_name: "Main",
     workspace_id: "w",
     workspace_name: "Kate",

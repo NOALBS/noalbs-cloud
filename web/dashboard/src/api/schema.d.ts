@@ -4873,8 +4873,9 @@ export interface components {
             scopes: string[];
             status: string;
         };
-        /** @description A switcher whose browser source is connected. */
+        /** @description A switcher whose browser source or Connect client is connected. */
         ConnectedSwitcherDto: {
+            client: components["schemas"]["SwitcherClient"];
             obs_connected: boolean;
             /** @description The workspace owner's most recently used sign-in name. */
             owner_username?: string | null;
@@ -7418,10 +7419,14 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        /** @enum {string} */
+        SwitcherClient: "browser_source" | "connect";
         SwitcherCountsDto: {
+            /** Format: int64 */
+            connect: number;
             /**
              * Format: int64
-             * @description Browser source connected to obs-link.
+             * @description Browser source or Connect connected to obs-link.
              */
             connected: number;
             /**

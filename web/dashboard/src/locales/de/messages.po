@@ -2091,6 +2091,7 @@ msgstr "BRB-SZENE"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "Browserquelle"
 
@@ -2098,21 +2099,21 @@ msgstr "Browserquelle"
 msgid "Browser source connected"
 msgstr "Browserquelle verbunden"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "Browserquelle verbunden: zuerst live (längste zuerst), dann mit OBS."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "Browserquelle läuft; warte auf OBS. Prüfe oben den WebSocket-Port und das Passwort."
 
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr "Browserquelle oder Connect verbunden: zuerst live (längste zuerst), dann mit OBS."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr "Browserquelle oder Connect verbunden"
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
-msgstr "Browserquelle läuft"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
 msgstr "Browserquelle läuft"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -2542,6 +2543,7 @@ msgstr "Deine Zahlung wird bestätigt… das dauert ein paar Sekunden."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "Verbinden"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "Kein Bot verbunden"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "Keine Browserquelle verbunden."
+msgid "No browser source or Connect client is connected."
+msgstr "Keine Browserquelle und kein Connect-Client ist verbunden."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

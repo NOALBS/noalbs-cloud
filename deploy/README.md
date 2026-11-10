@@ -264,10 +264,34 @@ What goes out is kept small:
   paused), `noalbs.switcher.scene_switches`, `noalbs.stream_server.fetches`,
   `noalbs.chat.commands`, `noalbs.chat.replies`. None carry a switcher or user ID.
 
+`noalbs.switchers` has `client=browser_source|connect` and `state`; connection counts
+use `connection.kind=browser_source|connect|moblin` (unidentified connections start as
+browser sources). The API refreshes these database-wide gauges every five minutes,
+only when OTLP is configured:
+
+- `noalbs.users.active{window=1d|7d|30d}`: rolling activity from the most recent
+  session use or OAuth connection update, excluding disabled accounts. This is an
+  approximation: expired/signed-out sessions disappear, not a daily activity history.
+- `noalbs.switchers.active{window=1d|7d|30d}`: last seen since the cutoff, plus currently
+  connected switchers (distinct). Last seen is touched on identify and disconnect.
+- `noalbs.connect.devices{state=paired|active_1d|active_30d}`: unrevoked devices,
+  optionally seen within the rolling window or currently connected. Device last seen
+  updates when a paired device identifies, not on heartbeats; live device IDs also count
+  toward both active windows so long-lived connections do not age out.
+
+Each API replica exports the same snapshot: use **max/last, not sum** across API
+replicas in Grafana. These deployment files use Compose and do not set a replica count.
+
 A dashboard for all of it is in `grafana/noalbs.json`: in Grafana, **Dashboards → New → Import**
 and upload the file; the Metrics and Logs pickers at its top choose your Prometheus and Loki data
 sources (Grafana Cloud: `grafanacloud-<stack>-prom` and `-logs`). In Prometheus the
 names use underscores and units (`noalbs_switchers`, `http_server_request_duration_seconds_bucket`).
+
+The **Now** row separates browser sources from Connect clients. **Usage** shows DAU,
+WAU, MAU, DAU/MAU, rolling active switchers and Connect device counts, with activity
+timeseries below. These API snapshots use `max` across replicas, never `sum`.
+The **Switchers** row also charts connected switchers by client; **Connections**
+continues to group WebSocket connections by `connection_kind`, including Connect.
 
 Logs and traces hold account, workspace and switcher IDs and chat platform user IDs, never
 IP addresses, tokens, stats URLs or chat messages. If you run NOALBS Cloud for others, your

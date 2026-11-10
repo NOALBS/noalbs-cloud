@@ -173,6 +173,90 @@ async fn user_named(pool: &PgPool, name: &str) -> Uuid {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn rolling_metrics_use_activity_and_live_switchers(pool: PgPool) {
+    let now = Utc::now();
+    assert_eq!(
+        admin::active_counts(&pool, now, &[]).await.unwrap().users,
+        0
+    );
+    let user = user_named(&pool, "metrics").await;
+    sqlx::query("ALTER TABLE oauth2_connections DISABLE TRIGGER oauth2_connections_set_updated_at")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE oauth2_connections SET updated_at = $1 WHERE user_id = $2")
+        .bind(now - TimeDelta::days(6))
+        .bind(user)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let workspace = workspaces::create(&pool, user, "Metrics", "metrics")
+        .await
+        .unwrap();
+    let switcher = db::switchers::create(&pool, workspace.id, "Main", b"hash")
+        .await
+        .unwrap();
+    sqlx::query("UPDATE switchers SET last_seen_at = $1 WHERE id = $2")
+        .bind(now - TimeDelta::days(20))
+        .bind(switcher.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    for (days, users, switchers) in [(1, 0, 0), (7, 1, 0), (30, 1, 1)] {
+        let counts = admin::active_counts(&pool, now - TimeDelta::days(days), &[])
+            .await
+            .unwrap();
+        assert_eq!((counts.users, counts.switchers), (users, switchers));
+    }
+    let live = admin::active_counts(&pool, now, &[switcher.id, switcher.id])
+        .await
+        .unwrap();
+    assert_eq!(live.switchers, 1);
+    sqlx::query("UPDATE users SET disabled_at = now() WHERE id = $1")
+        .bind(user)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        admin::active_counts(&pool, now - TimeDelta::days(30), &[])
+            .await
+            .unwrap()
+            .users,
+        0
+    );
+    sqlx::query("INSERT INTO connect_devices (switcher_id, name, os, app_version, token_hash, last_seen_at) VALUES ($1, 'PC', 'linux', '1', 'hash', $2)")
+        .bind(switcher.id).bind(now - TimeDelta::days(2)).execute(&pool).await.unwrap();
+    let devices = admin::device_counts(&pool, now, &[]).await.unwrap();
+    assert_eq!(
+        (devices.paired, devices.active_1d, devices.active_30d),
+        (1, 0, 1)
+    );
+    let device_id: Uuid =
+        sqlx::query_scalar("UPDATE connect_devices SET last_seen_at = $1 RETURNING id")
+            .bind(now - TimeDelta::days(31))
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let aged = admin::device_counts(&pool, now, &[]).await.unwrap();
+    assert_eq!((aged.active_1d, aged.active_30d), (0, 0));
+    let live = admin::device_counts(&pool, now, &[device_id, device_id])
+        .await
+        .unwrap();
+    assert_eq!((live.paired, live.active_1d, live.active_30d), (1, 1, 1));
+    sqlx::query("UPDATE connect_devices SET revoked_at = now()")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let revoked = admin::device_counts(&pool, now, &[device_id])
+        .await
+        .unwrap();
+    assert_eq!(
+        (revoked.paired, revoked.active_1d, revoked.active_30d),
+        (0, 0, 0)
+    );
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn users_and_workspaces_are_searched_and_paged(pool: PgPool) {
     let kate = user_named(&pool, "kate_irl").await;
     let bob = user_named(&pool, "bob").await;
