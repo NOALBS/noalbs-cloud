@@ -3929,9 +3929,7 @@ msgid "History days"
 msgstr "歷史紀錄天數"
 
 #: src/components/app-shell.tsx
-#: src/components/home-shell.tsx
 #: src/components/minimal-header.tsx
-#: src/components/top-bar.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Home"
 msgstr "首頁"
