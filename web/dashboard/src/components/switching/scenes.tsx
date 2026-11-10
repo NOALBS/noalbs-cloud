@@ -9,11 +9,9 @@ import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys, sceneRulesQuery, streamServersQuery } from "@/api/queries";
 import type { ObsScenes, SceneRule, Scenes, StreamServer, Switcher } from "@/api/types";
 import { Section } from "@/components/page";
-import { ScenePicker } from "@/components/scene-picker";
-import { SceneRulesSection } from "@/components/scene-rules-section";
 import { SaveBar } from "@/components/settings";
-import { SwitcherBody } from "@/components/switcher-page";
-import { Badge } from "@/components/ui/badge";
+import { SceneChoice as ScenePicker } from "@/components/switching/scene-choice";
+import { SceneRulesSection } from "@/components/switching/scene-rules";
 import { useNow } from "@/hooks/use-now";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
@@ -49,33 +47,33 @@ const automatic = (): RoleRow[] => [
   },
 ];
 
-const onCommand = (): RoleRow[] => [
+const onCommand = (prefix = "!"): RoleRow[] => [
   {
     key: "starting",
     label: t`Starting`,
-    description: t`Before the stream goes live.`,
-    dot: "bg-primary",
+    description: t`Before the stream goes live · ${prefix}starting`,
+    dot: "bg-muted-foreground",
     command: "starting",
   },
   {
     key: "ending",
     label: t`Ending`,
-    description: t`Wrapping up the stream.`,
-    dot: "bg-primary",
+    description: t`Wrapping up the stream · ${prefix}ending`,
+    dot: "bg-muted-foreground",
     command: "ending",
   },
   {
     key: "privacy",
     label: t`Privacy`,
-    description: t`Hide the camera instantly.`,
-    dot: "bg-primary",
+    description: t`Hide the camera instantly · ${prefix}privacy`,
+    dot: "bg-muted-foreground",
     command: "privacy",
   },
   {
     key: "refresh",
     label: t`Refresh`,
-    description: t`Shown briefly while the feed reloads.`,
-    dot: "bg-primary",
+    description: t`Shown briefly while the feed reloads · ${prefix}refresh`,
+    dot: "bg-muted-foreground",
     command: "refresh",
   },
 ];
@@ -117,15 +115,14 @@ export function ScenesPage() {
   const editable = canManage && obs.isSuccess;
 
   return (
-    <SwitcherBody
+    <Section
       title={t`Scenes`}
-      description={t`Tell NOALBS which OBS scene to use for each situation.`}
-      backToSettings
+      description={t`Which OBS scene each state means.`}
       actions={<SyncedChip obs={obs} />}
     >
       {obs.isError && (
-        <div className="flex gap-3 rounded-2xl border border-dashed p-4">
-          <MonitorPlay className="mt-0.5 size-5 shrink-0 text-primary" />
+        <div className="flex gap-3 border-t border-divider p-4">
+          <MonitorPlay className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             <Trans>
               {errorMessage(obs.error)} Scenes are picked from your OBS, so connect it to change
@@ -134,70 +131,44 @@ export function ScenesPage() {
           </p>
         </div>
       )}
-
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
-        <div className="flex flex-col gap-4 lg:col-span-8">
-          {[
-            {
-              title: t`Automatic`,
-              description: t`Chosen by the switcher from your bitrate and latency.`,
-              rows: automatic(),
-            },
-            {
-              title: t`On command`,
-              description: t`Only used when you or a mod asks for them.`,
-              rows: onCommand(),
-            },
-          ].map((group, index) => (
-            <Fragment key={group.title}>
-              {index === 1 && <SceneRulesSection obs={obs.data} servers={servers.data ?? []} />}
-              <Section title={group.title} description={group.description}>
-                <ul>
-                  {group.rows.map((row) => (
-                    <li
-                      key={row.key}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-divider px-5 py-3"
-                    >
-                      <span
-                        className={cn("h-9 w-2.5 shrink-0 rounded", row.dot)}
-                        aria-hidden="true"
-                      />
-                      <span className="flex min-w-40 flex-1 flex-col gap-0.5">
-                        <span className="text-sm font-semibold">{row.label}</span>
-                        <span className="text-sm text-muted-foreground">{row.description}</span>
-                      </span>
-                      {row.command && (
-                        <Badge variant="secondary" className="hidden font-mono sm:inline-flex">
-                          {prefix}
-                          {row.command}
-                        </Badge>
-                      )}
-                      <ScenePicker
-                        label={row.label}
-                        value={form[row.key] ?? null}
-                        obs={obs.data}
-                        disabled={!editable}
-                        onChange={(uuid) => setForm({ ...form, [row.key]: uuid })}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </Section>
+      {[
+        { title: t`Automatic`, rows: automatic() },
+        { title: t`On command`, rows: onCommand(prefix) },
+      ].map((group) => (
+        <Fragment key={group.title}>
+          <h3 className="border-t border-divider px-5 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            {group.title}
+          </h3>
+          {group.rows.map((row) => (
+            <Fragment key={row.key}>
+              <div className="flex flex-wrap items-center gap-4 border-t border-divider px-5 py-3">
+                <span className={cn("h-8 w-0.5 shrink-0", row.dot)} aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{row.label}</p>
+                  <p className="text-sm text-muted-foreground">{row.description}</p>
+                </div>
+                <ScenePicker
+                  label={row.label}
+                  value={form[row.key] ?? null}
+                  obs={obs.data}
+                  disabled={!editable}
+                  onChange={(uuid) => setForm({ ...form, [row.key]: uuid })}
+                />
+              </div>
+              {row.key === "live" && (
+                <SceneRulesSection obs={obs.data} servers={servers.data ?? []} />
+              )}
             </Fragment>
           ))}
-        </div>
-
-        <div className="flex flex-col gap-4 lg:col-span-4">
-          <ObsSceneList
-            obs={obs.data}
-            scenes={form}
-            servers={servers.data ?? []}
-            rules={rules.data ?? []}
-          />
-          <OverridesNote servers={servers.data ?? []} obs={obs.data} />
-        </div>
-      </div>
-
+        </Fragment>
+      ))}
+      <ObsSceneList
+        obs={obs.data}
+        scenes={form}
+        servers={servers.data ?? []}
+        rules={rules.data ?? []}
+      />
+      <OverridesNote servers={servers.data ?? []} obs={obs.data} />
       <SaveBar
         dirty={!same(form, base)}
         saving={save.isPending}
@@ -208,7 +179,7 @@ export function ScenesPage() {
           save.reset();
         }}
       />
-    </SwitcherBody>
+    </Section>
   );
 }
 
@@ -221,7 +192,7 @@ function SyncedChip({ obs }: { obs: UseQueryResult<ObsScenes> }) {
     <button
       type="button"
       onClick={() => void obs.refetch()}
-      className="flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] text-muted-foreground hover:text-foreground"
+      className="flex min-h-9 items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
     >
       <RotateCw className={cn("size-3.5", obs.isFetching && "animate-spin")} />
       <Trans>Synced from OBS {formatRelative(new Date(obs.dataUpdatedAt), new Date(now))}</Trans>
@@ -258,7 +229,10 @@ function ObsSceneList({
   };
 
   return (
-    <section aria-label={t`Scenes in OBS`} className="flex flex-col rounded-2xl border bg-card">
+    <details aria-label={t`Scenes in OBS`} className="border-t border-divider">
+      <summary className="cursor-pointer px-5 py-3 text-sm text-muted-foreground">
+        {plural(obs.scenes.length, { one: "# scene in OBS", other: "# scenes in OBS" })}
+      </summary>
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
         <h2 className="font-semibold">
           <Trans>Scenes in OBS</Trans>
@@ -278,7 +252,7 @@ function ObsSceneList({
             >
               <span className="flex max-w-full min-w-0 items-center gap-2 text-sm font-medium">
                 {onAir && (
-                  <span className="size-2 shrink-0 rounded-full bg-offline">
+                  <span className="size-2 shrink-0 rounded-full bg-primary">
                     <span className="sr-only">
                       <Trans>On air</Trans>
                     </span>
@@ -293,7 +267,7 @@ function ObsSceneList({
           );
         })}
       </ul>
-    </section>
+    </details>
   );
 }
 
@@ -310,7 +284,7 @@ function OverridesNote({ servers, obs }: { servers: StreamServer[]; obs: ObsScen
   );
 
   return (
-    <section className="flex flex-col gap-2 rounded-2xl border border-dashed p-5">
+    <section className="flex flex-col gap-2 border-t border-divider px-5 py-3">
       <span className="text-sm font-semibold">
         <Trans>Per-server overrides</Trans>
       </span>

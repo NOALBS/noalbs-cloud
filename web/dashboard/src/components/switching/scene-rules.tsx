@@ -23,8 +23,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys, sceneRulesQuery } from "@/api/queries";
 import type { ObsScenes, SceneRule, StreamServer } from "@/api/types";
-import { Section } from "@/components/page";
-import { ScenePicker } from "@/components/scene-picker";
+import { SceneChoice as ScenePicker } from "@/components/switching/scene-choice";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +35,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -120,22 +118,7 @@ export function SceneRulesSection({
   const tooFewServers = servers.length < 2;
 
   return (
-    <Section
-      title={t`Server combinations`}
-      description={t`Use other scenes while certain servers are live together, like a two-camera layout while both cameras stream. If more than one matches, the highest one wins.`}
-      actions={
-        canManage && (
-          <Button
-            variant="outline"
-            onClick={() => setEditing({})}
-            disabled={tooFewServers || list.length >= MAX_RULES}
-          >
-            <Plus />
-            <Trans>Add combination</Trans>
-          </Button>
-        )
-      }
-    >
+    <div className="pl-4 sm:pl-7">
       {rules.isSuccess && list.length === 0 && (
         <p className="border-t border-divider px-5 py-4 text-sm text-muted-foreground">
           {tooFewServers
@@ -155,7 +138,6 @@ export function SceneRulesSection({
                 <RuleRow
                   key={rule.id}
                   rule={rule}
-                  position={index + 1}
                   label={ruleLabel(rule, servers)}
                   shadowed={shadowedBy(list, index)}
                   servers={servers}
@@ -169,6 +151,18 @@ export function SceneRulesSection({
         </DndContext>
       )}
 
+      {canManage && (
+        <Button
+          variant="ghost"
+          className="min-h-11 w-full justify-start rounded-none border-t border-divider px-5 text-muted-foreground"
+          onClick={() => setEditing({})}
+          disabled={tooFewServers || list.length >= MAX_RULES}
+        >
+          <Plus />
+          <Trans>Add a server combination</Trans>
+        </Button>
+      )}
+      <p className="border-t border-divider px-5 py-3 text-xs text-muted-foreground">{t`Use other scenes while certain servers are live together. If more than one matches, the highest one wins.`}</p>
       {canManage && editing && (
         <RuleDialog
           key={editing.rule?.id ?? "new"}
@@ -179,7 +173,7 @@ export function SceneRulesSection({
           onClose={() => setEditing(null)}
         />
       )}
-    </Section>
+    </div>
   );
 }
 
@@ -216,7 +210,6 @@ function useSaveRule(rule: SceneRule | undefined) {
 
 function RuleRow({
   rule,
-  position,
   label,
   shadowed,
   servers,
@@ -225,7 +218,6 @@ function RuleRow({
   onEdit,
 }: {
   rule: SceneRule;
-  position: number;
   label: string;
   shadowed: SceneRule | undefined;
   servers: StreamServer[];
@@ -275,7 +267,7 @@ function RuleRow({
         transition: sortable.transition,
       }}
       className={cn(
-        "flex items-stretch border-t border-divider bg-card last:rounded-b-2xl",
+        "flex flex-wrap items-center border-t border-divider",
         sortable.isDragging && "relative z-10 rounded-2xl border border-primary shadow-2xl",
       )}
     >
@@ -293,33 +285,26 @@ function RuleRow({
       )}
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col gap-1.5 py-3 pr-3",
+          "flex min-w-40 flex-1 flex-col gap-1.5 py-3 pr-3",
           !canManage && "pl-5",
           !rule.enabled && "opacity-60",
         )}
       >
         <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="font-mono text-xs text-muted-foreground tabular">
-            {String(position).padStart(2, "0")}
-          </span>
-          <span className="min-w-0 text-sm font-semibold break-words">{label}</span>
-          {inUse && (
-            <Badge className="bg-live/15 text-[11px] text-live">
-              <Trans>in use</Trans>
-            </Badge>
-          )}
+          <span className="min-w-0 text-sm font-semibold break-words">{t`While ${label} both have a feed`}</span>
         </span>
-        <span className="flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] text-muted-foreground">
-          {ROLES.map((role) => (
-            <span key={role} className="flex min-w-0 items-center gap-1.5">
-              <span className={cn("size-1.5 shrink-0 rounded-full", SCENE_ROLES[role].dot)} />
-              <span className="font-medium">{SCENE_ROLES[role].label}</span>
-              <span className="truncate">
-                {sceneName(obs, rule.scenes[role]) ?? t`server’s scene`}
-              </span>
-            </span>
-          ))}
+        <span className="text-xs text-muted-foreground">
+          {inUse ? t`Server combination · In use now` : t`Server combination`}
         </span>
+        {(["low", "offline"] as const).map(
+          (role) =>
+            rule.scenes[role] && (
+              <span
+                key={role}
+                className="text-xs text-muted-foreground"
+              >{t`${SCENE_ROLES[role].label}: ${sceneName(obs, rule.scenes[role]) ?? t`server’s scene`}`}</span>
+            ),
+        )}
         {warnings.map((warning) => (
           <span key={warning} className="flex gap-1.5 text-[13px] text-low">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
@@ -327,8 +312,26 @@ function RuleRow({
           </span>
         ))}
       </div>
+      <div className="w-full px-5 pb-3 sm:w-auto sm:px-2 sm:py-3">
+        <ScenePicker
+          label={label}
+          value={rule.scenes.live ?? null}
+          obs={obs}
+          disabled={!canManage || !obs || save.isPending}
+          onChange={(live) =>
+            save.mutate(
+              {
+                server_ids: rule.server_ids,
+                scenes: { ...rule.scenes, live },
+                enabled: rule.enabled,
+              },
+              { onError: (error) => toast.error(errorMessage(error)) },
+            )
+          }
+        />
+      </div>
       {canManage && (
-        <span className="flex shrink-0 items-center gap-1 pr-3">
+        <span className="flex shrink-0 items-center gap-1 px-3 pb-3 sm:pb-0">
           <Switch
             checked={rule.enabled}
             onCheckedChange={(enabled) =>

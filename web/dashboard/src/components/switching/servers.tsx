@@ -17,9 +17,9 @@ import {
 import { t } from "@lingui/core/macro";
 import { Plural, Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { GripVertical, Info, Plus, Server } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Link, useSearch } from "@tanstack/react-router";
+import { ChevronRight, GripVertical, Plus, Server } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import {
@@ -31,7 +31,7 @@ import {
 } from "@/api/queries";
 import type { StreamServer, StreamServerKind } from "@/api/types";
 import { DocsLink } from "@/components/docs-link";
-import { ScenePicker } from "@/components/scene-picker";
+import { Section } from "@/components/page";
 import { SecretUrlInput } from "@/components/secret-url-input";
 import {
   type DetailsForm,
@@ -41,7 +41,7 @@ import {
   sameDetails,
 } from "@/components/server-details-fields";
 import { ReadOnlyNotice } from "@/components/settings";
-import { SwitcherBody } from "@/components/switcher-page";
+import { SceneChoice as ScenePicker } from "@/components/switching/scene-choice";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,7 +53,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,10 +64,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useCreateStreamServer } from "@/hooks/use-create-stream-server";
-import { DESKTOP, useMediaQuery } from "@/hooks/use-media-query";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { errorMessage } from "@/lib/errors";
 import { formatKbps } from "@/lib/live-format";
@@ -97,14 +102,14 @@ export function ServersPage() {
   const maxServers = plan.data?.plan.max_stream_servers;
   const full = maxServers != null && (servers.data?.length ?? 0) >= maxServers;
   const live = useSwitcherLive(workspace.id, switcher.id);
-  const desktop = useMediaQuery(DESKTOP);
+  const search = useSearch({ strict: false });
   const [adding, setAdding] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // On phones the editor opens as a dialog instead of the side pane.
-  const [dialogOpen, setDialogOpen] = useState(false);
+  useEffect(() => {
+    if (search.server) setSelectedId(search.server);
+  }, [search.server]);
 
-  const selected =
-    servers.data?.find((server) => server.id === selectedId) ?? servers.data?.[0] ?? null;
+  const selected = servers.data?.find((server) => server.id === selectedId) ?? null;
   const status = live.status && !isStale(live.status) ? live.status : null;
 
   const readingOf = (server: StreamServer): Reading => {
@@ -114,9 +119,8 @@ export function ServersPage() {
       return { text: status?.obs_connected ? t`No feed` : t`Waiting for OBS`, tone: "idle" };
     const parts = [`${formatKbps(sample.bitrate)} kbps`];
     if (sample.rtt != null) parts.push(`${Math.round(sample.rtt)} ms`);
-    const inUse = server.id === status?.active_server_id;
-    if (inUse) parts.push(t`in use`);
-    return { text: parts.join(" · "), tone: inUse ? "live" : "idle" };
+    parts.push(sample.state === "offline" ? t`No feed` : t`receiving`);
+    return { text: parts.join(" · "), tone: sample.state === "offline" ? "idle" : "live" };
   };
 
   const sensors = useSensors(
@@ -159,7 +163,6 @@ export function ServersPage() {
 
   const select = (id: string) => {
     setSelectedId(id);
-    if (!desktop) setDialogOpen(true);
   };
 
   const editor = selected && (
@@ -170,16 +173,14 @@ export function ServersPage() {
       canManage={canManage}
       onRemoved={() => {
         setSelectedId(null);
-        setDialogOpen(false);
       }}
     />
   );
 
   return (
-    <SwitcherBody
-      title={t`Stream servers`}
+    <Section
+      title={t`Servers`}
       description={t`Where your encoder sends video. NOALBS uses the first one in the list that is receiving.`}
-      backToSettings
       actions={
         canManage && (
           <Button onClick={() => setAdding(true)} disabled={full}>
@@ -208,6 +209,9 @@ export function ServersPage() {
       )}
 
       {servers.isPending && <Skeleton className="h-20 rounded-2xl" />}
+      {servers.error && (
+        <p className="px-5 py-4 text-sm text-destructive">{errorMessage(servers.error)}</p>
+      )}
 
       {servers.data?.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-10 text-center">
@@ -236,71 +240,58 @@ export function ServersPage() {
       )}
 
       {servers.data && servers.data.length > 0 && (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
-          <section aria-label={t`Server order`} className="flex flex-col gap-2.5 lg:col-span-5">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <SortableContext
-                items={servers.data.map((server) => server.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <ol className="flex flex-col gap-2.5">
-                  {servers.data.map((server, index) => (
-                    <ServerRow
-                      key={server.id}
-                      server={server}
-                      position={index + 1}
-                      reading={readingOf(server)}
-                      selected={desktop && server.id === selected?.id}
-                      canManage={canManage}
-                      path={path}
-                      onSelect={() => select(server.id)}
-                    />
-                  ))}
-                </ol>
-              </SortableContext>
-            </DndContext>
-            <p className="flex gap-2 pt-1 text-[13px] leading-relaxed text-muted-foreground">
-              <Info className="mt-0.5 size-4 shrink-0" />
-              {servers.data.length === 1
-                ? t`Tip: add a second server as a backup uplink so NOALBS can fail over.`
-                : t`Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink.`}
-            </p>
-          </section>
-
-          {desktop && (
-            <section
-              aria-label={t`Server details`}
-              className="flex flex-col rounded-2xl border bg-card lg:col-span-7"
+        <section aria-label={t`Server order`}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext
+              items={servers.data.map((server) => server.id)}
+              strategy={verticalListSortingStrategy}
             >
-              {editor}
-            </section>
-          )}
-        </div>
+              <ol>
+                {servers.data.map((server, index) => (
+                  <ServerRow
+                    key={server.id}
+                    server={server}
+                    position={index + 1}
+                    reading={readingOf(server)}
+                    selected={server.id === selected?.id}
+                    inUse={server.id === status?.active_server_id}
+                    canManage={canManage}
+                    path={path}
+                    onSelect={() => select(server.id)}
+                  />
+                ))}
+              </ol>
+            </SortableContext>
+          </DndContext>
+        </section>
       )}
-
-      {!desktop && (
-        <Dialog open={dialogOpen && selected != null} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-h-[90dvh] gap-0 overflow-y-auto p-0">
-            <DialogHeader className="sr-only">
-              <DialogTitle>{selected?.name}</DialogTitle>
-              <DialogDescription>
-                <Trans>Change how NOALBS reaches this server.</Trans>
-              </DialogDescription>
-            </DialogHeader>
-            {editor}
-          </DialogContent>
-        </Dialog>
-      )}
+      <p className="border-t border-divider px-5 py-3 text-sm text-muted-foreground">{t`When no server has a feed, the BRB scene of the last one in use is shown. Click a server for its stats URL, test and scene overrides.`}</p>
+      <p className="px-5 pb-3 text-sm text-muted-foreground">
+        {servers.data?.length === 1
+          ? t`Tip: add a second server as a backup uplink so NOALBS can fail over.`
+          : t`Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink.`}
+      </p>
+      <Sheet
+        open={selected != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+      >
+        <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-xl">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{selected?.name}</SheetTitle>
+            <SheetDescription>
+              <Trans>Change how NOALBS reaches this server.</Trans>
+            </SheetDescription>
+          </SheetHeader>
+          <section aria-label={t`Server details`}>{editor}</section>
+        </SheetContent>
+      </Sheet>
 
       {canManage && (
-        <AddServerDialog
-          open={adding}
-          onOpenChange={setAdding}
-          path={path}
-          onAdded={(id) => setSelectedId(id)}
-        />
+        <AddServerDialog open={adding} onOpenChange={setAdding} path={path} onAdded={select} />
       )}
-    </SwitcherBody>
+    </Section>
   );
 }
 
@@ -309,6 +300,7 @@ function ServerRow({
   position,
   reading,
   selected,
+  inUse,
   canManage,
   path,
   onSelect,
@@ -317,6 +309,7 @@ function ServerRow({
   position: number;
   reading: Reading;
   selected: boolean;
+  inUse: boolean;
   canManage: boolean;
   path: Path;
   onSelect: () => void;
@@ -341,8 +334,8 @@ function ServerRow({
         transition,
       }}
       className={cn(
-        "flex items-stretch rounded-2xl border bg-card",
-        selected && "border-2 border-primary bg-primary-soft",
+        "flex items-stretch border-t border-divider",
+        selected && "bg-muted/40",
         isDragging && "relative z-10 border-primary shadow-2xl",
       )}
     >
@@ -372,33 +365,24 @@ function ServerRow({
             <span className="font-mono text-xs text-muted-foreground tabular">
               {String(position).padStart(2, "0")}
             </span>
-            <span className="truncate text-[15px] font-semibold">{server.name}</span>
+            <span className="min-w-0 break-words text-sm font-semibold">{server.name}</span>
           </span>
-          <KindBadge label={info.label} />
+          <span className="text-xs font-normal text-muted-foreground">{info.label}</span>
         </span>
         <span
           className={cn(
             "flex items-center gap-2 text-[13px]",
-            reading.tone === "live" && "text-live",
+            reading.tone === "live" && "text-muted-foreground",
             reading.tone === "idle" && "text-muted-foreground",
             reading.tone === "off" && "text-subtle-foreground",
           )}
         >
-          <span
-            className={cn(
-              "size-1.5 rounded-full",
-              reading.tone === "live"
-                ? "bg-live"
-                : reading.tone === "idle"
-                  ? "bg-idle"
-                  : "bg-border",
-            )}
-          />
           <span className="font-mono tabular">{reading.text}</span>
         </span>
       </button>
+      {inUse && <span className="self-center pr-3 text-xs text-muted-foreground">{t`In use`}</span>}
       {canManage && (
-        <span className="flex items-center pr-4 lg:hidden">
+        <span className="flex items-center pr-3">
           <Switch
             checked={server.enabled}
             onCheckedChange={(enabled) => toggle.mutate(enabled)}
@@ -407,15 +391,15 @@ function ServerRow({
           />
         </span>
       )}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label={t`Edit ${server.name}`}
+        className="px-2 text-muted-foreground"
+      >
+        <ChevronRight className="size-4" />
+      </button>
     </li>
-  );
-}
-
-function KindBadge({ label }: { label: string }) {
-  return (
-    <Badge className="bg-primary-soft text-[11px] tracking-wider text-primary-soft-foreground uppercase">
-      {label}
-    </Badge>
   );
 }
 
@@ -550,7 +534,7 @@ function ServerEditor({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-divider py-4 pr-12 pl-5 lg:px-5.5">
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="truncate text-lg font-semibold">{server.name}</span>
-          <KindBadge label={info.label} />
+          <span className="text-xs text-muted-foreground">{info.label}</span>
         </span>
         {canManage && (
           <span className="flex items-center gap-2.5 text-sm font-medium">

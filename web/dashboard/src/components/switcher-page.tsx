@@ -87,33 +87,17 @@ export function SwitcherPage({
   );
 }
 
-export function SwitcherBody({
-  children,
-  actions,
-}: {
-  children: ReactNode;
-  actions?: ReactNode;
-  title?: ReactNode;
-  description?: ReactNode;
-  className?: string;
-  backToSettings?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      {actions}
-      {children}
-    </div>
-  );
-}
 export function IndexedPage({
   sections,
   children,
+  lead,
   ...props
 }: {
   title: ReactNode;
   description?: ReactNode;
   children?: ReactNode;
-  sections: { id: string; title: string; content: ReactNode }[];
+  lead?: ReactNode;
+  sections: { id: string; title: string; count?: number; content: ReactNode }[];
 }) {
   const [active, setActive] = useState(sections[0]?.id);
   const hash = useLocation({ select: (location) => location.hash });
@@ -153,15 +137,19 @@ export function IndexedPage({
               onClick={() => setActive(s.id)}
               aria-current={active === s.id ? "location" : undefined}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted",
+                "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted",
                 active === s.id && "bg-muted font-semibold text-foreground",
               )}
             >
-              {s.title}
+              <span>{s.title}</span>
+              {s.count != null && (
+                <span className="font-display text-xs text-muted-foreground">{s.count}</span>
+              )}
             </a>
           ))}
         </nav>
         <div className="flex min-w-0 max-w-[940px] flex-col gap-4">
+          {lead}
           {sections.map((s) => (
             <div key={s.id} id={s.id} className="scroll-mt-24">
               {s.content}
