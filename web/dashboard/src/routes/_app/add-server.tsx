@@ -9,6 +9,7 @@ import { MinimalHeader } from "@/components/minimal-header";
 import { NoticeBanners } from "@/components/notice-banner";
 import { SecretUrlInput } from "@/components/secret-url-input";
 import { detailsForm, detailsInput, ServerDetailsFields } from "@/components/server-details-fields";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,12 +53,12 @@ function AddServerPage() {
       <MinimalHeader me={me} />
       <NoticeBanners />
       <main className="flex flex-1 items-center justify-center px-4 py-10">
-        <section className="flex w-full max-w-130 flex-col gap-5.5 rounded-3xl border bg-card p-6 md:p-8">
+        <section className="w-full max-w-xl overflow-hidden rounded-2xl border bg-card shadow-tile">
           {request ? (
             <AddServerForm request={request} />
           ) : (
-            <div className="flex flex-col gap-3">
-              <h1 className="text-lg font-semibold">
+            <div className="flex flex-col gap-3 px-5 py-4">
+              <h1 className="font-display text-lg font-bold">
                 <Trans>Nothing to add</Trans>
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -136,12 +137,12 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
+    <form onSubmit={submit} className="flex flex-col">
+      <div className="flex flex-col gap-1 px-5 py-4 wrap-anywhere">
         <span className="text-sm text-muted-foreground">
           <Trans>Add a stream server</Trans>
         </span>
-        <h1 className="text-2xl font-bold">{info.label}</h1>
+        <h1 className="font-display text-2xl font-extrabold">{info.label}</h1>
         <span className="text-sm text-muted-foreground">
           {host ? (
             <>
@@ -155,7 +156,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
         </span>
       </div>
 
-      <p className="flex gap-2.5 rounded-2xl border border-divider bg-sunken p-4 text-sm text-muted-foreground">
+      <p className="flex gap-2.5 border-t border-divider px-5 py-3 text-sm text-muted-foreground">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-low" />
         <span>
           <Trans>Only add servers you stream to</Trans>
@@ -163,7 +164,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
       </p>
 
       {eligible.length === 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 border-t border-divider px-5 py-3">
           <p className="text-sm text-muted-foreground">
             <Trans>
               You aren’t an admin or owner of any workspace, so you can’t add stream servers. Create
@@ -178,98 +179,114 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
+          <SettingsRow
+            label={
               <Label htmlFor="add-workspace">
                 <Trans>Workspace</Trans>
               </Label>
-              <Select
-                value={workspace?.id}
-                onValueChange={(next) => {
-                  setWorkspaceChoice(next);
-                  setSwitcherChoice(null);
-                }}
-              >
-                <SelectTrigger id="add-workspace" className="w-full">
+            }
+          >
+            <Select
+              value={workspace?.id}
+              onValueChange={(next) => {
+                setWorkspaceChoice(next);
+                setSwitcherChoice(null);
+              }}
+            >
+              <SelectTrigger id="add-workspace" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {eligible.map((candidate) => (
+                  <SelectItem key={candidate.id} value={candidate.id}>
+                    <span className="flex items-center gap-2">
+                      <WorkspaceTile seed={candidate.url_slug} name={candidate.name} size="sm" />
+                      {candidate.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+
+          <SettingsRow
+            label={
+              <Label htmlFor="add-switcher">
+                <Trans>Switcher</Trans>
+              </Label>
+            }
+          >
+            {switchers.isPending ? (
+              <Skeleton className="h-9" />
+            ) : switchers.data?.length ? (
+              <Select value={switcher?.id} onValueChange={setSwitcherChoice}>
+                <SelectTrigger id="add-switcher" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {eligible.map((candidate) => (
+                  {switchers.data.map((candidate) => (
                     <SelectItem key={candidate.id} value={candidate.id}>
-                      <span className="flex items-center gap-2">
-                        <WorkspaceTile seed={candidate.url_slug} name={candidate.name} size="sm" />
-                        {candidate.name}
-                      </span>
+                      {candidate.name}
+                      {candidate.paused && t` (paused)`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {switchers.error
+                  ? errorMessage(switchers.error)
+                  : t`This workspace has no switchers yet.`}
+              </p>
+            )}
+          </SettingsRow>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="add-switcher">
-                <Trans>Switcher</Trans>
+          <SettingsRow
+            label={
+              <Label htmlFor="add-name">
+                <Trans>Name</Trans>
               </Label>
-              {switchers.isPending ? (
-                <Skeleton className="h-9" />
-              ) : switchers.data?.length ? (
-                <Select value={switcher?.id} onValueChange={setSwitcherChoice}>
-                  <SelectTrigger id="add-switcher" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {switchers.data.map((candidate) => (
-                      <SelectItem key={candidate.id} value={candidate.id}>
-                        {candidate.name}
-                        {candidate.paused && t` (paused)`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {switchers.error
-                    ? errorMessage(switchers.error)
-                    : t`This workspace has no switchers yet.`}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="add-name">
-              <Trans>Name</Trans>
-            </Label>
+            }
+          >
             <Input
               id="add-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={60}
             />
-          </div>
+          </SettingsRow>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="add-stats-url">
-              <Trans>Stats URL</Trans>
-            </Label>
+          <SettingsRow
+            label={
+              <Label htmlFor="add-stats-url">
+                <Trans>Stats URL</Trans>
+              </Label>
+            }
+          >
             <SecretUrlInput
               id="add-stats-url"
               value={statsUrl}
               onChange={setStatsUrl}
               label={t`stats URL`}
             />
+          </SettingsRow>
+
+          <div className="flex flex-col gap-3 empty:hidden [&>*]:border-t [&>*]:border-divider [&>*]:px-5 [&>*]:py-3">
+            <ServerDetailsFields
+              kind={request.kind}
+              form={details}
+              onChange={setDetails}
+              idPrefix="add"
+            />
           </div>
 
-          <ServerDetailsFields
-            kind={request.kind}
-            form={details}
-            onChange={setDetails}
-            idPrefix="add"
-          />
+          {create.error && (
+            <p className="border-t border-divider px-5 py-3 text-sm text-destructive">
+              {errorMessage(create.error)}
+            </p>
+          )}
 
-          {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
-
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid gap-2.5 border-t border-divider px-5 py-3 sm:grid-cols-2">
             <Button asChild variant="outline" className="h-12 rounded-xl">
               <Link to="/" onClick={clearAddServer}>
                 <Trans>Cancel</Trans>

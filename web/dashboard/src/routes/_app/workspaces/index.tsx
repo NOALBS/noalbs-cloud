@@ -8,16 +8,10 @@ import { myWorkspacesQuery } from "@/api/queries";
 import type { MyWorkspace } from "@/api/types";
 import { Pager, SearchBox } from "@/components/admin/list-controls";
 import { Page } from "@/components/page";
+import { Row, RowList } from "@/components/row-list";
+import { SegmentedControl } from "@/components/segmented-control";
 import { StatusDot } from "@/components/switcher-status";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceTile } from "@/components/workspace-tile";
 import { MEMBER_ROLES, parseWorkspacesSearch } from "@/lib/my-workspaces";
@@ -91,73 +85,46 @@ function WorkspacesPage() {
     >
       <div className="flex flex-wrap items-center gap-2">
         <SearchBox value={q} onSearch={search} placeholder={t`Search by name or URL`} />
-        <Select
+        <SegmentedControl
+          label={t`State`}
           value={state ?? "any"}
           onValueChange={(value) =>
             filter({ state: CLIENT_STATES.find((candidate) => candidate === value) })
           }
-        >
-          <SelectTrigger className="w-40" aria-label={t`State`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">
-              <Trans>Any state</Trans>
-            </SelectItem>
-            {CLIENT_STATES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {clientStateLabels()[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
+          options={[
+            { value: "any", label: t`Any state` },
+            ...CLIENT_STATES.map((value) => ({ value, label: clientStateLabels()[value] })),
+          ]}
+        />
+        <SegmentedControl
+          label={t`Your role`}
           value={role ?? "any"}
           onValueChange={(value) => filter({ role: MEMBER_ROLES.find((r) => r === value) })}
-        >
-          <SelectTrigger className="w-36" aria-label={t`Your role`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">
-              <Trans>Any role</Trans>
-            </SelectItem>
-            {MEMBER_ROLES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {roleLabels()[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
+          options={[
+            { value: "any", label: t`Any role` },
+            ...MEMBER_ROLES.map((value) => ({ value, label: roleLabels()[value] })),
+          ]}
+        />
+        <SegmentedControl
+          label={t`Sort`}
           value={sort ?? "oldest"}
           onValueChange={(value) => filter({ sort: value === "name" ? "name" : undefined })}
-        >
-          <SelectTrigger className="w-36" aria-label={t`Sort`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {sorts().map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={sorts()}
+        />
       </div>
 
       {!workspaces.data ? (
         <Skeleton className="h-48 rounded-2xl" />
       ) : items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border bg-card px-5 py-8 text-center text-sm text-muted-foreground shadow-tile">
           {filtered ? t`No workspaces match.` : t`You’re not in any workspace yet.`}
         </p>
       ) : (
-        <ul className="flex flex-col overflow-hidden rounded-2xl border bg-card">
+        <RowList className="overflow-hidden rounded-2xl border bg-card shadow-tile">
           {items.map((item) => (
             <WorkspaceRow key={item.workspace.id} item={item} />
           ))}
-        </ul>
+        </RowList>
       )}
       {workspaces.data && (
         <Pager
@@ -180,31 +147,32 @@ function WorkspaceRow({ item }: { item: MyWorkspace }) {
   });
 
   return (
-    <li className="border-b border-divider last:border-b-0">
-      <Link
-        to="/$workspace"
-        params={{ workspace: workspace.url_slug }}
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-surface-2"
-      >
-        <WorkspaceTile seed={workspace.url_slug} name={workspace.name} />
-        <span className="flex min-w-0 flex-1 basis-56 flex-col">
-          <span className="truncate text-sm font-semibold">{workspace.name}</span>
-          <span className="truncate text-xs text-muted-foreground">
-            /{workspace.url_slug}
-            {workspace.managed_by && t` · managed by ${workspace.managed_by.name}`}
-          </span>
-        </span>
-        <span className="flex items-center gap-3 text-xs text-muted-foreground">
-          {workspace.role && <Badge variant="secondary">{roleLabels()[workspace.role]}</Badge>}
-          <span className="tabular font-mono">
-            {plural(workspace.switcher_count, { one: "# switcher", other: "# switchers" })}
-          </span>
-          <span className="flex min-w-28 items-center gap-1.5">
-            <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[status])} />
-            {clientStateLabels()[status]}
-          </span>
-        </span>
-      </Link>
-    </li>
+    <Row
+      className="relative first:border-t-0 hover:bg-surface-2"
+      lead={<WorkspaceTile seed={workspace.url_slug} name={workspace.name} />}
+      title={
+        <Link
+          to="/$workspace"
+          params={{ workspace: workspace.url_slug }}
+          className="after:absolute after:inset-0"
+        >
+          {workspace.name}
+        </Link>
+      }
+      meta={
+        <>
+          {workspace.role && <>{roleLabels()[workspace.role]} · </>}
+          {plural(workspace.switcher_count, { one: "# switcher", other: "# switchers" })}
+          {t` · Plan ${workspace.plan_code}`}
+          {` · /${workspace.url_slug}`}
+          {workspace.managed_by && t` · managed by ${workspace.managed_by.name}`}
+        </>
+      }
+    >
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <StatusDot className={cn("size-2.5", CLIENT_STATE_DOT[status])} />
+        {clientStateLabels()[status]}
+      </span>
+    </Row>
   );
 }

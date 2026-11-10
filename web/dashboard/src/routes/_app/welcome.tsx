@@ -2,12 +2,13 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, Link2, Loader2, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, Loader2, X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { meQuery, queryKeys, slugAvailableQuery, workspacesQuery } from "@/api/queries";
 import { MinimalHeader } from "@/components/minimal-header";
 import { NoticeBanners } from "@/components/notice-banner";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +43,7 @@ function WelcomePage() {
       <NoticeBanners />
       <main className="flex flex-1 flex-col items-center gap-10 px-4 pt-12 pb-16 md:pt-20">
         <div className="flex max-w-xl flex-col items-center gap-2.5 text-center">
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+          <h1 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">
             {firstRun ? (username ? t`Welcome, ${username}` : t`Welcome`) : t`Add a workspace`}
           </h1>
           <p className="text-muted-foreground">
@@ -52,10 +53,10 @@ function WelcomePage() {
           </p>
         </div>
 
-        <div className="grid w-full max-w-220 gap-5 md:grid-cols-2">
+        <section className="w-full max-w-2xl overflow-hidden rounded-2xl border bg-card shadow-tile">
           <CreateWorkspace autoFocus={mode !== "join"} />
           <JoinWorkspace autoFocus={mode === "join"} />
-        </div>
+        </section>
 
         {!firstRun && workspaces[0] && (
           <Link
@@ -102,12 +103,9 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5 rounded-2xl border bg-card p-6.5">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
-        <Plus className="size-5" />
-      </span>
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold">
+    <form onSubmit={submit} className="flex flex-col">
+      <div className="flex flex-col gap-1.5 px-5 py-4">
+        <h2 className="font-display text-xl font-bold">
           <Trans>Create a workspace</Trans>
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -115,10 +113,13 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="workspace-name">
-          <Trans>Workspace name</Trans>
-        </Label>
+      <SettingsRow
+        label={
+          <Label htmlFor="workspace-name">
+            <Trans>Workspace name</Trans>
+          </Label>
+        }
+      >
         <Input
           id="workspace-name"
           value={name}
@@ -128,14 +129,19 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
           autoFocus={autoFocus}
           className="h-11"
         />
-      </div>
+      </SettingsRow>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="workspace-slug">
-          <Trans>URL</Trans>
-        </Label>
-        <div className="flex h-11 items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
-          <span className="font-mono text-sm text-muted-foreground">{window.location.host}/</span>
+      <SettingsRow
+        label={
+          <Label htmlFor="workspace-slug">
+            <Trans>URL</Trans>
+          </Label>
+        }
+      >
+        <div className="flex h-11 w-full items-center rounded-md border border-input bg-transparent pl-3 focus-within:ring-[3px] focus-within:ring-ring/50">
+          <span className="max-w-1/2 truncate font-mono text-sm text-muted-foreground">
+            {window.location.host}/
+          </span>
           <input
             id="workspace-slug"
             value={slug}
@@ -168,18 +174,24 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
             </>
           ) : null}
         </p>
+      </SettingsRow>
+
+      {create.error && (
+        <p className="px-5 py-3 text-sm text-destructive">{errorMessage(create.error)}</p>
+      )}
+
+      <div className="border-t border-divider px-5 py-3">
+        <Button
+          type="submit"
+          size="lg"
+          className="h-11 w-full sm:w-auto"
+          disabled={
+            !name.trim() || slug.length < SLUG_MIN_LENGTH || unavailable || create.isPending
+          }
+        >
+          {create.isPending ? t`Creating…` : t`Create workspace`}
+        </Button>
       </div>
-
-      {create.error && <p className="text-sm text-destructive">{errorMessage(create.error)}</p>}
-
-      <Button
-        type="submit"
-        size="lg"
-        className="mt-auto h-12 rounded-xl"
-        disabled={!name.trim() || slug.length < SLUG_MIN_LENGTH || unavailable || create.isPending}
-      >
-        {create.isPending ? t`Creating…` : t`Create workspace`}
-      </Button>
     </form>
   );
 }
@@ -200,12 +212,9 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5 rounded-2xl border bg-card p-6.5">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-live/15 text-live">
-        <Link2 className="size-5" />
-      </span>
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold">
+    <form onSubmit={submit} className="flex flex-col border-t border-divider">
+      <div className="flex flex-col gap-1.5 px-5 py-4">
+        <h2 className="font-display text-xl font-bold">
           <Trans>Join with an invite</Trans>
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -213,10 +222,13 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="invite-link">
-          <Trans>Invite link</Trans>
-        </Label>
+      <SettingsRow
+        label={
+          <Label htmlFor="invite-link">
+            <Trans>Invite link</Trans>
+          </Label>
+        }
+      >
         <Input
           id="invite-link"
           value={link}
@@ -234,17 +246,19 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
             ? t`That doesn’t look like an invite link.`
             : t`Invites expire, so ask for a new one if it doesn’t work.`}
         </p>
-      </div>
+      </SettingsRow>
 
-      <Button
-        type="submit"
-        size="lg"
-        variant="outline"
-        className="mt-auto h-12 rounded-xl"
-        disabled={!link.trim()}
-      >
-        <Trans>Continue</Trans>
-      </Button>
+      <div className="border-t border-divider px-5 py-3">
+        <Button
+          type="submit"
+          size="lg"
+          variant="outline"
+          className="h-11 w-full sm:w-auto"
+          disabled={!link.trim()}
+        >
+          <Trans>Continue</Trans>
+        </Button>
+      </div>
     </form>
   );
 }

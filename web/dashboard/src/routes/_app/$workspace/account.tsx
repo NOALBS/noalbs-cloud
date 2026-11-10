@@ -9,6 +9,8 @@ import { api, unwrap } from "@/api/client";
 import { providersQuery, queryKeys, sessionsQuery } from "@/api/queries";
 import type { Connection, Session } from "@/api/types";
 import { Page, Section } from "@/components/page";
+import { Row, RowList } from "@/components/row-list";
+import { SettingsRow } from "@/components/settings-row";
 import { TypeToConfirm } from "@/components/type-to-confirm";
 import {
   AlertDialog,
@@ -21,7 +23,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { providerLabel, UserAvatar } from "@/components/user-avatar";
@@ -95,73 +96,66 @@ function YourData({ username }: { username: string }) {
   });
 
   return (
-    <Section
-      title={t`Your data`}
-      description={
-        <>
-          <Trans>
-            What we keep and why is in the{" "}
-            <a href="/privacy" className="font-medium text-primary hover:underline">
-              privacy policy
-            </a>
-            ; the rules for using NOALBS Cloud are in the{" "}
-            <a href="/terms" className="font-medium text-primary hover:underline">
-              terms of service
-            </a>
-            .
-          </Trans>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-5 px-5 pb-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">
-              <Trans>Download my data</Trans>
-            </span>
-            <span className="text-sm text-muted-foreground">
-              <Trans>
-                Your account, sign-ins, workspaces, switchers and their settings, and what you did
-                in teams and chat, as a JSON file. It holds your stats URLs and stream keys: keep it
-                private.
-              </Trans>
-            </span>
-          </span>
+    <>
+      <Section
+        title={t`Your data`}
+        description={
+          <>
+            <Trans>
+              What we keep and why is in the{" "}
+              <a href="/privacy" className="font-medium text-primary hover:underline">
+                privacy policy
+              </a>
+              ; the rules for using NOALBS Cloud are in the{" "}
+              <a href="/terms" className="font-medium text-primary hover:underline">
+                terms of service
+              </a>
+              .
+            </Trans>
+          </>
+        }
+      >
+        <SettingsRow
+          label={t`Download my data`}
+          description={
+            <Trans>
+              Your account, sign-ins, workspaces, switchers and their settings, and what you did in
+              teams and chat, as a JSON file. It holds your stats URLs and stream keys: keep it
+              private.
+            </Trans>
+          }
+        >
           <Button variant="outline" disabled={download.isPending} onClick={() => download.mutate()}>
             <Download />
             <Trans>Download</Trans>
           </Button>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">
-              <Trans>Download stream history</Trans>
-            </span>
-            <span className="text-sm text-muted-foreground">
-              <Trans>
-                The stream history, stats, markers and activity log of your own switchers, one JSON
-                object per line. It can be large.
-              </Trans>
-            </span>
-          </span>
+        </SettingsRow>
+        <SettingsRow
+          label={t`Download stream history`}
+          description={
+            <Trans>
+              The stream history, stats, markers and activity log of your own switchers, one JSON
+              object per line. It can be large.
+            </Trans>
+          }
+        >
           <Button variant="outline" asChild>
             <a href="/api/me/export/history" download>
               <Download />
               <Trans>Download</Trans>
             </a>
           </Button>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-5">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">
-              <Trans>Delete account</Trans>
-            </span>
-            <span className="text-sm text-muted-foreground">
-              <Trans>
-                Removes your account and every workspace you own on your own. This can’t be undone.
-              </Trans>
-            </span>
-          </span>
+        </SettingsRow>
+      </Section>
+      <Section title={t`Delete account`}>
+        <SettingsRow
+          label={t`Delete account`}
+          description={
+            <Trans>
+              Removes your account and every workspace you own on your own. This can’t be undone.
+            </Trans>
+          }
+        >
           <TypeToConfirm
             trigger={t`Delete account`}
             title={t`Delete your account?`}
@@ -190,9 +184,9 @@ function YourData({ username }: { username: string }) {
               window.location.assign("/");
             }}
           />
-        </div>
-      </div>
-    </Section>
+        </SettingsRow>
+      </Section>
+    </>
   );
 }
 
@@ -209,50 +203,43 @@ function ConnectedAccounts({ connections }: { connections: Connection[] }) {
       title={t`Connected accounts`}
       description={t`Sign in with any of these. Connect both to keep a way in if one has trouble.`}
     >
-      <ul>
-        {PLATFORMS.map((platform) => {
+      <RowList>
+        {PLATFORMS.flatMap((platform) => {
           const linked = connections.filter((item) => item.provider === platform.provider);
           const available = providers.data?.[platform.path] ?? false;
-          return (
-            <li key={platform.provider} className="border-t border-divider">
-              {linked.map((connection) => (
-                <ConnectionRow
-                  key={connection.id}
-                  connection={connection}
-                  onlyOne={connections.length === 1}
-                />
-              ))}
-              {linked.length === 0 && (
-                <div className="flex min-h-16 flex-wrap items-center gap-3 px-5 py-3">
-                  <span className="flex flex-1 flex-col gap-0.5">
-                    <span className="font-semibold">{platform.label}</span>
-                    <span className="text-sm text-muted-foreground">
-                      <Trans>Not connected</Trans>
-                    </span>
-                  </span>
-                  {available ? (
-                    <a
-                      href={`/api/auth/link/${platform.path}?redirect=${encodeURIComponent(returnTo)}`}
-                      className={`flex h-9 items-center rounded-lg px-3.5 text-sm font-semibold ${platform.button}`}
-                    >
-                      <Trans>Connect {platform.label}</Trans>
-                    </a>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      {providers.isPending ? "…" : t`Not available on this server`}
-                    </span>
-                  )}
-                </div>
+          return linked.length > 0 ? (
+            linked.map((connection) => (
+              <ConnectionRow
+                key={connection.id}
+                connection={connection}
+                onlyOne={connections.length === 1}
+              />
+            ))
+          ) : (
+            <Row key={platform.provider} title={platform.label} meta={t`Not connected`}>
+              {available ? (
+                <a
+                  href={`/api/auth/link/${platform.path}?redirect=${encodeURIComponent(returnTo)}`}
+                  className="flex h-9 items-center rounded-lg border px-3.5 text-sm font-semibold hover:bg-accent"
+                >
+                  <Trans>Connect {platform.label}</Trans>
+                </a>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {providers.isPending ? "…" : t`Not available on this server`}
+                </span>
               )}
-            </li>
+            </Row>
           );
         })}
         {others.map((connection) => (
-          <li key={connection.id} className="border-t border-divider">
-            <ConnectionRow connection={connection} onlyOne={connections.length === 1} />
-          </li>
+          <ConnectionRow
+            key={connection.id}
+            connection={connection}
+            onlyOne={connections.length === 1}
+          />
         ))}
-      </ul>
+      </RowList>
     </Section>
   );
 }
@@ -279,20 +266,21 @@ function ConnectionRow({ connection, onlyOne }: { connection: Connection; onlyOn
   });
 
   return (
-    <div className="flex min-h-16 flex-wrap items-center gap-3 px-5 py-3">
-      <UserAvatar name={connection.username} avatarUrl={connection.avatar_url} />
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-2 font-semibold">
+    <Row
+      lead={<UserAvatar name={connection.username} avatarUrl={connection.avatar_url} />}
+      title={
+        <span className="flex flex-wrap items-center gap-2">
           {label}
           <span className="truncate font-normal text-muted-foreground">{connection.username}</span>
         </span>
-        <span className="text-sm text-muted-foreground">
-          <Trans>
-            Connected {formatDate(connection.connected_at)}
-            {onlyOne && t` · your only way to sign in`}
-          </Trans>
-        </span>
-      </span>
+      }
+      meta={
+        <Trans>
+          Connected {formatDate(connection.connected_at)}
+          {onlyOne && t` · your only way to sign in`}
+        </Trans>
+      }
+    >
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="outline" size="sm" disabled={onlyOne || disconnect.isPending}>
@@ -323,7 +311,7 @@ function ConnectionRow({ connection, onlyOne }: { connection: Connection; onlyOn
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Row>
   );
 }
 
@@ -387,11 +375,11 @@ function Sessions() {
       {sessions.isError && (
         <p className="px-5 pb-5 text-sm text-destructive">{errorMessage(sessions.error)}</p>
       )}
-      <ul aria-label={t`Sessions`}>
+      <RowList aria-label={t`Sessions`}>
         {sessions.data?.map((session) => (
           <SessionRow key={session.id} session={session} />
         ))}
-      </ul>
+      </RowList>
     </Section>
   );
 }
@@ -416,27 +404,26 @@ function SessionRow({ session }: { session: Session }) {
   });
 
   return (
-    <li className="flex min-h-16 flex-wrap items-center gap-3 border-t border-divider px-5 py-3">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted-foreground">
-        <Icon className="size-4.5" />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-2 font-semibold">
+    <Row
+      lead={<Icon className="size-5 text-muted-foreground" />}
+      title={
+        <span className="flex flex-wrap items-center gap-2">
           {device.label}
           {session.current && (
-            <Badge variant="secondary">
+            <span className="text-xs font-normal text-muted-foreground">
               <Trans>This browser</Trans>
-            </Badge>
+            </span>
           )}
         </span>
-        <span className="text-sm text-muted-foreground">
-          <Trans>
-            {providerLabel(session.provider)} ·{" "}
-            {session.current ? t`Active now` : t`Active ${formatRelative(session.last_used_at)}`} ·
-            Signed in {formatDate(session.created_at)}
-          </Trans>
-        </span>
-      </span>
+      }
+      meta={
+        <Trans>
+          {providerLabel(session.provider)} ·{" "}
+          {session.current ? t`Active now` : t`Active ${formatRelative(session.last_used_at)}`} ·
+          Signed in {formatDate(session.created_at)}
+        </Trans>
+      }
+    >
       {!session.current && (
         <Button
           variant="outline"
@@ -447,6 +434,6 @@ function SessionRow({ session }: { session: Session }) {
           <Trans>Sign out</Trans>
         </Button>
       )}
-    </li>
+    </Row>
   );
 }

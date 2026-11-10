@@ -14,6 +14,7 @@ import {
 } from "@/api/queries";
 import { MinimalHeader } from "@/components/minimal-header";
 import { NoticeBanners } from "@/components/notice-banner";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -88,12 +89,12 @@ function ConnectPairingPage() {
       <MinimalHeader me={me} />
       <NoticeBanners />
       <main className="flex flex-1 items-center justify-center px-4 py-10">
-        <section className="flex w-full max-w-xl flex-col gap-5 rounded-3xl border bg-card p-6 md:p-8">
+        <section className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border bg-card shadow-tile [&>*]:px-5 [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider">
           <div className="flex flex-col gap-1">
             <span className="text-sm text-muted-foreground">
               <Trans>NOALBS Cloud Connect</Trans>
             </span>
-            <h1 className="text-2xl font-bold">
+            <h1 className="font-display text-2xl font-extrabold">
               {confirmed ? t`Computer connected` : t`Connect this computer`}
             </h1>
           </div>
@@ -120,17 +121,17 @@ function ConnectPairingPage() {
             />
           )}
           {confirmed && (
-            <p className="rounded-2xl border border-live/30 bg-live/5 p-4 text-sm">
+            <p className="text-sm">
               <Trans>You can close this tab; Connect is now connected.</Trans>
             </p>
           )}
           {code && preview.data && !confirmed && (
             <>
-              <div className="rounded-2xl border border-divider bg-sunken p-4">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <div className="wrap-anywhere">
+                <p className="text-xs text-muted-foreground">
                   <Trans>Computer requesting access</Trans>
                 </p>
-                <p className="mt-1 text-lg font-semibold">{preview.data.name}</p>
+                <p className="mt-1 text-sm font-semibold">{preview.data.name}</p>
                 <p className="text-sm text-muted-foreground">
                   {preview.data.os} · {preview.data.app_version}
                 </p>
@@ -144,10 +145,13 @@ function ConnectPairingPage() {
                 />
               ) : (
                 <>
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="connect-workspace" className="text-sm font-medium">
-                      <Trans>Workspace</Trans>
-                    </label>
+                  <SettingsRow
+                    label={
+                      <label htmlFor="connect-workspace" className="text-sm font-medium">
+                        <Trans>Workspace</Trans>
+                      </label>
+                    }
+                  >
                     <Select
                       value={workspace?.id}
                       onValueChange={(id) => {
@@ -166,12 +170,15 @@ function ConnectPairingPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                  </SettingsRow>
 
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="connect-switcher" className="text-sm font-medium">
-                      <Trans>Switcher</Trans>
-                    </label>
+                  <SettingsRow
+                    label={
+                      <label htmlFor="connect-switcher" className="text-sm font-medium">
+                        <Trans>Switcher</Trans>
+                      </label>
+                    }
+                  >
                     <Select
                       value={switcher?.id}
                       onValueChange={setSwitcherChoice}
@@ -191,7 +198,7 @@ function ConnectPairingPage() {
                     {switchers.error && (
                       <p className="text-sm text-destructive">{errorMessage(switchers.error)}</p>
                     )}
-                  </div>
+                  </SettingsRow>
 
                   {confirm.error && (
                     <p className="text-sm text-destructive">
@@ -200,7 +207,7 @@ function ConnectPairingPage() {
                         : errorMessage(confirm.error)}
                     </p>
                   )}
-                  <p className="flex items-start gap-2 rounded-xl border border-low/30 bg-low/5 p-3 text-sm text-muted-foreground">
+                  <p className="flex items-start gap-2 text-sm text-muted-foreground">
                     <ShieldAlert className="mt-0.5 size-4 shrink-0 text-low" aria-hidden="true" />
                     <Trans>
                       Only continue if NOALBS Cloud Connect is showing this code on your own
@@ -208,13 +215,15 @@ function ConnectPairingPage() {
                       be able to control OBS for this switcher.
                     </Trans>
                   </p>
-                  <Button
-                    className="h-11 rounded-xl"
-                    onClick={() => confirm.mutate()}
-                    disabled={!switcher || confirm.isPending}
-                  >
-                    {confirm.isPending ? t`Connecting…` : t`Connect to this switcher`}
-                  </Button>
+                  <div>
+                    <Button
+                      className="h-11 rounded-xl"
+                      onClick={() => confirm.mutate()}
+                      disabled={!switcher || confirm.isPending}
+                    >
+                      {confirm.isPending ? t`Connecting…` : t`Connect to this switcher`}
+                    </Button>
+                  </div>
                 </>
               )}
             </>
@@ -227,7 +236,7 @@ function ConnectPairingPage() {
 
 function PairingProblem({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-divider p-4">
+    <div className="flex flex-col gap-1">
       <p className="font-semibold">{title}</p>
       <p className="text-sm text-muted-foreground">{detail}</p>
     </div>

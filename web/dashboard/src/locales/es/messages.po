@@ -31,6 +31,11 @@ msgstr " · Gestionado por {0}"
 msgid " · own chat bot"
 msgstr " · bot de chat propio"
 
+#. placeholder {0}: workspace.plan_code
+#: src/routes/_app/workspaces/index.tsx
+msgid " · Plan {0}"
+msgstr ""
+
 #: src/components/app-shell.tsx
 msgid " · Staff"
 msgstr " · Personal"

@@ -7,6 +7,8 @@ import { ApiRequestError, api, unwrap } from "@/api/client";
 import { invitePreviewQuery, meQuery, queryKeys } from "@/api/queries";
 import { MinimalHeader } from "@/components/minimal-header";
 import { NoticeBanners } from "@/components/notice-banner";
+import { Row, RowList } from "@/components/row-list";
+import { SettingsRow } from "@/components/settings-row";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { providerLabel, UserAvatar } from "@/components/user-avatar";
@@ -58,7 +60,7 @@ function InvitePage() {
       <MinimalHeader me={me} />
       <NoticeBanners />
       <main className="flex flex-1 items-center justify-center px-4 py-10">
-        <section className="flex w-full max-w-115 flex-col gap-5.5 rounded-3xl border bg-card p-6 md:p-8">
+        <section className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border bg-card shadow-tile [&>*]:px-5 [&>*]:py-3 [&>*+*]:border-t [&>*+*]:border-divider">
           {preview.isPending && <InviteSkeleton />}
 
           {preview.error && (
@@ -80,7 +82,7 @@ function InvitePage() {
                   name={preview.data.workspace_name}
                   size="lg"
                 />
-                <div className="flex flex-col gap-1">
+                <div className="flex min-w-0 flex-col gap-1 wrap-anywhere">
                   <span className="text-sm text-muted-foreground">
                     {preview.data.invited_by ? (
                       <>
@@ -95,7 +97,9 @@ function InvitePage() {
                       t`You’re invited to`
                     )}
                   </span>
-                  <span className="text-2xl font-bold">{preview.data.workspace_name}</span>
+                  <h1 className="font-display text-2xl font-extrabold">
+                    {preview.data.workspace_name}
+                  </h1>
                 </div>
               </div>
 
@@ -125,34 +129,32 @@ function InvitePage() {
                 />
               ) : (
                 <>
-                  <div className="flex flex-col gap-3 rounded-2xl border border-divider bg-sunken p-4">
-                    <span className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">
-                        <Trans>You’ll join as</Trans>
-                      </span>
-                      <span className="rounded-md bg-primary-soft px-2 py-0.5 text-xs font-bold tracking-wider text-primary-soft-foreground uppercase">
+                  <div className="px-0! py-0!">
+                    <SettingsRow label={t`You’ll join as`}>
+                      <span className="text-sm text-muted-foreground">
                         {roleLabels()[preview.data.role]}
                       </span>
-                    </span>
-                    {roleAbilities()[preview.data.role].can.map((line) => (
-                      <span key={line} className="flex items-center gap-2.5 text-sm">
-                        <Check className="size-4 text-live" />
-                        {line}
-                      </span>
-                    ))}
-                    {roleAbilities()[preview.data.role].cannot.map((line) => (
-                      <span
-                        key={line}
-                        className="flex items-center gap-2.5 text-sm text-muted-foreground"
-                      >
-                        <X className="size-4" />
-                        {line}
-                      </span>
-                    ))}
+                    </SettingsRow>
+                    <RowList>
+                      {roleAbilities()[preview.data.role].can.map((line) => (
+                        <Row
+                          key={line}
+                          lead={<Check className="size-4 text-muted-foreground" />}
+                          title={<span className="font-normal">{line}</span>}
+                        />
+                      ))}
+                      {roleAbilities()[preview.data.role].cannot.map((line) => (
+                        <Row
+                          key={line}
+                          lead={<X className="size-4 text-muted-foreground" />}
+                          title={<span className="font-normal text-muted-foreground">{line}</span>}
+                        />
+                      ))}
+                    </RowList>
                   </div>
 
                   {preview.data.managed_by && (
-                    <p className="rounded-2xl border border-divider p-4 text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       <Trans>
                         <span className="font-semibold text-foreground">
                           {preview.data.managed_by}
@@ -165,7 +167,7 @@ function InvitePage() {
                   )}
 
                   <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-2">
+                    <span className="flex min-w-0 flex-wrap items-center gap-2">
                       <UserAvatar
                         name={connection?.username}
                         avatarUrl={connection?.avatar_url}
@@ -181,7 +183,7 @@ function InvitePage() {
                     <p className="text-sm text-destructive">{errorMessage(accept.error)}</p>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <Button asChild variant="outline" className="h-12 rounded-xl">
                       <Link to="/">
                         <Trans>Decline</Trans>
@@ -219,7 +221,7 @@ function Problem({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-lg font-semibold">{title}</h1>
+      <h1 className="font-display text-lg font-bold">{title}</h1>
       <p className="text-sm text-muted-foreground">{detail}</p>
       {action ?? (
         <Button asChild variant="outline" className="h-11 rounded-xl">
