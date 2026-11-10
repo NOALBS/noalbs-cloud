@@ -12,7 +12,7 @@ import { ALL_DEVICES, phoneStorageKey } from "./layout";
 import { PhoneSections, PhoneStatus } from "./phone";
 import { PhoneActions, PhoneStreamButton } from "./phone-actions";
 import { PhoneScenes } from "./phone-scenes";
-import type { ObsControls } from "./quick-actions";
+import { type ObsControls, RecordButton } from "./quick-actions";
 import { useLiveLayout } from "./use-live-layout";
 
 let root: Root;
@@ -75,6 +75,7 @@ const status: SwitcherStatus = {
 function controls() {
   return {
     stream: { mutate: vi.fn(), isPending: false },
+    record: { mutate: vi.fn(), isPending: false },
     fix: { mutate: vi.fn(), isPending: false },
     autoSwitch: { mutate: vi.fn(), isPending: false },
     marker: { mutate: vi.fn(), isPending: false },
@@ -105,6 +106,50 @@ it("reorders and hides phone sections through settings and restores the saved or
       { id: "activity", hidden: false },
     ],
   });
+});
+
+it("shows compact recording in the phone status card, outside the four-slot bar, and respects disabled and pending controls", () => {
+  const obs = controls();
+  const phone = (disabled: boolean) => (
+    <>
+      <PhoneStatus
+        state="live"
+        status={status}
+        servers={[]}
+        activeServer={undefined}
+        live={initialLiveState}
+        now={Date.now()}
+        low={1000}
+        offline={300}
+        scenesSet
+        narrow
+        paused={disabled}
+        record={
+          <RecordButton controls={obs} status={status} disabled={disabled} variant="compact" />
+        }
+      />
+      <PhoneActions
+        controls={obs}
+        status={status}
+        disabled={disabled}
+        canControl={!disabled}
+        autoSwitchSetting
+      />
+    </>
+  );
+  render(phone(false));
+  expect(button("Record").closest("section")?.getAttribute("aria-label")).toBe("Stream status");
+  expect(host.querySelectorAll('[aria-label="Live controls"] button')).toHaveLength(4);
+  expect(button("Record").disabled).toBe(false);
+  click("Record");
+  expect(obs.record.mutate).toHaveBeenCalledExactlyOnceWith(true);
+  render(phone(true));
+  expect(button("Record").disabled).toBe(true);
+  click("Record");
+  expect(obs.record.mutate).toHaveBeenCalledTimes(1);
+  obs.record.isPending = true;
+  render(phone(false));
+  expect(button("Record").disabled).toBe(true);
 });
 
 it("requires stop confirmation in a bottom sheet, cancellation does nothing, and confirm stops once", () => {

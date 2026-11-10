@@ -333,6 +333,14 @@ function LivePage() {
       ) : !desktop ? (
         <>
           <PhoneStatus
+            record={
+              <RecordButton
+                controls={controls}
+                status={status}
+                disabled={disabled}
+                variant="compact"
+              />
+            }
             state={state}
             status={status}
             servers={servers.data ?? []}

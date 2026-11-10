@@ -64,7 +64,8 @@ export function PhoneStatus({
   live,
   now,
   paused,
-}: ComponentProps<typeof LiveHero>) {
+  record,
+}: ComponentProps<typeof LiveHero> & { record?: ReactNode }) {
   const look = lookFor(status);
   const sample = activeServer && status?.obs_connected ? latest(live, activeServer.id) : undefined;
   const neutral = [
@@ -171,6 +172,7 @@ export function PhoneStatus({
           className="mt-2"
         />
       )}
+      {record && <div className="mt-3 flex justify-end border-t border-divider pt-3">{record}</div>}
     </section>
   );
 }
