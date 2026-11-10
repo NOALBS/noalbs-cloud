@@ -4113,9 +4113,7 @@ msgid "History days"
 msgstr "기록 보관 일수"
 
 #: src/components/app-shell.tsx
-#: src/components/home-shell.tsx
 #: src/components/minimal-header.tsx
-#: src/components/top-bar.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Home"
 msgstr "홈"
