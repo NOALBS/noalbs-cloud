@@ -47,7 +47,7 @@ export function Section({
 }) {
   return (
     <section className={cn("rounded-2xl border bg-card shadow-tile", className)}>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-divider px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-base font-bold">{title}</h2>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}

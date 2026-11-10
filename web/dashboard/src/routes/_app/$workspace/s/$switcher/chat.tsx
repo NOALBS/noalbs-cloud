@@ -125,7 +125,7 @@ function ChatPage() {
           content: (
             <Section
               title={t`Commands`}
-              description={t`Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in.`}
+              description={t`Turn commands on or off, choose who can use them and add aliases. Each role includes the ones above it, so a Subscribers command also works for VIPs, moderators and admins. Admins are the channel owner and this workspace’s members.`}
               actions={
                 <div
                   role="radiogroup"

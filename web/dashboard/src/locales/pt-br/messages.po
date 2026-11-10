@@ -10462,8 +10462,8 @@ msgid "Turn <0>Enabled</0> on under <1>Streamer</1>."
 msgstr "Ligue <0>Enabled</0> em <1>Streamer</1>."
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-msgid "Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in."
-msgstr "Ligue ou desligue comandos, escolha quem pode usá-los e adicione nomes mais curtos. As funções se somam (Todos → Inscritos → VIPs → Moderadores → Administradores): um comando para Inscritos também funciona para VIPs, moderadores e administradores. Administradores são o proprietário do canal e todos os membros deste workspace, nas contas vinculadas ao login do NOALBS deles."
+msgid "Turn commands on or off, choose who can use them and add aliases. Each role includes the ones above it, so a Subscribers command also works for VIPs, moderators and admins. Admins are the channel owner and this workspace’s members."
+msgstr ""
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
