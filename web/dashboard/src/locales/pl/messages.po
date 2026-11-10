@@ -854,6 +854,10 @@ msgstr "Statystyki {label}"
 msgid "{label}: {used} of {max}"
 msgstr "{label}: {used} z {max}"
 
+#: src/components/usage-bar.tsx
+msgid "{label}: {used} of {max}, full"
+msgstr ""
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "{level} until {until}"
 msgstr "{level} do {until}"
@@ -3828,6 +3832,10 @@ msgstr "z Connect"
 #: src/lib/live-format.ts
 msgid "from the dashboard"
 msgstr "z panelu"
+
+#: src/components/usage-bar.tsx
+msgid "Full"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Full program path"

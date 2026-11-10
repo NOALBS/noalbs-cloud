@@ -205,7 +205,6 @@ function PlanPage() {
                 <span className="font-display text-sm font-bold tabular">
                   {plural(data.plan.history_days, { one: "# day", other: "# days" })}
                 </span>
-                <div className="h-1 rounded-full bg-foreground/55" />
               </div>
             </>
           ) : (

@@ -854,6 +854,10 @@ msgstr "{label} 統計資料"
 msgid "{label}: {used} of {max}"
 msgstr "{label}：{used} / {max}"
 
+#: src/components/usage-bar.tsx
+msgid "{label}: {used} of {max}, full"
+msgstr ""
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "{level} until {until}"
 msgstr "{level}，至 {until} 為止"
@@ -3828,6 +3832,10 @@ msgstr "透過 Connect"
 #: src/lib/live-format.ts
 msgid "from the dashboard"
 msgstr "從儀表板"
+
+#: src/components/usage-bar.tsx
+msgid "Full"
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Full program path"

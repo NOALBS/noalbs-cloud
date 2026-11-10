@@ -101,12 +101,18 @@ describe("settings primitives", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps usage neutral at zero, at and beyond limits, and without a limit", () => {
+  it("keeps usage bars neutral and labels a full limit", () => {
     for (const used of [0, 3, 4]) {
       const html = renderToStaticMarkup(<UsageBar label="Members" used={used} max={3} />);
       expect(html).toContain(`Members: ${used} of 3`);
       expect(html).toContain("bg-foreground/55");
       expect(html).not.toContain("bg-low");
+      if (used >= 3) {
+        expect(html).toContain("text-low");
+        expect(html).toContain(`Members: ${used} of 3, full`);
+      } else {
+        expect(html).not.toContain("text-low");
+      }
     }
     expect(renderToStaticMarkup(<UsageBar label="Members" used={0} max={null} />)).toContain(
       "Members",
