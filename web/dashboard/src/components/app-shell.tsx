@@ -38,6 +38,8 @@ import {
 } from "@/api/queries";
 import type { Me, Organization, SwitcherSummary, Workspace } from "@/api/types";
 import { NoticeBanners } from "@/components/notice-banner";
+import { AttentionCount } from "@/components/operator/attention-count";
+import { SwitcherRail } from "@/components/operator/switcher-rail";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -171,6 +173,7 @@ export function AppShell({
         }
         right={
           <>
+            <AttentionCount workspace={workspace} switchers={switchers.data} actor={actor} />
             {inSwitcher && current && (
               <ConnectChip desktop workspace={workspace} switcher={current} actor={actor} />
             )}
@@ -259,7 +262,14 @@ export function AppShell({
             <MissingCardBanner workspace={workspace} />
           </>
         )}
-        <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        <SwitcherRail
+          workspace={workspace}
+          switchers={switchers.data}
+          actor={actor}
+          currentId={inSwitcher ? current?.id : undefined}
+        >
+          <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        </SwitcherRail>
 
         <nav
           aria-label={t`Primary`}
