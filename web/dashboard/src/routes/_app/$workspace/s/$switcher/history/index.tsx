@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, History } from "lucide-react";
 import { streamsQuery, workspacePlanQuery } from "@/api/queries";
 import type { StreamSummary } from "@/api/types";
+import { HistorySummary } from "@/components/history/history-summary";
 import { StateBar } from "@/components/history/state-bar";
 import { SwitcherPage } from "@/components/switcher-page";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +28,7 @@ function HistoryPage() {
       title={t`History`}
       description={t`Every stream from start to stop: how the feed held up, and what switched.`}
     >
+      {streams.isSuccess && <HistorySummary streams={all} partial={Boolean(streams.hasNextPage)} />}
       {streams.isPending && (
         <div className="flex flex-col gap-2.5">
           <Skeleton className="h-20" />
@@ -53,7 +55,7 @@ function HistoryPage() {
       {groupByDay(all).map((group) => (
         <section key={group.key} aria-label={group.label} className="flex flex-col gap-2.5">
           <h2 className="text-sm font-semibold text-muted-foreground">{group.label}</h2>
-          <ol className="flex flex-col overflow-hidden rounded-2xl border bg-card">
+          <ol className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-tile">
             {group.streams.map((stream) => (
               <li key={stream.id} className="border-b border-divider last:border-b-0">
                 <StreamRow stream={stream} />
@@ -68,7 +70,7 @@ function HistoryPage() {
           type="button"
           onClick={() => void streams.fetchNextPage()}
           disabled={streams.isFetchingNextPage}
-          className="min-h-11 self-center rounded-full border px-5 text-sm font-medium text-primary hover:bg-surface-2 disabled:opacity-50"
+          className="min-h-11 self-center rounded-lg border px-5 text-sm font-medium text-primary hover:bg-surface-2 disabled:opacity-50"
         >
           {streams.isFetchingNextPage ? t`Loading…` : t`Load older streams`}
         </button>
@@ -103,11 +105,11 @@ function StreamRow({ stream }: { stream: StreamSummary }) {
     <Link
       to="/$workspace/s/$switcher/history/$stream"
       params={{ workspace: workspace.url_slug, switcher: switcher.id, stream: stream.id }}
-      className="flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 md:px-5"
+      className="flex flex-wrap items-center gap-4 px-4 py-3.5 hover:bg-surface-2 md:flex-nowrap md:px-5"
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-none">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-mono text-base font-semibold tabular">
+          <span className="font-display text-base font-semibold tabular">
             <Trans>
               {formatClock(start)} –{" "}
               {running ? t`now` : formatClock(Date.parse(stream.ended_at ?? ""))}
@@ -123,10 +125,10 @@ function StreamRow({ stream }: { stream: StreamSummary }) {
             </span>
           )}
         </div>
-        <StateBar seconds={stream} className="max-w-md" />
       </div>
+      <StateBar seconds={stream} className="min-w-24 flex-1" />
       <div className="hidden shrink-0 flex-col items-end gap-0.5 text-right sm:flex">
-        <span className="font-mono text-sm font-semibold text-live tabular">
+        <span className="font-display text-sm font-semibold text-live tabular">
           <Trans>{Math.round(shares.live * 100)}% live</Trans>
         </span>
         <span className="text-xs text-muted-foreground">

@@ -283,9 +283,7 @@ function ChannelRow({
           onClick={() => notify.mutate(!on)}
           className={cn(
             "gap-1.5 disabled:opacity-100",
-            on
-              ? "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft"
-              : "text-muted-foreground",
+            on ? "text-foreground hover:bg-muted" : "text-muted-foreground",
           )}
         >
           {on ? <Bell /> : <BellOff />}
@@ -560,6 +558,9 @@ export function IgnoredSection({ ignored }: { ignored: IgnoredChatter[] | undefi
           <Button type="submit" variant="outline" disabled={!username.trim() || add.isPending}>
             <Trans>Ignore</Trans>
           </Button>
+          <p className="w-full text-xs text-muted-foreground">
+            {t`Ignore messages from this account on ${available.find((item) => item.path === chosen)?.label ?? chosen}.`}
+          </p>
         </form>
       )}
     </Section>

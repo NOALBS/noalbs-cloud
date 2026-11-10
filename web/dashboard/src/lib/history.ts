@@ -41,6 +41,7 @@ export function worstState(seconds: StateSeconds): FeedState {
 export function groupByDay<T extends Pick<StreamSummary, "started_at">>(
   streams: T[],
   locale = currentLocale(),
+  now = new Date(),
 ): { key: string; label: string; streams: T[] }[] {
   const groups: { key: string; label: string; streams: T[] }[] = [];
   for (const stream of streams) {
@@ -50,11 +51,17 @@ export function groupByDay<T extends Pick<StreamSummary, "started_at">>(
     if (group?.key !== key) {
       group = {
         key,
-        label: date.toLocaleDateString(locale, {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        }),
+        label:
+          date.toDateString() === now.toDateString()
+            ? t`Today`
+            : date.toDateString() ===
+                new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toDateString()
+              ? t`Yesterday`
+              : date.toLocaleDateString(locale, {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                }),
         streams: [],
       };
       groups.push(group);

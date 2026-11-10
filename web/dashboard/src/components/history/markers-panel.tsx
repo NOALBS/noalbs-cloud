@@ -34,7 +34,13 @@ export function MarkersPanel({
   };
 
   return (
-    <section aria-label={t`Markers`} className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <section
+      aria-label={t`Markers`}
+      className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-2xl border bg-card p-4 shadow-tile"
+    >
+      <h2 className="font-display font-semibold">
+        <Trans>Markers</Trans>
+      </h2>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           <Trans>
@@ -69,9 +75,9 @@ export function MarkersPanel({
         </p>
       )}
       {list.length > 0 && (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y divide-divider border-t border-divider">
           {list.map((marker) => (
-            <li key={marker.id} className="flex items-baseline gap-4 px-4 py-2.5 text-sm">
+            <li key={marker.id} className="flex flex-wrap items-baseline gap-3 py-2.5 text-sm">
               <span className="w-16 shrink-0 font-mono text-muted-foreground tabular">
                 {formatOffset(marker.offset_seconds)}
               </span>

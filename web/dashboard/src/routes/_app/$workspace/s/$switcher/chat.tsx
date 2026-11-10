@@ -11,7 +11,7 @@ import type { ChatCommand, ChatRole, ChatSettings } from "@/api/types";
 import { BotSection, ChannelsSection, IgnoredSection } from "@/components/chat/chat-links";
 import { Section } from "@/components/page";
 import { ReadOnlyNotice } from "@/components/settings";
-import { SwitcherPage } from "@/components/switcher-page";
+import { IndexedPage } from "@/components/switcher-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,73 +86,108 @@ function ChatPage() {
   );
 
   return (
-    <SwitcherPage
-      title={t`Chat & commands`}
-      description={t`What viewers and mods can do from chat.`}
-      backToSettings
-      className="max-w-5xl"
-    >
-      {!canManage && <ReadOnlyNotice />}
-
-      <ChannelsSection channels={chat.data?.channels} />
-      <BotSection />
-
-      {chat.data ? (
-        <ChatSettingsSection
-          key={JSON.stringify(chat.data.settings)}
-          settings={chat.data.settings}
-          languages={chat.data.languages}
-          canManage={canManage}
-          path={path}
-        />
-      ) : (
-        <Skeleton className="h-40 rounded-2xl" />
-      )}
-
-      <Section
-        title={t`Commands`}
-        description={t`Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in.`}
-        actions={
-          <div
-            role="radiogroup"
-            aria-label={t`Show commands for`}
-            className="flex flex-wrap gap-1.5"
-          >
-            {filters.map((option) => (
-              <label
-                key={option}
-                className="flex h-8 cursor-pointer items-center rounded-full border px-3 text-xs font-semibold text-muted-foreground has-checked:border-primary has-checked:bg-primary-soft has-checked:text-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring"
-              >
-                <input
-                  type="radio"
-                  name="command-filter"
-                  className="sr-only"
-                  checked={filter === option}
-                  onChange={() => setFilter(option)}
+    <IndexedPage
+      title={t`Chat`}
+      description={t`What viewers and mods can do from chat, and who answers them.`}
+      lead={!canManage && <ReadOnlyNotice />}
+      sections={[
+        {
+          id: "channels",
+          title: t`Channels`,
+          count: chat.data?.channels.length,
+          content: <ChannelsSection channels={chat.data?.channels} />,
+        },
+        { id: "bot", title: t`Bot`, content: <BotSection /> },
+        {
+          id: "settings",
+          title: t`Settings`,
+          content: (
+            <div className="flex flex-col gap-4">
+              {chat.data ? (
+                <ChatSettingsSection
+                  key={JSON.stringify(chat.data.settings)}
+                  settings={chat.data.settings}
+                  languages={chat.data.languages}
+                  canManage={canManage}
+                  path={path}
                 />
-                {option === "all"
-                  ? t`All ${chat.data?.commands.length ?? ""}`
-                  : roleLabels()[option]}
-              </label>
-            ))}
-          </div>
-        }
-      >
-        <ul>
-          {commands?.map((command) => (
-            <CommandRow
-              key={command.command}
-              command={command}
-              prefix={prefix}
-              canManage={canManage}
-              path={path}
-            />
-          ))}
-        </ul>
-      </Section>
-
-      <IgnoredSection ignored={chat.data?.ignored} />
-    </SwitcherPage>
+              ) : (
+                <Skeleton className="h-40 rounded-2xl" />
+              )}
+              <IgnoredSection ignored={chat.data?.ignored} />
+            </div>
+          ),
+        },
+        {
+          id: "commands",
+          title: t`Commands`,
+          count: chat.data?.commands.length,
+          content: (
+            <Section
+              title={t`Commands`}
+              description={t`Turn commands on or off, choose who may use them and add shorter names. Roles build on each other (Everyone → Subscribers → VIPs → Moderators → Admins): a command for Subscribers also works for VIPs, moderators and admins. Admins are the channel owner and every member of this workspace, on the accounts linked to their NOALBS sign-in.`}
+              actions={
+                <div
+                  role="radiogroup"
+                  aria-label={t`Show commands for`}
+                  className="flex flex-wrap gap-1.5"
+                >
+                  {filters.map((option) => (
+                    <label
+                      key={option}
+                      className="flex h-8 cursor-pointer items-center rounded-md px-3 text-xs font-semibold text-muted-foreground has-checked:border-primary has-checked:bg-primary-soft has-checked:text-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                    >
+                      <input
+                        type="radio"
+                        name="command-filter"
+                        className="sr-only"
+                        checked={filter === option}
+                        onChange={() => setFilter(option)}
+                      />
+                      {option === "all"
+                        ? t`All ${chat.data?.commands.length ?? ""}`
+                        : roleLabels()[option]}
+                    </label>
+                  ))}
+                </div>
+              }
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[680px] text-left">
+                  <thead className="border-t border-divider text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">
+                        <Trans>Command & aliases</Trans>
+                      </th>
+                      <th className="px-5 py-3 font-medium">
+                        <Trans>Description</Trans>
+                      </th>
+                      <th className="px-5 py-3 font-medium">
+                        <Trans>Who can use it</Trans>
+                      </th>
+                      <th className="px-5 py-3 font-medium">
+                        <Trans>Enabled</Trans>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commands?.map((command) => (
+                      <CommandRow
+                        key={command.command}
+                        command={command}
+                        prefix={prefix}
+                        canManage={canManage}
+                        path={path}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          ),
+        },
+      ]}
+    />
   );
 }
 
@@ -200,22 +235,23 @@ function ChatSettingsSection({
   return (
     <Section title={t`Settings`}>
       <form onSubmit={submit} className="flex flex-col">
-        <div className="grid gap-4 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col divide-y divide-divider border-t border-divider">
+          <div className="grid items-center gap-2 px-5 py-3 sm:grid-cols-[1fr_auto]">
             <Label htmlFor="chat-prefix">
               <Trans>Command prefix</Trans>
             </Label>
+            <p className="text-xs text-muted-foreground sm:col-start-1 sm:row-start-2">{t`Commands start with this character.`}</p>
             <Input
               id="chat-prefix"
               value={form.command_prefix}
               onChange={(event) => setForm({ ...form, command_prefix: event.target.value })}
               maxLength={3}
               disabled={!canManage}
-              className="w-24 font-mono"
+              className="w-24 font-mono sm:col-start-2 sm:row-span-2 sm:row-start-1"
             />
           </div>
           {languages.length > 1 && (
-            <div className="flex flex-col gap-2">
+            <div className="grid items-center gap-2 px-5 py-3 sm:grid-cols-[1fr_auto]">
               <Label htmlFor="chat-language">
                 <Trans>Bot language</Trans>
               </Label>
@@ -235,9 +271,10 @@ function ChatSettingsSection({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground sm:col-span-2">{t`Bot replies use ${LANGUAGE_NAMES[form.language] ?? form.language}.`}</p>
             </div>
           )}
-          <div className="flex flex-col gap-2">
+          <div className="grid items-center gap-2 px-5 py-3 sm:grid-cols-[1fr_auto]">
             <Label htmlFor="chat-reply-mode">
               <Trans>Reply mode</Trans>
             </Label>
@@ -258,6 +295,11 @@ function ChatSettingsSection({
                 </SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              {form.threaded_replies
+                ? t`Replies are threaded under the original message.`
+                : t`Replies are posted as normal chat messages.`}
+            </p>
           </div>
         </div>
         {(
@@ -373,27 +415,17 @@ function CommandRow({
   };
 
   return (
-    <li
-      className={cn(
-        "grid gap-3 border-t border-divider px-5 py-3 md:grid-cols-[10rem_minmax(0,1fr)_13rem_3rem] md:items-center",
-        !command.enabled && "opacity-60",
-      )}
-    >
-      <span className="flex flex-col">
-        <span className="font-mono text-sm font-semibold">
+    <tr className={cn("border-t border-divider align-top", !command.enabled && "opacity-60")}>
+      <td className="w-48 px-5 py-3">
+        <p className="font-mono text-sm font-semibold">
           {prefix}
           {command.command}
-        </span>
-        <span className="text-xs text-muted-foreground md:hidden">{command.description}</span>
-      </span>
-
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <span className="hidden text-sm text-muted-foreground md:block">{command.description}</span>
+        </p>
         <div className="flex flex-wrap items-center gap-1.5">
           {command.aliases.map((alias) => (
             <span
               key={alias}
-              className="flex items-center gap-1 rounded-md bg-primary-soft py-0.5 pr-1 pl-2 font-mono text-xs text-primary-soft-foreground"
+              className="flex items-center gap-1 font-mono text-xs text-muted-foreground"
             >
               {prefix}
               {alias}
@@ -439,34 +471,38 @@ function CommandRow({
               </form>
             ))}
         </div>
-      </div>
-
-      <Select
-        value={command.role}
-        onValueChange={(role) =>
-          setCommand.mutate({ enabled: command.enabled, role: role as ChatRole })
-        }
-        disabled={!canManage || setCommand.isPending}
-      >
-        <SelectTrigger className="h-9 w-full" aria-label={t`Who can use ${command.command}`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {(["public", "subscriber", "vip", "moderator", "admin"] as const).map((role) => (
-            <SelectItem key={role} value={role}>
-              {roleLabels()[role]}
-              {role === command.default_role && t` (default)`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Switch
-        checked={command.enabled}
-        onCheckedChange={(enabled) => setCommand.mutate({ enabled, role: command.role })}
-        disabled={!canManage || setCommand.isPending}
-        aria-label={t`Enable ${command.command}`}
-      />
-    </li>
+      </td>
+      <td className="px-5 py-3 text-sm text-muted-foreground">{command.description}</td>
+      <td className="w-48 px-5 py-3">
+        <Select
+          value={command.role}
+          onValueChange={(role) =>
+            setCommand.mutate({ enabled: command.enabled, role: role as ChatRole })
+          }
+          disabled={!canManage || setCommand.isPending}
+        >
+          <SelectTrigger className="h-9 w-full" aria-label={t`Who can use ${command.command}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(["public", "subscriber", "vip", "moderator", "admin"] as const).map((role) => (
+              <SelectItem key={role} value={role}>
+                {roleLabels()[role]}
+                {role === command.default_role && t` (default)`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="mt-1 text-xs text-muted-foreground">{t`${roleLabels()[command.role]} and higher roles can use this command.`}</p>
+      </td>
+      <td className="px-5 py-3">
+        <Switch
+          checked={command.enabled}
+          onCheckedChange={(enabled) => setCommand.mutate({ enabled, role: command.role })}
+          disabled={!canManage || setCommand.isPending}
+          aria-label={t`Enable ${command.command}`}
+        />
+      </td>
+    </tr>
   );
 }

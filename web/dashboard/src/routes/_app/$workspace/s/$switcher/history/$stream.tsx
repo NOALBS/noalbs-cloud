@@ -30,7 +30,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSwitcher } from "@/hooks/use-switcher";
@@ -103,6 +102,7 @@ function StreamPage() {
 
   return (
     <SwitcherPage
+      className="min-[1800px]:max-w-[1720px]"
       back={back}
       title={new Date(stream.started_at).toLocaleDateString(currentLocale(), {
         weekday: "long",
@@ -270,7 +270,10 @@ function Summary({ data }: { data: StreamDetail }) {
   const rtt = rtts.length > 0 ? rtts.reduce((sum, value) => sum + value, 0) / rtts.length : null;
 
   return (
-    <section aria-label={t`Summary`} className="flex flex-col gap-4 rounded-2xl border bg-card p-5">
+    <section
+      aria-label={t`Summary`}
+      className="flex flex-col gap-4 rounded-2xl border bg-card p-5 shadow-tile"
+    >
       <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
         <Tile label={t`Duration`} value={formatDuration(stream.duration_seconds)} />
         <Tile label="LIVE" value={formatDuration(stream.live_seconds)} tone="text-live" />
@@ -307,7 +310,7 @@ function Tile({
       <span className="truncate text-xs tracking-wider text-muted-foreground uppercase">
         {label}
       </span>
-      <span className={cn("font-mono text-2xl leading-none font-semibold tabular", tone)}>
+      <span className={cn("font-display text-2xl leading-none font-semibold tabular", tone)}>
         {value}
         {unit && <span className="text-sm font-normal text-muted-foreground"> {unit}</span>}
       </span>
@@ -331,6 +334,7 @@ function Overview({
   onHover: (at: number | null) => void;
   onZoom: (from: number, to: number) => void;
 }) {
+  const { workspace, switcher } = useSwitcher();
   const servers = useServerPoints(data);
   const [pinnedEvent, setPinnedEvent] = useState<string | null>(null);
   const switches = data.events.filter((event) => event.kind === "scene_switched");
@@ -340,8 +344,8 @@ function Overview({
   }));
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
+    <div className="grid grid-cols-1 items-start gap-4 min-[1024px]:max-[1799px]:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] min-[1800px]:grid-cols-3">
+      <div className="grid min-w-0 gap-4 min-[1800px]:col-span-2 min-[1800px]:grid-cols-2">
         {servers.length === 0 && (
           <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
             <Trans>No stream server stats were recorded for this stream.</Trans>
@@ -362,7 +366,7 @@ function Overview({
           />
         ))}
       </div>
-      <div className="lg:col-span-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <StreamActivity
           events={data.events}
           pinned={pinnedEvent}
@@ -370,6 +374,12 @@ function Overview({
             setPinnedEvent(event?.id ?? null);
             onHover(event ? Date.parse(event.created_at) : null);
           }}
+        />
+        <MarkersPanel
+          workspaceId={workspace.id}
+          switcherId={switcher.id}
+          streamId={data.stream.id}
+          startedAt={data.stream.started_at}
         />
       </div>
     </div>
@@ -413,14 +423,12 @@ function ServerHistory({
   return (
     <section
       aria-label={source.name}
-      className="flex flex-col gap-3 rounded-2xl border bg-card p-4 md:p-5"
+      className="flex min-w-0 flex-col gap-3 rounded-2xl border bg-card p-4 shadow-tile md:p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate font-semibold">{source.name}</span>
-          <Badge className="bg-primary-soft text-[10px] tracking-wider text-primary-soft-foreground uppercase">
-            {kindInfo(source.kind).label}
-          </Badge>
+          <span className="text-xs text-muted-foreground">{kindInfo(source.kind).label}</span>
         </span>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           {switcher.triggers.low != null && (
@@ -542,11 +550,14 @@ function StreamActivity({
   onPick: (event: SwitcherEvent | null) => void;
 }) {
   return (
-    <section aria-label={t`Activity`} className="flex flex-col gap-2.5">
-      <h2 className="font-semibold">
+    <section
+      aria-label={t`Activity`}
+      className="overflow-hidden rounded-2xl border bg-card shadow-tile"
+    >
+      <h2 className="border-b border-divider px-4 py-3 font-display font-semibold">
         <Trans>Activity</Trans>
       </h2>
-      <div className="flex max-h-[32rem] flex-col overflow-y-auto overscroll-contain rounded-2xl border bg-card">
+      <div className="flex max-h-[32rem] flex-col overflow-y-auto overscroll-contain">
         {events.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
             <Trans>Nothing happened during this stream.</Trans>

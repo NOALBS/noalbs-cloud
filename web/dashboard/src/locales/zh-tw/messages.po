@@ -102,11 +102,11 @@ msgstr "· 已隱藏"
 msgid "“{0}”"
 msgstr "「{0}」"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "“Server’s scene” keeps what the top server would use: its override, or your scene above."
 msgstr "「伺服器的場景」沿用排在最前面的伺服器會用的場景：它的覆寫，或你在上方設定的場景。"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "(off)"
 msgstr "（已關閉）"
 
@@ -195,12 +195,17 @@ msgid "{0, plural, one {# other browser will need to sign in again. This one sta
 msgstr "{0, plural, other {其他 # 個瀏覽器需要重新登入。這個瀏覽器會保持登入。}}"
 
 #. placeholder {0}: obs.scenes.length
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
+msgid "{0, plural, one {# scene in OBS} other {# scenes in OBS}}"
+msgstr ""
+
+#. placeholder {0}: obs.scenes.length
+#: src/components/switching/scenes.tsx
 msgid "{0, plural, one {# scene} other {# scenes}}"
 msgstr "{0, plural, other {# 個場景}}"
 
 #. placeholder {0}: unavailable.length
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "{0, plural, one {# selected scene is no longer in OBS.} other {# selected scenes are no longer in OBS.}}"
 msgstr "{0, plural, other {已選的 # 個場景已不在 OBS 中。}}"
 
@@ -285,7 +290,7 @@ msgid "{0, plural, one {also on # other switcher} other {also on # other switche
 msgstr "{0, plural, other {也用於其他 # 個切換器}}"
 
 #. placeholder {0}: selected.length
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "{0, plural, one {Connect OBS to edit # selected scene.} other {Connect OBS to edit # selected scenes.}}"
 msgstr "{0, plural, other {連接 OBS 才能編輯已選的 # 個場景。}}"
 
@@ -320,7 +325,7 @@ msgid "{0, plural, one {It happened # more time.} other {It happened # more time
 msgstr "{0, plural, other {此情況又發生了 # 次。}}"
 
 #. placeholder {0}: off.length
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "{0, plural, one {Not used while {offNames} is turned off.} other {Not used while {offNames} are turned off.}}"
 msgstr "{0, plural, other {{offNames} 關閉期間不會使用。}}"
 
@@ -330,7 +335,7 @@ msgid "{0, plural, one {Signed out of # session} other {Signed out of # sessions
 msgstr "{0, plural, other {已登出 # 個工作階段}}"
 
 #. placeholder {0}: goingRules.length
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "{0, plural, one {The server combination it is in goes too:} other {The # server combinations it is in go too:}}"
 msgstr "{0, plural, other {它所在的 # 個伺服器組合也會一併移除：}}"
 
@@ -387,7 +392,7 @@ msgstr "{0}（終端客戶）"
 
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "{0} +{1} more"
 msgstr "{0} 等另 {1} 個"
 
@@ -402,6 +407,11 @@ msgstr "{0} 個啟用中 · 優先使用 {1}"
 #: src/lib/org-audit.ts
 msgid "{0} and {1} more"
 msgstr "{0} 及另外 {1} 個"
+
+#. placeholder {0}: roleLabels()[command.role]
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "{0} and higher roles can use this command."
+msgstr ""
 
 #. placeholder {0}: outcome.ok
 #. placeholder {1}: outcome.failed
@@ -464,7 +474,7 @@ msgid "{0} event subscriptions (recorded {1})."
 msgstr "{0} 個事件訂閱（已記錄 {1} 個）。"
 
 #. placeholder {0}: SCENE_ROLES[role].label
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "{0} for this combination"
 msgstr "此組合的 {0}"
 
@@ -473,10 +483,37 @@ msgstr "此組合的 {0}"
 msgid "{0} hasn’t let NOALBS support in"
 msgstr "{0} 尚未開放 NOALBS 支援團隊存取"
 
+#. placeholder {0}: server.name
+#: src/lib/switching-now.ts
+msgid "{0} is above the LOW triggers, so the combination {combination} picks the scene."
+msgstr ""
+
+#. placeholder {0}: server.name
+#: src/lib/switching-now.ts
+msgid "{0} is above the LOW triggers."
+msgstr ""
+
+#. placeholder {0}: server.name
+#. placeholder {1}: triggers.rtt
+#: src/lib/switching-now.ts
+msgid "{0} is at or above the LOW RTT trigger of {1} ms."
+msgstr ""
+
+#. placeholder {0}: server.name
+#. placeholder {1}: triggers.low
+#: src/lib/switching-now.ts
+msgid "{0} is at or below the LOW bitrate trigger of {1} kbps."
+msgstr ""
+
 #. placeholder {0}: formatPrice(planPrice.amount, planPrice.currency)
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "{0} is for the plan."
 msgstr "其中 {0} 為方案費用。"
+
+#. placeholder {0}: status.current_scene.name
+#: src/components/switching/right-now.tsx
+msgid "{0} is on air"
+msgstr ""
 
 #. placeholder {0}: event.data.scene
 #: src/lib/live-format.ts
@@ -506,7 +543,7 @@ msgid "{0} low · {1} offline"
 msgstr "{0} 個偏低 · {1} 個離線"
 
 #. placeholder {0}: unavailable.length
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "{0} missing"
 msgstr "缺少 {0} 個"
 
@@ -525,6 +562,7 @@ msgstr "{0} / {1}（{2} 方案）"
 #. placeholder {0}: progress.done
 #. placeholder {1}: progress.total
 #: src/components/settings-hub.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "{0} of {1} steps done"
 msgstr "已完成 {0} / {1} 個步驟"
 
@@ -549,7 +587,7 @@ msgid "{0} over the pool. They keep running; no new switchers fit until usage dr
 msgstr "超出額度池 {0} 個。這些切換器會繼續運作，但在用量下降前無法新增切換器。"
 
 #. placeholder {0}: SCENE_ROLES[role].label
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "{0} override"
 msgstr "{0} 覆寫"
 
@@ -593,13 +631,13 @@ msgid "{0} saved"
 msgstr "{0} 已儲存"
 
 #. placeholder {0}: errorMessage(obs.error)
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "{0} Scenes are picked from your OBS, so connect it to change them."
 msgstr "{0} 場景取自你的 OBS，請連接後再變更。"
 
 #. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "{0} selected"
 msgstr "已選取 {0} 個"
@@ -681,7 +719,7 @@ msgstr "{0} 位使用者"
 #. placeholder {0}: line.server
 #. placeholder {1}: line.scene
 #. placeholder {2}: SCENE_ROLES[line.role].label
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "{0} uses <0>{1}</0> instead of {2}."
 msgstr "{0} 使用 <0>{1}</0> 取代 {2}。"
 
@@ -719,6 +757,12 @@ msgstr "{0}–{1}"
 #: src/components/live/placement-canvas.tsx
 msgid "{0}, {1}, {2} by {3}"
 msgstr "{0}，{1}，{2}×{3}"
+
+#. placeholder {0}: SCENE_ROLES[role].label
+#. placeholder {1}: sceneName(obs, rule.scenes[role]) ?? t`server’s scene`
+#: src/components/switching/scene-rules.tsx
+msgid "{0}: {1}"
+msgstr ""
 
 #. placeholder {0}: addon.code
 #. placeholder {1}: addon.quantity
@@ -1292,15 +1336,19 @@ msgstr "在你一直開著的場景中新增 <0>Browser</0> 來源（不必顯�
 msgid "Add a network by name…"
 msgstr "依名稱新增網路…"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Add a second stream server to use combinations, e.g. a two-camera layout while both are live."
 msgstr "再新增一台串流伺服器即可使用組合，例如兩台都在直播時使用雙機位版面。"
+
+#: src/components/switching/scene-rules.tsx
+msgid "Add a server combination"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "Add a source"
 msgstr "新增來源"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 #: src/routes/_app/add-server.tsx
 msgid "Add a stream server"
@@ -1313,10 +1361,6 @@ msgstr "新增切換器"
 #: src/routes/_app/welcome.tsx
 msgid "Add a workspace"
 msgstr "新增工作區"
-
-#: src/components/scene-rules-section.tsx
-msgid "Add combination"
-msgstr "新增組合"
 
 #: src/components/live/quick-actions.tsx
 msgid "Add marker"
@@ -1334,12 +1378,12 @@ msgstr "新增程式"
 msgid "Add scene"
 msgstr "新增場景"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/add-server.tsx
 msgid "Add server"
 msgstr "新增伺服器"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Add server combination"
 msgstr "新增伺服器組合"
 
@@ -1354,7 +1398,7 @@ msgstr "新增來源"
 msgid "Add switcher"
 msgstr "新增切換器"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "新增你的編碼器推流的目標伺服器，例如 BELABOX Cloud 或你自己的 MediaMTX。OBS 會從這裡播放你的訊號，NOALBS 則讀取它的統計資料來選擇場景。"
 
@@ -1422,7 +1466,7 @@ msgid "Added the scene {0}"
 msgstr "已新增場景 {0}"
 
 #: src/components/create-switcher-dialog.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/add-server.tsx
 msgid "Adding…"
 msgstr "新增中…"
@@ -1604,12 +1648,12 @@ msgstr "OBS 中的空白場景。可從「來源」卡片替它新增來源。"
 msgid "An srt://, rtmp://, rist://, udp:// or https:// address."
 msgstr "srt://、rtmp://、rist://、udp:// 或 https:// 位址。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Announce raids"
 msgstr "宣布揪團"
 
-#: src/components/scene-rules-section.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/scenes.tsx
 msgid "another scene"
 msgstr "其他場景"
 
@@ -1763,14 +1807,19 @@ msgid "Audit log"
 msgstr "稽核紀錄"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 #: src/components/language-menu.tsx
 msgid "Auto"
 msgstr "自動"
 
 #: src/components/live/quick-actions.tsx
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Auto switch"
 msgstr "自動切換"
+
+#: src/lib/switching-now.ts
+msgid "Auto switch is off; OBS stays on the scene you choose."
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -1780,12 +1829,13 @@ msgstr "自動切換已關閉"
 msgid "Auto switch on"
 msgstr "自動切換已開啟"
 
+#: src/components/history/history-summary.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Auto switches"
 msgstr "自動切換次數"
 
 #: src/components/belabox/modem-panel.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Automatic"
 msgstr "自動"
 
@@ -1845,7 +1895,7 @@ msgstr "返回網站"
 msgid "Backup SRT"
 msgstr "備用 SRT"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Bad checks in a row before leaving LIVE; one check per second."
 msgstr "離開 LIVE 前連續偵測到異常的次數；每秒偵測一次。"
 
@@ -1857,9 +1907,18 @@ msgstr "頻段"
 msgid "Battery"
 msgstr "電池"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Before the stream goes live."
-msgstr "開台之前。"
+#. placeholder {0}: live.moblin.battery_level
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Battery: {0}%"
+msgstr ""
+
+#: src/components/switching/scenes.tsx
+msgid "Before the stream goes live · {prefix}starting"
+msgstr ""
+
+#: src/components/switching/rules.tsx
+msgid "Behaviour"
+msgstr ""
 
 #: src/components/live/belabox-card.tsx
 msgid "BELABOX"
@@ -2013,11 +2072,11 @@ msgid "Bitrate · {serverName}"
 msgstr "位元率 · {serverName}"
 
 #. placeholder {0}: formatKbps(result.bitrate)
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "bitrate {0} kbps"
 msgstr "位元率 {0} kbps"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Bitrate or RTT crossed the LOW trigger."
 msgstr "位元率或 RTT 已超過 LOW 觸發值。"
 
@@ -2035,13 +2094,9 @@ msgstr "位元率預設組合"
 
 #. placeholder {0}: triggers.low ?? "off"
 #. placeholder {1}: triggers.offline ?? "off"
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Bitrate scale: LOW at {0}, BRB at {1} kbps"
 msgstr "位元率刻度：LOW 在 {0}，BRB 在 {1} kbps"
-
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "Bitrate triggers"
-msgstr "位元率觸發值"
 
 #: src/lib/triggers.ts
 msgid "Bitrate triggers must be between 1 and 100,000 kbps."
@@ -2056,12 +2111,18 @@ msgid "Bonding"
 msgstr "Bonding"
 
 #: src/components/chat/chat-links.tsx
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Bot"
 msgstr "機器人"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Bot language"
 msgstr "機器人語言"
+
+#. placeholder {0}: LANGUAGE_NAMES[form.language] ?? form.language
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Bot replies use {0}."
+msgstr ""
 
 #: src/components/live/source-position.tsx
 msgid "Bottom"
@@ -2075,13 +2136,17 @@ msgstr "左下"
 msgid "Bottom right"
 msgstr "右下"
 
+#: src/components/history/history-summary.tsx
+msgid "BRB"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "BRB / offline"
 msgstr "BRB / 離線"
 
@@ -2091,8 +2156,13 @@ msgstr "BRB 場景"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Browser source"
 msgstr "瀏覽器來源"
+
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Browser source added to OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source connected"
@@ -2115,12 +2185,12 @@ msgstr "瀏覽器來源已連線"
 msgid "Browser source up"
 msgstr "瀏覽器來源已連線"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "browser source URL"
 msgstr "瀏覽器來源 URL"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Browser-source link"
 msgstr "瀏覽器來源連結"
 
@@ -2170,14 +2240,14 @@ msgstr "無法移除：{blockedBy}"
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
-#: src/components/scene-rules-section.tsx
 #: src/components/support-access.tsx
 #: src/components/support/break-glass-dialog.tsx
+#: src/components/switcher-obs-content.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/servers.tsx
 #: src/components/type-to-confirm.tsx
 #: src/routes/_app/$workspace/account.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/add-server.tsx
@@ -2194,10 +2264,6 @@ msgstr "已取消。方案維持有效至 {end}，之後工作區將改為 Free�
 msgid "Canceled. The plan stays active until the end of the period."
 msgstr "已取消。方案維持有效至週期結束。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "Catch a struggling uplink before the bitrate drops. Only SRT servers report RTT."
-msgstr "在位元率下降之前先發現上行連線不穩。只有 SRT 伺服器會回報 RTT。"
-
 #: src/components/live/source-position.tsx
 msgid "Center"
 msgstr "置中"
@@ -2206,7 +2272,7 @@ msgstr "置中"
 msgid "Change"
 msgstr "變更"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Change how NOALBS reaches this server."
 msgstr "變更 NOALBS 連線到這台伺服器的方式。"
 
@@ -2334,12 +2400,16 @@ msgid "Channel not linked"
 msgstr "頻道未連結"
 
 #: src/components/chat/chat-links.tsx
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Channels"
 msgstr "頻道"
 
-#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Chat"
+msgstr ""
+
+#: src/components/settings-hub.tsx
 msgid "Chat & commands"
 msgstr "聊天室與指令"
 
@@ -2365,7 +2435,7 @@ msgstr "聊天室頻道"
 msgid "Chat commands on Twitch, Kick and YouTube"
 msgstr "Twitch、Kick 和 YouTube 上的聊天室指令"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Chat notification"
 msgstr "聊天室通知"
 
@@ -2392,20 +2462,20 @@ msgid "Checking this pairing code…"
 msgstr "正在檢查這組配對碼…"
 
 #: src/components/slug-field.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/welcome.tsx
 msgid "Checking…"
 msgstr "檢查中…"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Checks before switching"
 msgstr "切換前的偵測次數"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Checks before switching must be between 0 and 100."
 msgstr "切換前的偵測次數必須介於 0 到 100 之間。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Checks the stats URL from NOALBS Cloud."
 msgstr "從 NOALBS Cloud 檢查統計資料 URL。"
 
@@ -2432,10 +2502,6 @@ msgstr "選擇新擁有者"
 #: src/components/live/obs-preview.tsx
 msgid "Choose who sees it off air"
 msgstr "選擇未開台時誰看得到"
-
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Chosen by the switcher from your bitrate and latency."
-msgstr "由切換器根據你的位元率和延遲自動選擇。"
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Clear"
@@ -2486,13 +2552,17 @@ msgid "Color"
 msgstr "顏色"
 
 #. placeholder {0}: ruleLabel(rule, servers)
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Combination · {0}"
 msgstr "組合 · {0}"
 
 #: src/lib/billing.ts
 msgid "Coming soon"
 msgstr "即將推出"
+
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Command & aliases"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Command prefix"
@@ -2505,6 +2575,10 @@ msgstr "指令"
 #: src/components/chat/chat-links.tsx
 msgid "Commands from these accounts are ignored, e.g. other bots. Bots connected to NOALBS are always ignored."
 msgstr "這些帳號的指令會被忽略，例如其他機器人。連接到 NOALBS 的機器人一律會被忽略。"
+
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Commands start with this character."
+msgstr ""
 
 #: src/routes/_app/admin/organizations/index.tsx
 msgid "Companies that run client workspaces for their customers, paid from a pool you set."
@@ -2540,6 +2614,7 @@ msgid "Confirming your payment… this takes a few seconds."
 msgstr "正在確認你的付款… 這需要幾秒鐘。"
 
 #: src/components/belabox/wifi-panel.tsx
+#: src/components/connect-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
@@ -2602,13 +2677,21 @@ msgstr "連接 OBS"
 msgid "Connect OBS and your stream server to {0}, and optionally your BELABOX or Moblin."
 msgstr "將 OBS 和你的串流伺服器連接到 {0}，也可以選擇連接 BELABOX 或 Moblin。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Connect OBS to choose scenes for this server."
 msgstr "連接 OBS 以選擇這台伺服器的場景。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Connect OBS to choose scenes."
 msgstr "連接 OBS 以選擇場景。"
+
+#: src/components/switching/scene-choice.tsx
+msgid "Connect OBS to identify this scene."
+msgstr ""
+
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Connect OBS, a stream server and your scenes."
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Connect permissions changed"
@@ -2733,7 +2816,7 @@ msgstr "找不到這個連線"
 msgid "Connection priorities"
 msgstr "連線優先順序"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Connection test"
 msgstr "連線測試"
 
@@ -2810,6 +2893,10 @@ msgstr "從你的 <1>BELABOX Cloud</1> 帳號複製 <0>BELABOX 遠端秘密 URL<
 msgid "Copy the link now: it won’t be shown again. It works once and expires {0}."
 msgstr "請立即複製連結：之後不會再顯示。連結僅能使用一次，並於 {0} 到期。"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Could not load setup progress."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "Couldn't cancel the subscription with the payment provider, so nothing was deleted. Try again in a moment."
 msgstr "無法向付款服務商取消訂閱，因此未刪除任何內容。請稍後再試。"
@@ -2864,15 +2951,15 @@ msgstr "無法讀取切換器狀態：{0}"
 msgid "Couldn't remove the billing details with the payment provider, so nothing changed. Try again in a moment."
 msgstr "無法向付款服務商移除帳務資料，因此未做任何變更。請稍後再試。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Couldn’t test"
 msgstr "無法測試"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Counts while auto switch is on and BRB is on air; the feed coming back starts it over."
 msgstr "自動切換開啟且 BRB 場景播出時開始計時；訊號恢復後會重新計時。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Counts while streaming with the Ending scene on air, even with auto switch off; leaving it starts it over."
 msgstr "實況中且結尾場景播出時開始計時，即使自動切換已關閉也一樣；離開該場景後會重新計時。"
 
@@ -2894,12 +2981,12 @@ msgstr "Connect 上傳的當機報告和 OBS 記錄檔。"
 msgid "Create"
 msgstr "建立"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Create a new browser-source link?"
 msgstr "要建立新的瀏覽器來源連結嗎？"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Create a new link"
 msgstr "建立新連結"
@@ -2935,7 +3022,7 @@ msgstr "建立邀請連結"
 msgid "Create link"
 msgstr "建立連結"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Create new link"
 msgstr "建立新連結"
@@ -3085,6 +3172,7 @@ msgid "Customize"
 msgstr "自訂"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Dark"
 msgstr "深色"
 
@@ -3098,12 +3186,13 @@ msgid "Decline"
 msgstr "拒絕"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Default"
 msgstr ""
 
 #: src/components/connect-settings.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/admin/notices.tsx
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Delete"
@@ -3117,7 +3206,7 @@ msgstr "刪除 {0}"
 #. placeholder {0}: organization.name
 #. placeholder {0}: switcher.name
 #. placeholder {0}: workspace.name
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "Delete {0}"
@@ -3160,10 +3249,6 @@ msgstr "請先刪除或移交這個組織的客戶工作區"
 msgid "Delete organization"
 msgstr "刪除組織"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "Delete switcher"
-msgstr "刪除切換器"
-
 #: src/components/connect-settings.tsx
 msgid "Delete this log?"
 msgstr "要刪除這個記錄檔嗎？"
@@ -3185,7 +3270,7 @@ msgid "Delete your account?"
 msgstr "要刪除你的帳號嗎？"
 
 #. placeholder {0}: switcher.name
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Deleted {0}"
 msgstr "已刪除 {0}"
 
@@ -3226,8 +3311,13 @@ msgid "Deleting…"
 msgstr "刪除中…"
 
 #: src/components/admin/products.tsx
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Description"
 msgstr "說明"
+
+#: src/components/connect-settings.tsx
+msgid "Desktop app for OBS on your PC."
+msgstr ""
 
 #: src/components/user-avatar.tsx
 #: src/routes/login.tsx
@@ -3237,6 +3327,11 @@ msgstr "開發者登入"
 #: src/components/connect-settings.tsx
 msgid "Device removed"
 msgstr "裝置已移除"
+
+#: src/components/switcher-page.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Devices"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3251,7 +3346,7 @@ msgid "Disable this account?"
 msgstr "要停用這個帳號嗎？"
 
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
 msgid "Disabled"
@@ -3304,10 +3399,16 @@ msgstr "Discord"
 msgid "Dismiss"
 msgstr "關閉"
 
+#: src/components/display-settings.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Display"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Done"
 msgstr "完成"
 
@@ -3374,7 +3475,7 @@ msgstr "時長"
 msgid "Each customer signs in with Twitch, Kick or YouTube and gets in as an admin. The links expire after 7 days and are shown only now: copy or download them before closing."
 msgstr "每位終端客戶使用 Twitch、Kick 或 YouTube 登入後，會以管理員身分加入。連結 7 天後到期，且只在此時顯示：請在關閉前複製或下載。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different overlay for a backup uplink."
 msgstr "每台伺服器都可覆寫 LIVE、LOW 和 BRB 場景，例如為備援上行連線使用不同的疊加層。"
 
@@ -3390,11 +3491,12 @@ msgstr "編輯"
 #. placeholder {0}: plan.name
 #: src/components/admin/products.tsx
 #: src/components/orgs/client-dialog.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Edit {0}"
 msgstr "編輯 {0}"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Edit {label}"
 msgstr "編輯 {label}"
 
@@ -3410,7 +3512,7 @@ msgstr "編輯公告"
 msgid "Edit program"
 msgstr "編輯程式"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Edit server combination"
 msgstr "編輯伺服器組合"
 
@@ -3472,7 +3574,8 @@ msgstr "要啟用這個帳號嗎？"
 msgid "enabled"
 msgstr "已啟用"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Enabled"
 msgstr "已啟用"
 
@@ -3501,15 +3604,15 @@ msgstr "結束"
 msgid "End now"
 msgstr "立即結束"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "End the stream once the BRB scene has been on air this long without a feed, and say so in chat."
 msgstr "BRB 場景在沒有訊號的情況下播出達到這段時間後，結束實況並在聊天室告知。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "End the stream once the Ending scene has been on air this long, and say so in chat."
 msgstr "結尾場景播出達到這段時間後，結束實況並在聊天室告知。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "End the stream once you raid out (Twitch and Kick)."
 msgstr "揪團出去後結束實況（Twitch 和 Kick）。"
 
@@ -3531,7 +3634,7 @@ msgid "Ended a notice"
 msgstr "結束了公告"
 
 #: src/components/settings-hub.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Ending"
 msgstr "結尾"
 
@@ -3730,6 +3833,10 @@ msgstr "請修正標示的欄位後再儲存。"
 msgid "Fixed the feed"
 msgstr "修復了訊號"
 
+#: src/components/display-settings.tsx
+msgid "Follow your browser’s language."
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Font"
 msgstr "字型"
@@ -3833,7 +3940,7 @@ msgstr "來源名稱最多 256 個字元。"
 msgid "Global"
 msgstr "全域"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Go back to LIVE the moment the feed recovers."
 msgstr "訊號恢復後立即回到 LIVE。"
 
@@ -3908,9 +4015,9 @@ msgstr "隱藏 {label}"
 msgid "Hide all"
 msgstr "全部隱藏"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Hide the camera instantly."
-msgstr "立即隱藏攝影機畫面。"
+#: src/components/switching/scenes.tsx
+msgid "Hide the camera instantly · {prefix}privacy"
+msgstr ""
 
 #: src/lib/obs-preview.ts
 msgid "High"
@@ -3961,11 +4068,16 @@ msgstr "熱點已更新"
 msgid "Hover or tap a chart for the numbers at that moment."
 msgstr "將游標移到圖表上或點一下，即可查看當時的數值。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#. placeholder {0}: switcher.name
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "How {0} connects to OBS, and how the dashboard looks for you."
+msgstr ""
+
+#: src/components/switching/servers.tsx
 msgid "How it connects"
 msgstr "連線方式"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "How the browser source reaches OBS on your computer. Match OBS’s Tools → WebSocket Server Settings."
 msgstr "瀏覽器來源連線到你電腦上 OBS 的方式。請與 OBS 的 Tools → WebSocket Server Settings 保持一致。"
 
@@ -4010,6 +4122,11 @@ msgstr "如果你想支持這個專案並協助負擔伺服器費用，贊助是
 msgid "Ignore"
 msgstr "忽略"
 
+#. placeholder {0}: available.find((item) => item.path === chosen)?.label ?? chosen
+#: src/components/chat/chat-links.tsx
+msgid "Ignore messages from this account on {0}."
+msgstr ""
+
 #: src/components/chat/chat-links.tsx
 msgid "Ignored chatters"
 msgstr "忽略的聊天者"
@@ -4039,7 +4156,7 @@ msgid "In {0} {1}"
 msgstr "在 {0} 場景，{1}"
 
 #. placeholder {0}: result.elapsed_ms
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "in {0} ms"
 msgstr "耗時 {0} ms"
 
@@ -4075,10 +4192,9 @@ msgstr "在 OBS 中"
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "在 OBS 中開啟 <0>Tools → WebSocket Server Settings</0>，開啟 WebSocket 伺服器，並在這裡輸入連接埠和密碼（<1>Show Connect Info</1> 會顯示這兩項）。"
 
-#: src/components/scene-rules-section.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
-msgid "in use"
-msgstr "使用中"
+#: src/components/switching/servers.tsx
+msgid "In use"
+msgstr ""
 
 #: src/components/live/server-card.tsx
 msgid "IN USE"
@@ -4100,7 +4216,7 @@ msgstr "輸入格式"
 msgid "Instances"
 msgstr "執行個體"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Instant recovery"
 msgstr "即時恢復"
 
@@ -4183,6 +4299,10 @@ msgstr "邀請須在 1 到 30 天內到期"
 #: src/routes/_app/welcome.tsx
 msgid "Invites expire, so ask for a new one if it doesn’t work."
 msgstr "邀請會過期，如果無法使用，請索取新的邀請。"
+
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "iPhone remote control."
+msgstr ""
 
 #: src/routes/_app/admin/notices.tsx
 msgid "It disappears from this list. The audit log keeps that it existed."
@@ -4350,9 +4470,14 @@ msgstr "加入了團隊"
 msgid "Joining…"
 msgstr "加入中…"
 
+#: src/components/display-settings.tsx
+msgid "Just for you, on this browser."
+msgstr ""
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
+#: src/components/switching/right-now.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
@@ -4433,21 +4558,32 @@ msgstr "類型"
 msgid "Kinds:"
 msgstr "類型："
 
+#: src/components/display-settings.tsx
 #: src/components/language-menu.tsx
 msgid "Language"
 msgstr "語言"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Large"
 msgstr ""
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Larger"
+msgstr ""
+
+#: src/components/display-settings.tsx
+msgid "Larger sizes suit 4K monitors at 100% scaling."
 msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Last 2 min"
 msgstr "最近 2 分鐘"
+
+#: src/components/history/history-summary.tsx
+msgid "Last 30 days"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
@@ -4469,10 +4605,6 @@ msgstr "上次上線：{0}"
 #: src/components/belabox/stream-panel.tsx
 msgid "Latency"
 msgstr "延遲"
-
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "Latency (RTT) triggers"
-msgstr "延遲（RTT）觸發值"
 
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -4496,7 +4628,7 @@ msgstr "留空則保留目前設定。"
 msgid "Leave empty to keep the one the BELABOX has."
 msgstr "留空則保留 BELABOX 上的設定。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Leave OBS alone when you aren’t live."
 msgstr "未開台時不更動 OBS。"
 
@@ -4504,7 +4636,7 @@ msgstr "未開台時不更動 OBS。"
 msgid "Leave the feed empty to use the first active stream."
 msgstr "訊號留空時會使用第一個作用中的串流。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Leave the Starting scene as soon as your feed arrives."
 msgstr "訊號一到就離開開場場景。"
 
@@ -4568,6 +4700,7 @@ msgid "Lifted the suspension of {target}"
 msgstr "解除了 {target} 的停權"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Light"
 msgstr "淺色"
 
@@ -4640,6 +4773,10 @@ msgstr "已列出，但目前還無法購買。"
 msgid "Live"
 msgstr "實況"
 
+#: src/components/history/history-summary.tsx
+msgid "LIVE"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
 msgstr "即時資料"
@@ -4668,6 +4805,10 @@ msgstr "LIVE 場景"
 msgid "Live stats push"
 msgstr "即時統計推送"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "LIVE, LOW and BRB scenes picked"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -4677,6 +4818,10 @@ msgstr "載入更早的內容"
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "Load older streams"
 msgstr "載入更早的實況"
+
+#: src/components/history/history-summary.tsx
+msgid "Loaded streams started in the last 30 days; load older streams to complete this summary."
+msgstr ""
 
 #: src/components/connect-settings.tsx
 msgid "Loading devices…"
@@ -4698,6 +4843,10 @@ msgstr "正在載入記錄檔清單…"
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "正在載入程式…"
+
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Loading setup progress…"
+msgstr ""
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4780,6 +4929,10 @@ msgstr "循環播放清單"
 #: src/lib/obs-preview.ts
 msgid "Low"
 msgstr "低"
+
+#: src/components/history/history-summary.tsx
+msgid "LOW"
+msgstr ""
 
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -4872,10 +5025,6 @@ msgstr "管理"
 msgid "Manage billing"
 msgstr "管理帳務"
 
-#: src/components/connect-settings.tsx
-msgid "Manage computers paired with this switcher and choose who can control OBS."
-msgstr "管理與這個切換器配對的電腦，並選擇誰可以控制 OBS。"
-
 #: src/routes/_app/invite.$token.tsx
 msgid "Manage members, switchers or billing"
 msgstr "管理成員、切換器或帳務"
@@ -4952,9 +5101,9 @@ msgstr "最高位元率（kbps）"
 msgid "Max per workspace"
 msgstr "每個工作區上限"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "Measured on the highest-priority server that is receiving video. Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone."
-msgstr "以正在接收影像且優先順序最高的伺服器為準。將 LOW 設在畫面開始崩壞的位置（預設的 800 kbps 適合大多數實況）；關閉 BRB 時，NOALBS 只有在訊號消失時才會切到 BRB。"
+#: src/components/switching/rules.tsx
+msgid "Measured on the server in use, once a second. The worse of bitrate and RTT decides."
+msgstr ""
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Measuring…"
@@ -5009,11 +5158,11 @@ msgstr "訊息"
 msgid "Messages shown as a banner to everyone who is signed in: maintenance, an outage, a change. Each post, change and removal is in the audit log."
 msgstr "以橫幅顯示給所有已登入者的訊息：維護、服務中斷、變更。每次發布、變更和移除都會記錄在稽核紀錄中。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Minutes offline"
 msgstr "離線分鐘數"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Minutes on Ending"
 msgstr "結尾分鐘數"
 
@@ -5230,11 +5379,11 @@ msgstr "更多設定"
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Move {0}"
 msgstr "移動 {0}"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Move {label}"
 msgstr "移動 {label}"
 
@@ -5271,6 +5420,10 @@ msgstr "MRR"
 msgid "ms"
 msgstr "ms"
 
+#: src/components/switching/right-now.tsx
+msgid "ms RTT"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Mute"
@@ -5296,8 +5449,8 @@ msgstr "靜音或取消靜音音訊"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/orgs/client-dialog.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switcher-obs-content.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/admin/organizations/index.tsx
@@ -5344,11 +5497,11 @@ msgstr "沒有裝置的名稱："
 msgid "Needs attention"
 msgstr "需要注意"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Needs chat bot"
 msgstr "需要聊天機器人"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Needs Ending scene"
 msgstr "需要結尾場景"
 
@@ -5406,7 +5559,7 @@ msgid "Never connected"
 msgstr "從未連線"
 
 #. placeholder {0}: ruleLabel(shadowed, servers)
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Never used: {0} is above it and always matches first."
 msgstr "永遠不會用到：上方的 {0} 總是先符合。"
 
@@ -5578,7 +5731,7 @@ msgid "no feed"
 msgstr "無訊號"
 
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "No feed"
 msgstr "無訊號"
 
@@ -5680,7 +5833,15 @@ msgstr "尚未新增任何程式。"
 msgid "No scene"
 msgstr "無場景"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scene-choice.tsx
+msgid "No scene is selected; the fallback applies."
+msgstr ""
+
+#: src/lib/switching-now.ts
+msgid "No server has a usable feed."
+msgstr ""
+
+#: src/components/switching/scenes.tsx
 msgid "No server swaps in its own scenes. "
 msgstr "沒有伺服器使用自己的場景。 "
 
@@ -5719,7 +5880,7 @@ msgstr "這場實況期間沒有串流伺服器回報統計資料。"
 msgid "No stream server stats were recorded for this stream."
 msgstr "這場實況沒有記錄到串流伺服器統計資料。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "No stream servers yet"
 msgstr "尚無串流伺服器"
 
@@ -5764,7 +5925,7 @@ msgstr "尚無切換器"
 msgid "no Twitch shards"
 msgstr "沒有 Twitch 分片"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "No usable feed on any server."
 msgstr "所有伺服器都沒有可用的訊號。"
 
@@ -5790,7 +5951,6 @@ msgstr "NOALBS"
 msgid "NOALBS Cloud at a glance."
 msgstr "NOALBS Cloud 一覽。"
 
-#: src/components/connect-settings.tsx
 #: src/routes/_app/connect.tsx
 msgid "NOALBS Cloud Connect"
 msgstr "NOALBS Cloud Connect"
@@ -5816,11 +5976,19 @@ msgstr "NOALBS 目前沒有回應。請稍後再試。"
 msgid "NOALBS only switches while OBS is streaming (you can change that under Switching), so start the stream in OBS first. Then turn off your encoder"
 msgstr "NOALBS 只會在 OBS 實況中切換場景（你可以在「切換」頁面變更），所以請先在 OBS 開始實況。然後關閉你的編碼器"
 
+#: src/lib/switching-now.ts
+msgid "NOALBS reports a LIVE feed."
+msgstr ""
+
+#: src/lib/switching-now.ts
+msgid "NOALBS reports a LOW feed; no current reading identifies the trigger."
+msgstr ""
+
 #: src/components/support-access.tsx
 msgid "NOALBS staff"
 msgstr "NOALBS 工作人員"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "NOALBS stops reading this server’s stats."
 msgstr "NOALBS 會停止讀取這台伺服器的統計資料。"
 
@@ -5930,7 +6098,7 @@ msgstr "尚無"
 msgid "None yet."
 msgstr "尚無。"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "None yet. Add one for, say, a two-camera layout while two servers are live."
 msgstr "尚未建立。可以新增一個，例如兩台伺服器都在直播時使用雙機位版面。"
 
@@ -5950,7 +6118,7 @@ msgstr "未加入任何工作區。"
 msgid "Not available on this server"
 msgstr "此伺服器無法使用"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Not checked"
 msgstr "未檢查"
 
@@ -6031,7 +6199,7 @@ msgstr "未列出。已擁有的工作區仍看得到，也可以減少數量。
 msgid "Not live"
 msgstr "未開台"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Not reachable"
 msgstr "無法連線"
 
@@ -6162,6 +6330,7 @@ msgstr "現在"
 
 #: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "OBS"
 msgstr "OBS"
 
@@ -6200,7 +6369,7 @@ msgstr "OBS 控制：{0} · 記錄檔：{1} · 程式：{2} {3}"
 msgid "OBS crashed"
 msgstr "OBS 已當機"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "OBS did not return any scenes with UUIDs."
 msgstr "OBS 沒有回傳任何含 UUID 的場景。"
 
@@ -6254,6 +6423,22 @@ msgstr "OBS 尚未回報場景。"
 msgid "OBS is in safe mode"
 msgstr "OBS 處於安全模式"
 
+#: src/lib/switching-now.ts
+msgid "OBS is not connected."
+msgstr ""
+
+#: src/lib/switching-now.ts
+msgid "OBS is not streaming and auto switch is off."
+msgstr ""
+
+#: src/lib/switching-now.ts
+msgid "OBS is not streaming; auto switching is enabled."
+msgstr ""
+
+#: src/lib/switching-now.ts
+msgid "OBS is not streaming; auto switching takes over when the stream starts."
+msgstr ""
+
 #: src/lib/connect.ts
 msgid "OBS is waiting for input"
 msgstr "OBS 正在等待輸入"
@@ -6303,7 +6488,7 @@ msgstr "OBS 連接埠 {0} · 瀏覽器來源連結 · BELABOX Cloud"
 msgid "OBS preview"
 msgstr "OBS 預覽"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "OBS preview off air"
 msgstr "未開台時的 OBS 預覽"
 
@@ -6343,7 +6528,7 @@ msgstr "OBS 已停止"
 msgid "OBS watchdog"
 msgstr "OBS 監控程式"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "OBS WebSocket"
 msgstr "OBS WebSocket"
 
@@ -6369,9 +6554,9 @@ msgid "off"
 msgstr "關閉"
 
 #: src/components/chat/chat-links.tsx
+#: src/components/switching/rules.tsx
 #: src/components/trigger-field.tsx
 #: src/lib/connect.ts
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Off"
 msgstr "關閉"
 
@@ -6441,8 +6626,8 @@ msgstr "在 {0} 場景"
 msgid "On {0}"
 msgstr "場景：{0}"
 
+#: src/components/switching/scenes.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "播出中"
 
@@ -6450,9 +6635,21 @@ msgstr "播出中"
 msgid "ON AIR"
 msgstr "播出中"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "On command"
 msgstr "依指令"
+
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "On Live: bitrate sent, max bitrate and modem controls."
+msgstr ""
+
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "On Live: bitrate, battery, bonding and remote controls."
+msgstr ""
+
+#: src/components/connect-settings.tsx
+msgid "On Live: OBS controls, restart, logs and programs."
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "on the BELABOX"
@@ -6489,7 +6686,7 @@ msgid "Only {0} can change these permissions."
 msgstr "只有 {0} 可以變更這些權限。"
 
 #. placeholder {0}: workspace.managed_by.name
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Only {0} can change this."
 msgstr "只有 {0} 可以變更。"
 
@@ -6546,9 +6743,13 @@ msgstr "只有工作區成員才能執行此操作"
 msgid "Only once it has no clients left: delete them from its Clients page first."
 msgstr "必須先沒有任何客戶：請先從它的客戶頁面刪除。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Only record on these scenes"
 msgstr "只在這些場景錄影"
+
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Only switcher managers can create a browser-source link."
+msgstr ""
 
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "Only the first {BULK_MAX} are imported: do the rest in another go."
@@ -6575,7 +6776,7 @@ msgstr "只有工作區擁有者可以變更方案。"
 msgid "Only the workspace’s owner can change these permissions."
 msgstr "只有工作區擁有者可以變更這些權限。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Only the workspace’s owner can change this."
 msgstr "只有工作區擁有者可以變更此設定。"
 
@@ -6587,11 +6788,7 @@ msgstr "只有工作區擁有者可以選擇誰看得到預覽"
 msgid "Only the workspace’s owner can use it. Admins and operators can’t."
 msgstr "只有工作區擁有者可以使用。管理員和操作員不行。"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Only used when you or a mod asks for them."
-msgstr "只有在你或版主要求時才會使用。"
-
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Only while streaming"
 msgstr "僅實況中"
 
@@ -6632,11 +6829,11 @@ msgstr "開啟設定"
 msgid "Open Setup"
 msgstr "開啟初始設定"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Open setup guide"
 msgstr "開啟設定指南"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Open stream servers"
 msgstr "開啟串流伺服器"
 
@@ -6693,14 +6890,6 @@ msgstr "電信業者 {saved}"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Optional"
 msgstr "選填"
-
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "Optional. Connect Moblin's remote control to see its bitrate, bonding and battery on the Live page and control it from here and chat (!mstart, !mstop, !mbitrate, !mscene, !mstats)."
-msgstr "選填。連接 Moblin 的遠端控制後，可在實況頁面查看它的位元率、Bonding 和電池，並從這裡和聊天室控制它（!mstart、!mstop、!mbitrate、!mscene、!mstats）。"
-
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "Optional. Connect your BELABOX to see its modems on the Live page and control it from here and chat (!bbstart, !bbstop, !bbb, !bbt, !bbs)."
-msgstr "選填。連接 BELABOX 後，可在實況頁面查看它的數據機，並從這裡和聊天室控制它（!bbstart、!bbstop、!bbb、!bbt、!bbs）。"
 
 #: src/components/admin/products.tsx
 msgid "Order"
@@ -6768,7 +6957,7 @@ msgid "Overlay links often hold a key: it’s shown hidden."
 msgstr "疊加層連結常常含有金鑰：會以隱藏方式顯示。"
 
 #. placeholder {0}: server.name
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Override · {0}"
 msgstr "覆寫 · {0}"
 
@@ -6795,6 +6984,10 @@ msgstr "擁有者"
 #: src/lib/connect.ts
 msgid "Owners, admins and operators can use it."
 msgstr "擁有者、管理員和操作員都可以使用。"
+
+#: src/components/switcher-page.tsx
+msgid "Page sections"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
@@ -6877,7 +7070,7 @@ msgstr "每個客戶"
 msgid "per switcher"
 msgstr "每個切換器"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Per-server overrides"
 msgstr "各伺服器覆寫"
 
@@ -6945,11 +7138,11 @@ msgstr "每次操作最多選擇 {BULK_MAX} 個。"
 msgid "Pick the APN automatically"
 msgstr "自動選擇 APN"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Pick the server your encoder streams to and OBS plays from. Not sure which one you have? See the <0>list of servers</0>."
 msgstr "選擇你的編碼器推流、OBS 播放的伺服器。不確定你用的是哪一種？請查看<0>伺服器清單</0>。"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Pick two or more."
 msgstr "選擇兩個或更多。"
 
@@ -7033,7 +7226,7 @@ msgstr "調整 {0} 的位置"
 msgid "Position…"
 msgstr "位置…"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "場景自動切換時發布到聊天室。請在「聊天室與指令」頁面選擇頻道。"
 
@@ -7062,6 +7255,7 @@ msgid "Presets"
 msgstr "預設"
 
 #: src/components/live/obs-preview.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Preview"
 msgstr "預覽"
 
@@ -7105,7 +7299,7 @@ msgid "Priority: higher is used more when stable"
 msgstr "優先順序：穩定時，數值越高使用越多"
 
 #: src/components/settings-hub.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 #: src/routes/login.tsx
 msgid "Privacy"
 msgstr "隱私"
@@ -7191,7 +7385,7 @@ msgstr "影格率"
 msgid "Raw stats"
 msgstr "原始統計資料"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Reachable"
 msgstr "可連線"
 
@@ -7219,7 +7413,11 @@ msgstr "REC"
 msgid "REC paused"
 msgstr "REC 已暫停"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
+msgid "receiving"
+msgstr ""
+
+#: src/components/switching/servers.tsx
 msgid "Receiving"
 msgstr "接收中"
 
@@ -7279,7 +7477,7 @@ msgstr "重新連線中…"
 msgid "Record"
 msgstr "錄影"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Record while streaming"
 msgstr "實況時錄影"
 
@@ -7292,7 +7490,7 @@ msgstr "已記錄在工作人員稽核紀錄中。"
 msgid "Recording"
 msgstr "錄影中"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Recording control is off until you pick at least one scene."
 msgstr "選擇至少一個場景前，錄影控制會保持關閉。"
 
@@ -7316,7 +7514,7 @@ msgstr "錄影場景不得重複"
 msgid "Recording started"
 msgstr "已開始錄影"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Recording stays on for {summary}."
 msgstr "錄影會在 {summary} 保持開啟。"
 
@@ -7325,7 +7523,7 @@ msgid "Recording stopped"
 msgstr "已停止錄影"
 
 #: src/components/settings-hub.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Refresh"
 msgstr "重新整理"
@@ -7351,9 +7549,9 @@ msgstr "其場景開始播出時重新載入"
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
-#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/admin/notices.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -7365,7 +7563,7 @@ msgstr "移除"
 #. placeholder {0}: server.name
 #: src/components/billing/addon-card.tsx
 #: src/components/chat/chat-links.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Remove {0}"
 msgstr "移除 {0}"
 
@@ -7380,7 +7578,7 @@ msgstr "要從 {1} 移除 {0} 嗎？"
 msgid "Remove {0}?"
 msgstr "要移除 {0} 嗎？"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Remove {label}"
 msgstr "移除 {label}"
 
@@ -7404,7 +7602,7 @@ msgstr "移除別名 {alias}"
 msgid "Remove from {0}…"
 msgstr "從 {0} 移除…"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Remove missing"
 msgstr "移除遺失項目"
 
@@ -7416,7 +7614,7 @@ msgstr "移除密碼"
 msgid "Remove program?"
 msgstr "要移除程式嗎？"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Remove server"
 msgstr "移除伺服器"
 
@@ -7456,8 +7654,8 @@ msgstr "移除這個 URL"
 
 #. placeholder {0}: event.data.source
 #. placeholder {0}: server.name
+#: src/components/switching/servers.tsx
 #: src/lib/live-format.ts
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Removed {0}"
 msgstr "已移除 {0}"
 
@@ -7467,7 +7665,7 @@ msgstr "已移除 {0}"
 msgid "Removed {0} from {1}"
 msgstr "已從 {1} 移除 {0}"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Removed {label}"
 msgstr "已移除 {label}"
 
@@ -7502,7 +7700,7 @@ msgstr "已移除場景 {0}"
 msgid "Removed the workspace’s chat bot"
 msgstr "移除了工作區的聊天機器人"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Removes this switcher and its stream servers. The browser source in OBS stops working."
 msgstr "會移除這個切換器及其串流伺服器。OBS 中的瀏覽器來源將停止運作。"
 
@@ -7519,8 +7717,12 @@ msgstr "重新命名"
 msgid "Rename {0}"
 msgstr "重新命名 {0}"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Rename or remove this switcher."
+msgstr ""
+
 #: src/components/connect-settings.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Renamed"
 msgstr "已重新命名"
 
@@ -7571,6 +7773,14 @@ msgstr "換成 URL"
 #: src/components/live/source-editor.tsx
 msgid "Replace with URLs"
 msgstr "換成多個 URL"
+
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Replies are posted as normal chat messages."
+msgstr ""
+
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Replies are threaded under the original message."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Reply"
@@ -7694,6 +7904,10 @@ msgstr "撤銷了聊天室授權"
 msgid "Right"
 msgstr "右側"
 
+#: src/components/switching/right-now.tsx
+msgid "Right now"
+msgstr ""
+
 #: src/lib/stream-server-kinds.ts
 msgid "RIST receiver"
 msgstr "RIST 接收器"
@@ -7730,7 +7944,7 @@ msgid "RTT (ms)"
 msgstr "RTT（ms）"
 
 #. placeholder {0}: Math.round(result.rtt)
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "rtt {0} ms"
 msgstr "RTT {0} ms"
 
@@ -7740,15 +7954,14 @@ msgstr "RTT {0} ms"
 msgid "RTT {0} ms"
 msgstr "RTT {0} ms"
 
-#. placeholder {0}: triggers.rtt ?? "off"
-#. placeholder {1}: triggers.rtt_offline ?? "off"
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "RTT scale: LOW at {0}, BRB at {1} ms"
-msgstr "RTT 刻度：LOW 在 {0}，BRB 在 {1} ms"
-
 #: src/lib/triggers.ts
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT 觸發值必須介於 1 到 60,000 ms 之間。"
+
+#: src/components/switching/rules.tsx
+#: src/routes/_app/$workspace/s/$switcher/switching.tsx
+msgid "Rules"
+msgstr ""
 
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
@@ -7782,8 +7995,8 @@ msgstr "操作實況：切換場景、開始和停止、查看統計資料。"
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/client-dialog.tsx
 #: src/components/settings.tsx
+#: src/components/switcher-obs-content.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "Save"
 msgstr "儲存"
@@ -7792,7 +8005,7 @@ msgstr "儲存"
 msgid "save {saving}%"
 msgstr "省 {saving}%"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Save combination"
 msgstr "儲存組合"
 
@@ -7808,7 +8021,7 @@ msgstr "儲存限制"
 msgid "Save modem"
 msgstr "儲存數據機"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Save server"
 msgstr "儲存伺服器"
 
@@ -7817,13 +8030,13 @@ msgstr "儲存伺服器"
 #: src/components/moblin-settings.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/client-dialog.tsx
-#: src/components/scene-rules-section.tsx
 #: src/components/server-details-fields.tsx
+#: src/components/switcher-obs-content.tsx
+#: src/components/switching/rules.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/scenes.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Saved"
 msgstr "已儲存"
 
@@ -7869,15 +8082,15 @@ msgstr "儲存後會立即在 OBS 生效。"
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
-#: src/components/scene-rules-section.tsx
 #: src/components/settings.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "Saving…"
 msgstr "儲存中…"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Say in chat when the stream stops for a raid (Twitch and Kick)."
 msgstr "因揪團而停止實況時，在聊天室告知（Twitch 和 Kick）。"
 
@@ -7915,7 +8128,7 @@ msgstr "{label} 的場景"
 msgid "Scene not in OBS"
 msgstr "場景不在 OBS 中"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Scene overrides"
 msgstr "場景覆寫"
 
@@ -7924,10 +8137,10 @@ msgid "Scene switches"
 msgstr "場景切換"
 
 #: src/components/live/scene-grid.tsx
-#: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
-#: src/components/switcher-page.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/scenes.tsx
+#: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Scenes"
 msgstr "場景"
 
@@ -7939,7 +8152,7 @@ msgstr "這裡無法複製場景和群組。"
 msgid "Scenes appear once OBS is connected."
 msgstr "OBS 連接後就會顯示場景。"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Scenes in OBS"
 msgstr "OBS 中的場景"
 
@@ -8023,7 +8236,7 @@ msgstr "選取 {0}"
 msgid "Select every client on this page"
 msgstr "選取此頁所有客戶"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Select scenes"
 msgstr "選擇場景"
 
@@ -8051,35 +8264,41 @@ msgstr "以你在 Stripe Dashboard 建立的價格按年販售 {name}。必須�
 msgid "Server"
 msgstr "伺服器"
 
-#: src/components/scene-rules-section.tsx
-msgid "Server combinations"
-msgstr "伺服器組合"
+#: src/components/switching/scene-rules.tsx
+msgid "Server combination"
+msgstr ""
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/scene-rules.tsx
+msgid "Server combination · In use now"
+msgstr ""
+
+#: src/components/switching/servers.tsx
 msgid "Server details"
 msgstr "伺服器詳細資料"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Server is disabled"
 msgstr "伺服器已停用"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Server order"
 msgstr "伺服器順序"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Server type"
 msgstr "伺服器類型"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "server’s scene"
 msgstr "伺服器的場景"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Server’s scene"
 msgstr "伺服器的場景"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
+#: src/components/switching/servers.tsx
+#: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Servers"
 msgstr "伺服器"
 
@@ -8111,7 +8330,11 @@ msgstr "由 NOALBS 為你的組織設定。如需變更，請與我們聯絡。"
 msgid "Set its prices after creating it."
 msgstr "建立後再設定價格。"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/rules.tsx
+msgid "Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone. Only SRT servers report RTT."
+msgstr ""
+
+#: src/components/switching/scenes.tsx
 msgid "Set overrides on each stream server."
 msgstr "在各串流伺服器上設定覆寫。"
 
@@ -8142,9 +8365,17 @@ msgstr "設定了 {target} 的方案"
 msgid "Set to {0}"
 msgstr "設為 {0}"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Set up"
+msgstr ""
+
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "設定 Moblin"
+
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Set up optional devices"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Set up Stripe first: prices are created there."
@@ -8165,7 +8396,7 @@ msgstr "設定中…"
 #: src/components/app-shell.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 msgid "Settings"
 msgstr "設定"
@@ -8174,18 +8405,16 @@ msgstr "設定"
 msgid "Settings sections"
 msgstr "設定區段"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup"
 msgstr "初始設定"
-
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "Setup guide"
-msgstr "設定指南"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Setup help"
 msgstr "設定說明"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "設定進度"
@@ -8277,7 +8506,7 @@ msgstr "顯示更早的內容"
 msgid "Show sensitive values"
 msgstr "顯示敏感值"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Show the BRB scene as the stream stops for a raid."
 msgstr "因揪團而停止實況時顯示 BRB 場景。"
 
@@ -8285,7 +8514,7 @@ msgstr "因揪團而停止實況時顯示 BRB 場景。"
 msgid "Show the OBS preview"
 msgstr "顯示 OBS 預覽"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Show the Starting scene when the stream starts."
 msgstr "實況開始時顯示開場場景。"
 
@@ -8316,9 +8545,9 @@ msgstr "顯示中 · 上層已隱藏"
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
 msgstr "顯示在儀表板頂端，所有已登入者都看得到。僅限純文字。"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Shown briefly while the feed reloads."
-msgstr "訊號重新載入時短暫顯示。"
+#: src/components/switching/scenes.tsx
+msgid "Shown briefly while the feed reloads · {prefix}refresh"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Shown on the Plan page and in Checkout."
@@ -8554,7 +8783,11 @@ msgstr "工作人員：<0>管理員專區中的這個工作區</0>（設定方�
 msgid "Start"
 msgstr "開始"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
+msgid "Start & end"
+msgstr ""
+
+#: src/components/switching/rules.tsx
 msgid "Start and stop recording together with the stream."
 msgstr "隨實況一起開始和停止錄影。"
 
@@ -8592,10 +8825,6 @@ msgstr "要開始實況嗎？"
 msgid "Start with OBS"
 msgstr "隨 OBS 啟動"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "Start, end & raids"
-msgstr "開始、結束與揪團"
-
 #: src/lib/support.ts
 msgid "Started a checkout"
 msgstr "開始了 Checkout"
@@ -8613,11 +8842,11 @@ msgid "Started or stopped the stream"
 msgstr "開始或停止了實況"
 
 #: src/components/settings-hub.tsx
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Starting"
 msgstr "開場"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Starting scene on go-live"
 msgstr "開台時使用開場場景"
 
@@ -8640,12 +8869,12 @@ msgstr "將於 {0} 開始。"
 msgid "State"
 msgstr "狀態"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/add-server.tsx
 msgid "stats URL"
 msgstr "統計資料 URL"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/integrate-stream-server.tsx
 msgid "Stats URL"
@@ -8717,7 +8946,7 @@ msgstr "要停止 {deviceName} 上的 OBS 嗎？"
 msgid "Stop OBS?"
 msgstr "要停止 OBS 嗎？"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Stop on the Ending scene"
 msgstr "在結尾場景停止"
 
@@ -8741,7 +8970,7 @@ msgstr "要停止販售 {name}：{label} 嗎？"
 msgid "Stop stream"
 msgstr "結束實況"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Stop stream after a raid"
 msgstr "揪團後結束實況"
 
@@ -8765,7 +8994,7 @@ msgstr "要停止使用 {name} 嗎？"
 msgid "Stop using it"
 msgstr "停止使用"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Stop when offline"
 msgstr "離線時停止"
 
@@ -8823,15 +9052,17 @@ msgstr "找不到這場實況"
 msgid "Stream server"
 msgstr "串流伺服器"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Stream server connected"
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "Stream server not found"
 msgstr "找不到這台串流伺服器"
 
 #: src/components/settings-hub.tsx
-#: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Stream servers"
 msgstr "串流伺服器"
 
@@ -8861,12 +9092,16 @@ msgstr "串流 URL"
 msgid "Stream URL"
 msgstr "串流 URL"
 
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Streaming"
+msgstr ""
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "實況中"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
 msgstr "直接從手機推流到 Twitch 或 Kick 嗎？那就還沒有可讀取的伺服器：你需要一台中間伺服器。"
 
@@ -8874,9 +9109,14 @@ msgstr "直接從手機推流到 Twitch 或 Kick 嗎？那就還沒有可讀取�
 msgid "Streaming with Moblin? See its bitrate, bonding and battery on the Live page, control it from the dashboard and chat, and start or stop it with the OBS stream."
 msgstr "使用 Moblin 實況嗎？可在實況頁面查看它的位元率、Bonding 和電池，從儀表板和聊天室控制它，並隨 OBS 實況啟動或停止。"
 
+#: src/components/history/history-summary.tsx
 #: src/lib/organizations.ts
 msgid "Streams"
 msgstr "實況"
+
+#: src/components/history/history-summary.tsx
+msgid "Streams started in the last 30 days, within your plan’s history retention."
+msgstr ""
 
 #: src/components/live/source-position.tsx
 msgid "Stretch"
@@ -9000,7 +9240,7 @@ msgstr "{0} 的切換通知"
 msgid "Switch organization or workspace"
 msgstr "切換組織或工作區"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch scenes automatically using the triggers."
 msgstr "使用觸發值自動切換場景。"
 
@@ -9021,23 +9261,23 @@ msgstr "請先切換到其他場景：播出中的場景不能移除。"
 msgid "Switch to another workspace, create one or join one."
 msgstr "切換到其他工作區、建立或加入工作區。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch to BRB after a raid"
 msgstr "揪團後切換到 BRB"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch to BRB at or above"
 msgstr "切換到 BRB（等於或高於）"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch to BRB at or below"
 msgstr "切換到 BRB（等於或低於）"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch to LOW at or above"
 msgstr "切換到 LOW（等於或高於）"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Switch to LOW at or below"
 msgstr "切換到 LOW（等於或低於）"
 
@@ -9087,7 +9327,7 @@ msgid "Switched to yearly billing"
 msgstr "已改為年繳"
 
 #: src/components/app-shell.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/connect.tsx
 msgid "Switcher"
@@ -9098,7 +9338,6 @@ msgid "Switcher not found"
 msgstr "找不到這個切換器"
 
 #: src/components/settings-hub.tsx
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Switcher settings"
 msgstr "切換器設定"
 
@@ -9137,7 +9376,7 @@ msgid "Switchers, their settings, the Live page and history. Nothing can be chan
 msgstr "切換器及其設定、實況頁面和歷史紀錄。無法變更任何內容。"
 
 #: src/components/switcher-page.tsx
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Switching"
 msgstr "切換"
 
@@ -9150,9 +9389,13 @@ msgid "Synced from OBS"
 msgstr "已從 OBS 同步"
 
 #. placeholder {0}: formatRelative(new Date(obs.dataUpdatedAt), new Date(now))
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Synced from OBS {0}"
 msgstr "已從 OBS 同步 {0}"
+
+#: src/components/display-settings.tsx
+msgid "System"
+msgstr ""
 
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9183,19 +9426,15 @@ msgstr "團隊"
 msgid "Team of {0}"
 msgstr "{0} 的團隊"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Tell NOALBS which OBS scene to use for each situation."
-msgstr "告訴 NOALBS 每種情況要使用哪個 OBS 場景。"
-
 #: src/routes/login.tsx
 msgid "Terms"
 msgstr "條款"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Test"
 msgstr "測試"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Test again"
 msgstr "再次測試"
 
@@ -9208,6 +9447,7 @@ msgid "Text"
 msgstr "文字"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Text size"
 msgstr ""
 
@@ -9293,7 +9533,7 @@ msgid "That's this browser. Use Sign out instead."
 msgstr "這是目前的瀏覽器。請改用「登出」。"
 
 #. placeholder {0}: plan.data?.plan.name
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "The {0} plan allows {maxServers, plural, one {# stream server} other {# stream servers}} per switcher. <0>See plans</0>"
 msgstr "{0} 方案允許每個切換器 {maxServers, plural, other {# 台串流伺服器}}。<0>查看方案</0>"
 
@@ -9419,9 +9659,17 @@ msgstr "瀏覽器來源已連上 OBS"
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
 msgstr "目前的連結會失效，你需要將新連結貼到 OBS。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS. Do this if the link leaked."
 msgstr "目前的連結會失效，你需要將新連結貼到 OBS。如果連結外洩，請執行此操作。"
+
+#: src/lib/switching-now.ts
+msgid "The current scene is not assigned to NOALBS’s automatic scenes; it may be under manual control."
+msgstr ""
+
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "The encoder and the PC this switcher can control. Each one adds a panel to the Live page."
+msgstr ""
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -9432,7 +9680,7 @@ msgstr "週期結束"
 msgid "The ending timeout must be between 1 and 1440 minutes"
 msgstr "結尾逾時必須介於 1 到 1440 分鐘之間"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "The ending timeout must be between 1 and 1440 minutes."
 msgstr "結尾逾時必須介於 1 到 1440 分鐘之間。"
 
@@ -9497,15 +9745,11 @@ msgstr "名稱會在裝置的連接埠變更時嘗試跟著裝置（usb0 → usb
 msgid "The newest switchers beyond {0} are paused: they stay connected but don’t switch. Upgrade, or delete switchers you no longer need."
 msgstr "超過 {0} 的最新切換器已暫停：它們會保持連線，但不會切換場景。請升級，或刪除不再需要的切換器。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "The OBS connection, browser-source link and NOALBS Cloud Connect, BELABOX Cloud, Moblin, preview visibility and this switcher’s name."
-msgstr "OBS 連線、瀏覽器來源連結，以及 NOALBS Cloud Connect、BELABOX Cloud、Moblin、預覽可見範圍和這個切換器的名稱。"
-
 #: src/lib/api-messages.ts
 msgid "The offline timeout must be between 1 and 1440 minutes"
 msgstr "離線逾時必須介於 1 到 1440 分鐘之間"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "The offline timeout must be between 1 and 1440 minutes."
 msgstr "離線逾時必須介於 1 到 1440 分鐘之間。"
 
@@ -9594,7 +9838,7 @@ msgstr "範圍為空或超出實況範圍。"
 msgid "The reconnect delay is 1 to 60 seconds."
 msgstr "重新連線等待時間為 1 到 60 秒。"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "The recording pauses on any scene not picked here and resumes when you come back to one that is. Leave it empty to record on every scene. If you resume it yourself on another scene, it keeps recording until the next scene change."
 msgstr "在未選取的場景上錄影會暫停，回到已選取的場景時會恢復。留空則在所有場景錄影。如果你在其他場景手動恢復錄影，會持續錄影到下次切換場景為止。"
 
@@ -9655,10 +9899,6 @@ msgstr "你的 OpenIRL 串流的統計資料 URL。"
 msgid "The stats WebSocket from IRLHosting (ws:// or wss://). It sends the stats as they change."
 msgstr "IRLHosting 提供的統計資料 WebSocket（ws:// 或 wss://）。統計資料變動時會即時傳送。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
-msgid "The step-by-step checklist for connecting OBS, a stream server and your scenes."
-msgstr "連接 OBS、串流伺服器和場景的逐步檢查清單。"
-
 #: src/routes/_app/$workspace/account.tsx
 msgid "The stream history, stats, markers and activity log of your own switchers, one JSON object per line. It can be large."
 msgstr "你自己的切換器的實況歷史紀錄、統計資料、標記和活動紀錄，每行一個 JSON 物件。檔案可能很大。"
@@ -9675,6 +9915,10 @@ msgstr "Node Media Server 的 streams API；應用程式和金鑰會附加在後
 msgid "The subscription is set to end. Resume it first."
 msgstr "訂閱已設定為終止。請先恢復訂閱。"
 
+#: src/lib/switching-now.ts
+msgid "The switcher is offline."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "The switcher isn't streaming. Markers go on the running stream."
 msgstr "切換器未在實況中。標記只能加在進行中的實況。"
@@ -9688,7 +9932,7 @@ msgstr "切換器正在使用它（{0}）：請先在場景頁面選擇另一個
 msgid "The team isn't counted."
 msgstr "不計入團隊人數。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "The URL pasted into OBS. It contains a secret, so it’s only shown right after it’s created."
 msgstr "貼到 OBS 的 URL。它包含秘密內容，因此只在建立後顯示。"
 
@@ -9717,6 +9961,7 @@ msgid "Their workspaces go for good with their switchers, stream servers, histor
 msgstr "他們的工作區及其切換器、串流伺服器、歷史紀錄和終端客戶的存取權都會永久刪除。此處的任何內容都無法復原。"
 
 #: src/components/app-shell.tsx
+#: src/components/display-settings.tsx
 msgid "Theme"
 msgstr "主題"
 
@@ -9729,11 +9974,11 @@ msgstr "之後為 {0}"
 msgid "then none"
 msgstr "之後歸零"
 
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+#: src/components/switching/rules.tsx
 msgid "Then switch to LIVE"
 msgstr "接著切換到 LIVE"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "There is already a combination of these servers."
 msgstr "這些伺服器的組合已存在。"
 
@@ -9804,7 +10049,7 @@ msgstr "這台 BELABOX 未回報任何 WiFi 網卡。"
 msgid "This browser"
 msgstr "這個瀏覽器"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "This can’t be undone. Its settings and stream servers are deleted too."
 msgstr "此操作無法復原。它的設定和串流伺服器也會一併刪除。"
 
@@ -9920,6 +10165,10 @@ msgstr "這個程式將從已配對的 Connect 電腦中移除。"
 msgid "This scene has no sources."
 msgstr "這個場景沒有來源。"
 
+#: src/components/switching/scene-choice.tsx
+msgid "This scene is no longer in OBS."
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "This server didn’t report any stats during this stream."
 msgstr "這台伺服器在這場實況期間沒有回報任何統計資料。"
@@ -9935,6 +10184,10 @@ msgstr "這個切換器已有同名的串流伺服器"
 #: src/lib/api-messages.ts
 msgid "This switcher has reached its plan's stream server limit. Upgrade the plan to add more."
 msgstr "這個切換器已達方案的串流伺服器上限。請升級方案以新增更多。"
+
+#: src/lib/switching-now.ts
+msgid "This switcher is paused and is not switching scenes."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "This switcher is paused: the workspace has more switchers than its plan includes."
@@ -9992,11 +10245,15 @@ msgstr "這個工作區透過 Stripe 付款：下一次 Stripe 事件會將方�
 msgid "Through an invite link"
 msgstr "透過邀請連結"
 
+#: src/components/history/history-summary.tsx
+msgid "Time live"
+msgstr ""
+
 #: src/components/history/markers-panel.tsx
 msgid "Times are from the start of the stream. Add them with the Marker button on the Live page or <0>!marker</0> in chat."
 msgstr "時間從實況開始起算。可用實況頁面的「新增標記」按鈕，或在聊天室輸入 <0>!marker</0> 新增。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Tip: add a second server as a backup uplink so NOALBS can fail over."
 msgstr "提示：新增第二台伺服器作為備援上行連線，讓 NOALBS 可以容錯移轉。"
 
@@ -10005,6 +10262,10 @@ msgstr "提示：新增第二台伺服器作為備援上行連線，讓 NOALBS �
 #: src/lib/live-format.ts
 msgid "To {0} {1}"
 msgstr "到 {0} {1}"
+
+#: src/lib/history.ts
+msgid "Today"
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
@@ -10251,11 +10512,11 @@ msgid "URL must be between 3 and 50 characters long"
 msgstr "URL 長度須為 3 到 50 個字元"
 
 #. placeholder {0}: server.name
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Use {0}"
 msgstr "使用 {0}"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Use {label}"
 msgstr "使用 {label}"
 
@@ -10275,11 +10536,11 @@ msgstr "改用串流 ID"
 msgid "Use a three-letter currency code, e.g. eur."
 msgstr "請使用三個字母的貨幣代碼，例如 eur。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Use default"
 msgstr "使用預設值"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Use different scenes while this server is the one in use."
 msgstr "這台伺服器使用中時，改用不同的場景。"
 
@@ -10291,9 +10552,13 @@ msgstr "盡量使用硬體解碼"
 msgid "Use my own password"
 msgstr "使用我自己的密碼"
 
-#: src/components/scene-rules-section.tsx
-msgid "Use other scenes while certain servers are live together, like a two-camera layout while both cameras stream. If more than one matches, the highest one wins."
-msgstr "當特定伺服器同時在直播時改用其他場景，例如兩台攝影機都在推流時使用雙機位版面。若有多個組合符合，以排在最上面的為準。"
+#: src/components/switching/scene-rules.tsx
+msgid "Use other scenes while certain servers are live together. If more than one matches, the highest one wins."
+msgstr ""
+
+#: src/components/display-settings.tsx
+msgid "Use the selected language for the dashboard."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Use your own account page for your own sessions."
@@ -10311,7 +10576,7 @@ msgstr "下次啟動時生效（從這裡、聊天室或隨 OBS 實況）。"
 msgid "Used in URLs and billing; can't be changed later."
 msgstr "用於 URL 和帳務；之後無法變更。"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "Used while all the servers you pick are live, even if others are too."
 msgstr "你選的伺服器全部在直播時使用，即使其他伺服器也在直播。"
 
@@ -10349,6 +10614,10 @@ msgstr "使用者可以隱藏"
 msgid "Users stop seeing it within a few minutes."
 msgstr "使用者會在幾分鐘內不再看到它。"
 
+#: src/components/switching/scene-choice.tsx
+msgid "Uses {name}."
+msgstr ""
+
 #. placeholder {0}: servers.data[0]?.name ?? ""
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Using {0}."
@@ -10361,6 +10630,10 @@ msgstr "使用 BELABOX 嗎？可在實況頁面查看它的數據機，從儀表
 #: src/components/chat/chat-links.tsx
 msgid "Using your own bot? Sign in as the bot account when asked, not as yourself."
 msgstr "使用自己的機器人嗎？要求登入時，請以機器人帳號登入，不要用你自己的帳號。"
+
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Via BELABOX Cloud remote."
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
@@ -10397,13 +10670,21 @@ msgstr "{0} 的音量"
 msgid "Waiting for Moblin… Enter the password and URL above, then turn the streamer on."
 msgstr "正在等待 Moblin… 請輸入上方的密碼和 URL，然後開啟 Streamer。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Waiting for OBS"
 msgstr "正在等待 OBS"
+
+#: src/lib/switching-now.ts
+msgid "Waiting for switcher status."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Waiting for the browser source…"
 msgstr "正在等待瀏覽器來源…"
+
+#: src/lib/switching-now.ts
+msgid "Waiting for the current feed state."
+msgstr ""
 
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
@@ -10488,8 +10769,8 @@ msgid "What this workspace can use."
 msgstr "這個工作區可使用的內容。"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
-msgid "What viewers and mods can do from chat."
-msgstr "觀眾和版主可以從聊天室做什麼。"
+msgid "What viewers and mods can do from chat, and who answers them."
+msgstr ""
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "What we keep and why is in the <0>privacy policy</0>; the rules for using NOALBS Cloud are in the <1>terms of service</1>."
@@ -10508,10 +10789,9 @@ msgstr "最新消息"
 msgid "What’s running right now. Refreshes every 15 seconds."
 msgstr "目前正在運作的項目。每 15 秒更新一次。"
 
-#. placeholder {0}: switcher.name
-#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
-msgid "When and how NOALBS switches scenes for {0}."
-msgstr "NOALBS 何時以及如何為 {0} 切換場景。"
+#: src/components/switching/servers.tsx
+msgid "When no server has a feed, the BRB scene of the last one in use is shown. Click a server for its stats URL, test and scene overrides."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "When OBS goes live with the browser source connected, the stream is recorded here with its bitrate, RTT and scene switches."
@@ -10549,27 +10829,39 @@ msgstr "{name} 將位於：{0}，{1}，{2}×{3}"
 msgid "Where the BELABOX sends the stream."
 msgstr "BELABOX 傳送實況的目的地。"
 
+#: src/routes/_app/$workspace/s/$switcher/switching.tsx
+msgid "Where the feed comes from, which scene that means, and when to switch."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Where your encoder sends video. NOALBS reads its stats to pick a scene."
 msgstr "你的編碼器傳送影像的目的地。NOALBS 會讀取它的統計資料來選擇場景。"
 
-#: src/routes/_app/$workspace/s/$switcher/servers.tsx
+#: src/components/switching/servers.tsx
 msgid "Where your encoder sends video. NOALBS uses the first one in the list that is receiving."
 msgstr "你的編碼器傳送影像的目的地。NOALBS 會使用清單中第一台正在接收的伺服器。"
+
+#: src/components/switching/scenes.tsx
+msgid "Which OBS scene each state means."
+msgstr ""
 
 #: src/components/live/moblin-card.tsx
 msgid "Which of Moblin’s bonding connections it uses, and which it prefers."
 msgstr "Moblin 使用哪些綁定連線，以及優先使用哪些。"
 
+#: src/components/switching/scene-rules.tsx
+msgid "While {label} both have a feed"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "While it isn’t shown"
 msgstr "未顯示時"
 
-#: src/components/scene-rules-section.tsx
+#: src/components/switching/scene-rules.tsx
 msgid "While these servers are live, NOALBS goes back to using the top server’s scenes."
 msgstr "這些伺服器在直播時，NOALBS 會改回使用排在最前面的伺服器的場景。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does."
 msgstr "開台時，工作區中的所有人都能在實況頁面看到預覽，和觀眾看到的畫面相同。未開台時，OBS 可能仍顯示私人內容，例如你家裡的網路攝影機，所以由你決定屆時誰看得到。NOALBS 支援團隊一律看不到。"
 
@@ -10602,11 +10894,15 @@ msgstr "誰可以啟動、停止和重新啟動 OBS"
 msgid "Who can use {0}"
 msgstr "誰可以使用 {0}"
 
+#: src/routes/_app/$workspace/s/$switcher/chat.tsx
+msgid "Who can use it"
+msgstr ""
+
 #: src/components/chat/chat-links.tsx
 msgid "Who replies in chat, for every switcher in this workspace."
 msgstr "誰在聊天室回覆，適用於這個工作區的所有切換器。"
 
-#: src/routes/_app/$workspace/s/$switcher/obs.tsx
+#: src/components/switcher-obs-content.tsx
 msgid "Who sees it off air"
 msgstr "未開台時誰看得到"
 
@@ -10707,9 +11003,9 @@ msgstr "各方案的工作區數"
 msgid "Workspaces:"
 msgstr "工作區："
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
-msgid "Wrapping up the stream."
-msgstr "實況收尾。"
+#: src/components/switching/scenes.tsx
+msgid "Wrapping up the stream · {prefix}ending"
+msgstr ""
 
 #: src/lib/belabox.ts
 msgid "Wrong WiFi password"
@@ -10753,6 +11049,10 @@ msgstr "年繳價格 ÷ 12"
 #: src/components/orgs/managed-plan.tsx
 msgid "Yes"
 msgstr "是"
+
+#: src/lib/history.ts
+msgid "Yesterday"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "You"
@@ -10950,7 +11250,7 @@ msgstr "你的信用卡、帳單電子郵件、地址和稅務編號都會從工
 msgid "Your data"
 msgstr "你的資料"
 
-#: src/routes/_app/$workspace/s/$switcher/scenes.tsx
+#: src/components/switching/scenes.tsx
 msgid "Your feed is healthy."
 msgstr "你的訊號狀況良好。"
 
