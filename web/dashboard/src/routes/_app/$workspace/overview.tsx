@@ -1,20 +1,25 @@
 import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Plus, Radio, UserPlus } from "lucide-react";
+import { useCallback, useMemo } from "react";
 import { membersQuery, switchersQuery, workspacePlanQuery } from "@/api/queries";
 import { CreateSwitcherDialog } from "@/components/create-switcher-dialog";
+import { LiveList } from "@/components/operator/live-list";
+import { normalizeWorkspace } from "@/components/operator/model";
 import { Page, Section } from "@/components/page";
-import { StatusDot, switcherStatus } from "@/components/switcher-status";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UsageBar } from "@/components/usage-bar";
 import { UserAvatar } from "@/components/user-avatar";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { errorMessage } from "@/lib/errors";
+import { parseLiveSearch } from "@/lib/organizations";
 import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/$workspace/overview")({
+  validateSearch: parseLiveSearch,
   component: WorkspaceHome,
 });
 
@@ -22,14 +27,37 @@ function WorkspaceHome() {
   const { workspace, actor } = useWorkspace();
   const members = useQuery(membersQuery(workspace.id));
   const plan = useQuery(workspacePlanQuery(workspace.id));
-  const switchers = useQuery(switchersQuery(workspace.id));
+  const switchers = useQuery({
+    ...switchersQuery(workspace.id),
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+  });
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const data = useMemo(
+    () => (switchers.data ? normalizeWorkspace(switchers.data, workspace, actor) : undefined),
+    [switchers.data, workspace, actor],
+  );
+  const onSearch = useCallback(
+    (value: string) =>
+      void navigate({
+        search: (previous) => ({ ...previous, q: value || undefined, page: undefined }),
+        replace: true,
+      }),
+    [navigate],
+  );
   const canAddSwitcher = can(actor, "switcher.manage");
   const params = { workspace: workspace.url_slug };
 
   return (
-    <Page title={workspace.name} description={t`Your switchers, team and plan at a glance.`}>
+    <Page
+      title={workspace.name}
+      description={t`Your switchers, team and plan at a glance.`}
+      className="max-w-none"
+    >
       <Section
         title={t`Switchers`}
+        className="border-0 bg-transparent shadow-none [&>div:first-child]:px-0"
         description={t`A switcher connects one OBS to your stream servers and switches scenes for you.`}
         actions={
           canAddSwitcher &&
@@ -68,33 +96,18 @@ function WorkspaceHome() {
           </div>
         )}
         {switchers.data && switchers.data.length > 0 && (
-          <ul className="flex flex-col">
-            {switchers.data.map((switcher) => {
-              const status = switcherStatus(switcher);
-              return (
-                <li key={switcher.id} className="border-t border-divider">
-                  <Link
-                    to="/$workspace/s/$switcher"
-                    params={{ ...params, switcher: switcher.id }}
-                    className="flex min-h-16 items-center gap-3 px-5 py-3 hover:bg-surface-2/50"
-                  >
-                    <StatusDot className={status.dot} />
-                    <span className="flex flex-1 flex-col gap-0.5">
-                      <span className="font-semibold">{switcher.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {status.label} ·{" "}
-                        {plural(switcher.stream_server_count, {
-                          one: "# stream server",
-                          other: "# stream servers",
-                        })}
-                      </span>
-                    </span>
-                    <ArrowRight className="size-4 text-muted-foreground" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <LiveList
+            data={data}
+            pending={switchers.isPending}
+            error={switchers.isError ? errorMessage(switchers.error) : undefined}
+            updatedAt={switchers.dataUpdatedAt}
+            scope="workspace"
+            search={search}
+            onSearch={onSearch}
+            onShow={(show) =>
+              void navigate({ search: (previous) => ({ ...previous, show, page: undefined }) })
+            }
+          />
         )}
       </Section>
 

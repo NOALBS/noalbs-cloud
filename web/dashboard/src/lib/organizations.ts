@@ -315,7 +315,7 @@ export function parseActivitySearch(search: Record<string, unknown>): ActivitySe
 export interface LiveSearch {
   q?: string;
   page?: number;
-  show?: "live" | "obs";
+  show?: "live" | "obs" | "attention";
 }
 
 export function parseLiveSearch(search: Record<string, unknown>): LiveSearch {
@@ -323,7 +323,10 @@ export function parseLiveSearch(search: Record<string, unknown>): LiveSearch {
   return {
     q: typeof search.q === "string" && search.q ? search.q : undefined,
     page: Number.isInteger(page) && page > 1 ? page : undefined,
-    show: search.show === "live" || search.show === "obs" ? search.show : undefined,
+    show:
+      search.show === "live" || search.show === "obs" || search.show === "attention"
+        ? search.show
+        : undefined,
   };
 }
 
