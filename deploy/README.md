@@ -287,6 +287,12 @@ and upload the file; the Metrics and Logs pickers at its top choose your Prometh
 sources (Grafana Cloud: `grafanacloud-<stack>-prom` and `-logs`). In Prometheus the
 names use underscores and units (`noalbs_switchers`, `http_server_request_duration_seconds_bucket`).
 
+The **Now** row separates browser sources from Connect clients. **Usage** shows DAU,
+WAU, MAU, DAU/MAU, rolling active switchers and Connect device counts, with activity
+timeseries below. These API snapshots use `max` across replicas, never `sum`.
+The **Switchers** row also charts connected switchers by client; **Connections**
+continues to group WebSocket connections by `connection_kind`, including Connect.
+
 Logs and traces hold account, workspace and switcher IDs and chat platform user IDs, never
 IP addresses, tokens, stats URLs or chat messages. If you run NOALBS Cloud for others, your
 backend is a processor of that data: name it in your privacy policy.

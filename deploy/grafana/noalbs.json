@@ -55,7 +55,7 @@
     {
       "type": "stat",
       "title": "Browser sources",
-      "description": "Switchers whose browser source is connected to obs-link.",
+      "description": "Connected browser sources, including older series without a client label.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -66,7 +66,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(noalbs_switchers{state=\"connected\"})",
+          "expr": "sum(noalbs_switchers{state=\"connected\",client!=\"connect\"}) or vector(0)",
           "legendFormat": "Browser sources",
           "refId": "A",
           "instant": true,
@@ -99,15 +99,67 @@
       "id": 2,
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 1
       }
     },
     {
       "type": "stat",
+      "title": "Connect",
+      "description": "Switchers whose Connect client is connected to obs-link.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(noalbs_switchers{state=\"connected\",client=\"connect\"}) or vector(0)",
+          "legendFormat": "Connect",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 26,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 1
+      }
+    },
+    {
+      "type": "stat",
       "title": "OBS connected",
-      "description": "Switchers whose browser source has OBS's websocket.",
+      "description": "Switchers whose browser source or Connect client has OBS's websocket.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -151,8 +203,8 @@
       "id": 3,
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 3,
+        "x": 6,
         "y": 1
       }
     },
@@ -203,8 +255,8 @@
       "id": 4,
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 3,
+        "x": 9,
         "y": 1
       }
     },
@@ -366,8 +418,8 @@
     },
     {
       "type": "row",
-      "id": 8,
-      "title": "Switchers",
+      "id": 27,
+      "title": "Usage",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -378,9 +430,554 @@
       "panels": []
     },
     {
+      "type": "stat",
+      "title": "DAU",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_users_active{window=\"1d\"})",
+          "legendFormat": "DAU",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 28,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "WAU",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_users_active{window=\"7d\"})",
+          "legendFormat": "WAU",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 29,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "MAU",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_users_active{window=\"30d\"})",
+          "legendFormat": "MAU",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 30,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "DAU / MAU",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_users_active{window=\"1d\"}) / max(noalbs_users_active{window=\"30d\"})",
+          "legendFormat": "DAU / MAU",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 31,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Active switchers 30d",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_switchers_active{window=\"30d\"})",
+          "legendFormat": "Active switchers 30d",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 32,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Connect devices active 30d",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_connect_devices{state=\"active_30d\"})",
+          "legendFormat": "Connect devices active 30d",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 33,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Connect devices paired",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(noalbs_connect_devices{state=\"paired\"})",
+          "legendFormat": "Connect devices paired",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "id": 34,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 6
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Active users",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (window) (noalbs_users_active)",
+          "legendFormat": "{{window}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 35,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 10
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Active switchers",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (window) (noalbs_switchers_active)",
+          "legendFormat": "{{window}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 36,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Connect devices",
+      "description": "Sessions are counted after sign-in/use and refreshed every 5 minutes. API replicas export the same snapshot; max avoids double-counting.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (state) (noalbs_connect_devices)",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 37,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      }
+    },
+    {
+      "type": "row",
+      "id": 8,
+      "title": "Switchers",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "panels": []
+    },
+    {
       "type": "timeseries",
       "title": "Switchers by state",
-      "description": "connected: browser source identified; obs_connected: OBS's websocket up; streaming; paused: over the plan's limit.",
+      "description": "connected: browser source or Connect identified; obs_connected: OBS's websocket up; streaming; paused: over the plan's limit.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -430,7 +1027,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 19
       }
     },
     {
@@ -486,7 +1083,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 19
       }
     },
     {
@@ -542,7 +1139,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 14
+        "y": 27
       }
     },
     {
@@ -598,7 +1195,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 14
+        "y": 27
       }
     },
     {
@@ -654,7 +1251,63 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 14
+        "y": 27
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Connected switchers by client",
+      "description": "Connected switchers by client (browser_source or connect). Older series may have no client label.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (client) (noalbs_switchers{state=\"connected\"})",
+          "legendFormat": "{{client}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 38,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 35
       }
     },
     {
@@ -666,7 +1319,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 43
       },
       "panels": []
     },
@@ -741,7 +1394,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 23
+        "y": 44
       }
     },
     {
@@ -797,7 +1450,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 23
+        "y": 44
       }
     },
     {
@@ -809,7 +1462,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 52
       },
       "panels": []
     },
@@ -866,7 +1519,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 32
+        "y": 53
       }
     },
     {
@@ -922,7 +1575,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 32
+        "y": 53
       }
     },
     {
@@ -978,7 +1631,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 32
+        "y": 53
       }
     },
     {
@@ -990,7 +1643,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 61
       },
       "panels": []
     },
@@ -1047,7 +1700,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 62
       }
     },
     {
@@ -1103,7 +1756,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 62
       }
     },
     {
@@ -1115,7 +1768,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 70
       },
       "panels": []
     },
@@ -1149,7 +1802,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 71
       }
     }
   ]
