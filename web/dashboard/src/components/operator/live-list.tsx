@@ -2,7 +2,7 @@ import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Pager, SearchBox } from "@/components/admin/list-controls";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,8 @@ import { formatKbps, formatUptime } from "@/lib/live-format";
 import type { LiveSearch } from "@/lib/organizations";
 import { roleLabels } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { OperatorColumns } from "./columns";
+import { CompactLive } from "./compact-live";
 import { offlineSummary, problemLine, stateChip, streamingMetrics, timeAgo } from "./format";
 import { type BitrateHistory, useBitrateHistory } from "./history";
 import {
@@ -21,12 +23,14 @@ import {
   type OperatorData,
   type OperatorItem,
 } from "./model";
+import { type OperatorPin, pinOf, useOperatorPins } from "./pins";
 import { RowActions } from "./row-actions";
 import { Sparkline } from "./sparkline";
 
 type View = "rows" | "tiles" | "side-by-side";
 const VIEW_KEY = "noalbs-operator-view";
 const EMPTY_ITEMS: OperatorItem[] = [];
+const Selection = createContext<{ selected?: string; onOpen?: (pin?: OperatorPin) => void }>({});
 
 function savedView(): View | null {
   try {
@@ -62,6 +66,7 @@ export interface LiveListProps {
   onSearch: (q: string) => void;
   onShow: (show: LiveSearch["show"]) => void;
   onPage?: (page: number) => void;
+  onOpen: (pin?: OperatorPin) => void;
 }
 
 export function LiveList({
@@ -74,13 +79,31 @@ export function LiveList({
   onSearch,
   onShow,
   onPage,
+  onOpen,
 }: LiveListProps) {
   const now = useNow();
+  const desktop = useMediaQuery("(min-width: 64rem)");
+  const { pins, save } = useOperatorPins();
   const wide = useMediaQuery("(min-width: 1921px)");
   const [choice, setChoice] = useState(savedView);
   const view = choice ?? (wide ? "tiles" : "rows");
   const [showOffline, setShowOffline] = useState(false);
   const items = data?.items ?? EMPTY_ITEMS;
+  const openWorkspace =
+    search.open_workspace ?? items.find((item) => item.switcher_id === search.open)?.workspace_slug;
+  const panel =
+    desktop && view !== "side-by-side" && search.open && openWorkspace
+      ? { workspace: openWorkspace, switcher: search.open }
+      : null;
+  const panelOpen = Boolean(panel);
+  useEffect(() => {
+    if (!panelOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) onOpen(undefined);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [panelOpen, onOpen]);
   const history = useBitrateHistory(items, updatedAt);
   const groups = groupItems(items, scope === "workspace" ? search : undefined);
   const nothingConnected = data?.counts.connected === 0;
@@ -113,183 +136,213 @@ export function LiveList({
       : t`Never connected`;
 
   return (
-    <section
-      aria-label={t`Live switchers`}
-      className="@container mx-auto flex w-full min-w-0 max-w-[1800px] flex-col gap-4"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4 xl:flex-nowrap">
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h2 className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight">
-            {nothingConnected
-              ? t`Nothing is connected`
-              : data
-                ? plural(data.counts.streaming, { one: "# streaming", other: "# streaming" })
-                : t`Live switchers`}
-          </h2>
-          {data && (
-            <p className="text-xs text-muted-foreground">
+    <Selection.Provider value={{ selected: panel?.switcher, onOpen: desktop ? onOpen : undefined }}>
+      <section
+        aria-label={t`Live switchers`}
+        className="@container flex w-full min-w-0 flex-col gap-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4 xl:flex-nowrap">
+          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h2 className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight">
               {nothingConnected
-                ? offlineSummary(data.offlineTotal, data.counts)
-                : summary(data.counts)}
-            </p>
-          )}
-        </div>
-        <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:flex-nowrap">
-          <div className="w-full sm:w-56 xl:w-40 2xl:w-48">
-            <SearchBox
-              value={search.q ?? ""}
-              onSearch={onSearch}
-              placeholder={
-                scope === "workspace" ? t`Find a switcher` : t`Search by workspace or switcher`
-              }
-            />
-          </div>
-          <fieldset
-            aria-label={t`Show`}
-            className="flex max-w-full flex-wrap rounded-lg bg-muted p-0.5"
-          >
-            {filters.map((filter) => (
-              <Button
-                key={filter.label}
-                size="sm"
-                variant={search.show === filter.value ? "secondary" : "ghost"}
-                aria-pressed={search.show === filter.value}
-                onClick={() => onShow(filter.value)}
-                className="text-xs"
-              >
-                {filter.label}
-              </Button>
-            ))}
-            {search.show === "obs" && (
-              <Button size="sm" variant="secondary" aria-pressed onClick={() => onShow(undefined)}>
-                <Trans>OBS connected</Trans>
-              </Button>
+                ? t`Nothing is connected`
+                : data
+                  ? plural(data.counts.streaming, { one: "# streaming", other: "# streaming" })
+                  : t`Live switchers`}
+            </h2>
+            {data && (
+              <p className="text-xs text-muted-foreground">
+                {nothingConnected
+                  ? offlineSummary(data.offlineTotal, data.counts)
+                  : summary(data.counts)}
+              </p>
             )}
-          </fieldset>
-          <fieldset aria-label={t`List view`} className="flex rounded-lg bg-muted p-0.5">
-            {views.map((option) => (
-              <Button
-                key={option.value}
-                size="sm"
-                variant={view === option.value ? "secondary" : "ghost"}
-                aria-pressed={view === option.value}
-                onClick={() => choose(option.value)}
-                className="text-xs"
-              >
-                {option.label}
-              </Button>
-            ))}
-          </fieldset>
-        </div>
-      </div>
-      {nothingConnected && (
-        <p className="text-sm text-muted-foreground">
-          <Trans>
-            Switchers show up here when their OBS is open with the browser source active.
-          </Trans>
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {pending && !data ? (
-        <Skeleton className="h-48 rounded-xl" />
-      ) : (
-        <>
-          {view === "side-by-side" && (
-            <div
-              data-operator-slot="side-by-side"
-              className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground"
-            >
-              <Trans>Side-by-side controls will appear here. Rows are shown below for now.</Trans>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:shrink-0 xl:flex-nowrap">
+            <div className="w-full sm:w-48 xl:min-w-44">
+              <SearchBox
+                value={search.q ?? ""}
+                onSearch={onSearch}
+                placeholder={t`Find a switcher`}
+              />
             </div>
-          )}
-          {(["attention", "streaming", "idle"] as const).map(
-            (group) =>
-              groups[group].length > 0 && (
-                <LiveGroup
-                  key={group}
-                  group={group}
-                  items={groups[group]}
-                  multi={scope !== "workspace"}
-                  view={view === "tiles" ? "tiles" : "rows"}
-                  now={now}
-                  history={history}
-                />
-              ),
-          )}
-          {!nothingConnected && data && connectedShown === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              <Trans>Nothing matches.</Trans>
-            </p>
-          )}
-          {data && onPage && data.total > data.perPage && (
-            <Pager
-              page={search.page ?? 1}
-              total={data.total}
-              perPage={data.perPage}
-              onPage={onPage}
-            />
-          )}
-          {groups.offline.length > 0 && (
-            <>
-              {!nothingConnected && (
-                <div className="flex flex-wrap items-center justify-between gap-2 px-3 text-xs text-muted-foreground">
-                  <span>
-                    {plural(data?.offlineTotal ?? groups.offline.length, {
-                      one: "# more switcher is offline",
-                      other: "# more switchers are offline",
-                    })}
-                    <span className="ml-3">{offlineRange}</span>
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-expanded={offlineExpanded}
-                    aria-controls="operator-offline"
-                    onClick={() => setShowOffline(!showOffline)}
-                    className="text-primary"
-                  >
-                    {offlineExpanded ? t`Hide` : t`Show`}
-                  </Button>
-                </div>
-              )}
-              {offlineExpanded && (
-                <section
-                  id="operator-offline"
-                  className="overflow-hidden rounded-xl border bg-card shadow-tile"
+            <fieldset
+              aria-label={t`Show`}
+              className="flex max-w-full flex-wrap rounded-lg bg-muted p-0.5"
+            >
+              {filters.map((filter) => (
+                <Button
+                  key={filter.label}
+                  size="sm"
+                  variant={search.show === filter.value ? "secondary" : "ghost"}
+                  aria-pressed={search.show === filter.value}
+                  onClick={() => onShow(filter.value)}
+                  className="text-xs"
                 >
-                  <GroupHeading
-                    title={t`Offline`}
-                    count={data?.offlineTotal ?? groups.offline.length}
-                    hint={t`Most recent first`}
-                  />
-                  <ul>
-                    {groups.offline.map((item) => (
-                      <OfflineRow
-                        key={item.switcher_id}
-                        item={item}
-                        multi={scope !== "workspace"}
-                        now={now}
-                      />
-                    ))}
-                  </ul>
-                  {data && data.offlineTotal > groups.offline.length && (
-                    <p className="border-t border-divider px-4 py-3 text-xs text-muted-foreground">
-                      <Trans>
-                        Showing the {groups.offline.length} most recently seen switchers.
-                      </Trans>
+                  {filter.label}
+                </Button>
+              ))}
+              {search.show === "obs" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-pressed
+                  onClick={() => onShow(undefined)}
+                >
+                  <Trans>OBS connected</Trans>
+                </Button>
+              )}
+            </fieldset>
+            <fieldset aria-label={t`List view`} className="flex rounded-lg bg-muted p-0.5">
+              {views.map((option) => (
+                <Button
+                  key={option.value}
+                  size="sm"
+                  variant={view === option.value ? "secondary" : "ghost"}
+                  aria-pressed={view === option.value}
+                  onClick={() => choose(option.value)}
+                  className="text-xs"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </fieldset>
+          </div>
+        </div>
+        {nothingConnected && (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Switchers show up here when their OBS is open with the browser source active.
+            </Trans>
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {view === "side-by-side" ? (
+          <OperatorColumns items={items} pins={pins} onChange={save} />
+        ) : (
+          <div
+            className={cn(
+              "grid min-w-0 items-start gap-4",
+              panel && "lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)]",
+            )}
+          >
+            <div className="@container flex min-w-0 flex-col gap-4">
+              {pending && !data ? (
+                <Skeleton className="h-48 rounded-xl" />
+              ) : (
+                <>
+                  {(["attention", "streaming", "idle"] as const).map(
+                    (group) =>
+                      groups[group].length > 0 && (
+                        <LiveGroup
+                          key={group}
+                          group={group}
+                          items={groups[group]}
+                          multi={scope !== "workspace"}
+                          view={view === "tiles" ? "tiles" : "rows"}
+                          now={now}
+                          history={history}
+                        />
+                      ),
+                  )}
+                  {!nothingConnected && data && connectedShown === 0 && (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      <Trans>Nothing matches.</Trans>
                     </p>
                   )}
-                </section>
+                  {data && onPage && data.total > data.perPage && (
+                    <Pager
+                      page={search.page ?? 1}
+                      total={data.total}
+                      perPage={data.perPage}
+                      onPage={onPage}
+                    />
+                  )}
+                  {groups.offline.length > 0 && (
+                    <>
+                      {!nothingConnected && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-3 text-xs text-muted-foreground">
+                          <span>
+                            {plural(data?.offlineTotal ?? groups.offline.length, {
+                              one: "# more switcher is offline",
+                              other: "# more switchers are offline",
+                            })}
+                            <span className="ml-3">{offlineRange}</span>
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-expanded={offlineExpanded}
+                            aria-controls="operator-offline"
+                            onClick={() => setShowOffline(!showOffline)}
+                            className="text-primary"
+                          >
+                            {offlineExpanded ? t`Hide` : t`Show`}
+                          </Button>
+                        </div>
+                      )}
+                      {offlineExpanded && (
+                        <section
+                          id="operator-offline"
+                          className="overflow-hidden rounded-xl border bg-card shadow-tile"
+                        >
+                          <GroupHeading
+                            title={t`Offline`}
+                            count={data?.offlineTotal ?? groups.offline.length}
+                            hint={t`Most recent first`}
+                          />
+                          <ul>
+                            {groups.offline.map((item) => (
+                              <OfflineRow
+                                key={item.switcher_id}
+                                item={item}
+                                multi={scope !== "workspace"}
+                                now={now}
+                              />
+                            ))}
+                          </ul>
+                          {data && data.offlineTotal > groups.offline.length && (
+                            <p className="border-t border-divider px-4 py-3 text-xs text-muted-foreground">
+                              <Trans>
+                                Showing the {groups.offline.length} most recently seen switchers.
+                              </Trans>
+                            </p>
+                          )}
+                        </section>
+                      )}
+                    </>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </>
-      )}
-    </section>
+            </div>
+            {panel && (
+              <aside
+                aria-label={t`Live panel`}
+                className="hidden min-w-0 lg:sticky lg:top-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
+              >
+                <CompactLive
+                  pin={panel}
+                  pinned={pins.some((pin) => pin.switcher === panel.switcher)}
+                  canPin={pins.length < 4}
+                  onPin={() =>
+                    save(
+                      pins.some((pin) => pin.switcher === panel.switcher)
+                        ? pins.filter((pin) => pin.switcher !== panel.switcher)
+                        : [...pins, panel],
+                    )
+                  }
+                  onClose={() => onOpen(undefined)}
+                />
+              </aside>
+            )}
+          </div>
+        )}
+      </section>
+    </Selection.Provider>
   );
 }
 
@@ -360,10 +413,25 @@ function LiveGroup({
 }
 
 function ItemName({ item, multi }: { item: OperatorItem; multi: boolean }) {
+  const selection = useContext(Selection);
   return (
     <Link
       to="/$workspace/s/$switcher/live"
       params={{ workspace: item.workspace_slug, switcher: item.switcher_id }}
+      aria-current={selection.selected === item.switcher_id ? "true" : undefined}
+      onClick={(event) => {
+        if (
+          selection.onOpen &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.shiftKey &&
+          !event.altKey &&
+          event.button === 0
+        ) {
+          event.preventDefault();
+          selection.onOpen(pinOf(item));
+        }
+      }}
       className="font-semibold after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
     >
       {multi ? (
@@ -392,6 +460,7 @@ function LiveItem({
   history: BitrateHistory;
 }) {
   const chip = stateChip(item);
+  const selected = useContext(Selection).selected === item.switcher_id;
   const problem = problemLine(item, now);
   const role = item.role ? roleLabels()[item.role] : null;
   const actions = item.can_control && !item.paused && item.obs_connected;
@@ -454,6 +523,7 @@ function LiveItem({
       <li
         className={cn(
           "group relative flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-3 shadow-tile",
+          selected && "border-primary bg-primary-soft ring-1 ring-primary",
           item.attention === "no_feed"
             ? "border-offline/30"
             : item.attention
@@ -506,7 +576,12 @@ function LiveItem({
       </li>
     );
   return (
-    <li className="group relative grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2 border-b border-divider px-4 py-3 last:border-b-0 hover:bg-surface-2/30 @min-[1100px]:grid-cols-[78px_minmax(140px,2.5fr)_minmax(90px,1.3fr)_minmax(60px,.8fr)_54px_minmax(70px,1.1fr)_76px_30px_174px_12px] @min-[1100px]:gap-x-3">
+    <li
+      className={cn(
+        "group relative grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2 border-b border-divider border-l-2 border-l-transparent px-4 py-3 last:border-b-0 hover:bg-surface-2/30 @min-[1100px]:grid-cols-[78px_minmax(140px,2.5fr)_minmax(90px,1.3fr)_minmax(60px,.8fr)_54px_minmax(70px,1.1fr)_76px_30px_174px_12px] @min-[1100px]:gap-x-3",
+        selected && "border-l-primary bg-primary-soft",
+      )}
+    >
       <div>{status}</div>
       <div className="min-w-0 text-sm">
         <ItemName item={item} multi={multi} />

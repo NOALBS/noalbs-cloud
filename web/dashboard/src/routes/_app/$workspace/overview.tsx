@@ -104,6 +104,15 @@ function WorkspaceHome() {
             scope="workspace"
             search={search}
             onSearch={onSearch}
+            onOpen={(pin) =>
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  open: pin?.switcher,
+                  open_workspace: pin?.workspace,
+                }),
+              })
+            }
             onShow={(show) =>
               void navigate({ search: (previous) => ({ ...previous, show, page: undefined }) })
             }

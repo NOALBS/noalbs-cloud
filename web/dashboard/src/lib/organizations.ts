@@ -313,6 +313,8 @@ export function parseActivitySearch(search: Record<string, unknown>): ActivitySe
 
 /** The live overview's address: a search, which switchers to list and the page. */
 export interface LiveSearch {
+  open?: string;
+  open_workspace?: string;
   q?: string;
   page?: number;
   show?: "live" | "obs" | "attention";
@@ -321,6 +323,11 @@ export interface LiveSearch {
 export function parseLiveSearch(search: Record<string, unknown>): LiveSearch {
   const page = Number(search.page);
   return {
+    open: typeof search.open === "string" && search.open ? search.open : undefined,
+    open_workspace:
+      typeof search.open_workspace === "string" && search.open_workspace
+        ? search.open_workspace
+        : undefined,
     q: typeof search.q === "string" && search.q ? search.q : undefined,
     page: Number.isInteger(page) && page > 1 ? page : undefined,
     show:

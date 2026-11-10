@@ -243,6 +243,25 @@ describe("activity and live addresses", () => {
   });
 
   it("read the live page and its filter", () => {
+    expect(
+      parseLiveSearch({
+        open: "switcher",
+        open_workspace: "studio",
+        show: "attention",
+        page: 3,
+        q: "main",
+      }),
+    ).toMatchObject({
+      open: "switcher",
+      open_workspace: "studio",
+      show: "attention",
+      page: 3,
+      q: "main",
+    });
+    expect(parseLiveSearch({ open: {}, open_workspace: 1 })).toMatchObject({
+      open: undefined,
+      open_workspace: undefined,
+    });
     expect(parseLiveSearch({ q: "k", page: "2", show: "obs" })).toEqual({
       q: "k",
       page: 2,

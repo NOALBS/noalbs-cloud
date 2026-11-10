@@ -46,6 +46,15 @@ function LivePage() {
         scope="organization"
         search={search}
         onSearch={onSearch}
+        onOpen={(pin) =>
+          void navigate({
+            search: (previous) => ({
+              ...previous,
+              open: pin?.switcher,
+              open_workspace: pin?.workspace,
+            }),
+          })
+        }
         onShow={(value) =>
           void navigate({ search: (previous) => ({ ...previous, show: value, page: undefined }) })
         }
