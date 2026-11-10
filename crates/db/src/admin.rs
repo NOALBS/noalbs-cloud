@@ -162,6 +162,49 @@ macro_rules! users_with_activity {
     };
 }
 
+#[derive(Debug, sqlx::FromRow)]
+pub struct ActiveCounts {
+    pub users: i64,
+    pub switchers: i64,
+}
+
+/// Rolling activity, including live connections whose last identify may be old.
+pub async fn active_counts(
+    pool: &PgPool,
+    cutoff: DateTime<Utc>,
+    connected: &[Uuid],
+) -> Result<ActiveCounts> {
+    Ok(sqlx::query_as(concat!(
+        "SELECT (SELECT count(*) ",
+        users_with_activity!(),
+        " WHERE users.disabled_at IS NULL AND activity.last_active_at >= $1) AS users,
+        (SELECT count(*) FROM switchers WHERE last_seen_at >= $1 OR id = ANY($2)) AS switchers"
+    ))
+    .bind(cutoff)
+    .bind(connected)
+    .fetch_one(pool)
+    .await?)
+}
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct DeviceCounts {
+    pub paired: i64,
+    pub active_1d: i64,
+    pub active_30d: i64,
+}
+
+pub async fn device_counts(pool: &PgPool, now: DateTime<Utc>) -> Result<DeviceCounts> {
+    Ok(sqlx::query_as(
+        "SELECT count(*) AS paired,
+        count(*) FILTER (WHERE last_seen_at >= $1 - interval '1 day') AS active_1d,
+        count(*) FILTER (WHERE last_seen_at >= $1 - interval '30 days') AS active_30d
+        FROM connect_devices WHERE revoked_at IS NULL",
+    )
+    .bind(now)
+    .fetch_one(pool)
+    .await?)
+}
+
 macro_rules! user_select {
     () => {
         concat!(

@@ -280,6 +280,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     }
 
     billing::spawn_upkeep(state.clone(), shutdown_handle.clone());
+    crate::metrics::spawn_refresh(state.clone(), shutdown_handle.clone());
     crate::rate_limit::spawn_upkeep(state.limits.clone(), shutdown_handle.clone());
     crate::screenshots::spawn_follow(
         state.nats.clone(),

@@ -2091,6 +2091,7 @@ msgstr "BRB SAHNESİ"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "Tarayıcı kaynağı"
 
@@ -2098,22 +2099,22 @@ msgstr "Tarayıcı kaynağı"
 msgid "Browser source connected"
 msgstr "Tarayıcı kaynağı bağlandı"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "Tarayıcı kaynağı bağlı: önce yayındakiler (en uzun süredir yayında olan başta), sonra OBS ile bağlı olanlar."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "Tarayıcı kaynağı çalışıyor; OBS bekleniyor. Yukarıdaki WebSocket port ve şifresini kontrol et."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr ""
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
 msgstr "tarayıcı kaynağı çalışıyor"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
-msgstr "Tarayıcı kaynağı çalışıyor"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -2542,6 +2543,7 @@ msgstr "Ödemen onaylanıyor… birkaç saniye sürer."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "Bağlan"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "Bağlı bot yok"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "Bağlı tarayıcı kaynağı yok."
+msgid "No browser source or Connect client is connected."
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "no cap"

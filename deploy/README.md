@@ -264,6 +264,23 @@ What goes out is kept small:
   paused), `noalbs.switcher.scene_switches`, `noalbs.stream_server.fetches`,
   `noalbs.chat.commands`, `noalbs.chat.replies`. None carry a switcher or user ID.
 
+`noalbs.switchers` has `client=browser_source|connect` and `state`; connection counts
+use `connection.kind=browser_source|connect|moblin` (unidentified connections start as
+browser sources). The API refreshes these database-wide gauges every five minutes,
+only when OTLP is configured:
+
+- `noalbs.users.active{window=1d|7d|30d}`: rolling activity from the most recent
+  session use or OAuth connection update, excluding disabled accounts. This is an
+  approximation: expired/signed-out sessions disappear, not a daily activity history.
+- `noalbs.switchers.active{window=1d|7d|30d}`: last seen since the cutoff, plus currently
+  connected switchers (distinct). Last seen is touched on identify and disconnect.
+- `noalbs.connect.devices{state=paired|active_1d|active_30d}`: unrevoked devices,
+  optionally seen within the rolling window. Device last seen updates when a paired
+  device identifies, not on heartbeats; long-lived connections can age out.
+
+Each API replica exports the same snapshot: use **max/last, not sum** across API
+replicas in Grafana. These deployment files use Compose and do not set a replica count.
+
 A dashboard for all of it is in `grafana/noalbs.json`: in Grafana, **Dashboards → New → Import**
 and upload the file; the Metrics and Logs pickers at its top choose your Prometheus and Loki data
 sources (Grafana Cloud: `grafanacloud-<stack>-prom` and `-logs`). In Prometheus the

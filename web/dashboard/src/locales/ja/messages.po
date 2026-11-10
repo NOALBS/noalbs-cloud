@@ -2091,6 +2091,7 @@ msgstr "BRBシーン"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "ブラウザソース"
 
@@ -2098,21 +2099,21 @@ msgstr "ブラウザソース"
 msgid "Browser source connected"
 msgstr "ブラウザソース接続済み"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "ブラウザソース接続済み：配信中を先に（長い順）、次にOBS接続中の順です。"
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "ブラウザソースは接続済みです。OBSを待っています。上のWebSocketのポートとパスワードを確認してください。"
 
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr ""
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr ""
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
-msgstr "ブラウザソース接続中"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
 msgstr "ブラウザソース接続中"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -2542,6 +2543,7 @@ msgstr "支払いを確認しています… 数秒かかります。"
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "接続"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "ボットが接続されていません"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "ブラウザソースが接続されていません。"
+msgid "No browser source or Connect client is connected."
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "no cap"

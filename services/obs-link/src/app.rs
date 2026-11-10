@@ -174,7 +174,7 @@ async fn handle_connection(
         "browser_source"
     };
     Span::current().record("connection.kind", kind);
-    let _counted = metrics::connection(kind);
+    let counted = metrics::connection(kind);
     info!("New connection");
 
     if let Some(switcher_id) = moblin {
@@ -192,6 +192,7 @@ async fn handle_connection(
     let (inner_comm, inner_comm_rx) = mpsc::unbounded_channel();
     let (control_tx, control_rx) = mpsc::unbounded_channel();
     let mut connection = Connection {
+        counted,
         id: Uuid::new_v4(),
         websocket,
         shared,
@@ -424,6 +425,7 @@ struct RunningSwitcher {
 }
 
 struct Connection {
+    counted: metrics::Gauge,
     id: Uuid,
     websocket: tokio_tungstenite::WebSocketStream<net::TcpStream>,
     shared: Arc<Shared>,
@@ -822,6 +824,15 @@ impl Connection {
         self.send_request(RequestKind::IdentifyAck(true), None)
             .await?;
         let is_connect = identify.client.as_deref() == Some("connect");
+        let client = if is_connect {
+            "connect"
+        } else {
+            "browser_source"
+        };
+        Span::current().record("connection.kind", client);
+        if is_connect {
+            self.counted = metrics::connection(client);
+        }
         self.send_request(
             RequestKind::Settings(self.settings_for(&switcher, is_connect)),
             None,
@@ -850,7 +861,7 @@ impl Connection {
         let status = StatusHandle::new(initial);
         let attribution = SharedAttribution::default();
         let tasks = vec![
-            crate::spawn(metrics::track_switcher(status.subscribe())),
+            crate::spawn(metrics::track_switcher(status.subscribe(), client)),
             crate::spawn(status::publish(
                 self.shared.stores.status.clone(),
                 switcher_id,

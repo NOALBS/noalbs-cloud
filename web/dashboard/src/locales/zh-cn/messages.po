@@ -2091,6 +2091,7 @@ msgstr "BRB 场景"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "浏览器来源"
 
@@ -2098,21 +2099,21 @@ msgstr "浏览器来源"
 msgid "Browser source connected"
 msgstr "浏览器来源已连接"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "浏览器来源已连接：直播中的排在最前（时长最长的优先），然后是已连接 OBS 的。"
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "浏览器来源已启动，正在等待 OBS。请检查上方的 WebSocket 端口和密码。"
 
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr ""
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr ""
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
-msgstr "浏览器来源在线"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
 msgstr "浏览器来源在线"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -2542,6 +2543,7 @@ msgstr "正在确认你的付款……需要几秒钟。"
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "连接"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "未连接机器人"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "未连接浏览器来源。"
+msgid "No browser source or Connect client is connected."
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "no cap"

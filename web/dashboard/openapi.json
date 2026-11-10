@@ -17359,8 +17359,9 @@
       },
       "ConnectedSwitcherDto": {
         "type": "object",
-        "description": "A switcher whose browser source is connected.",
+        "description": "A switcher whose browser source or Connect client is connected.",
         "required": [
+          "client",
           "switcher_id",
           "switcher_name",
           "workspace_id",
@@ -17373,6 +17374,9 @@
           "state"
         ],
         "properties": {
+          "client": {
+            "$ref": "#/components/schemas/SwitcherClient"
+          },
           "obs_connected": {
             "type": "boolean"
           },
@@ -24805,11 +24809,19 @@
           }
         }
       },
+      "SwitcherClient": {
+        "type": "string",
+        "enum": [
+          "browser_source",
+          "connect"
+        ]
+      },
       "SwitcherCountsDto": {
         "type": "object",
         "required": [
           "total",
           "connected",
+          "connect",
           "obs_connected",
           "streaming",
           "recording",
@@ -24818,10 +24830,14 @@
           "offline"
         ],
         "properties": {
+          "connect": {
+            "type": "integer",
+            "format": "int64"
+          },
           "connected": {
             "type": "integer",
             "format": "int64",
-            "description": "Browser source connected to obs-link."
+            "description": "Browser source or Connect connected to obs-link."
           },
           "low": {
             "type": "integer",

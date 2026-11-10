@@ -39,7 +39,7 @@ pub static STATS_FETCHES: LazyLock<Counter<u64>> = LazyLock::new(|| {
 static CONNECTIONS: LazyLock<UpDownCounter<i64>> = LazyLock::new(|| {
     telemetry::meter()
         .i64_up_down_counter("noalbs.obslink.connections")
-        .with_description("Open WebSocket connections, by kind (browser source, Moblin)")
+        .with_description("Open WebSocket connections, by kind (browser source, Connect, Moblin)")
         .build()
 });
 
@@ -47,7 +47,7 @@ static SWITCHERS: LazyLock<UpDownCounter<i64>> = LazyLock::new(|| {
     telemetry::meter()
         .i64_up_down_counter("noalbs.switchers")
         .with_description(
-            "Switchers by state: identified browser source, OBS connected, streaming, paused",
+            "Switchers by client and state: connected, OBS connected, streaming, paused",
         )
         .build()
 });
@@ -56,7 +56,7 @@ static SWITCHERS: LazyLock<UpDownCounter<i64>> = LazyLock::new(|| {
 /// is aborted) takes it back.
 pub struct Gauge {
     counter: &'static UpDownCounter<i64>,
-    attributes: [KeyValue; 1],
+    attributes: Vec<KeyValue>,
     up: bool,
 }
 
@@ -64,7 +64,7 @@ impl Gauge {
     fn new(counter: &'static UpDownCounter<i64>, attribute: KeyValue) -> Self {
         Self {
             counter,
-            attributes: [attribute],
+            attributes: vec![attribute],
             up: false,
         }
     }
@@ -92,8 +92,12 @@ pub fn connection(kind: &'static str) -> Gauge {
 
 /// Counts an identified switcher by what its status says, until the task stops
 /// (the connection aborts it on close).
-pub async fn track_switcher(mut status: watch::Receiver<SwitcherStatus>) {
-    let state = |name: &'static str| Gauge::new(&SWITCHERS, KeyValue::new("state", name));
+pub async fn track_switcher(mut status: watch::Receiver<SwitcherStatus>, client: &'static str) {
+    let state = |name: &'static str| {
+        let mut gauge = Gauge::new(&SWITCHERS, KeyValue::new("state", name));
+        gauge.attributes.push(KeyValue::new("client", client));
+        gauge
+    };
     let mut connected = state("connected");
     let mut obs = state("obs_connected");
     let mut streaming = state("streaming");

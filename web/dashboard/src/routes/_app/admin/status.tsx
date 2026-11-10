@@ -74,9 +74,10 @@ function StatusPage() {
             <Stat
               label={t`Connected`}
               value={data.switchers.connected}
-              hint={t`Browser source up`}
+              hint={t`Browser source or Connect up`}
             />
             <Stat label={t`OBS connected`} value={data.switchers.obs_connected} />
+            <Stat label={t`Connect`} value={data.switchers.connect} />
             <Stat
               label={t`Live now`}
               value={data.switchers.streaming}
@@ -153,7 +154,7 @@ function Connected({ connected, now }: { connected: ConnectedSwitcher[]; now: nu
   return (
     <Section
       title={t`Connected switchers`}
-      description={t`Browser source connected: live first (longest first), then with OBS.`}
+      description={t`Browser source or Connect connected: live first (longest first), then with OBS.`}
       actions={
         <fieldset className="flex flex-wrap gap-1" aria-label={t`Show`}>
           {connectedFilters().map((option) => (
@@ -175,7 +176,9 @@ function Connected({ connected, now }: { connected: ConnectedSwitcher[]; now: nu
     >
       {shown.length === 0 ? (
         <p className="px-5 pb-5 text-sm text-muted-foreground">
-          {connected.length === 0 ? t`No browser source is connected.` : t`None right now.`}
+          {connected.length === 0
+            ? t`No browser source or Connect client is connected.`
+            : t`None right now.`}
         </p>
       ) : (
         <ul>
@@ -208,6 +211,9 @@ function Connected({ connected, now }: { connected: ConnectedSwitcher[]; now: nu
                       <Trans>Paused</Trans>
                     </Badge>
                   )}
+                  <Badge variant="outline">
+                    {switcher.client === "connect" ? t`Connect` : t`Browser source`}
+                  </Badge>
                   {switcher.recording && (
                     <Badge variant="outline">
                       <Trans>REC</Trans>

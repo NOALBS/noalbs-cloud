@@ -2091,6 +2091,7 @@ msgstr "SCÈNE BRB"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Browser source"
 msgstr "Source navigateur"
 
@@ -2098,22 +2099,22 @@ msgstr "Source navigateur"
 msgid "Browser source connected"
 msgstr "Source navigateur connectée"
 
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source connected: live first (longest first), then with OBS."
-msgstr "Source navigateur connectée : en direct d’abord (les plus longs en premier), puis avec OBS."
-
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "La source navigateur est active ; en attente d’OBS. Vérifiez le port et le mot de passe WebSocket ci-dessus."
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect connected: live first (longest first), then with OBS."
+msgstr ""
+
+#: src/routes/_app/admin/status.tsx
+msgid "Browser source or Connect up"
+msgstr ""
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "browser source up"
 msgstr "source navigateur active"
-
-#: src/routes/_app/admin/status.tsx
-msgid "Browser source up"
-msgstr "Source navigateur active"
 
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
@@ -2542,6 +2543,7 @@ msgstr "Confirmation de votre paiement… cela prend quelques secondes."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
+#: src/routes/_app/admin/status.tsx
 msgid "Connect"
 msgstr "Connecter"
 
@@ -5506,8 +5508,8 @@ msgid "No bot is connected"
 msgstr "Aucun bot n’est connecté"
 
 #: src/routes/_app/admin/status.tsx
-msgid "No browser source is connected."
-msgstr "Aucune source navigateur n’est connectée."
+msgid "No browser source or Connect client is connected."
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "no cap"

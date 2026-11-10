@@ -45,8 +45,9 @@ pub struct AdminStatusDto {
 pub struct SwitcherCountsDto {
     /// Every switcher there is.
     pub total: i64,
-    /// Browser source connected to obs-link.
+    /// Browser source or Connect connected to obs-link.
     pub connected: i64,
+    pub connect: i64,
     pub obs_connected: i64,
     pub streaming: i64,
     pub recording: i64,
@@ -57,9 +58,10 @@ pub struct SwitcherCountsDto {
     pub offline: i64,
 }
 
-/// A switcher whose browser source is connected.
+/// A switcher whose browser source or Connect client is connected.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ConnectedSwitcherDto {
+    pub client: SwitcherClient,
     pub switcher_id: Uuid,
     pub switcher_name: String,
     pub workspace_id: Uuid,
@@ -247,7 +249,9 @@ async fn admin_status(
 }
 
 /// Every connected switcher's status, from obs-link's bucket.
-async fn switcher_statuses(state: &ApiState) -> Result<Vec<(Uuid, SwitcherStatus)>, String> {
+pub(crate) async fn switcher_statuses(
+    state: &ApiState,
+) -> Result<Vec<(Uuid, SwitcherStatus)>, String> {
     let keys: Vec<String> = state
         .stores
         .status
@@ -271,11 +275,19 @@ async fn switcher_statuses(state: &ApiState) -> Result<Vec<(Uuid, SwitcherStatus
     Ok(statuses)
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SwitcherClient {
+    BrowserSource,
+    Connect,
+}
+
 fn count_switchers(statuses: &[(Uuid, SwitcherStatus)]) -> SwitcherCountsDto {
     let mut counts = SwitcherCountsDto::default();
     for (_, status) in statuses {
         let add = |yes: bool| i64::from(yes);
         counts.connected += 1;
+        counts.connect += add(status.pc.is_some());
         counts.obs_connected += add(status.obs_connected);
         counts.streaming += add(status.streaming);
         counts.recording += add(status.recording);
@@ -299,6 +311,11 @@ async fn connected_switchers(
         .filter_map(|switcher| {
             let status = by_id.get(&switcher.id)?;
             Some(ConnectedSwitcherDto {
+                client: if status.pc.is_some() {
+                    SwitcherClient::Connect
+                } else {
+                    SwitcherClient::BrowserSource
+                },
                 switcher_id: switcher.id,
                 switcher_name: switcher.name,
                 workspace_id: switcher.workspace_id,
@@ -581,6 +598,26 @@ mod tests {
     use time::{Duration, OffsetDateTime};
 
     use super::{ChatInstanceDto, instances, shard_number};
+
+    #[test]
+    fn connected_counts_include_connect() {
+        let empty = super::count_switchers(&[]);
+        assert_eq!((empty.connected, empty.connect), (0, 0));
+        let browser = live::SwitcherStatus::connected(false);
+        let mut connect = browser.clone();
+        connect.pc = Some(live::PcStatus {
+            device_id: None,
+            device_name: None,
+            obs: live::PcObsState::Unknown,
+            obs_version: None,
+            programs: Vec::new(),
+        });
+        let counts = super::count_switchers(&[
+            (uuid::Uuid::new_v4(), browser),
+            (uuid::Uuid::new_v4(), connect),
+        ]);
+        assert_eq!((counts.connected, counts.connect), (2, 1));
+    }
 
     #[test]
     fn shard_claims_are_matched_to_their_instances() {
