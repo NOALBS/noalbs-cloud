@@ -7,15 +7,14 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: nl\n"
 
+#. placeholder {0}: item.server.name
+#: src/components/operator/live-list.tsx
+msgid " · {0}"
+msgstr ""
+
 #: src/routes/_app/admin/notices.tsx
 msgid " · can’t be hidden"
 msgstr " · kan niet worden verborgen"
-
-#. placeholder {0}: formatUptime(item.stream_started_at, now)
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid " · live for {0}"
-msgstr " · {0} live"
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/routes/_app/workspaces/index.tsx
@@ -119,6 +118,16 @@ msgstr "(optioneel)"
 msgid "(you)"
 msgstr "(jij)"
 
+#. placeholder {0}: counts.clients
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {{attention} need attention · {connected} connected · {recording} recording · in # client} other {{attention} need attention · {connected} connected · {recording} recording · in # clients}}"
+msgstr ""
+
+#. placeholder {0}: counts.workspaces
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {{attention} need attention · {connected} connected · {recording} recording · in # workspace} other {{attention} need attention · {connected} connected · {recording} recording · in # workspaces}}"
+msgstr ""
+
 #. placeholder {0}: names.length
 #: src/lib/obs-preview.ts
 msgid "{0, plural, one {{list} is watching} other {{list} are watching}}"
@@ -184,10 +193,25 @@ msgstr "{0, plural, one {# dag} other {# dagen}}"
 msgid "{0, plural, one {# member} other {# members}}"
 msgstr "{0, plural, one {# lid} other {# leden}}"
 
+#. placeholder {0}: data?.offlineTotal ?? groups.offline.length
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {# more switcher is offline} other {# more switchers are offline}}"
+msgstr ""
+
 #. placeholder {0}: fields.length
 #: src/components/history/raw-explorer.tsx
 msgid "{0, plural, one {# numeric field} other {# numeric fields}} · pick up to {MAX_PICKED} to chart"
 msgstr "{0, plural, one {# numeriek veld} other {# numerieke velden}} · kies er tot {MAX_PICKED} voor de grafiek"
+
+#. placeholder {0}: pins.length
+#: src/components/operator/columns.tsx
+msgid "{0, plural, one {# of 4 columns · the layout is saved for you} other {# of 4 columns · the layout is saved for you}}"
+msgstr ""
+
+#. placeholder {0}: data.offline
+#: src/components/operator/switcher-rail.tsx
+msgid "{0, plural, one {# offline} other {# offline}}"
+msgstr ""
 
 #. placeholder {0}: others.length
 #: src/routes/_app/$workspace/account.tsx
@@ -219,17 +243,17 @@ msgstr "{0, plural, one {# streamserver per switcher} other {# streamservers per
 msgid "{0, plural, one {# stream server, tried in order.} other {# stream servers, tried in order.}}"
 msgstr "{0, plural, one {# streamserver, op volgorde geprobeerd.} other {# streamservers, op volgorde geprobeerd.}}"
 
-#. placeholder {0}: switcher.stream_server_count
-#: src/routes/_app/$workspace/overview.tsx
-msgid "{0, plural, one {# stream server} other {# stream servers}}"
-msgstr "{0, plural, one {# streamserver} other {# streamservers}}"
-
 #. placeholder {0}: youtube.watcher.streaming
 #. placeholder {1}: youtube.watcher.chats_open
 #. placeholder {2}: youtube.watcher.instance_id
 #: src/routes/_app/admin/status.tsx
 msgid "{0, plural, one {# streaming channel} other {# streaming channels}}, {1, plural, one {# live chat} other {# live chats}} followed by {2}."
 msgstr "{0, plural, one {# streamend kanaal} other {# streamende kanalen}}, {1, plural, one {# livechat} other {# livechats}} gevolgd door {2}."
+
+#. placeholder {0}: data.counts.streaming
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {# streaming} other {# streaming}}"
+msgstr ""
 
 #. placeholder {0}: pool.over
 #: src/components/orgs/limits-card.tsx
@@ -299,16 +323,6 @@ msgstr "{0, plural, one {# klant aanmaken} other {# klanten aanmaken}}"
 msgid "{0, plural, one {Delete # client?} other {Delete # clients?}}"
 msgstr "{0, plural, one {# klant verwijderen?} other {# klanten verwijderen?}}"
 
-#. placeholder {0}: counts.clients
-#: src/routes/_app/orgs/$organization/live.tsx
-msgid "{0, plural, one {in # client} other {in # clients}}"
-msgstr "{0, plural, one {bij # klant} other {bij # klanten}}"
-
-#. placeholder {0}: counts.workspaces
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0, plural, one {in # workspace} other {in # workspaces}}"
-msgstr "{0, plural, one {in # workspace} other {in # workspaces}}"
-
 #. placeholder {0}: ids.length
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "{0, plural, one {Invite links for # client} other {Invite links for # clients}}"
@@ -353,6 +367,12 @@ msgstr "{0, plural, other {Kanalen op # switchers moeten opnieuw worden verbonde
 msgid "{0} – {1}"
 msgstr "{0} – {1}"
 
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.scene
+#: src/components/operator/switcher-rail.tsx
+msgid "{0} · {1}"
+msgstr ""
+
 #. placeholder {0}: providerLabel(session.provider)
 #. placeholder {1}: session.current ? t`Active now` : t`Active ${formatRelative(session.last_used_at)}`
 #. placeholder {2}: formatDate(session.created_at)
@@ -384,6 +404,14 @@ msgstr "{0} · de lijst ververst vanzelf; scan om opnieuw te kijken."
 #: src/lib/org-audit.ts
 msgid "{0} (customer)"
 msgstr "{0} (eindklant)"
+
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.switcher_name
+#. placeholder {2}: stateChip(item).label
+#. placeholder {3}: phoneDetail(item, now)
+#: src/components/operator/switcher-rail.tsx
+msgid "{0} / {1} · {2} · {3}"
+msgstr ""
 
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
@@ -493,12 +521,6 @@ msgstr "{0} Hij is mogelijk ouder dan je abonnement bewaart."
 msgid "{0} kbps"
 msgstr "{0} kbps"
 
-#. placeholder {0}: counts.low
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0} low"
-msgstr "{0} laag"
-
 #. placeholder {0}: data.switchers.low
 #. placeholder {1}: data.switchers.offline
 #: src/routes/_app/admin/status.tsx
@@ -509,6 +531,13 @@ msgstr "{0} laag · {1} offline"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "{0} missing"
 msgstr "{0} ontbreken"
+
+#. placeholder {0}: Math.round(sample.rtt)
+#. placeholder {0}: Math.round(serverRtt)
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
+msgid "{0} ms"
+msgstr ""
 
 #. placeholder {0}: data.new_users_7d
 #: src/routes/_app/admin/index.tsx
@@ -695,12 +724,6 @@ msgstr "{0} is toegevoegd"
 msgid "{0} was deleted"
 msgstr "{0} is verwijderd"
 
-#. placeholder {0}: counts.offline
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0} without a feed"
-msgstr "{0} zonder feed"
-
 #. placeholder {0}: workspaces.data.total
 #: src/routes/_app/admin/workspaces/index.tsx
 msgid "{0} workspaces"
@@ -763,6 +786,14 @@ msgstr "{0}% van de workspaces"
 msgid "{access}, allowed by {0}"
 msgstr "{access}, toegestaan door {0}"
 
+#: src/components/operator/attention-count.tsx
+msgid "{attention, plural, one {# needs attention} other {# need attention}}"
+msgstr ""
+
+#: src/components/operator/live-list.tsx
+msgid "{attention} need attention · {connected} connected · {recording} recording"
+msgstr ""
+
 #: src/lib/user-agent.ts
 msgid "{browser} on {os}"
 msgstr "{browser} op {os}"
@@ -774,6 +805,10 @@ msgstr "{count, plural, one {# eerdere prijs, behouden door bestaande abonnees} 
 #: src/lib/org-audit.ts
 msgid "{created, plural, one {Imported # client} other {Imported # clients}}"
 msgstr "{created, plural, one {# klant geïmporteerd} other {# klanten geïmporteerd}}"
+
+#: src/components/operator/format.ts
+msgid "{days, plural, one {# day ago} other {# days ago}}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "{deleted, plural, one {Deleted # client} other {Deleted # clients}}"
@@ -799,6 +834,10 @@ msgstr "{hiddenCount} verborgen"
 #: src/components/live/source-list.tsx
 msgid "{hiddenHere} hidden"
 msgstr "{hiddenHere} verborgen"
+
+#: src/components/operator/format.ts
+msgid "{hours, plural, one {# h ago} other {# h ago}}"
+msgstr ""
 
 #: src/components/orgs/client-dialog.tsx
 msgid "{inUse} in use: delete some first, or keep at least that many."
@@ -863,6 +902,10 @@ msgstr "Het team van {managedBy} kan het gebruiken. Admins en operators niet."
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "Het team van {managedBy} ziet het ook off air. Admins en operators zien het alleen tijdens live."
 
+#: src/components/operator/format.ts
+msgid "{minutes, plural, one {# min ago} other {# min ago}}"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} wordt niet meer verkocht: {label}"
@@ -923,6 +966,10 @@ msgstr "{platform} verbonden"
 msgid "{rest} and {last}"
 msgstr "{rest} en {last}"
 
+#: src/components/operator/format.ts
+msgid "{seconds, plural, one {# sec ago} other {# sec ago}}"
+msgstr ""
+
 #. placeholder {0}: formatKbps(bitrate)
 #: src/lib/live-format.ts
 msgid "{server} at {0} kbps"
@@ -960,6 +1007,22 @@ msgstr "{targetName} is nu eigenaar van {0}"
 #: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "Bot van {team}"
+
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher · all offline} other {# switchers · all offline}}"
+msgstr ""
+
+#. placeholder {0}: counts.clients
+#. placeholder {1}: counts.clients
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher in {0, plural, one {# client} other {# clients}} · all offline} other {# switchers in {1, plural, one {# client} other {# clients}} · all offline}}"
+msgstr ""
+
+#. placeholder {0}: counts.workspaces
+#. placeholder {1}: counts.workspaces
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher in {0, plural, one {# workspace} other {# workspaces}} · all offline} other {# switchers in {1, plural, one {# workspace} other {# workspaces}} · all offline}}"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
@@ -1238,6 +1301,12 @@ msgstr "Account niet gevonden"
 msgid "Account settings"
 msgstr "Accountinstellingen"
 
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.switcher_name
+#: src/components/operator/phone-row.tsx
+msgid "Actions for {0} / {1}"
+msgstr ""
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1307,8 +1376,13 @@ msgid "Add a stream server"
 msgstr "Streamserver toevoegen"
 
 #: src/components/create-switcher-dialog.tsx
+#: src/components/operator/columns.tsx
 msgid "Add a switcher"
 msgstr "Switcher toevoegen"
+
+#: src/components/operator/columns.tsx
+msgid "Add a switcher here, or pin one from its live panel. Your columns follow you between workspaces."
+msgstr ""
 
 #: src/routes/_app/welcome.tsx
 msgid "Add a workspace"
@@ -1477,6 +1551,8 @@ msgid "All"
 msgstr "Alles"
 
 #. placeholder {0}: chat.data?.commands.length ?? ""
+#. placeholder {0}: data?.counts.connected ?? 0
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "All {0}"
 msgstr "Alle {0}"
@@ -1489,8 +1565,7 @@ msgstr "Alle audio-ingangen zijn verborgen. Tik om er een paar te kiezen."
 msgid "All client workspaces together. Can’t go below the switchers in use; a limit never stops a running one."
 msgstr "Alle klantworkspaces samen. Kan niet lager dan het aantal switchers in gebruik; een limiet stopt nooit een draaiende switcher."
 
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
+#: src/components/operator/live-list.tsx
 msgid "All connected"
 msgstr "Alle verbonden"
 
@@ -1519,14 +1594,13 @@ msgstr "Alles klaar"
 msgid "All sources are hidden. Tap to pick some."
 msgstr "Alle bronnen zijn verborgen. Tik om er een paar te kiezen."
 
+#: src/components/operator/switcher-rail.tsx
+msgid "All switchers"
+msgstr ""
+
 #: src/routes/_app/admin/index.tsx
 msgid "All users"
 msgstr "Alle gebruikers"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "all with a feed"
-msgstr "allemaal met een feed"
 
 #: src/components/home-shell.tsx
 msgid "All workspaces"
@@ -1732,6 +1806,11 @@ msgstr "Minstens {MOBLIN_MIN_PASSWORD} tekens"
 msgid "At least 3 characters: letters, numbers and dashes."
 msgstr "Minstens 3 tekens: letters, cijfers en streepjes."
 
+#. placeholder {0}: data?.counts.attention ?? 0
+#: src/components/operator/live-list.tsx
+msgid "Attention {0}"
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
 msgid "Audio"
@@ -1864,6 +1943,11 @@ msgstr "Voordat de stream live gaat."
 #: src/components/live/belabox-card.tsx
 msgid "BELABOX"
 msgstr "BELABOX"
+
+#. placeholder {0}: formatKbps(live.belabox.total_kbps)
+#: src/components/operator/compact-live.tsx
+msgid "BELABOX · {0} kbps"
+msgstr ""
 
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
@@ -2017,9 +2101,17 @@ msgstr "Bitrate · {serverName}"
 msgid "bitrate {0} kbps"
 msgstr "bitrate {0} kbps"
 
+#: src/components/operator/live-list.tsx
+msgid "Bitrate and RTT of the server in use · last 2 min"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Bitrate or RTT crossed the LOW trigger."
 msgstr "Bitrate of RTT is over de LOW-trigger gegaan."
+
+#: src/components/operator/sparkline.tsx
+msgid "Bitrate over the last two minutes"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Bitrate overlay"
@@ -2075,6 +2167,10 @@ msgstr "Linksonder"
 msgid "Bottom right"
 msgstr "Rechtsonder"
 
+#: src/components/operator/format.ts
+msgid "BRB"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2105,11 +2201,6 @@ msgstr "Browserbron verbonden: eerst live (langst eerst), daarna met OBS."
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "Browserbron is actief; wachten op OBS. Controleer de WebSocket-poort en het wachtwoord hierboven."
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "browser source up"
-msgstr "browserbron actief"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source up"
@@ -2463,11 +2554,16 @@ msgstr "Klanten"
 msgid "Clients of {0}"
 msgstr "Klanten van {0}"
 
+#: src/components/operator/compact-live.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
 msgid "Close"
 msgstr "Sluiten"
+
+#: src/components/operator/compact-live.tsx
+msgid "Close live panel"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "Close the stream while it isn’t shown"
@@ -2480,6 +2576,10 @@ msgstr "Sluiten wanneer OBS inactief is"
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "Code"
+
+#: src/components/operator/switcher-rail.tsx
+msgid "Collapse switcher rail"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "Color"
@@ -2659,8 +2759,6 @@ msgstr "verbonden"
 #: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Connected"
 msgstr "Verbonden"
 
@@ -2721,6 +2819,7 @@ msgstr "Verbinden…"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "CONNECTING…"
 msgstr "VERBINDEN…"
@@ -2757,6 +2856,10 @@ msgstr "Doorgaan met {0}"
 #: src/components/live/source-editor.tsx
 msgid "Control its audio from OBS’s Audio Mixer"
 msgstr "Het geluid regelen via de audiomixer van OBS"
+
+#: src/components/operator/phone-sheet.tsx
+msgid "Control this switcher without leaving the list."
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
@@ -3622,14 +3725,6 @@ msgstr "De switchers van alle klanten gaan weer verder en de chat werkt weer."
 msgid "Every stream from start to stop: how the feed held up, and what switched."
 msgstr "Elke stream van start tot stop: hoe de feed standhield en wat er is gewisseld."
 
-#: src/routes/_app/workspaces/live.tsx
-msgid "Every switcher of every workspace you’re a member of that is connected now, live ones first."
-msgstr "Elke nu verbonden switcher van elke workspace waar je lid van bent, live switchers eerst."
-
-#: src/routes/_app/orgs/$organization/live.tsx
-msgid "Every switcher of your clients that is connected now, live ones first."
-msgstr "Elke nu verbonden switcher van je klanten, live switchers eerst."
-
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Every switcher pauses (no switching, no commands) and chat commands stop, until you lift it. Its members see this reason."
 msgstr "Elke switcher pauzeert (geen wissels, geen opdrachten) en chatopdrachten stoppen, tot jij de schorsing opheft. De leden zien deze reden."
@@ -3672,6 +3767,10 @@ msgstr "Precies het kader, zo nodig vervormd."
 msgid "Existing source"
 msgstr "Bestaande bron"
 
+#: src/components/operator/switcher-rail.tsx
+msgid "Expand switcher rail"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
 msgstr "Verloopt"
@@ -3700,6 +3799,10 @@ msgstr "Velden"
 msgid "Fill"
 msgstr "Vullen"
 
+#: src/components/operator/columns.tsx
+msgid "Fill with what needs attention"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 msgid "Filter log lines"
 msgstr "Logregels filteren"
@@ -3707,6 +3810,10 @@ msgstr "Logregels filteren"
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Zoek een veld"
+
+#: src/components/operator/live-list.tsx
+msgid "Find a switcher"
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/components/settings-hub.tsx
@@ -3718,8 +3825,14 @@ msgid "Fit"
 msgstr "Passend"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/row-actions.tsx
 msgid "Fix feed"
 msgstr "Feed herstellen"
+
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/row-actions.tsx
+msgid "Fix feed for {0}"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Fix the highlighted fields to save."
@@ -3894,6 +4007,7 @@ msgid "Hidden, since raw stats can include stream names or addresses. Copy works
 msgstr "Verborgen, want ruwe statistieken kunnen streamnamen of adressen bevatten. Kopiëren werkt zonder ze te tonen."
 
 #: src/components/history/raw-explorer.tsx
+#: src/components/operator/live-list.tsx
 msgid "Hide"
 msgstr "Verbergen"
 
@@ -4071,9 +4185,19 @@ msgstr "Open in Moblin <0>Settings → Remote control</0> en zet het <1>Password
 msgid "in OBS"
 msgstr "in OBS"
 
+#: src/components/operator/live-list.tsx
+msgid "In OBS"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "Open in OBS <0>Tools → WebSocket Server Settings</0>, zet de WebSocket-server aan en vul hier de poort en het wachtwoord in (<1>Show Connect Info</1> toont beide)."
+
+#. placeholder {0}: item.scene
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
+msgid "In OBS: {0}"
+msgstr ""
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4353,6 +4477,8 @@ msgstr "Deelnemen…"
 #: src/components/live/belabox-card.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
@@ -4392,6 +4518,10 @@ msgstr "Blijven opnemen"
 #: src/components/live/quick-actions.tsx
 msgid "Keep streaming"
 msgstr "Blijven streamen"
+
+#: src/components/operator/columns.tsx
+msgid "Keep up to four switchers side by side"
+msgstr ""
 
 #. placeholder {0}: subscription.held_plan_code
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -4462,9 +4592,17 @@ msgid "Last error {0}{1}: {2}"
 msgstr "Laatste fout {0}{1}: {2}"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
+#. placeholder {0}: timeAgo(item.last_seen_at, now)
 #: src/components/connect-settings.tsx
+#: src/components/operator/live-list.tsx
 msgid "Last seen {0}"
 msgstr "Laatst gezien {0}"
+
+#. placeholder {0}: timeAgo(recentSeen, now)
+#. placeholder {1}: timeAgo(oldestSeen, now)
+#: src/components/operator/live-list.tsx
+msgid "Last seen {0} to {1}"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Latency"
@@ -4620,6 +4758,10 @@ msgstr "Prijs koppelen"
 msgid "Links copied"
 msgstr "Links gekopieerd"
 
+#: src/components/operator/live-list.tsx
+msgid "List view"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "Vermeld als momenteel niet beschikbaar: niemand kan meer kopen, wie het heeft houdt het."
@@ -4640,6 +4782,15 @@ msgstr "Vermeld, maar nog niet te koop."
 msgid "Live"
 msgstr "Live"
 
+#: src/components/operator/format.ts
+msgid "LIVE"
+msgstr ""
+
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/compact-live.tsx
+msgid "Live controls for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
 msgstr "Livefeed"
@@ -4650,8 +4801,6 @@ msgid "Live for {0}"
 msgstr "{0} live"
 
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Live now"
 msgstr "Nu live"
 
@@ -4660,6 +4809,10 @@ msgstr "Nu live"
 msgid "LIVE NOW"
 msgstr "NU LIVE"
 
+#: src/components/operator/live-list.tsx
+msgid "Live panel"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "LIVE SCENE"
 msgstr "LIVE-SCÈNE"
@@ -4667,6 +4820,10 @@ msgstr "LIVE-SCÈNE"
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
 msgstr "Pusht statistieken live"
+
+#: src/components/operator/live-list.tsx
+msgid "Live switchers"
+msgstr ""
 
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
@@ -4699,6 +4856,11 @@ msgstr "Logs laden…"
 msgid "Loading programs…"
 msgstr "Programma’s laden…"
 
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
+msgid "Loading scenes…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4712,6 +4874,10 @@ msgstr "Laden…"
 #: src/components/connect-settings.tsx
 msgid "Logs"
 msgstr "Logs"
+
+#: src/components/operator/live-list.tsx
+msgid "Longest first"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -4781,12 +4947,17 @@ msgstr "De afspeellijst herhalen"
 msgid "Low"
 msgstr "Laag"
 
+#: src/components/operator/format.ts
+msgid "LOW"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
+#: src/components/operator/format.ts
 #: src/components/switcher-status.tsx
 msgid "Low bitrate"
 msgstr "Lage bitrate"
@@ -4794,6 +4965,10 @@ msgstr "Lage bitrate"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "LAGE BITRATE"
+
+#: src/components/operator/format.ts
+msgid "Low bitrate for {duration}"
+msgstr ""
 
 #: src/components/live/scene-grid.tsx
 msgid "LOW SCENE"
@@ -5025,6 +5200,11 @@ msgstr "Sessiecookie ontbreekt"
 msgid "Moblin"
 msgstr "Moblin"
 
+#. placeholder {0}: live.moblin.bitrate ?? "—"
+#: src/components/operator/compact-live.tsx
+msgid "Moblin · {0}"
+msgstr ""
+
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
 msgid "Moblin {0} off"
@@ -5227,6 +5407,10 @@ msgstr "Meer latentie overleeft slechtere verbindingen, {SRT_LATENCY_MIN} tot {S
 msgid "More settings"
 msgstr "Meer instellingen"
 
+#: src/components/operator/live-list.tsx
+msgid "Most recent first"
+msgstr ""
+
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
@@ -5340,6 +5524,8 @@ msgstr "Namen"
 msgid "Names without a device:"
 msgstr "Namen zonder apparaat:"
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Needs attention"
 msgstr "Vraagt aandacht"
@@ -5401,6 +5587,7 @@ msgstr "Nooit"
 msgid "never connected"
 msgstr "nooit verbonden"
 
+#: src/components/operator/live-list.tsx
 #: src/components/switcher-status.tsx
 msgid "Never connected"
 msgstr "Nooit verbonden"
@@ -5578,14 +5765,27 @@ msgid "no feed"
 msgstr "geen feed"
 
 #: src/components/live/server-card.tsx
+#: src/components/operator/format.ts
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "No feed"
 msgstr "Geen feed"
+
+#: src/components/operator/format.ts
+msgid "No feed · the stream stops in {remaining}"
+msgstr ""
 
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
 msgid "No feed for {0} min on BRB, so the stream was stopped"
 msgstr "{0} min geen feed op BRB, dus de stream is gestopt"
+
+#: src/components/operator/format.ts
+msgid "No feed for {duration}"
+msgstr ""
+
+#: src/components/operator/format.ts
+msgid "No feed for {duration} · the stream stops in {remaining}"
+msgstr ""
 
 #: src/components/history/state-bar.tsx
 msgid "No feed recorded"
@@ -5631,6 +5831,8 @@ msgstr "Geen netwerken gevonden. Scan opnieuw, of voeg er hieronder een toe."
 msgid "No notices yet."
 msgstr "Nog geen meldingen."
 
+#: src/components/operator/format.ts
+#: src/components/operator/phone-format.ts
 #: src/lib/admin.ts
 #: src/routes/_app/admin/status.tsx
 msgid "No OBS"
@@ -5675,10 +5877,15 @@ msgstr "Geen prijs: het is het gratis abonnement."
 msgid "No programs have been added yet."
 msgstr "Er zijn nog geen programma’s toegevoegd."
 
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
 msgid "No scene"
 msgstr "Geen scène"
+
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
+msgid "No scenes in OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5723,6 +5930,7 @@ msgstr "Er zijn geen streamserverstatistieken vastgelegd voor deze stream."
 msgid "No stream servers yet"
 msgstr "Nog geen streamservers"
 
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "No stream servers yet."
 msgstr "Nog geen streamservers."
@@ -5746,11 +5954,6 @@ msgstr "Die facturatieperiode bestaat niet"
 #: src/lib/api-messages.ts
 msgid "No such product kind"
 msgstr "Dat producttype bestaat niet"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "No switcher is connected right now. Connected ones show up here."
-msgstr "Er is nu geen switcher verbonden. Verbonden switchers verschijnen hier."
 
 #: src/routes/_app/connect.tsx
 msgid "No switcher you can manage"
@@ -6056,6 +6259,9 @@ msgid "Not sold yearly"
 msgstr "Niet jaarlijks te koop"
 
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/operator/format.ts
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 msgid "Not streaming"
 msgstr "Streamt niet"
 
@@ -6084,10 +6290,13 @@ msgstr "Er is niets gebeurd tijdens deze stream."
 msgid "Nothing here"
 msgstr "Hier is niets"
 
+#: src/components/operator/live-list.tsx
+msgid "Nothing is connected"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Nothing matches."
 msgstr "Niets gevonden."
 
@@ -6173,14 +6382,13 @@ msgstr "OBS heeft al een bron of scène met die naam."
 msgid "OBS command"
 msgstr "OBS-opdracht"
 
+#: src/components/operator/live-list.tsx
 #: src/lib/admin.ts
 #: src/lib/connect.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "OBS connected"
 msgstr "OBS verbonden"
 
@@ -6224,6 +6432,14 @@ msgstr "OBS niet meer verbonden"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS NIET VERBONDEN"
+
+#: src/components/operator/format.ts
+msgid "OBS disconnected {ago}"
+msgstr ""
+
+#: src/components/operator/format.ts
+msgid "OBS disconnected {ago} · was live for {duration}"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6395,6 +6611,7 @@ msgstr "Uit: jouw bot, of de gedeelde NOALBS-bot, antwoordt voor elke klant."
 msgid "Offered"
 msgstr "Aangeboden"
 
+#: src/components/operator/live-list.tsx
 #: src/lib/organizations.ts
 msgid "Offline"
 msgstr "Offline"
@@ -6436,17 +6653,18 @@ msgid "on {0}"
 msgstr "op {0}"
 
 #. placeholder {0}: item.scene
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "On {0}"
-msgstr "Op {0}"
+#: src/components/operator/phone-format.ts
+msgid "On {0} · {uptime}"
+msgstr ""
 
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "On air"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/operator/compact-live.tsx
 msgid "ON AIR"
 msgstr "ON AIR"
 
@@ -6620,6 +6838,11 @@ msgstr "Openen in Workspaces"
 msgid "Open invites"
 msgstr "Openstaande uitnodigingen"
 
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/phone-sheet.tsx
+msgid "Open Live"
+msgstr ""
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Open network: no password"
 msgstr "Open netwerk: geen wachtwoord"
@@ -6763,6 +6986,11 @@ msgstr "Omlijning"
 msgid "Over plan limit"
 msgstr "Boven abonnementslimiet"
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
+msgid "Over the plan’s switcher limit"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Overlay links often hold a key: it’s shown hidden."
 msgstr "Overlaylinks bevatten vaak een sleutel: die wordt verborgen getoond."
@@ -6832,6 +7060,8 @@ msgstr "Eerdere facturen behouden het e-mailadres en de laatste kaartcijfers die
 msgid "Pause, and resume when shown"
 msgstr "Pauzeren, en verdergaan als hij te zien is"
 
+#: src/components/operator/format.ts
+#: src/components/operator/phone-format.ts
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
@@ -6956,6 +7186,10 @@ msgstr "Kies er twee of meer."
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Kies je LIVE-, LOW- en BRB-scène"
+
+#: src/components/operator/compact-live.tsx
+msgid "Pin switcher"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/belabox-card.tsx
@@ -7209,9 +7443,8 @@ msgstr "KLAAR"
 msgid "Reason"
 msgstr "Reden"
 
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
 
@@ -7250,6 +7483,7 @@ msgid "Reconnect the browser source?"
 msgstr "Browserbron opnieuw verbinden?"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/row-actions.tsx
 msgid "Reconnect the stream sources playing on the scene on air"
 msgstr "Verbind de streambronnen die in de scène in beeld spelen opnieuw"
 
@@ -7270,6 +7504,7 @@ msgstr "Opnieuw verbinden"
 msgid "Reconnecting {0}"
 msgstr "{0} opnieuw verbinden"
 
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "RECONNECTING…"
 msgstr "OPNIEUW VERBINDEN…"
@@ -7721,6 +7956,10 @@ msgstr "Rollen"
 msgid "Round-trip time"
 msgstr "Retourtijd (RTT)"
 
+#: src/components/operator/live-list.tsx
+msgid "Rows"
+msgstr ""
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP-invoer - {stream}"
@@ -7924,6 +8163,8 @@ msgid "Scene switches"
 msgstr "Scènewissels"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
@@ -7939,6 +8180,11 @@ msgstr "Scènes en groepen kun je hier niet dupliceren."
 msgid "Scenes appear once OBS is connected."
 msgstr "Scènes verschijnen zodra OBS is verbonden."
 
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/row-actions.tsx
+msgid "Scenes for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
 msgstr "Scènes in OBS"
@@ -7952,7 +8198,6 @@ msgid "Search"
 msgstr "Zoeken"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
 msgid "Search by client or switcher"
 msgstr "Zoek op klant of switcher"
 
@@ -7972,10 +8217,6 @@ msgstr "Zoek op naam, slug of ID"
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Search by name, URL or ID"
 msgstr "Zoek op naam, URL of ID"
-
-#: src/routes/_app/workspaces/live.tsx
-msgid "Search by workspace or switcher"
-msgstr "Zoek op workspace of switcher"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8142,6 +8383,10 @@ msgstr "Abonnement van {target} ingesteld"
 msgid "Set to {0}"
 msgstr "Instellen op {0}"
 
+#: src/components/operator/live-list.tsx
+msgid "Set up"
+msgstr ""
+
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Moblin instellen"
@@ -8229,11 +8474,10 @@ msgid "Shifts the audio against the video, {AUDIO_DELAY_MIN} to {AUDIO_DELAY_MAX
 msgstr "Verschuift de audio ten opzichte van het beeld, {AUDIO_DELAY_MIN} tot {AUDIO_DELAY_MAX}."
 
 #: src/components/history/raw-explorer.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/admin/audit.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Show"
 msgstr "Tonen"
 
@@ -8302,6 +8546,11 @@ msgstr "Bron getoond of verborgen"
 msgid "Showing"
 msgstr "Zichtbaar"
 
+#. placeholder {0}: groups.offline.length
+#: src/components/operator/live-list.tsx
+msgid "Showing the {0} most recently seen switchers."
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8331,6 +8580,11 @@ msgstr "Willekeurig"
 #: src/components/live/source-editor.tsx
 msgid "Shut it down while it isn’t shown"
 msgstr "Uitschakelen zolang hij niet te zien is"
+
+#: src/components/operator/columns.tsx
+#: src/components/operator/live-list.tsx
+msgid "Side by side"
+msgstr ""
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -8738,6 +8992,7 @@ msgid "Stop selling {name}: {label}?"
 msgstr "Verkoop van {name} stoppen: {label}?"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/phone-sheet.tsx
 msgid "Stop stream"
 msgstr "Stream stoppen"
 
@@ -8795,6 +9050,10 @@ msgstr "Stream"
 msgid "Stream bitrate"
 msgstr "Streambitrate"
 
+#: src/components/operator/compact-live.tsx
+msgid "Stream controls"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Stream deleted"
 msgstr "Stream verwijderd"
@@ -8827,6 +9086,7 @@ msgstr "Streamserver"
 msgid "Stream server not found"
 msgstr "Streamserver niet gevonden"
 
+#: src/components/operator/compact-live.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
@@ -8861,10 +9121,20 @@ msgstr "stream-URL"
 msgid "Stream URL"
 msgstr "Stream-URL"
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
+msgid "Streaming"
+msgstr ""
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "STREAMT"
+
+#. placeholder {0}: data?.counts.streaming ?? 0
+#: src/components/operator/live-list.tsx
+msgid "Streaming {0}"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8929,6 +9199,10 @@ msgstr "Abonnementen op onze conduit: {0} (geregistreerd: {1}). Alle abonnemente
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Summary"
 msgstr "Samenvatting"
+
+#: src/components/operator/compact-live.tsx
+msgid "Support"
+msgstr ""
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Support access"
@@ -8999,6 +9273,10 @@ msgstr "Wisselmeldingen in {0}"
 #: src/components/orgs/org-shell.tsx
 msgid "Switch organization or workspace"
 msgstr "Organisatie of workspace wisselen"
+
+#: src/components/operator/phone-sheet.tsx
+msgid "Switch scene"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Switch scenes automatically using the triggers."
@@ -9097,6 +9375,10 @@ msgstr "Switcher"
 msgid "Switcher not found"
 msgstr "Switcher niet gevonden"
 
+#: src/components/operator/switcher-rail.tsx
+msgid "Switcher rail"
+msgstr ""
+
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Switcher settings"
@@ -9104,6 +9386,8 @@ msgstr "Switcherinstellingen"
 
 #: src/components/admin/products.tsx
 #: src/components/app-shell.tsx
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 #: src/components/orgs/client-dialog.tsx
 #: src/components/orgs/managed-plan.tsx
 #: src/routes/_app/$workspace/overview.tsx
@@ -9114,8 +9398,6 @@ msgstr "Switcherinstellingen"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 #: src/routes/_app/admin/workspaces/index.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Switchers"
 msgstr "Switchers"
 
@@ -9127,6 +9409,10 @@ msgstr "Switchers boven de limiet van Free pauzeren dan; ze blijven verbonden ma
 #: src/components/orgs/limits-card.tsx
 msgid "Switchers in the pool"
 msgstr "Switchers in de pool"
+
+#: src/components/operator/live-list.tsx
+msgid "Switchers show up here when their OBS is open with the browser source active."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Switchers, stream servers, members and days of history must be at least 1."
@@ -9667,6 +9953,10 @@ msgstr "De streamgeschiedenis, statistieken, markers en het activiteitenlog van 
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "De stream is live en valt weg als OBS stopt. Wil je doorgaan?"
 
+#: src/components/operator/compact-live.tsx
+msgid "The stream stops in {remaining} if no feed returns."
+msgstr ""
+
 #: src/lib/stream-server-kinds.ts
 msgid "The streams API of Node Media Server; the application and key are added to it."
 msgstr "De streams-API van Node Media Server; de applicatie en sleutel worden eraan toegevoegd."
@@ -9992,6 +10282,10 @@ msgstr "Deze workspace betaalt via Stripe: de volgende Stripe-gebeurtenis zet he
 msgid "Through an invite link"
 msgstr "Via een uitnodigingslink"
 
+#: src/components/operator/live-list.tsx
+msgid "Tiles"
+msgstr ""
+
 #: src/components/history/markers-panel.tsx
 msgid "Times are from the start of the stream. Add them with the Marker button on the Live page or <0>!marker</0> in chat."
 msgstr "Tijden zijn vanaf de start van de stream. Voeg ze toe met de knop Marker op de pagina Live of met <0>!marker</0> in de chat."
@@ -10155,6 +10449,11 @@ msgstr "Onbekende opdracht"
 msgid "Unknown plan"
 msgstr "Onbekend abonnement"
 
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
+msgid "Unknown scene"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/admin/organizations/$organization.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -10194,6 +10493,10 @@ msgstr "{0} niet meer gedempt"
 #: src/components/transfer-ownership.tsx
 msgid "Unnamed"
 msgstr "Naamloos"
+
+#: src/components/operator/compact-live.tsx
+msgid "Unpin switcher"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/settings.tsx

@@ -7,15 +7,14 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh-tw\n"
 
+#. placeholder {0}: item.server.name
+#: src/components/operator/live-list.tsx
+msgid " · {0}"
+msgstr ""
+
 #: src/routes/_app/admin/notices.tsx
 msgid " · can’t be hidden"
 msgstr " · 無法隱藏"
-
-#. placeholder {0}: formatUptime(item.stream_started_at, now)
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid " · live for {0}"
-msgstr " · 已開台 {0}"
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/routes/_app/workspaces/index.tsx
@@ -119,6 +118,16 @@ msgstr "（選填）"
 msgid "(you)"
 msgstr "（你）"
 
+#. placeholder {0}: counts.clients
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {{attention} need attention · {connected} connected · {recording} recording · in # client} other {{attention} need attention · {connected} connected · {recording} recording · in # clients}}"
+msgstr ""
+
+#. placeholder {0}: counts.workspaces
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {{attention} need attention · {connected} connected · {recording} recording · in # workspace} other {{attention} need attention · {connected} connected · {recording} recording · in # workspaces}}"
+msgstr ""
+
 #. placeholder {0}: names.length
 #: src/lib/obs-preview.ts
 msgid "{0, plural, one {{list} is watching} other {{list} are watching}}"
@@ -184,10 +193,25 @@ msgstr "{0, plural, other {# 天}}"
 msgid "{0, plural, one {# member} other {# members}}"
 msgstr "{0, plural, other {# 位成員}}"
 
+#. placeholder {0}: data?.offlineTotal ?? groups.offline.length
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {# more switcher is offline} other {# more switchers are offline}}"
+msgstr ""
+
 #. placeholder {0}: fields.length
 #: src/components/history/raw-explorer.tsx
 msgid "{0, plural, one {# numeric field} other {# numeric fields}} · pick up to {MAX_PICKED} to chart"
 msgstr "{0, plural, other {# 個數值欄位}} · 最多選 {MAX_PICKED} 個繪製圖表"
+
+#. placeholder {0}: pins.length
+#: src/components/operator/columns.tsx
+msgid "{0, plural, one {# of 4 columns · the layout is saved for you} other {# of 4 columns · the layout is saved for you}}"
+msgstr ""
+
+#. placeholder {0}: data.offline
+#: src/components/operator/switcher-rail.tsx
+msgid "{0, plural, one {# offline} other {# offline}}"
+msgstr ""
 
 #. placeholder {0}: others.length
 #: src/routes/_app/$workspace/account.tsx
@@ -219,17 +243,17 @@ msgstr "{0, plural, other {每個切換器 # 台串流伺服器}}"
 msgid "{0, plural, one {# stream server, tried in order.} other {# stream servers, tried in order.}}"
 msgstr "{0, plural, other {# 台串流伺服器，依序嘗試。}}"
 
-#. placeholder {0}: switcher.stream_server_count
-#: src/routes/_app/$workspace/overview.tsx
-msgid "{0, plural, one {# stream server} other {# stream servers}}"
-msgstr "{0, plural, other {# 台串流伺服器}}"
-
 #. placeholder {0}: youtube.watcher.streaming
 #. placeholder {1}: youtube.watcher.chats_open
 #. placeholder {2}: youtube.watcher.instance_id
 #: src/routes/_app/admin/status.tsx
 msgid "{0, plural, one {# streaming channel} other {# streaming channels}}, {1, plural, one {# live chat} other {# live chats}} followed by {2}."
 msgstr "{0, plural, other {# 個實況頻道}}，{2} 正在追蹤 {1, plural, other {# 個即時聊天室}}。"
+
+#. placeholder {0}: data.counts.streaming
+#: src/components/operator/live-list.tsx
+msgid "{0, plural, one {# streaming} other {# streaming}}"
+msgstr ""
 
 #. placeholder {0}: pool.over
 #: src/components/orgs/limits-card.tsx
@@ -299,16 +323,6 @@ msgstr "{0, plural, other {建立 # 個客戶}}"
 msgid "{0, plural, one {Delete # client?} other {Delete # clients?}}"
 msgstr "{0, plural, other {要刪除 # 個客戶嗎？}}"
 
-#. placeholder {0}: counts.clients
-#: src/routes/_app/orgs/$organization/live.tsx
-msgid "{0, plural, one {in # client} other {in # clients}}"
-msgstr "{0, plural, other {在 # 個客戶中}}"
-
-#. placeholder {0}: counts.workspaces
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0, plural, one {in # workspace} other {in # workspaces}}"
-msgstr "{0, plural, other {在 # 個工作區中}}"
-
 #. placeholder {0}: ids.length
 #: src/components/orgs/bulk-dialogs.tsx
 msgid "{0, plural, one {Invite links for # client} other {Invite links for # clients}}"
@@ -353,6 +367,12 @@ msgstr "{0, plural, other {# 個切換器上的頻道需要重新連接：機器
 msgid "{0} – {1}"
 msgstr "{0} – {1}"
 
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.scene
+#: src/components/operator/switcher-rail.tsx
+msgid "{0} · {1}"
+msgstr ""
+
 #. placeholder {0}: providerLabel(session.provider)
 #. placeholder {1}: session.current ? t`Active now` : t`Active ${formatRelative(session.last_used_at)}`
 #. placeholder {2}: formatDate(session.created_at)
@@ -384,6 +404,14 @@ msgstr "{0} · 清單會自動更新；若要重新查看，請掃描。"
 #: src/lib/org-audit.ts
 msgid "{0} (customer)"
 msgstr "{0}（終端客戶）"
+
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.switcher_name
+#. placeholder {2}: stateChip(item).label
+#. placeholder {3}: phoneDetail(item, now)
+#: src/components/operator/switcher-rail.tsx
+msgid "{0} / {1} · {2} · {3}"
+msgstr ""
 
 #. placeholder {0}: availableSelectedNames.slice(0, 2).join(", ")
 #. placeholder {1}: availableSelectedNames.length - 2
@@ -493,12 +521,6 @@ msgstr "{0}（可能已超過你的方案保留期限）"
 msgid "{0} kbps"
 msgstr "{0} kbps"
 
-#. placeholder {0}: counts.low
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0} low"
-msgstr "{0} 個偏低"
-
 #. placeholder {0}: data.switchers.low
 #. placeholder {1}: data.switchers.offline
 #: src/routes/_app/admin/status.tsx
@@ -509,6 +531,13 @@ msgstr "{0} 個偏低 · {1} 個離線"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "{0} missing"
 msgstr "缺少 {0} 個"
+
+#. placeholder {0}: Math.round(sample.rtt)
+#. placeholder {0}: Math.round(serverRtt)
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
+msgid "{0} ms"
+msgstr ""
 
 #. placeholder {0}: data.new_users_7d
 #: src/routes/_app/admin/index.tsx
@@ -695,12 +724,6 @@ msgstr "已新增 {0}"
 msgid "{0} was deleted"
 msgstr "已刪除 {0}"
 
-#. placeholder {0}: counts.offline
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "{0} without a feed"
-msgstr "{0} 個沒有訊號"
-
 #. placeholder {0}: workspaces.data.total
 #: src/routes/_app/admin/workspaces/index.tsx
 msgid "{0} workspaces"
@@ -763,6 +786,14 @@ msgstr "{0}% 的工作區"
 msgid "{access}, allowed by {0}"
 msgstr "{access}，由 {0} 允許"
 
+#: src/components/operator/attention-count.tsx
+msgid "{attention, plural, one {# needs attention} other {# need attention}}"
+msgstr ""
+
+#: src/components/operator/live-list.tsx
+msgid "{attention} need attention · {connected} connected · {recording} recording"
+msgstr ""
+
 #: src/lib/user-agent.ts
 msgid "{browser} on {os}"
 msgstr "{os} 上的 {browser}"
@@ -774,6 +805,10 @@ msgstr "{count, plural, other {# 個舊價格，由現有訂閱者沿用}}"
 #: src/lib/org-audit.ts
 msgid "{created, plural, one {Imported # client} other {Imported # clients}}"
 msgstr "{created, plural, other {已匯入 # 個客戶}}"
+
+#: src/components/operator/format.ts
+msgid "{days, plural, one {# day ago} other {# days ago}}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "{deleted, plural, one {Deleted # client} other {Deleted # clients}}"
@@ -799,6 +834,10 @@ msgstr "已隱藏 {hiddenCount} 個"
 #: src/components/live/source-list.tsx
 msgid "{hiddenHere} hidden"
 msgstr "已隱藏 {hiddenHere} 個"
+
+#: src/components/operator/format.ts
+msgid "{hours, plural, one {# h ago} other {# h ago}}"
+msgstr ""
 
 #: src/components/orgs/client-dialog.tsx
 msgid "{inUse} in use: delete some first, or keep at least that many."
@@ -863,6 +902,10 @@ msgstr "{managedBy} 的團隊可以使用。管理員和操作員不行。"
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "{managedBy} 的團隊在未開台時也看得到。管理員和操作員只有開台時才看得到。"
 
+#: src/components/operator/format.ts
+msgid "{minutes, plural, one {# min ago} other {# min ago}}"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} 已停售：{label}"
@@ -923,6 +966,10 @@ msgstr "{platform} 已連接"
 msgid "{rest} and {last}"
 msgstr "{rest} 和 {last}"
 
+#: src/components/operator/format.ts
+msgid "{seconds, plural, one {# sec ago} other {# sec ago}}"
+msgstr ""
+
 #. placeholder {0}: formatKbps(bitrate)
 #: src/lib/live-format.ts
 msgid "{server} at {0} kbps"
@@ -960,6 +1007,22 @@ msgstr "{targetName} 現在是 {0} 的擁有者"
 #: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team} 的機器人"
+
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher · all offline} other {# switchers · all offline}}"
+msgstr ""
+
+#. placeholder {0}: counts.clients
+#. placeholder {1}: counts.clients
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher in {0, plural, one {# client} other {# clients}} · all offline} other {# switchers in {1, plural, one {# client} other {# clients}} · all offline}}"
+msgstr ""
+
+#. placeholder {0}: counts.workspaces
+#. placeholder {1}: counts.workspaces
+#: src/components/operator/format.ts
+msgid "{total, plural, one {# switcher in {0, plural, one {# workspace} other {# workspaces}} · all offline} other {# switchers in {1, plural, one {# workspace} other {# workspaces}} · all offline}}"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
@@ -1238,6 +1301,12 @@ msgstr "找不到這個帳號"
 msgid "Account settings"
 msgstr "帳號設定"
 
+#. placeholder {0}: item.workspace_name
+#. placeholder {1}: item.switcher_name
+#: src/components/operator/phone-row.tsx
+msgid "Actions for {0} / {1}"
+msgstr ""
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1307,8 +1376,13 @@ msgid "Add a stream server"
 msgstr "新增串流伺服器"
 
 #: src/components/create-switcher-dialog.tsx
+#: src/components/operator/columns.tsx
 msgid "Add a switcher"
 msgstr "新增切換器"
+
+#: src/components/operator/columns.tsx
+msgid "Add a switcher here, or pin one from its live panel. Your columns follow you between workspaces."
+msgstr ""
 
 #: src/routes/_app/welcome.tsx
 msgid "Add a workspace"
@@ -1477,6 +1551,8 @@ msgid "All"
 msgstr "全部"
 
 #. placeholder {0}: chat.data?.commands.length ?? ""
+#. placeholder {0}: data?.counts.connected ?? 0
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "All {0}"
 msgstr "全部 {0}"
@@ -1489,8 +1565,7 @@ msgstr "所有音訊輸入都已隱藏。點一下即可選擇。"
 msgid "All client workspaces together. Can’t go below the switchers in use; a limit never stops a running one."
 msgstr "所有客戶工作區合計。不得低於使用中的切換器數量；限制絕不會停止運作中的切換器。"
 
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
+#: src/components/operator/live-list.tsx
 msgid "All connected"
 msgstr "全部已連線"
 
@@ -1519,14 +1594,13 @@ msgstr "全部設定完成"
 msgid "All sources are hidden. Tap to pick some."
 msgstr "所有來源都已隱藏。點一下即可選擇。"
 
+#: src/components/operator/switcher-rail.tsx
+msgid "All switchers"
+msgstr ""
+
 #: src/routes/_app/admin/index.tsx
 msgid "All users"
 msgstr "所有使用者"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "all with a feed"
-msgstr "全部都有訊號"
 
 #: src/components/home-shell.tsx
 msgid "All workspaces"
@@ -1732,6 +1806,11 @@ msgstr "至少 {MOBLIN_MIN_PASSWORD} 個字元"
 msgid "At least 3 characters: letters, numbers and dashes."
 msgstr "至少 3 個字元：字母、數字和連字號。"
 
+#. placeholder {0}: data?.counts.attention ?? 0
+#: src/components/operator/live-list.tsx
+msgid "Attention {0}"
+msgstr ""
+
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
 msgid "Audio"
@@ -1864,6 +1943,11 @@ msgstr "開台之前。"
 #: src/components/live/belabox-card.tsx
 msgid "BELABOX"
 msgstr "BELABOX"
+
+#. placeholder {0}: formatKbps(live.belabox.total_kbps)
+#: src/components/operator/compact-live.tsx
+msgid "BELABOX · {0} kbps"
+msgstr ""
 
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
@@ -2017,9 +2101,17 @@ msgstr "位元率 · {serverName}"
 msgid "bitrate {0} kbps"
 msgstr "位元率 {0} kbps"
 
+#: src/components/operator/live-list.tsx
+msgid "Bitrate and RTT of the server in use · last 2 min"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Bitrate or RTT crossed the LOW trigger."
 msgstr "位元率或 RTT 已超過 LOW 觸發值。"
+
+#: src/components/operator/sparkline.tsx
+msgid "Bitrate over the last two minutes"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Bitrate overlay"
@@ -2075,6 +2167,10 @@ msgstr "左下"
 msgid "Bottom right"
 msgstr "右下"
 
+#: src/components/operator/format.ts
+msgid "BRB"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2105,11 +2201,6 @@ msgstr "瀏覽器來源已連線：開台中的優先（時間最長的在前）
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Browser source is up; waiting for OBS. Check the WebSocket port and password above."
 msgstr "瀏覽器來源已連線，正在等待 OBS。請檢查上方的 WebSocket 連接埠和密碼。"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "browser source up"
-msgstr "瀏覽器來源已連線"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source up"
@@ -2463,11 +2554,16 @@ msgstr "客戶"
 msgid "Clients of {0}"
 msgstr "{0} 的客戶"
 
+#: src/components/operator/compact-live.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
 msgid "Close"
 msgstr "關閉"
+
+#: src/components/operator/compact-live.tsx
+msgid "Close live panel"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "Close the stream while it isn’t shown"
@@ -2480,6 +2576,10 @@ msgstr "OBS 閒置時關閉"
 #: src/components/admin/products.tsx
 msgid "Code"
 msgstr "代碼"
+
+#: src/components/operator/switcher-rail.tsx
+msgid "Collapse switcher rail"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "Color"
@@ -2659,8 +2759,6 @@ msgstr "已連線"
 #: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Connected"
 msgstr "已連線"
 
@@ -2721,6 +2819,7 @@ msgstr "連線中…"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "CONNECTING…"
 msgstr "連線中…"
@@ -2757,6 +2856,10 @@ msgstr "使用 {0} 繼續"
 #: src/components/live/source-editor.tsx
 msgid "Control its audio from OBS’s Audio Mixer"
 msgstr "從 OBS 的混音器控制它的聲音"
+
+#: src/components/operator/phone-sheet.tsx
+msgid "Control this switcher without leaving the list."
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Controlled BELABOX"
@@ -3622,14 +3725,6 @@ msgstr "所有客戶的切換器都會恢復，聊天室也會恢復運作。"
 msgid "Every stream from start to stop: how the feed held up, and what switched."
 msgstr "每場實況從開始到結束：訊號狀況，以及切換了什麼。"
 
-#: src/routes/_app/workspaces/live.tsx
-msgid "Every switcher of every workspace you’re a member of that is connected now, live ones first."
-msgstr "你所屬工作區中目前已連線的所有切換器，開台中的排在前面。"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-msgid "Every switcher of your clients that is connected now, live ones first."
-msgstr "你的客戶目前已連線的所有切換器，開台中的排在前面。"
-
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Every switcher pauses (no switching, no commands) and chat commands stop, until you lift it. Its members see this reason."
 msgstr "所有切換器都會暫停（不切換、不接受指令），聊天室指令也會停止，直到你解除為止。其成員會看到這個原因。"
@@ -3672,6 +3767,10 @@ msgstr "完全貼合框，必要時會變形。"
 msgid "Existing source"
 msgstr "既有來源"
 
+#: src/components/operator/switcher-rail.tsx
+msgid "Expand switcher rail"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
 msgstr "到期時間"
@@ -3700,6 +3799,10 @@ msgstr "欄位"
 msgid "Fill"
 msgstr "填滿"
 
+#: src/components/operator/columns.tsx
+msgid "Fill with what needs attention"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 msgid "Filter log lines"
 msgstr "篩選記錄檔行"
@@ -3707,6 +3810,10 @@ msgstr "篩選記錄檔行"
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "尋找欄位"
+
+#: src/components/operator/live-list.tsx
+msgid "Find a switcher"
+msgstr ""
 
 #: src/components/app-shell.tsx
 #: src/components/settings-hub.tsx
@@ -3718,8 +3825,14 @@ msgid "Fit"
 msgstr "符合"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/row-actions.tsx
 msgid "Fix feed"
 msgstr "修復訊號"
+
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/row-actions.tsx
+msgid "Fix feed for {0}"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 msgid "Fix the highlighted fields to save."
@@ -3894,6 +4007,7 @@ msgid "Hidden, since raw stats can include stream names or addresses. Copy works
 msgstr "已隱藏，因為原始統計資料可能包含實況名稱或位址。不顯示也能複製。"
 
 #: src/components/history/raw-explorer.tsx
+#: src/components/operator/live-list.tsx
 msgid "Hide"
 msgstr "隱藏"
 
@@ -4071,9 +4185,19 @@ msgstr "在 Moblin 中開啟 <0>Settings → Remote control</0>，並將 <1>Pass
 msgid "in OBS"
 msgstr "在 OBS 中"
 
+#: src/components/operator/live-list.tsx
+msgid "In OBS"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "在 OBS 中開啟 <0>Tools → WebSocket Server Settings</0>，開啟 WebSocket 伺服器，並在這裡輸入連接埠和密碼（<1>Show Connect Info</1> 會顯示這兩項）。"
+
+#. placeholder {0}: item.scene
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
+msgid "In OBS: {0}"
+msgstr ""
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4353,6 +4477,8 @@ msgstr "加入中…"
 #: src/components/live/belabox-card.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
@@ -4392,6 +4518,10 @@ msgstr "繼續錄影"
 #: src/components/live/quick-actions.tsx
 msgid "Keep streaming"
 msgstr "繼續實況"
+
+#: src/components/operator/columns.tsx
+msgid "Keep up to four switchers side by side"
+msgstr ""
 
 #. placeholder {0}: subscription.held_plan_code
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -4462,9 +4592,17 @@ msgid "Last error {0}{1}: {2}"
 msgstr "上次錯誤 {0}{1}：{2}"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
+#. placeholder {0}: timeAgo(item.last_seen_at, now)
 #: src/components/connect-settings.tsx
+#: src/components/operator/live-list.tsx
 msgid "Last seen {0}"
 msgstr "上次上線：{0}"
+
+#. placeholder {0}: timeAgo(recentSeen, now)
+#. placeholder {1}: timeAgo(oldestSeen, now)
+#: src/components/operator/live-list.tsx
+msgid "Last seen {0} to {1}"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 msgid "Latency"
@@ -4620,6 +4758,10 @@ msgstr "連結價格"
 msgid "Links copied"
 msgstr "連結已複製"
 
+#: src/components/operator/live-list.tsx
+msgid "List view"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "列為目前無法購買：任何人都無法再購買，已擁有的人可繼續保留。"
@@ -4640,6 +4782,15 @@ msgstr "已列出，但目前還無法購買。"
 msgid "Live"
 msgstr "實況"
 
+#: src/components/operator/format.ts
+msgid "LIVE"
+msgstr ""
+
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/compact-live.tsx
+msgid "Live controls for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
 msgstr "即時資料"
@@ -4650,8 +4801,6 @@ msgid "Live for {0}"
 msgstr "已開台 {0}"
 
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Live now"
 msgstr "實況中"
 
@@ -4660,6 +4809,10 @@ msgstr "實況中"
 msgid "LIVE NOW"
 msgstr "實況中"
 
+#: src/components/operator/live-list.tsx
+msgid "Live panel"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "LIVE SCENE"
 msgstr "LIVE 場景"
@@ -4667,6 +4820,10 @@ msgstr "LIVE 場景"
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
 msgstr "即時統計推送"
+
+#: src/components/operator/live-list.tsx
+msgid "Live switchers"
+msgstr ""
 
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
@@ -4699,6 +4856,11 @@ msgstr "正在載入記錄檔清單…"
 msgid "Loading programs…"
 msgstr "正在載入程式…"
 
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
+msgid "Loading scenes…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
@@ -4712,6 +4874,10 @@ msgstr "載入中…"
 #: src/components/connect-settings.tsx
 msgid "Logs"
 msgstr "記錄檔"
+
+#: src/components/operator/live-list.tsx
+msgid "Longest first"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Looked around"
@@ -4781,12 +4947,17 @@ msgstr "循環播放清單"
 msgid "Low"
 msgstr "低"
 
+#: src/components/operator/format.ts
+msgid "LOW"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "偏低 {0}"
 
+#: src/components/operator/format.ts
 #: src/components/switcher-status.tsx
 msgid "Low bitrate"
 msgstr "低位元率"
@@ -4794,6 +4965,10 @@ msgstr "低位元率"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "低位元率"
+
+#: src/components/operator/format.ts
+msgid "Low bitrate for {duration}"
+msgstr ""
 
 #: src/components/live/scene-grid.tsx
 msgid "LOW SCENE"
@@ -5025,6 +5200,11 @@ msgstr "缺少工作階段 Cookie"
 msgid "Moblin"
 msgstr "Moblin"
 
+#. placeholder {0}: live.moblin.bitrate ?? "—"
+#: src/components/operator/compact-live.tsx
+msgid "Moblin · {0}"
+msgstr ""
+
 #. placeholder {0}: event.data.name
 #: src/lib/live-format.ts
 msgid "Moblin {0} off"
@@ -5227,6 +5407,10 @@ msgstr "延遲越高越能應付較差的連線，範圍 {SRT_LATENCY_MIN} 到 {
 msgid "More settings"
 msgstr "更多設定"
 
+#: src/components/operator/live-list.tsx
+msgid "Most recent first"
+msgstr ""
+
 #. placeholder {0}: server.name
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
@@ -5340,6 +5524,8 @@ msgstr "名稱"
 msgid "Names without a device:"
 msgstr "沒有裝置的名稱："
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Needs attention"
 msgstr "需要注意"
@@ -5401,6 +5587,7 @@ msgstr "永不"
 msgid "never connected"
 msgstr "從未連線"
 
+#: src/components/operator/live-list.tsx
 #: src/components/switcher-status.tsx
 msgid "Never connected"
 msgstr "從未連線"
@@ -5578,14 +5765,27 @@ msgid "no feed"
 msgstr "無訊號"
 
 #: src/components/live/server-card.tsx
+#: src/components/operator/format.ts
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "No feed"
 msgstr "無訊號"
+
+#: src/components/operator/format.ts
+msgid "No feed · the stream stops in {remaining}"
+msgstr ""
 
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
 msgid "No feed for {0} min on BRB, so the stream was stopped"
 msgstr "BRB 場景已 {0} 分鐘沒有訊號，因此已停止實況"
+
+#: src/components/operator/format.ts
+msgid "No feed for {duration}"
+msgstr ""
+
+#: src/components/operator/format.ts
+msgid "No feed for {duration} · the stream stops in {remaining}"
+msgstr ""
 
 #: src/components/history/state-bar.tsx
 msgid "No feed recorded"
@@ -5631,6 +5831,8 @@ msgstr "找不到網路。請重新掃描，或在下方新增。"
 msgid "No notices yet."
 msgstr "尚無公告。"
 
+#: src/components/operator/format.ts
+#: src/components/operator/phone-format.ts
 #: src/lib/admin.ts
 #: src/routes/_app/admin/status.tsx
 msgid "No OBS"
@@ -5675,10 +5877,15 @@ msgstr "無價格：這是免費方案。"
 msgid "No programs have been added yet."
 msgstr "尚未新增任何程式。"
 
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
 msgid "No scene"
 msgstr "無場景"
+
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
+msgid "No scenes in OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5723,6 +5930,7 @@ msgstr "這場實況沒有記錄到串流伺服器統計資料。"
 msgid "No stream servers yet"
 msgstr "尚無串流伺服器"
 
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "No stream servers yet."
 msgstr "尚無串流伺服器。"
@@ -5746,11 +5954,6 @@ msgstr "沒有這個計費週期"
 #: src/lib/api-messages.ts
 msgid "No such product kind"
 msgstr "沒有這種產品類型"
-
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "No switcher is connected right now. Connected ones show up here."
-msgstr "目前沒有已連線的切換器。已連線的切換器會顯示在這裡。"
 
 #: src/routes/_app/connect.tsx
 msgid "No switcher you can manage"
@@ -6056,6 +6259,9 @@ msgid "Not sold yearly"
 msgstr "不提供年繳"
 
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/operator/format.ts
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 msgid "Not streaming"
 msgstr "未在實況"
 
@@ -6084,10 +6290,13 @@ msgstr "這場實況期間沒有發生任何事。"
 msgid "Nothing here"
 msgstr "這裡沒有內容"
 
+#: src/components/operator/live-list.tsx
+msgid "Nothing is connected"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Nothing matches."
 msgstr "沒有符合的項目。"
 
@@ -6173,14 +6382,13 @@ msgstr "OBS 已經有同名的來源或場景。"
 msgid "OBS command"
 msgstr "OBS 指令"
 
+#: src/components/operator/live-list.tsx
 #: src/lib/admin.ts
 #: src/lib/connect.ts
 #: src/lib/live-format.ts
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "OBS connected"
 msgstr "OBS 已連線"
 
@@ -6224,6 +6432,14 @@ msgstr "OBS 已中斷連線"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS 已中斷連線"
+
+#: src/components/operator/format.ts
+msgid "OBS disconnected {ago}"
+msgstr ""
+
+#: src/components/operator/format.ts
+msgid "OBS disconnected {ago} · was live for {duration}"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6395,6 +6611,7 @@ msgstr "關閉：由你的機器人或共用的 NOALBS 機器人回覆所有客�
 msgid "Offered"
 msgstr "提供中"
 
+#: src/components/operator/live-list.tsx
 #: src/lib/organizations.ts
 msgid "Offline"
 msgstr "離線"
@@ -6436,17 +6653,18 @@ msgid "on {0}"
 msgstr "在 {0} 場景"
 
 #. placeholder {0}: item.scene
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
-msgid "On {0}"
-msgstr "場景：{0}"
+#: src/components/operator/phone-format.ts
+msgid "On {0} · {uptime}"
+msgstr ""
 
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "播出中"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/operator/compact-live.tsx
 msgid "ON AIR"
 msgstr "播出中"
 
@@ -6620,6 +6838,11 @@ msgstr "在工作區中開啟"
 msgid "Open invites"
 msgstr "未使用的邀請"
 
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/phone-sheet.tsx
+msgid "Open Live"
+msgstr ""
+
 #: src/components/belabox/wifi-panel.tsx
 msgid "Open network: no password"
 msgstr "開放網路：無密碼"
@@ -6763,6 +6986,11 @@ msgstr "外框"
 msgid "Over plan limit"
 msgstr "超過方案上限"
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/phone-format.ts
+msgid "Over the plan’s switcher limit"
+msgstr ""
+
 #: src/components/live/source-editor.tsx
 msgid "Overlay links often hold a key: it’s shown hidden."
 msgstr "疊加層連結常常含有金鑰：會以隱藏方式顯示。"
@@ -6832,6 +7060,8 @@ msgstr "過去的帳單會保留當時的電子郵件和信用卡末碼。"
 msgid "Pause, and resume when shown"
 msgstr "暫停，顯示時繼續"
 
+#: src/components/operator/format.ts
+#: src/components/operator/phone-format.ts
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
@@ -6956,6 +7186,10 @@ msgstr "選擇兩個或更多。"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "選擇你的 LIVE、LOW 和 BRB 場景"
+
+#: src/components/operator/compact-live.tsx
+msgid "Pin switcher"
+msgstr ""
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/belabox-card.tsx
@@ -7209,9 +7443,8 @@ msgstr "就緒"
 msgid "Reason"
 msgstr "原因"
 
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/admin/status.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
 
@@ -7250,6 +7483,7 @@ msgid "Reconnect the browser source?"
 msgstr "要重新連線瀏覽器來源嗎？"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/row-actions.tsx
 msgid "Reconnect the stream sources playing on the scene on air"
 msgstr "重新連線目前播出場景上正在播放的串流來源"
 
@@ -7270,6 +7504,7 @@ msgstr "重新連線中"
 msgid "Reconnecting {0}"
 msgstr "正在重新連線 {0}"
 
+#: src/components/operator/compact-live.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "RECONNECTING…"
 msgstr "重新連線中…"
@@ -7721,6 +7956,10 @@ msgstr "角色"
 msgid "Round-trip time"
 msgstr "往返時間 (RTT)"
 
+#: src/components/operator/live-list.tsx
+msgid "Rows"
+msgstr ""
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP 輸入 - {stream}"
@@ -7924,6 +8163,8 @@ msgid "Scene switches"
 msgstr "場景切換"
 
 #: src/components/live/scene-grid.tsx
+#: src/components/operator/phone-sheet.tsx
+#: src/components/operator/row-actions.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
@@ -7939,6 +8180,11 @@ msgstr "這裡無法複製場景和群組。"
 msgid "Scenes appear once OBS is connected."
 msgstr "OBS 連接後就會顯示場景。"
 
+#. placeholder {0}: item.switcher_name
+#: src/components/operator/row-actions.tsx
+msgid "Scenes for {0}"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
 msgstr "OBS 中的場景"
@@ -7952,7 +8198,6 @@ msgid "Search"
 msgstr "搜尋"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
 msgid "Search by client or switcher"
 msgstr "依客戶或切換器搜尋"
 
@@ -7972,10 +8217,6 @@ msgstr "依名稱、網址代稱或 ID 搜尋"
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Search by name, URL or ID"
 msgstr "依名稱、URL 或 ID 搜尋"
-
-#: src/routes/_app/workspaces/live.tsx
-msgid "Search by workspace or switcher"
-msgstr "依工作區或切換器搜尋"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8142,6 +8383,10 @@ msgstr "設定了 {target} 的方案"
 msgid "Set to {0}"
 msgstr "設為 {0}"
 
+#: src/components/operator/live-list.tsx
+msgid "Set up"
+msgstr ""
+
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "設定 Moblin"
@@ -8229,11 +8474,10 @@ msgid "Shifts the audio against the video, {AUDIO_DELAY_MIN} to {AUDIO_DELAY_MAX
 msgstr "讓音訊相對影像偏移，範圍 {AUDIO_DELAY_MIN} 到 {AUDIO_DELAY_MAX}。"
 
 #: src/components/history/raw-explorer.tsx
+#: src/components/operator/live-list.tsx
 #: src/routes/_app/admin/audit.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Show"
 msgstr "顯示"
 
@@ -8302,6 +8546,11 @@ msgstr "顯示或隱藏了來源"
 msgid "Showing"
 msgstr "顯示中"
 
+#. placeholder {0}: groups.offline.length
+#: src/components/operator/live-list.tsx
+msgid "Showing the {0} most recently seen switchers."
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8331,6 +8580,11 @@ msgstr "隨機播放"
 #: src/components/live/source-editor.tsx
 msgid "Shut it down while it isn’t shown"
 msgstr "未顯示時關閉"
+
+#: src/components/operator/columns.tsx
+#: src/components/operator/live-list.tsx
+msgid "Side by side"
+msgstr ""
 
 #: src/routes/login.tsx
 msgid "Sign in"
@@ -8738,6 +8992,7 @@ msgid "Stop selling {name}: {label}?"
 msgstr "要停止販售 {name}：{label} 嗎？"
 
 #: src/components/live/quick-actions.tsx
+#: src/components/operator/phone-sheet.tsx
 msgid "Stop stream"
 msgstr "結束實況"
 
@@ -8795,6 +9050,10 @@ msgstr "實況"
 msgid "Stream bitrate"
 msgstr "實況位元率"
 
+#: src/components/operator/compact-live.tsx
+msgid "Stream controls"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Stream deleted"
 msgstr "已刪除實況"
@@ -8827,6 +9086,7 @@ msgstr "串流伺服器"
 msgid "Stream server not found"
 msgstr "找不到這台串流伺服器"
 
+#: src/components/operator/compact-live.tsx
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
@@ -8861,10 +9121,20 @@ msgstr "串流 URL"
 msgid "Stream URL"
 msgstr "串流 URL"
 
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
+msgid "Streaming"
+msgstr ""
+
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
 msgid "STREAMING"
 msgstr "實況中"
+
+#. placeholder {0}: data?.counts.streaming ?? 0
+#: src/components/operator/live-list.tsx
+msgid "Streaming {0}"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8929,6 +9199,10 @@ msgstr "我們 conduit 上的訂閱：{0}（已記錄 {1}）。應用程式依�
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Summary"
 msgstr "摘要"
+
+#: src/components/operator/compact-live.tsx
+msgid "Support"
+msgstr ""
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Support access"
@@ -8999,6 +9273,10 @@ msgstr "{0} 的切換通知"
 #: src/components/orgs/org-shell.tsx
 msgid "Switch organization or workspace"
 msgstr "切換組織或工作區"
+
+#: src/components/operator/phone-sheet.tsx
+msgid "Switch scene"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Switch scenes automatically using the triggers."
@@ -9097,6 +9375,10 @@ msgstr "切換器"
 msgid "Switcher not found"
 msgstr "找不到這個切換器"
 
+#: src/components/operator/switcher-rail.tsx
+msgid "Switcher rail"
+msgstr ""
+
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Switcher settings"
@@ -9104,6 +9386,8 @@ msgstr "切換器設定"
 
 #: src/components/admin/products.tsx
 #: src/components/app-shell.tsx
+#: src/components/operator/live-list.tsx
+#: src/components/operator/switcher-rail.tsx
 #: src/components/orgs/client-dialog.tsx
 #: src/components/orgs/managed-plan.tsx
 #: src/routes/_app/$workspace/overview.tsx
@@ -9114,8 +9398,6 @@ msgstr "切換器設定"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 #: src/routes/_app/admin/workspaces/index.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
-#: src/routes/_app/orgs/$organization/live.tsx
-#: src/routes/_app/workspaces/live.tsx
 msgid "Switchers"
 msgstr "切換器"
 
@@ -9127,6 +9409,10 @@ msgstr "屆時超過 Free 上限的切換器會暫停；它們會保持連線，
 #: src/components/orgs/limits-card.tsx
 msgid "Switchers in the pool"
 msgstr "額度池中的切換器"
+
+#: src/components/operator/live-list.tsx
+msgid "Switchers show up here when their OBS is open with the browser source active."
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Switchers, stream servers, members and days of history must be at least 1."
@@ -9667,6 +9953,10 @@ msgstr "你自己的切換器的實況歷史紀錄、統計資料、標記和活
 msgid "The stream is live and will drop if OBS stops. Do you want to continue?"
 msgstr "目前正在開台，OBS 停止後直播會中斷。要繼續嗎？"
 
+#: src/components/operator/compact-live.tsx
+msgid "The stream stops in {remaining} if no feed returns."
+msgstr ""
+
 #: src/lib/stream-server-kinds.ts
 msgid "The streams API of Node Media Server; the application and key are added to it."
 msgstr "Node Media Server 的 streams API；應用程式和金鑰會附加在後面。"
@@ -9992,6 +10282,10 @@ msgstr "這個工作區透過 Stripe 付款：下一次 Stripe 事件會將方�
 msgid "Through an invite link"
 msgstr "透過邀請連結"
 
+#: src/components/operator/live-list.tsx
+msgid "Tiles"
+msgstr ""
+
 #: src/components/history/markers-panel.tsx
 msgid "Times are from the start of the stream. Add them with the Marker button on the Live page or <0>!marker</0> in chat."
 msgstr "時間從實況開始起算。可用實況頁面的「新增標記」按鈕，或在聊天室輸入 <0>!marker</0> 新增。"
@@ -10155,6 +10449,11 @@ msgstr "未知的指令"
 msgid "Unknown plan"
 msgstr "未知的方案"
 
+#: src/components/operator/compact-live.tsx
+#: src/components/operator/live-list.tsx
+msgid "Unknown scene"
+msgstr ""
+
 #: src/routes/_app/$workspace/settings/members.tsx
 #: src/routes/_app/admin/organizations/$organization.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -10194,6 +10493,10 @@ msgstr "已取消靜音 {0}"
 #: src/components/transfer-ownership.tsx
 msgid "Unnamed"
 msgstr "未命名"
+
+#: src/components/operator/compact-live.tsx
+msgid "Unpin switcher"
+msgstr ""
 
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/settings.tsx
