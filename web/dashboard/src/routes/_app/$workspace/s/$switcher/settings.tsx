@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { streamServersQuery, switchersQuery } from "@/api/queries";
 import { DisplaySettings } from "@/components/display-settings";
 import { Section } from "@/components/page";
 import { ReadOnlyNotice } from "@/components/settings";
+import { SettingsHub } from "@/components/settings-hub";
 import {
   BrowserSourceLink,
   DeleteSwitcher,
@@ -13,14 +14,24 @@ import {
   PreviewPrivacy,
   SwitcherName,
 } from "@/components/switcher-obs-content";
-import { IndexedPage } from "@/components/switcher-page";
+import { IndexedPage, SwitcherPage } from "@/components/switcher-page";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSwitcher } from "@/hooks/use-switcher";
 import { setupProgress } from "@/lib/setup";
 export const Route = createFileRoute("/_app/$workspace/s/$switcher/settings")({
   component: SettingsPage,
 });
 function SettingsPage() {
-  const { switcher, canManage } = useSwitcher();
+  const { workspace, switcher, canManage } = useSwitcher();
+  const phone = useMediaQuery("(max-width: 767px)");
+  const hash = useLocation({ select: (location) => location.hash });
+  if (phone && !hash)
+    return (
+      <SwitcherPage title={t`Settings`}>
+        {!canManage && <ReadOnlyNotice />}
+        <SettingsHub />
+      </SwitcherPage>
+    );
   return (
     <IndexedPage
       title={t`Settings`}
@@ -54,6 +65,14 @@ function SettingsPage() {
         },
       ]}
     >
+      {phone && (
+        <Link
+          to="/$workspace/s/$switcher/settings"
+          params={{ workspace: workspace.url_slug, switcher: switcher.id }}
+          hash=""
+          className="text-sm text-primary"
+        >{t`Back to Settings`}</Link>
+      )}
       {!canManage && <ReadOnlyNotice />}
     </IndexedPage>
   );

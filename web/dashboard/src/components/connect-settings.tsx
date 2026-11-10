@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Download, Monitor, Pencil, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, apiWithTimeout, unwrap } from "@/api/client";
 import { connectDevicesQuery, queryKeys, switchersQuery } from "@/api/queries";
@@ -65,7 +65,7 @@ import { isOwner, isSupport } from "@/lib/permissions";
 import { redactLog } from "@/lib/redact-log";
 import { formatRelative } from "@/lib/time";
 
-export function ConnectSettings() {
+export function ConnectSettings({ summary: deviceSummary }: { summary?: ReactNode }) {
   const { workspace, switcher, actor, canManage, path } = useSwitcher();
   const queryClient = useQueryClient();
   const devices = useQuery(connectDevicesQuery(workspace.id, switcher.id));
@@ -170,6 +170,7 @@ export function ConnectSettings() {
       description={t`Desktop app for OBS on your PC.`}
       actions={<Monitor className="size-5 text-muted-foreground" />}
     >
+      {deviceSummary}
       <div className="flex flex-col gap-5 px-5 py-4">
         <p className="text-sm text-muted-foreground">
           <Trans>On Live: OBS controls, restart, logs and programs.</Trans>

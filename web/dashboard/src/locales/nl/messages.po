@@ -129,6 +129,16 @@ msgstr "{0, plural, one {{list} kijkt mee} other {{list} kijken mee}}"
 msgid "{0, plural, one {# auto switch} other {# auto switches}}"
 msgstr "{0, plural, one {# automatische wissel} other {# automatische wissels}}"
 
+#. placeholder {0}: channels.length
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# channel · bot available} other {# channels · bot available}}"
+msgstr ""
+
+#. placeholder {0}: channels.length
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# channel · no bot available} other {# channels · no bot available}}"
+msgstr ""
+
 #. placeholder {0}: chat.active_channels
 #. placeholder {1}: chat.links
 #. placeholder {2}: chat.environment
@@ -208,6 +218,13 @@ msgstr "{0, plural, one {# scène} other {# scènes}}"
 #: src/components/switching/rules.tsx
 msgid "{0, plural, one {# selected scene is no longer in OBS.} other {# selected scenes are no longer in OBS.}}"
 msgstr "{0, plural, one {# geselecteerde scène staat niet meer in OBS.} other {# geselecteerde scènes staan niet meer in OBS.}}"
+
+#. placeholder {0}: servers.data.length
+#. placeholder {1}: first.name
+#. placeholder {2}: first.name
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# server · {1} first} other {# servers · {2} first}}"
+msgstr ""
 
 #. placeholder {0}: plan.max_stream_servers
 #: src/components/admin/products.tsx
@@ -396,12 +413,6 @@ msgstr "{0} (eindklant)"
 msgid "{0} +{1} more"
 msgstr "{0} +{1} meer"
 
-#. placeholder {0}: enabled.length
-#. placeholder {1}: enabled[0]?.name ?? ""
-#: src/components/settings-hub.tsx
-msgid "{0} active · {1} first"
-msgstr "{0} actief · {1} eerst"
-
 #. placeholder {0}: names.join(", ")
 #. placeholder {1}: deleted - names.length
 #: src/lib/org-audit.ts
@@ -525,8 +536,11 @@ msgstr "{0} is geen van de scènes om op op te nemen"
 msgid "{0} It may be older than your plan keeps."
 msgstr "{0} Hij is mogelijk ouder dan je abonnement bewaart."
 
-#. placeholder {0}: item.kbps.toLocaleString(currentLocale())
+#. placeholder {0}: formatKbps(devices.belabox.max_br)
+#. placeholder {0}: formatKbps(devices.belabox.total_kbps)
+#. placeholder {0}: formatKbps(devices.moblin.bitrate_kbps)
 #: src/components/login-backdrop.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "{0} kbps"
 msgstr "{0} kbps"
 
@@ -787,6 +801,11 @@ msgstr "Bot van {0}"
 msgid "{0}’s own bot"
 msgstr "Eigen bot van {0}"
 
+#. placeholder {0}: devices.moblin.battery_level
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "{0}%"
+msgstr ""
+
 #. placeholder {0}: status.battery_level
 #: src/lib/moblin.ts
 msgid "{0}% · charging"
@@ -814,6 +833,18 @@ msgstr "{browser} op {os}"
 #: src/components/admin/products.tsx
 msgid "{count, plural, one {# earlier price, kept by existing subscribers} other {# earlier prices, kept by existing subscribers}}"
 msgstr "{count, plural, one {# eerdere prijs, behouden door bestaande abonnees} other {# eerdere prijzen, behouden door bestaande abonnees}}"
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · checking status} other {# paired computers · checking status}}"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · offline} other {# paired computers · offline}}"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · online} other {# paired computers · online}}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "{created, plural, one {Imported # client} other {Imported # clients}}"
@@ -967,6 +998,10 @@ msgstr "{platform} verbonden"
 msgid "{rest} and {last}"
 msgstr "{rest} en {last}"
 
+#: src/components/settings-hub.tsx
+msgid "{sceneCount} of 3 set"
+msgstr ""
+
 #. placeholder {0}: formatKbps(bitrate)
 #: src/lib/live-format.ts
 msgid "{server} at {0} kbps"
@@ -1004,6 +1039,10 @@ msgstr "{targetName} is nu eigenaar van {0}"
 #: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "Bot van {team}"
+
+#: src/components/settings-hub.tsx
+msgid "{themeLabel} · {sizeLabel}"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
@@ -1887,6 +1926,10 @@ msgstr ""
 msgid "Back to my workspace"
 msgstr "Terug naar mijn workspace"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Back to Settings"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "Back to the site"
 msgstr "Terug naar de site"
@@ -1904,13 +1947,9 @@ msgid "Band"
 msgstr "Band"
 
 #: src/components/live/moblin-card.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Battery"
 msgstr "Batterij"
-
-#. placeholder {0}: live.moblin.battery_level
-#: src/routes/_app/$workspace/s/$switcher/devices.tsx
-msgid "Battery: {0}%"
-msgstr ""
 
 #: src/components/switching/scenes.tsx
 msgid "Before the stream goes live · {prefix}starting"
@@ -2098,6 +2137,10 @@ msgstr "Bitrate-preset"
 msgid "Bitrate scale: LOW at {0}, BRB at {1} kbps"
 msgstr "Bitrateschaal: LOW bij {0}, BRB bij {1} kbps"
 
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Bitrate sent"
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "Bitrate triggers must be between 1 and 100,000 kbps."
 msgstr "Bitrate-triggers moeten tussen 1 en 100.000 kbps liggen."
@@ -2155,6 +2198,7 @@ msgid "BRB SCENE"
 msgstr "BRB-SCÈNE"
 
 #: src/components/live/source-editor.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Browser source"
@@ -2404,14 +2448,11 @@ msgstr "Kanaal niet gekoppeld"
 msgid "Channels"
 msgstr "Kanalen"
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Chat"
 msgstr ""
-
-#: src/components/settings-hub.tsx
-msgid "Chat & commands"
-msgstr "Chat & opdrachten"
 
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/orgs/$organization/chat.tsx
@@ -2616,6 +2657,7 @@ msgstr "Je betaling wordt bevestigd… dit duurt een paar seconden."
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/connect-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
 msgstr "Verbinden"
@@ -2741,6 +2783,8 @@ msgstr "verbonden"
 
 #: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -2750,6 +2794,15 @@ msgstr "Verbonden"
 #: src/components/switcher-status.tsx
 msgid "Connected · not streaming"
 msgstr "Verbonden · streamt niet"
+
+#: src/lib/device-summary.ts
+msgid "Connected · paused"
+msgstr ""
+
+#. placeholder {0}: switcher.obs.port
+#: src/components/settings-hub.tsx
+msgid "Connected · port {0}"
+msgstr ""
 
 #. placeholder {0}: formatRelative(bot.connected_at)
 #: src/components/orgs/chat-bot-section.tsx
@@ -2798,6 +2851,7 @@ msgstr "Verbinden met BELABOX Cloud…"
 msgid "Connecting was cancelled."
 msgstr "Verbinden is geannuleerd."
 
+#: src/lib/device-summary.ts
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "Verbinden…"
@@ -2893,6 +2947,19 @@ msgstr "Kopieer de <0>geheime BELABOX-remote-URL</0> uit je <1>BELABOX Cloud</1>
 msgid "Copy the link now: it won’t be shown again. It works once and expires {0}."
 msgstr "Kopieer de link nu: die wordt niet nog eens getoond. De link werkt één keer en verloopt {0}."
 
+#: src/components/settings-hub.tsx
+msgid "Could not load channels"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "Could not load computers"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Could not load servers"
+msgstr ""
+
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Could not load setup progress."
 msgstr ""
@@ -3173,6 +3240,7 @@ msgstr "Aanpassen"
 
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "Dark"
 msgstr "Donker"
 
@@ -3188,6 +3256,10 @@ msgstr "Weigeren"
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
 msgid "Default"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Default text"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -3328,6 +3400,7 @@ msgstr "Dev-login"
 msgid "Device removed"
 msgstr "Apparaat verwijderd"
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Devices"
@@ -3400,6 +3473,7 @@ msgid "Dismiss"
 msgstr "Sluiten"
 
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Display"
 msgstr ""
@@ -3408,6 +3482,7 @@ msgstr ""
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Done"
 msgstr "Klaar"
@@ -3591,6 +3666,10 @@ msgstr "Ingeschakeld met <0>dev_login = true</0>. Nooit in productie."
 msgid "Encoder"
 msgstr "Encoder"
 
+#: src/lib/device-summary.ts
+msgid "Encoder offline"
+msgstr ""
+
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
 msgstr "Coderingsvertraging"
@@ -3633,7 +3712,6 @@ msgstr "Beëindigd {0}"
 msgid "Ended a notice"
 msgstr "Melding beëindigd"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 msgid "Ending"
 msgstr "Einde"
@@ -3812,7 +3890,6 @@ msgid "Find a field"
 msgstr "Zoek een veld"
 
 #: src/components/app-shell.tsx
-#: src/components/settings-hub.tsx
 msgid "Finish setup"
 msgstr "Setup afronden"
 
@@ -4568,6 +4645,10 @@ msgstr "Taal"
 msgid "Large"
 msgstr ""
 
+#: src/components/settings-hub.tsx
+msgid "Large text"
+msgstr ""
+
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
 msgid "Larger"
@@ -4575,6 +4656,10 @@ msgstr ""
 
 #: src/components/display-settings.tsx
 msgid "Larger sizes suit 4K monitors at 100% scaling."
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Larger text"
 msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -4701,6 +4786,7 @@ msgstr "Schorsing van {target} opgeheven"
 
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "Light"
 msgstr "Licht"
 
@@ -4809,6 +4895,10 @@ msgstr "Pusht statistieken live"
 msgid "LIVE, LOW and BRB scenes picked"
 msgstr ""
 
+#: src/components/settings-hub.tsx
+msgid "LIVE, LOW and BRB set"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -4821,6 +4911,14 @@ msgstr "Oudere streams laden"
 
 #: src/components/history/history-summary.tsx
 msgid "Loaded streams started in the last 30 days; load older streams to complete this summary."
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Loading channels…"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "Loading computers…"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -4844,8 +4942,18 @@ msgstr "Logs laden…"
 msgid "Loading programs…"
 msgstr "Programma’s laden…"
 
+#: src/components/settings-hub.tsx
+msgid "Loading servers…"
+msgstr ""
+
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Loading setup progress…"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
+msgid "Loading status…"
 msgstr ""
 
 #: src/components/live/activity-feed.tsx
@@ -4939,6 +5047,16 @@ msgstr ""
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
+
+#. placeholder {0}: switcher.triggers.low
+#: src/components/settings-hub.tsx
+msgid "LOW at {0} kbps"
+msgstr ""
+
+#. placeholder {0}: switcher.triggers.rtt
+#: src/components/settings-hub.tsx
+msgid "LOW at {0} ms RTT"
+msgstr ""
 
 #: src/components/switcher-status.tsx
 msgid "Low bitrate"
@@ -5090,6 +5208,7 @@ msgid "Markers go on a running stream"
 msgstr "Markers komen op een lopende stream"
 
 #: src/components/live/belabox-card.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Max bitrate"
 msgstr "Max. bitrate"
 
@@ -5141,10 +5260,6 @@ msgstr "Leden"
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Members & invites"
 msgstr "Leden & uitnodigingen"
-
-#: src/components/settings-hub.tsx
-msgid "Members, invites, plan"
-msgstr "Leden, uitnodigingen, abonnement"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Memory"
@@ -5726,6 +5841,10 @@ msgstr "Nog geen klanten. Maak er een aan om de switcher in te stellen en de kla
 msgid "No computers are paired yet."
 msgstr "Er zijn nog geen computers gekoppeld."
 
+#: src/lib/device-summary.ts
+msgid "No computers paired"
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "no feed"
 msgstr "geen feed"
@@ -5767,6 +5886,10 @@ msgstr "Niet meer gekoppeld"
 #: src/components/billing/addon-card.tsx
 msgid "No longer offered"
 msgstr "Niet meer aangeboden"
+
+#: src/components/settings-hub.tsx
+msgid "No LOW triggers set"
+msgstr ""
 
 #: src/components/history/markers-panel.tsx
 msgid "No markers on this stream."
@@ -5844,6 +5967,10 @@ msgstr ""
 #: src/components/switching/scenes.tsx
 msgid "No server swaps in its own scenes. "
 msgstr "Geen enkele server gebruikt eigen scènes. "
+
+#: src/components/settings-hub.tsx
+msgid "No servers yet"
+msgstr ""
 
 #: src/routes/_app/admin/index.tsx
 #: src/routes/_app/admin/users/$user.tsx
@@ -6070,17 +6197,9 @@ msgstr "geen"
 msgid "None"
 msgstr "Geen"
 
-#: src/components/settings-hub.tsx
-msgid "None active"
-msgstr "Geen actief"
-
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "None linked."
 msgstr "Geen gekoppeld."
-
-#: src/components/settings-hub.tsx
-msgid "None picked yet"
-msgstr "Nog niets gekozen"
 
 #: src/routes/_app/admin/status.tsx
 msgid "None right now."
@@ -6133,6 +6252,8 @@ msgstr "niet verbonden"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "Niet verbonden"
@@ -6142,6 +6263,11 @@ msgstr "Niet verbonden"
 #: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "NIET VERBONDEN"
+
+#. placeholder {0}: switcher.obs.port
+#: src/components/settings-hub.tsx
+msgid "Not connected · port {0}"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Not connected to a WiFi network"
@@ -6206,6 +6332,10 @@ msgstr "Niet bereikbaar"
 #: src/components/scene-picker.tsx
 msgid "Not set"
 msgstr "Niet ingesteld"
+
+#: src/lib/device-summary.ts
+msgid "Not set up"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Not sold"
@@ -6478,11 +6608,6 @@ msgstr "OBS draait niet"
 #: src/components/app-shell.tsx
 msgid "OBS offline"
 msgstr ""
-
-#. placeholder {0}: switcher.obs.port
-#: src/components/settings-hub.tsx
-msgid "OBS port {0} · browser-source link · BELABOX Cloud"
-msgstr "OBS-poort {0} · browserbronlink · BELABOX Cloud"
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS preview"
@@ -7245,16 +7370,12 @@ msgstr "Geplaatst {0}{1}{2}"
 msgid "Posted a notice"
 msgstr "Melding geplaatst"
 
-#. placeholder {0}: switcher.chat.command_prefix
-#: src/components/settings-hub.tsx
-msgid "Prefix {0}"
-msgstr "Prefix {0}"
-
 #: src/components/live/source-position.tsx
 msgid "Presets"
 msgstr "Voorinstellingen"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Preview"
 msgstr "Preview"
@@ -7298,7 +7419,6 @@ msgstr "Hoofdnavigatie"
 msgid "Priority: higher is used more when stable"
 msgstr "Prioriteit: hoger wordt meer gebruikt als het stabiel is"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 #: src/routes/login.tsx
 msgid "Privacy"
@@ -7522,7 +7642,6 @@ msgstr "Opname blijft aan voor {summary}."
 msgid "Recording stopped"
 msgstr "Opname gestopt"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Refresh"
@@ -7543,6 +7662,10 @@ msgstr "Relayserver"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Herladen als zijn scène on air gaat"
+
+#: src/lib/device-summary.ts
+msgid "Remote key rejected"
+msgstr ""
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
@@ -7716,6 +7839,11 @@ msgstr "Naam wijzigen"
 #: src/components/connect-settings.tsx
 msgid "Rename {0}"
 msgstr "Naam van {0} wijzigen"
+
+#. placeholder {0}: switcher.name
+#: src/components/settings-hub.tsx
+msgid "Rename or delete {0}"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Rename or remove this switcher."
@@ -7958,6 +8086,7 @@ msgstr "RTT {0} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT-triggers moeten tussen 1 en 60.000 ms liggen."
 
+#: src/components/settings-hub.tsx
 #: src/components/switching/rules.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Rules"
@@ -8296,6 +8425,7 @@ msgstr "scène van de server"
 msgid "Server’s scene"
 msgstr "Scène van de server"
 
+#: src/components/settings-hub.tsx
 #: src/components/switching/scene-rules.tsx
 #: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
@@ -8405,6 +8535,7 @@ msgstr "Instellingen"
 msgid "Settings sections"
 msgstr "Instellingensecties"
 
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup"
@@ -8841,7 +8972,6 @@ msgstr "Opname gestart of gestopt"
 msgid "Started or stopped the stream"
 msgstr "Stream gestart of gestopt"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 msgid "Starting"
 msgstr "Start"
@@ -9060,7 +9190,6 @@ msgstr ""
 msgid "Stream server not found"
 msgstr "Streamserver niet gevonden"
 
-#: src/components/settings-hub.tsx
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Stream servers"
@@ -9327,6 +9456,7 @@ msgid "Switched to yearly billing"
 msgstr "Overgestapt op jaarlijkse facturatie"
 
 #: src/components/app-shell.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/connect.tsx
@@ -9336,10 +9466,6 @@ msgstr "Switcher"
 #: src/lib/api-messages.ts
 msgid "Switcher not found"
 msgstr "Switcher niet gevonden"
-
-#: src/components/settings-hub.tsx
-msgid "Switcher settings"
-msgstr "Switcherinstellingen"
 
 #: src/components/admin/products.tsx
 #: src/components/app-shell.tsx
@@ -9375,6 +9501,7 @@ msgstr "Switchers, streamservers, leden en dagen geschiedenis moeten minstens 1 
 msgid "Switchers, their settings, the Live page and history. Nothing can be changed."
 msgstr "Switchers, de instellingen ervan, de pagina Live en geschiedenis. Er kan niets worden gewijzigd."
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Switching"
@@ -9394,6 +9521,7 @@ msgid "Synced from OBS {0}"
 msgstr "Gesynchroniseerd vanuit OBS {0}"
 
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "System"
 msgstr ""
 
@@ -10177,6 +10305,10 @@ msgstr "Deze server heeft tijdens deze stream geen statistieken gemeld."
 msgid "This stream"
 msgstr "Deze stream"
 
+#: src/components/settings-hub.tsx
+msgid "This switcher"
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This switcher already has a stream server with that name"
 msgstr "Deze switcher heeft al een streamserver met die naam"
@@ -10948,7 +11080,6 @@ msgid "workspace"
 msgstr "workspace"
 
 #: src/components/app-shell.tsx
-#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/admin/status.tsx
@@ -10957,6 +11088,10 @@ msgstr "workspace"
 #: src/routes/_app/connect.tsx
 msgid "Workspace"
 msgstr "Workspace"
+
+#: src/components/settings-hub.tsx
+msgid "Workspace · members, invites and plan"
+msgstr ""
 
 #: src/routes/_app/welcome.tsx
 msgid "Workspace name"

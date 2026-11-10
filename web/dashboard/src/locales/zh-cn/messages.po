@@ -129,6 +129,16 @@ msgstr "{0, plural, other {{list} 正在观看}}"
 msgid "{0, plural, one {# auto switch} other {# auto switches}}"
 msgstr "{0, plural, other {# 次自动切换}}"
 
+#. placeholder {0}: channels.length
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# channel · bot available} other {# channels · bot available}}"
+msgstr ""
+
+#. placeholder {0}: channels.length
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# channel · no bot available} other {# channels · no bot available}}"
+msgstr ""
+
 #. placeholder {0}: chat.active_channels
 #. placeholder {1}: chat.links
 #. placeholder {2}: chat.environment
@@ -208,6 +218,13 @@ msgstr "{0, plural, other {# 个场景}}"
 #: src/components/switching/rules.tsx
 msgid "{0, plural, one {# selected scene is no longer in OBS.} other {# selected scenes are no longer in OBS.}}"
 msgstr "{0, plural, other {# 个已选场景已不在 OBS 中。}}"
+
+#. placeholder {0}: servers.data.length
+#. placeholder {1}: first.name
+#. placeholder {2}: first.name
+#: src/components/settings-hub.tsx
+msgid "{0, plural, one {# server · {1} first} other {# servers · {2} first}}"
+msgstr ""
 
 #. placeholder {0}: plan.max_stream_servers
 #: src/components/admin/products.tsx
@@ -396,12 +413,6 @@ msgstr "{0}（终端客户）"
 msgid "{0} +{1} more"
 msgstr "{0} 及另外 {1} 个"
 
-#. placeholder {0}: enabled.length
-#. placeholder {1}: enabled[0]?.name ?? ""
-#: src/components/settings-hub.tsx
-msgid "{0} active · {1} first"
-msgstr "{0} 个已启用 · 优先使用 {1}"
-
 #. placeholder {0}: names.join(", ")
 #. placeholder {1}: deleted - names.length
 #: src/lib/org-audit.ts
@@ -525,8 +536,11 @@ msgstr "{0} 不是要录制的场景之一"
 msgid "{0} It may be older than your plan keeps."
 msgstr "{0} 它可能已超出你的套餐的保留期限。"
 
-#. placeholder {0}: item.kbps.toLocaleString(currentLocale())
+#. placeholder {0}: formatKbps(devices.belabox.max_br)
+#. placeholder {0}: formatKbps(devices.belabox.total_kbps)
+#. placeholder {0}: formatKbps(devices.moblin.bitrate_kbps)
 #: src/components/login-backdrop.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "{0} kbps"
 msgstr "{0} kbps"
 
@@ -787,6 +801,11 @@ msgstr "{0} 的机器人"
 msgid "{0}’s own bot"
 msgstr "{0} 自己的机器人"
 
+#. placeholder {0}: devices.moblin.battery_level
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "{0}%"
+msgstr ""
+
 #. placeholder {0}: status.battery_level
 #: src/lib/moblin.ts
 msgid "{0}% · charging"
@@ -814,6 +833,18 @@ msgstr "{os} 上的 {browser}"
 #: src/components/admin/products.tsx
 msgid "{count, plural, one {# earlier price, kept by existing subscribers} other {# earlier prices, kept by existing subscribers}}"
 msgstr "{count, plural, other {# 个旧价格，现有订阅者继续使用}}"
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · checking status} other {# paired computers · checking status}}"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · offline} other {# paired computers · offline}}"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "{count, plural, one {# paired computer · online} other {# paired computers · online}}"
+msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "{created, plural, one {Imported # client} other {Imported # clients}}"
@@ -967,6 +998,10 @@ msgstr "{platform} 已连接"
 msgid "{rest} and {last}"
 msgstr "{rest} 和 {last}"
 
+#: src/components/settings-hub.tsx
+msgid "{sceneCount} of 3 set"
+msgstr ""
+
 #. placeholder {0}: formatKbps(bitrate)
 #: src/lib/live-format.ts
 msgid "{server} at {0} kbps"
@@ -1004,6 +1039,10 @@ msgstr "{targetName} 现在拥有 {0}"
 #: src/lib/chat.ts
 msgid "{team}’s bot"
 msgstr "{team} 的机器人"
+
+#: src/components/settings-hub.tsx
+msgid "{themeLabel} · {sizeLabel}"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{total, plural, one {# workspace. Staff open one like any workspace: with its support access.} other {# workspaces. Staff open one like any workspace: with its support access.}}"
@@ -1887,6 +1926,10 @@ msgstr ""
 msgid "Back to my workspace"
 msgstr "返回我的工作区"
 
+#: src/routes/_app/$workspace/s/$switcher/settings.tsx
+msgid "Back to Settings"
+msgstr ""
+
 #: src/routes/login.tsx
 msgid "Back to the site"
 msgstr "返回网站"
@@ -1904,13 +1947,9 @@ msgid "Band"
 msgstr "频段"
 
 #: src/components/live/moblin-card.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Battery"
 msgstr "电量"
-
-#. placeholder {0}: live.moblin.battery_level
-#: src/routes/_app/$workspace/s/$switcher/devices.tsx
-msgid "Battery: {0}%"
-msgstr ""
 
 #: src/components/switching/scenes.tsx
 msgid "Before the stream goes live · {prefix}starting"
@@ -2098,6 +2137,10 @@ msgstr "码率预设"
 msgid "Bitrate scale: LOW at {0}, BRB at {1} kbps"
 msgstr "码率刻度：LOW 为 {0}，BRB 为 {1} kbps"
 
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
+msgid "Bitrate sent"
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "Bitrate triggers must be between 1 and 100,000 kbps."
 msgstr "码率触发值必须在 1 至 100,000 kbps 之间。"
@@ -2155,6 +2198,7 @@ msgid "BRB SCENE"
 msgstr "BRB 场景"
 
 #: src/components/live/source-editor.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Browser source"
@@ -2404,14 +2448,11 @@ msgstr "频道未关联"
 msgid "Channels"
 msgstr "频道"
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Chat"
 msgstr ""
-
-#: src/components/settings-hub.tsx
-msgid "Chat & commands"
-msgstr "聊天与命令"
 
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/orgs/$organization/chat.tsx
@@ -2616,6 +2657,7 @@ msgstr "正在确认你的付款……需要几秒钟。"
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/connect-settings.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 msgid "Connect"
 msgstr "连接"
@@ -2741,6 +2783,8 @@ msgstr "已连接"
 
 #: src/components/app-shell.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -2750,6 +2794,15 @@ msgstr "已连接"
 #: src/components/switcher-status.tsx
 msgid "Connected · not streaming"
 msgstr "已连接 · 未在直播"
+
+#: src/lib/device-summary.ts
+msgid "Connected · paused"
+msgstr ""
+
+#. placeholder {0}: switcher.obs.port
+#: src/components/settings-hub.tsx
+msgid "Connected · port {0}"
+msgstr ""
 
 #. placeholder {0}: formatRelative(bot.connected_at)
 #: src/components/orgs/chat-bot-section.tsx
@@ -2798,6 +2851,7 @@ msgstr "正在连接 BELABOX Cloud……"
 msgid "Connecting was cancelled."
 msgstr "连接已取消。"
 
+#: src/lib/device-summary.ts
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "正在连接…"
@@ -2893,6 +2947,19 @@ msgstr "从你的 <1>BELABOX Cloud</1> 账号复制 <0>BELABOX 远程密钥 URL<
 msgid "Copy the link now: it won’t be shown again. It works once and expires {0}."
 msgstr "请立即复制链接：它不会再次显示。链接只能使用一次，{0}过期。"
 
+#: src/components/settings-hub.tsx
+msgid "Could not load channels"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "Could not load computers"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Could not load servers"
+msgstr ""
+
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Could not load setup progress."
 msgstr ""
@@ -3173,6 +3240,7 @@ msgstr "自定义"
 
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "Dark"
 msgstr "深色"
 
@@ -3188,6 +3256,10 @@ msgstr "拒绝"
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
 msgid "Default"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Default text"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -3328,6 +3400,7 @@ msgstr "开发登录"
 msgid "Device removed"
 msgstr "设备已移除"
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Devices"
@@ -3400,6 +3473,7 @@ msgid "Dismiss"
 msgstr "关闭"
 
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Display"
 msgstr ""
@@ -3408,6 +3482,7 @@ msgstr ""
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Done"
 msgstr "完成"
@@ -3591,6 +3666,10 @@ msgstr "通过 <0>dev_login = true</0> 启用。切勿用于生产环境。"
 msgid "Encoder"
 msgstr "编码器"
 
+#: src/lib/device-summary.ts
+msgid "Encoder offline"
+msgstr ""
+
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
 msgstr "编码延迟"
@@ -3633,7 +3712,6 @@ msgstr "结束于 {0}"
 msgid "Ended a notice"
 msgstr "结束了公告"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 msgid "Ending"
 msgstr "结尾"
@@ -3812,7 +3890,6 @@ msgid "Find a field"
 msgstr "查找字段"
 
 #: src/components/app-shell.tsx
-#: src/components/settings-hub.tsx
 msgid "Finish setup"
 msgstr "完成配置"
 
@@ -4568,6 +4645,10 @@ msgstr "语言"
 msgid "Large"
 msgstr ""
 
+#: src/components/settings-hub.tsx
+msgid "Large text"
+msgstr ""
+
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
 msgid "Larger"
@@ -4575,6 +4656,10 @@ msgstr ""
 
 #: src/components/display-settings.tsx
 msgid "Larger sizes suit 4K monitors at 100% scaling."
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Larger text"
 msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -4701,6 +4786,7 @@ msgstr "解除了 {target} 的封停"
 
 #: src/components/app-shell.tsx
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "Light"
 msgstr "浅色"
 
@@ -4809,6 +4895,10 @@ msgstr "实时统计推送"
 msgid "LIVE, LOW and BRB scenes picked"
 msgstr ""
 
+#: src/components/settings-hub.tsx
+msgid "LIVE, LOW and BRB set"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -4821,6 +4911,14 @@ msgstr "加载更早的直播"
 
 #: src/components/history/history-summary.tsx
 msgid "Loaded streams started in the last 30 days; load older streams to complete this summary."
+msgstr ""
+
+#: src/components/settings-hub.tsx
+msgid "Loading channels…"
+msgstr ""
+
+#: src/lib/device-summary.ts
+msgid "Loading computers…"
 msgstr ""
 
 #: src/components/connect-settings.tsx
@@ -4844,8 +4942,18 @@ msgstr "正在加载日志列表…"
 msgid "Loading programs…"
 msgstr "正在加载程序…"
 
+#: src/components/settings-hub.tsx
+msgid "Loading servers…"
+msgstr ""
+
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Loading setup progress…"
+msgstr ""
+
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
+msgid "Loading status…"
 msgstr ""
 
 #: src/components/live/activity-feed.tsx
@@ -4939,6 +5047,16 @@ msgstr ""
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
+
+#. placeholder {0}: switcher.triggers.low
+#: src/components/settings-hub.tsx
+msgid "LOW at {0} kbps"
+msgstr ""
+
+#. placeholder {0}: switcher.triggers.rtt
+#: src/components/settings-hub.tsx
+msgid "LOW at {0} ms RTT"
+msgstr ""
 
 #: src/components/switcher-status.tsx
 msgid "Low bitrate"
@@ -5090,6 +5208,7 @@ msgid "Markers go on a running stream"
 msgstr "标记只能添加到进行中的直播"
 
 #: src/components/live/belabox-card.tsx
+#: src/routes/_app/$workspace/s/$switcher/devices.tsx
 msgid "Max bitrate"
 msgstr "最大码率"
 
@@ -5141,10 +5260,6 @@ msgstr "成员"
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Members & invites"
 msgstr "成员与邀请"
-
-#: src/components/settings-hub.tsx
-msgid "Members, invites, plan"
-msgstr "成员、邀请、套餐"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Memory"
@@ -5726,6 +5841,10 @@ msgstr "还没有客户。创建一个客户，为其配置切换器并发出邀
 msgid "No computers are paired yet."
 msgstr "尚未配对任何电脑。"
 
+#: src/lib/device-summary.ts
+msgid "No computers paired"
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "no feed"
 msgstr "无信号"
@@ -5767,6 +5886,10 @@ msgstr "已不再关联"
 #: src/components/billing/addon-card.tsx
 msgid "No longer offered"
 msgstr "已不再提供"
+
+#: src/components/settings-hub.tsx
+msgid "No LOW triggers set"
+msgstr ""
 
 #: src/components/history/markers-panel.tsx
 msgid "No markers on this stream."
@@ -5844,6 +5967,10 @@ msgstr ""
 #: src/components/switching/scenes.tsx
 msgid "No server swaps in its own scenes. "
 msgstr "没有服务器使用自己的场景。 "
+
+#: src/components/settings-hub.tsx
+msgid "No servers yet"
+msgstr ""
 
 #: src/routes/_app/admin/index.tsx
 #: src/routes/_app/admin/users/$user.tsx
@@ -6070,17 +6197,9 @@ msgstr "无"
 msgid "None"
 msgstr "无"
 
-#: src/components/settings-hub.tsx
-msgid "None active"
-msgstr "未启用任何项"
-
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "None linked."
 msgstr "未关联。"
-
-#: src/components/settings-hub.tsx
-msgid "None picked yet"
-msgstr "尚未选择"
 
 #: src/routes/_app/admin/status.tsx
 msgid "None right now."
@@ -6133,6 +6252,8 @@ msgstr "未连接"
 
 #: src/components/belabox/modem-panel.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/settings-hub.tsx
+#: src/lib/device-summary.ts
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "未连接"
@@ -6142,6 +6263,11 @@ msgstr "未连接"
 #: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "未连接"
+
+#. placeholder {0}: switcher.obs.port
+#: src/components/settings-hub.tsx
+msgid "Not connected · port {0}"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Not connected to a WiFi network"
@@ -6206,6 +6332,10 @@ msgstr "无法访问"
 #: src/components/scene-picker.tsx
 msgid "Not set"
 msgstr "未设置"
+
+#: src/lib/device-summary.ts
+msgid "Not set up"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Not sold"
@@ -6478,11 +6608,6 @@ msgstr "OBS 未运行"
 #: src/components/app-shell.tsx
 msgid "OBS offline"
 msgstr ""
-
-#. placeholder {0}: switcher.obs.port
-#: src/components/settings-hub.tsx
-msgid "OBS port {0} · browser-source link · BELABOX Cloud"
-msgstr "OBS 端口 {0} · 浏览器来源链接 · BELABOX Cloud"
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS preview"
@@ -7245,16 +7370,12 @@ msgstr "发布于 {0}{1}{2}"
 msgid "Posted a notice"
 msgstr "发布了公告"
 
-#. placeholder {0}: switcher.chat.command_prefix
-#: src/components/settings-hub.tsx
-msgid "Prefix {0}"
-msgstr "前缀 {0}"
-
 #: src/components/live/source-position.tsx
 msgid "Presets"
 msgstr "预设"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Preview"
 msgstr "预览"
@@ -7298,7 +7419,6 @@ msgstr "主导航"
 msgid "Priority: higher is used more when stable"
 msgstr "优先级：数值越高，稳定时使用越多"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 #: src/routes/login.tsx
 msgid "Privacy"
@@ -7522,7 +7642,6 @@ msgstr "在 {summary} 上保持录制。"
 msgid "Recording stopped"
 msgstr "录制已停止"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Refresh"
@@ -7543,6 +7662,10 @@ msgstr "中继服务器"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "其场景开始播出时重新加载"
+
+#: src/lib/device-summary.ts
+msgid "Remote key rejected"
+msgstr ""
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
@@ -7716,6 +7839,11 @@ msgstr "重命名"
 #: src/components/connect-settings.tsx
 msgid "Rename {0}"
 msgstr "重命名 {0}"
+
+#. placeholder {0}: switcher.name
+#: src/components/settings-hub.tsx
+msgid "Rename or delete {0}"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 msgid "Rename or remove this switcher."
@@ -7958,6 +8086,7 @@ msgstr "RTT {0} ms"
 msgid "RTT triggers must be between 1 and 60,000 ms."
 msgstr "RTT 触发值必须在 1 至 60,000 ms 之间。"
 
+#: src/components/settings-hub.tsx
 #: src/components/switching/rules.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Rules"
@@ -8296,6 +8425,7 @@ msgstr "服务器的场景"
 msgid "Server’s scene"
 msgstr "服务器的场景"
 
+#: src/components/settings-hub.tsx
 #: src/components/switching/scene-rules.tsx
 #: src/components/switching/servers.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
@@ -8405,6 +8535,7 @@ msgstr "设置"
 msgid "Settings sections"
 msgstr "设置分区"
 
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup"
@@ -8841,7 +8972,6 @@ msgstr "开始或停止了录制"
 msgid "Started or stopped the stream"
 msgstr "开始或停止了直播"
 
-#: src/components/settings-hub.tsx
 #: src/components/switching/scenes.tsx
 msgid "Starting"
 msgstr "开场"
@@ -9060,7 +9190,6 @@ msgstr ""
 msgid "Stream server not found"
 msgstr "未找到推流服务器"
 
-#: src/components/settings-hub.tsx
 #: src/lib/organizations.ts
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Stream servers"
@@ -9327,6 +9456,7 @@ msgid "Switched to yearly billing"
 msgstr "已切换为按年计费"
 
 #: src/components/app-shell.tsx
+#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/settings.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/connect.tsx
@@ -9336,10 +9466,6 @@ msgstr "切换器"
 #: src/lib/api-messages.ts
 msgid "Switcher not found"
 msgstr "未找到切换器"
-
-#: src/components/settings-hub.tsx
-msgid "Switcher settings"
-msgstr "切换器设置"
 
 #: src/components/admin/products.tsx
 #: src/components/app-shell.tsx
@@ -9375,6 +9501,7 @@ msgstr "切换器、推流服务器、成员和历史天数都必须至少为 1�
 msgid "Switchers, their settings, the Live page and history. Nothing can be changed."
 msgstr "切换器及其设置、“直播”页面和历史。无法更改任何内容。"
 
+#: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/routes/_app/$workspace/s/$switcher/switching.tsx
 msgid "Switching"
@@ -9394,6 +9521,7 @@ msgid "Synced from OBS {0}"
 msgstr "已于 {0} 从 OBS 同步"
 
 #: src/components/display-settings.tsx
+#: src/components/settings-hub.tsx
 msgid "System"
 msgstr ""
 
@@ -10177,6 +10305,10 @@ msgstr "此服务器在这场直播期间未报告任何统计数据。"
 msgid "This stream"
 msgstr "这场直播"
 
+#: src/components/settings-hub.tsx
+msgid "This switcher"
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "This switcher already has a stream server with that name"
 msgstr "此切换器已有同名推流服务器"
@@ -10948,7 +11080,6 @@ msgid "workspace"
 msgstr "工作区"
 
 #: src/components/app-shell.tsx
-#: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/add-server.tsx
 #: src/routes/_app/admin/status.tsx
@@ -10957,6 +11088,10 @@ msgstr "工作区"
 #: src/routes/_app/connect.tsx
 msgid "Workspace"
 msgstr "工作区"
+
+#: src/components/settings-hub.tsx
+msgid "Workspace · members, invites and plan"
+msgstr ""
 
 #: src/routes/_app/welcome.tsx
 msgid "Workspace name"
