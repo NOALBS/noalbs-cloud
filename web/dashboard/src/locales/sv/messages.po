@@ -1368,10 +1368,6 @@ msgstr "Lägg till källa"
 msgid "Add switcher"
 msgstr "Lägg till switcher"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Add the browser source to OBS"
-msgstr ""
-
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "Lägg till servern som din kodare strömmar till, till exempel BELABOX Cloud eller din egen MediaMTX. OBS spelar upp ditt flöde därifrån, och NOALBS läser dess statistik för att välja scen."
@@ -1464,10 +1460,6 @@ msgstr "Admins"
 #: src/lib/obs-preview.ts
 msgid "Admins and operators see it off air too."
 msgstr "Admins och operatörer ser den även utanför sändning."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "After step {index}"
-msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
@@ -2705,7 +2697,6 @@ msgstr "Connect-watchdog ändrad"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "Anslut din kanal för att använda chattkommandon med den här switchern. Slå på aviseringar så publiceras dess automatiska scenbyten i chatten."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "Anslut din strömserver"
@@ -3416,7 +3407,6 @@ msgstr "Stäng"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "Klar"
 
@@ -5694,10 +5684,6 @@ msgstr "Nyast först"
 msgid "Newest users"
 msgstr "Nyaste användarna"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Next"
-msgstr ""
-
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "Nästa sida"
@@ -7251,7 +7237,6 @@ msgstr "Välj servern som din kodare strömmar till och OBS spelar upp från. Os
 msgid "Pick two or more."
 msgstr "Välj två eller fler."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Välj dina LIVE-, LOW- och BRB-scener"
@@ -8473,10 +8458,6 @@ msgstr "Satte planen för {target}"
 msgid "Set to {0}"
 msgstr "Sätt till {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Set up {name}"
-msgstr ""
-
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Konfigurera Moblin"
@@ -8521,7 +8502,6 @@ msgstr "Konfigurationsguide"
 msgid "Setup help"
 msgstr "Konfigurationshjälp"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "Konfigurationsförlopp"
@@ -10353,10 +10333,6 @@ msgstr "Den här arbetsytan har inte prenumererat på något än."
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "Den här arbetsytan betalar via Stripe: dess nästa Stripe-händelse återställer planen till den den betalar för."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
-msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Through an invite link"

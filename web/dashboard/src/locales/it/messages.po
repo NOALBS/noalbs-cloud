@@ -1368,10 +1368,6 @@ msgstr "Aggiungi sorgente"
 msgid "Add switcher"
 msgstr "Aggiungi switcher"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Add the browser source to OBS"
-msgstr ""
-
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "Aggiungi il server a cui trasmette il tuo encoder, come BELABOX Cloud o il tuo MediaMTX. OBS riproduce il tuo feed da lì e NOALBS ne legge le statistiche per scegliere una scena."
@@ -1464,10 +1460,6 @@ msgstr "Admin"
 #: src/lib/obs-preview.ts
 msgid "Admins and operators see it off air too."
 msgstr "Anche admin e operatori la vedono fuori onda."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "After step {index}"
-msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
@@ -2705,7 +2697,6 @@ msgstr "Watchdog di Connect modificato"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "Connetti il tuo canale per usare i comandi di chat con questo switcher. Attiva le notifiche per far pubblicare in chat i cambi di scena automatici."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "Connetti il tuo server di streaming"
@@ -3416,7 +3407,6 @@ msgstr "Chiudi"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "Fatto"
 
@@ -5694,10 +5684,6 @@ msgstr "Prima i più recenti"
 msgid "Newest users"
 msgstr "Utenti più recenti"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Next"
-msgstr ""
-
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "Pagina successiva"
@@ -7251,7 +7237,6 @@ msgstr "Scegli il server a cui trasmette il tuo encoder e da cui OBS riproduce. 
 msgid "Pick two or more."
 msgstr "Scegline due o più."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Scegli le scene LIVE, LOW e BRB"
@@ -8473,10 +8458,6 @@ msgstr "Ha impostato il piano di {target}"
 msgid "Set to {0}"
 msgstr "Imposta a {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Set up {name}"
-msgstr ""
-
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Configura Moblin"
@@ -8521,7 +8502,6 @@ msgstr "Guida alla configurazione"
 msgid "Setup help"
 msgstr "Aiuto configurazione"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "Avanzamento configurazione"
@@ -10353,10 +10333,6 @@ msgstr "Questo workspace non si è ancora abbonato a nulla."
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "Questo workspace paga tramite Stripe: il prossimo evento Stripe riporta il piano a quello pagato."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
-msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Through an invite link"

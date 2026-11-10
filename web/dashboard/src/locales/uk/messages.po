@@ -1368,10 +1368,6 @@ msgstr "Додати джерело"
 msgid "Add switcher"
 msgstr "Додати світчер"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Add the browser source to OBS"
-msgstr ""
-
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "Додай сервер, на який стрімить твій енкодер, наприклад BELABOX Cloud або власний MediaMTX. OBS відтворює з нього твій сигнал, а NOALBS читає його статистику, щоб вибрати сцену."
@@ -1464,10 +1460,6 @@ msgstr "Адміністратори"
 #: src/lib/obs-preview.ts
 msgid "Admins and operators see it off air too."
 msgstr "Адміністратори й оператори теж бачать його поза ефіром."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "After step {index}"
-msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
@@ -2705,7 +2697,6 @@ msgstr "Watchdog Connect змінено"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "Підключи свій канал, щоб використовувати команди чату з цим світчером. Увімкни сповіщення, щоб його автоматичні перемикання сцен публікувалися в чаті."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "Підключи свій стрім-сервер"
@@ -3416,7 +3407,6 @@ msgstr "Закрити"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "Готово"
 
@@ -5694,10 +5684,6 @@ msgstr "Спочатку нові"
 msgid "Newest users"
 msgstr "Найновіші користувачі"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Next"
-msgstr ""
-
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "Наступна сторінка"
@@ -7251,7 +7237,6 @@ msgstr "Вибери сервер, на який стрімить твій ен�
 msgid "Pick two or more."
 msgstr "Виберіть два або більше."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Вибери сцени LIVE, LOW і BRB"
@@ -8473,10 +8458,6 @@ msgstr "Встановлено тариф для {target}"
 msgid "Set to {0}"
 msgstr "Встановити {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Set up {name}"
-msgstr ""
-
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Налаштувати Moblin"
@@ -8521,7 +8502,6 @@ msgstr "Посібник із підключення"
 msgid "Setup help"
 msgstr "Допомога з підключенням"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "Хід підключення"
@@ -10353,10 +10333,6 @@ msgstr "Цей робочий простір ще ні на що не підпи
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "Цей робочий простір платить через Stripe: наступна подія Stripe поверне тариф, за який він платить."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
-msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Through an invite link"

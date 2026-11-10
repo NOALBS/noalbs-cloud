@@ -1368,10 +1368,6 @@ msgstr "Kaynak ekle"
 msgid "Add switcher"
 msgstr "Switcher ekle"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Add the browser source to OBS"
-msgstr ""
-
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "Kodlayıcının yayın gönderdiği sunucuyu ekle: örneğin BELABOX Cloud ya da kendi MediaMTX’in. OBS yayın akışını oradan oynatır, NOALBS da sahne seçmek için oradaki istatistikleri okur."
@@ -1464,10 +1460,6 @@ msgstr "Yöneticiler"
 #: src/lib/obs-preview.ts
 msgid "Admins and operators see it off air too."
 msgstr "Yöneticiler ve operatörler yayın dışında da görür."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "After step {index}"
-msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
@@ -2705,7 +2697,6 @@ msgstr "Connect watchdog’u değişti"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "Bu switcher ile sohbet komutlarını kullanmak için kanalını bağla. Otomatik sahne geçişlerinin sohbette paylaşılması için bildirimleri aç."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "Yayın sunucunu bağla"
@@ -3416,7 +3407,6 @@ msgstr "Kapat"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "Tamam"
 
@@ -5694,10 +5684,6 @@ msgstr "Önce en yeniler"
 msgid "Newest users"
 msgstr "En yeni kullanıcılar"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Next"
-msgstr ""
-
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "Sonraki sayfa"
@@ -7251,7 +7237,6 @@ msgstr "Kodlayıcının yayın gönderdiği ve OBS’in oynattığı sunucuyu se
 msgid "Pick two or more."
 msgstr "İki veya daha fazla seç."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "LIVE, LOW ve BRB sahnelerini seç"
@@ -8473,10 +8458,6 @@ msgstr "Plan ayarlandı: {target}"
 msgid "Set to {0}"
 msgstr "Şuna ayarla: {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Set up {name}"
-msgstr ""
-
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Moblin’i kur"
@@ -8521,7 +8502,6 @@ msgstr "Kurulum rehberi"
 msgid "Setup help"
 msgstr "Kurulum yardımı"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "Kurulum ilerlemesi"
@@ -10353,10 +10333,6 @@ msgstr "Bu çalışma alanı henüz hiçbir şeye abone olmadı."
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "Bu çalışma alanı Stripe üzerinden ödüyor: sonraki Stripe olayı planı ödediği plana geri döndürür."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
-msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Through an invite link"

@@ -94,7 +94,6 @@ function LivePage() {
     connection: live.connection,
     paused,
     suspended: Boolean(workspace.suspension),
-    setupProgress: progress,
   });
   const feedDown = live.connection === "reconnecting";
   const names = tileNames();
@@ -328,9 +327,7 @@ function LivePage() {
         canControlConnectObs={canControlConnectObs}
         obsCommand={obsCommand}
       />
-      {state === "firstRun" && progress ? (
-        <LiveSetup name={switcher.name} progress={progress} params={params} />
-      ) : !desktop ? (
+      {!desktop ? (
         <>
           <PhoneStatus
             record={
@@ -466,64 +463,5 @@ function LivePage() {
         </LiveLayoutEditor>
       )}
     </div>
-  );
-}
-
-function LiveSetup({
-  name,
-  progress,
-  params,
-}: {
-  name: string;
-  progress: ReturnType<typeof setupProgress>;
-  params: { workspace: string; switcher: string };
-}) {
-  const steps = [
-    { title: t`Add the browser source to OBS`, done: progress.connected },
-    { title: t`Connect your stream server`, done: progress.hasServer },
-    { title: t`Pick your LIVE, LOW and BRB scenes`, done: progress.scenesSet },
-  ];
-  const next = steps.findIndex((step) => !step.done);
-  return (
-    <section className="mx-auto w-full max-w-2xl rounded-2xl border bg-card p-6 shadow-tile">
-      <h2 className="font-display text-2xl font-bold">
-        <Trans>Set up {name}</Trans>
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        <Trans>Three steps, a couple of minutes. The Live page appears when they’re done.</Trans>
-      </p>
-      <div
-        role="progressbar"
-        aria-label={t`Setup progress`}
-        aria-valuemin={0}
-        aria-valuemax={3}
-        aria-valuenow={progress.done}
-        className="my-5 h-1 overflow-hidden rounded bg-muted"
-      >
-        <div
-          className="h-full bg-foreground"
-          style={{ width: `${(progress.done / progress.total) * 100}%` }}
-        />
-      </div>
-      <ol className="divide-y divide-divider">
-        {steps.map((step, index) => (
-          <li key={step.title}>
-            <Link
-              to="/$workspace/s/$switcher/setup"
-              params={params}
-              className="flex items-center gap-3 py-4 hover:underline"
-            >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs">
-                {step.done ? "✓" : index + 1}
-              </span>
-              <span className="flex-1 text-sm font-semibold">{step.title}</span>
-              <span className="text-xs text-muted-foreground">
-                {step.done ? t`Done` : index === next ? t`Next` : t`After step ${index}`}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }

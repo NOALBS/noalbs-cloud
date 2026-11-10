@@ -1368,10 +1368,6 @@ msgstr "ソースを追加"
 msgid "Add switcher"
 msgstr "スイッチャーを追加"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Add the browser source to OBS"
-msgstr ""
-
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
 msgstr "エンコーダーの配信先サーバー（BELABOX Cloudや独自のMediaMTXなど）を追加します。OBSはそこからフィードを再生し、NOALBSはその統計情報を読み取ってシーンを選びます。"
@@ -1464,10 +1460,6 @@ msgstr "管理者"
 #: src/lib/obs-preview.ts
 msgid "Admins and operators see it off air too."
 msgstr "管理者とオペレーターも配信外で閲覧できます。"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "After step {index}"
-msgstr ""
 
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
@@ -2705,7 +2697,6 @@ msgstr "Connectのウォッチドッグを変更"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "チャンネルを接続すると、このスイッチャーでチャットコマンドを使えます。アラートをオンにすると、シーンの自動切り替えがチャットに投稿されます。"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "配信サーバーを接続"
@@ -3416,7 +3407,6 @@ msgstr "閉じる"
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "完了"
 
@@ -5694,10 +5684,6 @@ msgstr "新しい順"
 msgid "Newest users"
 msgstr "新しいユーザー"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Next"
-msgstr ""
-
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "次のページ"
@@ -7251,7 +7237,6 @@ msgstr "エンコーダーの配信先であり、OBSの再生元でもあるサ
 msgid "Pick two or more."
 msgstr "2 つ以上選んでください。"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "LIVE、LOW、BRBシーンを選択"
@@ -8473,10 +8458,6 @@ msgstr "{target}のプランを設定しました"
 msgid "Set to {0}"
 msgstr "{0}に設定"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Set up {name}"
-msgstr ""
-
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Moblinを設定"
@@ -8521,7 +8502,6 @@ msgstr "セットアップガイド"
 msgid "Setup help"
 msgstr "セットアップのヘルプ"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "セットアップの進捗"
@@ -10353,10 +10333,6 @@ msgstr "このワークスペースはまだ何も契約していません。"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "このワークスペースはStripeで支払っています：次のStripeイベントで、支払い中のプランに戻ります。"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
-msgstr ""
 
 #: src/lib/org-audit.ts
 msgid "Through an invite link"

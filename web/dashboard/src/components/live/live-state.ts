@@ -3,7 +3,6 @@ import type { SwitcherStatus } from "@/api/types";
 export type LiveState =
   | "connecting"
   | "reconnecting"
-  | "firstRun"
   | "suspended"
   | "paused"
   | "browserOffline"
@@ -17,18 +16,10 @@ export interface LiveStateInput {
   connection: string;
   paused: boolean;
   suspended: boolean;
-  setupProgress: { complete: boolean } | null;
 }
-export function liveState({
-  status,
-  connection,
-  paused,
-  suspended,
-  setupProgress,
-}: LiveStateInput): LiveState {
+export function liveState({ status, connection, paused, suspended }: LiveStateInput): LiveState {
   if (status === undefined) return "connecting";
   if (connection === "reconnecting") return "reconnecting";
-  if (setupProgress && !setupProgress.complete && !status?.streaming) return "firstRun";
   if (suspended) return "suspended";
   if (paused) return "paused";
   if (status === null) return "browserOffline";
