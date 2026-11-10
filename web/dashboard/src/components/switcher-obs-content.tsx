@@ -1,0 +1,290 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { api, unwrap } from "@/api/client";
+import { queryKeys } from "@/api/queries";
+import type { PreviewOffAir, SwitcherSummary } from "@/api/types";
+import { CopyField } from "@/components/copy-field";
+import { ObsConnectionForm } from "@/components/obs-connection-form";
+import { Section } from "@/components/page";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSwitcher } from "@/hooks/use-switcher";
+import { errorMessage } from "@/lib/errors";
+import { previewOffAirOptions } from "@/lib/obs-preview";
+import { isOwner } from "@/lib/permissions";
+
+/** Who sees the OBS preview off air. Only the owner (or the organization's team) chooses. */
+export function PreviewPrivacy() {
+  const { workspace, switcher, actor, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const owner = isOwner(actor);
+  const options = previewOffAirOptions(workspace.managed_by?.name ?? null);
+  const current = options.find((option) => option.value === switcher.preview_off_air);
+
+  const save = useMutation({
+    mutationFn: (off_air: PreviewOffAir) =>
+      unwrap(
+        api.PUT("/workspaces/{workspace_id}/switchers/{switcher_id}/preview", {
+          params: { path },
+          body: { off_air },
+        }),
+      ),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
+      toast.success(t`Saved`);
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  return (
+    <div>
+      <Section
+        title={t`OBS preview off air`}
+        description={t`While you’re live, everyone in the workspace sees the preview on the Live page, the same picture your viewers get. When you’re not live, OBS might still show something private, like your webcam at home, so you choose who sees it then. NOALBS support never does.`}
+      >
+        <div className="flex flex-col gap-2 px-5 pb-5">
+          <Label htmlFor="preview-off-air">
+            <Trans>Who sees it off air</Trans>
+          </Label>
+          <Select
+            value={switcher.preview_off_air}
+            onValueChange={(next) => save.mutate(next as PreviewOffAir)}
+            disabled={!owner || save.isPending}
+          >
+            <SelectTrigger id="preview-off-air" className="w-full max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">{current?.description}</p>
+          {!owner && (
+            <p className="text-sm text-muted-foreground">
+              {workspace.managed_by
+                ? t`Only ${workspace.managed_by.name} can change this.`
+                : t`Only the workspace’s owner can change this.`}
+            </p>
+          )}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+export function ObsConnection() {
+  return (
+    <Section
+      title={t`OBS WebSocket`}
+      description={t`How the browser source reaches OBS on your computer. Match OBS’s Tools → WebSocket Server Settings.`}
+    >
+      <ObsConnectionForm className="px-5 pb-5" />
+    </Section>
+  );
+}
+
+export function BrowserSourceLink() {
+  const { switcher, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const { data: url } = useQuery<string | null>({
+    queryKey: queryKeys.connectLink(switcher.id),
+    queryFn: () => null,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const rotate = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/connect-token", {
+          params: { path },
+        }),
+      ),
+    onSuccess: (link) =>
+      queryClient.setQueryData(queryKeys.connectLink(switcher.id), link.browser_source_url),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  return (
+    <Section
+      title={t`Browser-source link`}
+      description={t`The URL pasted into OBS. It contains a secret, so it’s only shown right after it’s created.`}
+    >
+      <div className="flex flex-col gap-3 px-5 pb-5">
+        {url && <CopyField value={url} label={t`browser source URL`} secret />}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="self-start">
+              <Trans>Create a new link</Trans>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                <Trans>Create a new browser-source link?</Trans>
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <Trans>
+                  The current link stops working, so you’ll need to paste the new one into OBS. Do
+                  this if the link leaked.
+                </Trans>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => rotate.mutate()}>
+                <Trans>Create new link</Trans>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </Section>
+  );
+}
+
+export function SwitcherName() {
+  const { workspace, switcher, canManage, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(switcher.name);
+
+  const rename = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.PATCH("/workspaces/{workspace_id}/switchers/{switcher_id}", {
+          params: { path },
+          body: { name },
+        }),
+      ),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), updated);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.switchers(workspace.id) });
+      toast.success(t`Renamed`);
+    },
+  });
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    rename.mutate();
+  };
+
+  return (
+    <div className="border-t border-divider pt-4">
+      <form onSubmit={submit} className="flex max-w-md flex-col gap-2 px-5 pb-5">
+        <Label htmlFor="switcher-name">
+          <Trans>Name</Trans>
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="switcher-name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={60}
+            disabled={!canManage}
+          />
+          {canManage && (
+            <Button
+              type="submit"
+              disabled={!name.trim() || name.trim() === switcher.name || rename.isPending}
+            >
+              <Trans>Save</Trans>
+            </Button>
+          )}
+        </div>
+        {rename.error && <p className="text-sm text-destructive">{errorMessage(rename.error)}</p>}
+      </form>
+    </div>
+  );
+}
+
+export function DeleteSwitcher() {
+  const { workspace, switcher, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const remove = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/workspaces/{workspace_id}/switchers/{switcher_id}", { params: { path } }),
+      ),
+    onSuccess: async () => {
+      // Drop it from the list first: the workspace opens on a remaining switcher.
+      queryClient.setQueryData<SwitcherSummary[]>(queryKeys.switchers(workspace.id), (current) =>
+        current?.filter((item) => item.id !== switcher.id),
+      );
+      // Leave before removing its query, so the page doesn't re-render without it.
+      await navigate({ to: "/$workspace", params: { workspace: workspace.url_slug } });
+      queryClient.removeQueries({ queryKey: queryKeys.switcher(workspace.id, switcher.id) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.switchers(workspace.id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workspacePlan(workspace.id) }),
+      ]);
+      toast.success(t`Deleted ${switcher.name}`);
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  return (
+    <div className="border-t border-divider pt-4">
+      <p className="px-5 pb-3 text-sm text-muted-foreground">{t`Removes this switcher and its stream servers. The browser source in OBS stops working.`}</p>
+      <div className="px-5 pb-5">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="border-destructive/50 text-destructive-foreground">
+              <Trans>Delete {switcher.name}</Trans>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                <Trans>Delete {switcher.name}</Trans>?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <Trans>
+                  This can’t be undone. Its settings and stream servers are deleted too.
+                </Trans>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                <Trans>Cancel</Trans>
+              </AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={() => remove.mutate()}>
+                <Trans>Delete</Trans>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+}

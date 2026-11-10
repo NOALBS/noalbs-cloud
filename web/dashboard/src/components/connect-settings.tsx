@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Monitor, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, apiWithTimeout, unwrap } from "@/api/client";
@@ -166,10 +166,14 @@ export function ConnectSettings() {
 
   return (
     <Section
-      title={t`NOALBS Cloud Connect`}
-      description={t`Manage computers paired with this switcher and choose who can control OBS.`}
+      title={t`Connect`}
+      description={t`Desktop app for OBS on your PC.`}
+      actions={<Monitor className="size-5 text-muted-foreground" />}
     >
-      <div className="flex flex-col gap-5 px-5 pb-5">
+      <div className="flex flex-col gap-5 px-5 py-4">
+        <p className="text-sm text-muted-foreground">
+          <Trans>On Live: OBS controls, restart, logs and programs.</Trans>
+        </p>
         <div className="flex flex-col items-start gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {connectDownloadOptions.primary ? (
@@ -245,7 +249,7 @@ export function ConnectSettings() {
           ))}
         </div>
 
-        <div className="grid gap-4 border-t border-divider pt-4 md:grid-cols-2">
+        <div className="grid gap-4 border-t border-divider pt-4 grid-cols-1">
           <AccessSelect
             id="connect-obs-control"
             title={t`Who can start, stop and restart OBS`}
@@ -310,7 +314,7 @@ export function ConnectSettings() {
           )}
         </div>
         {logsAllowed && (
-          <section className="flex flex-col gap-3 rounded-lg border border-divider p-4">
+          <section className="flex flex-col gap-3 border-t border-divider py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold">
@@ -478,7 +482,7 @@ function ConnectProgramsCard({
   const control = useConnectProgramControl(path, mutationError);
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-divider p-4">
+    <section className="flex flex-col gap-3 border-t border-divider py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">
@@ -528,7 +532,7 @@ function ConnectProgramsCard({
         </p>
       )}
       {programs.data?.map(({ program, running }) => (
-        <div key={program.id} className="flex flex-col gap-3 rounded-md border border-divider p-3">
+        <div key={program.id} className="flex flex-col gap-3 border-t border-divider py-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">{program.name}</span>
@@ -796,7 +800,7 @@ function ConnectDeviceRow({
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-divider p-3">
+    <div className="flex flex-wrap items-center gap-3 border-t border-divider py-3">
       <div className="flex min-w-48 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-x-2 text-sm font-semibold">
           <span className="truncate">{device.name}</span>
@@ -807,7 +811,7 @@ function ConnectDeviceRow({
         <span className="text-xs text-muted-foreground">
           {onlineObs ? (
             <span className="inline-flex items-center gap-1.5">
-              <StatusDot className="bg-live" />
+              <StatusDot className="bg-muted-foreground" />
               {t`Online · ${pcObsLabel(onlineObs)}`}
             </span>
           ) : device.last_seen_at ? (
@@ -897,14 +901,14 @@ function ConnectLogRow({
     onError: (error) => toast.error(errorMessage(error)),
   });
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-divider p-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 border-t border-divider py-3 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs whitespace-nowrap">
+          <span className="text-xs whitespace-nowrap text-muted-foreground">
             {log.kind === "obs_log" ? t`OBS log` : t`Crash report`}
           </span>
           {log.truncated && (
-            <span className="rounded bg-muted px-1.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
+            <span className="text-xs whitespace-nowrap text-muted-foreground">
               <Trans>Truncated</Trans>
             </span>
           )}

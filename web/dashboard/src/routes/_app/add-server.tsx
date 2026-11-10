@@ -127,7 +127,8 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
           clearAddServer();
           rememberSwitcher(workspace.id, switcher.id);
           await navigate({
-            to: "/$workspace/s/$switcher/servers",
+            to: "/$workspace/s/$switcher/switching",
+            hash: "servers",
             params: { workspace: workspace.url_slug, switcher: switcher.id },
           });
         },

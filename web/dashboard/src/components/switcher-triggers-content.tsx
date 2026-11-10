@@ -1,0 +1,577 @@
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { api, unwrap } from "@/api/client";
+import { obsScenesQuery, queryKeys } from "@/api/queries";
+import type { Behaviour, Switcher, Triggers } from "@/api/types";
+import { Section } from "@/components/page";
+import { ReadOnlyNotice, SaveBar, ToggleRow } from "@/components/settings";
+import { SwitcherBody } from "@/components/switcher-page";
+import { TriggerField } from "@/components/trigger-field";
+import { TriggerScale } from "@/components/trigger-scale";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useSwitcher } from "@/hooks/use-switcher";
+import { errorMessage } from "@/lib/errors";
+import { formatKbps } from "@/lib/live-format";
+import { SCENE_ROLES } from "@/lib/scene-roles";
+import { bitrateRules, bitrateZones, rttZones, triggerError } from "@/lib/triggers";
+
+type TimeoutKey = "offline_timeout" | "ending_timeout";
+type BehaviourKey = Exclude<keyof Behaviour, "retry_attempts" | TimeoutKey | "recording_scene_ids">;
+
+/** Minutes, when a "Stop …" timeout is turned on. */
+const TIMEOUT_FALLBACK: Record<TimeoutKey, number> = { offline_timeout: 10, ending_timeout: 5 };
+
+const timeoutErrors = (): Record<TimeoutKey, string> => ({
+  offline_timeout: t`The offline timeout must be between 1 and 1440 minutes.`,
+  ending_timeout: t`The ending timeout must be between 1 and 1440 minutes.`,
+});
+
+const validTimeout = (minutes: number | null) =>
+  minutes === null || (Number.isInteger(minutes) && minutes >= 1 && minutes <= 1440);
+
+const switching = (): {
+  key: BehaviourKey;
+  title: string;
+  description: string;
+  note?: string;
+  /** Only means something while this other setting is on. */
+  requires?: BehaviourKey;
+}[] => [
+  {
+    key: "bitrate_switcher_enabled",
+    title: t`Auto switch`,
+    description: t`Switch scenes automatically using the triggers.`,
+  },
+  {
+    key: "only_switch_when_streaming",
+    title: t`Only while streaming`,
+    description: t`Leave OBS alone when you aren’t live.`,
+  },
+  {
+    key: "instantly_switch_on_recover",
+    title: t`Instant recovery`,
+    description: t`Go back to LIVE the moment the feed recovers.`,
+  },
+  {
+    key: "auto_switch_notification",
+    title: t`Chat notification`,
+    description: t`Post in chat when a scene switches automatically. Pick the channels on the Chat page.`,
+    note: t`Needs chat bot`,
+  },
+];
+
+const startEnd = (): ReturnType<typeof switching> => [
+  {
+    key: "switch_to_starting",
+    title: t`Starting scene on go-live`,
+    description: t`Show the Starting scene when the stream starts.`,
+  },
+  {
+    key: "switch_to_live",
+    title: t`Then switch to LIVE`,
+    description: t`Leave the Starting scene as soon as your feed arrives.`,
+  },
+  {
+    key: "record_while_streaming",
+    title: t`Record while streaming`,
+    description: t`Start and stop recording together with the stream.`,
+  },
+  {
+    key: "auto_stop_on_raid",
+    title: t`Stop stream after a raid`,
+    description: t`End the stream once you raid out (Twitch and Kick).`,
+    note: t`Needs chat bot`,
+  },
+  {
+    key: "switch_to_offline_on_raid",
+    title: t`Switch to BRB after a raid`,
+    description: t`Show the BRB scene as the stream stops for a raid.`,
+    note: t`Needs chat bot`,
+    requires: "auto_stop_on_raid",
+  },
+  {
+    key: "announce_raid",
+    title: t`Announce raids`,
+    description: t`Say in chat when the stream stops for a raid (Twitch and Kick).`,
+    note: t`Needs chat bot`,
+    requires: "auto_stop_on_raid",
+  },
+];
+
+interface Form {
+  triggers: Triggers;
+  behaviour: Behaviour;
+}
+
+const formOf = (switcher: Switcher): Form => ({
+  triggers: switcher.triggers,
+  behaviour: switcher.behaviour,
+});
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+export function TriggersPage() {
+  const { workspace, switcher, canManage, path } = useSwitcher();
+  const queryClient = useQueryClient();
+  const obs = useQuery(obsScenesQuery(workspace.id, switcher.id));
+  const saved = formOf(switcher);
+  const [form, setForm] = useState<Form>(saved);
+  const [base, setBase] = useState(saved);
+
+  // Adopt fresh server data (e.g. saved in another tab) while nothing is edited here.
+  if (!same(saved, base) && same(form, base)) {
+    setBase(saved);
+    setForm(saved);
+  }
+
+  const { triggers, behaviour } = form;
+  const setTriggers = (patch: Partial<Triggers>) =>
+    setForm((current) => ({ ...current, triggers: { ...current.triggers, ...patch } }));
+  const setBehaviour = (patch: Partial<Behaviour>) =>
+    setForm((current) => ({ ...current, behaviour: { ...current.behaviour, ...patch } }));
+
+  const badTimeout = (["offline_timeout", "ending_timeout"] as const).find(
+    (key) => !validTimeout(behaviour[key] ?? null),
+  );
+  const problem =
+    triggerError(triggers) ??
+    (Number.isInteger(behaviour.retry_attempts) &&
+    behaviour.retry_attempts >= 0 &&
+    behaviour.retry_attempts <= 100
+      ? null
+      : t`Checks before switching must be between 0 and 100.`) ??
+    (badTimeout ? timeoutErrors()[badTimeout] : null);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      let result: Switcher | undefined;
+      if (!same(triggers, base.triggers)) {
+        result = await unwrap(
+          api.PUT("/workspaces/{workspace_id}/switchers/{switcher_id}/triggers", {
+            params: { path },
+            body: triggers,
+          }),
+        );
+      }
+      if (!same(behaviour, base.behaviour)) {
+        result = await unwrap(
+          api.PUT("/workspaces/{workspace_id}/switchers/{switcher_id}/behaviour", {
+            params: { path },
+            body: behaviour,
+          }),
+        );
+      }
+      return result;
+    },
+    onSuccess: (result) => {
+      if (result) {
+        queryClient.setQueryData(queryKeys.switcher(workspace.id, switcher.id), result);
+        setBase(formOf(result));
+        setForm(formOf(result));
+      }
+      toast.success(t`Saved`);
+    },
+  });
+
+  const editable = canManage;
+
+  return (
+    <SwitcherBody
+      title={
+        <>
+          <span className="md:hidden">
+            <Trans>Settings</Trans>
+          </span>
+          <span className="hidden md:inline">
+            <Trans>Switching</Trans>
+          </span>
+        </>
+      }
+      description={t`When and how NOALBS switches scenes for ${switcher.name}.`}
+      className="max-w-5xl"
+    >
+      {!canManage && <ReadOnlyNotice />}
+
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+        <div className="flex flex-col gap-4 lg:col-span-7">
+          <Section
+            title={t`Bitrate triggers`}
+            description={t`Measured on the highest-priority server that is receiving video. Set LOW where your picture starts to fall apart (the default 800 kbps suits most streams); with BRB off, NOALBS goes to BRB only when the feed is gone.`}
+          >
+            <div className="flex flex-col gap-5 px-5 pb-5">
+              <TriggerScale
+                zones={bitrateZones(triggers)}
+                ticks={[0, 2000, 4000, 6000].map(formatKbps).concat(`${formatKbps(8000)}+ kbps`)}
+                label={t`Bitrate scale: LOW at ${triggers.low ?? "off"}, BRB at ${triggers.offline ?? "off"} kbps`}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TriggerField
+                  id="trigger-low"
+                  label={t`Switch to LOW at or below`}
+                  sceneRole="low"
+                  unit="kbps"
+                  value={triggers.low ?? null}
+                  fallback={800}
+                  onChange={(low) => setTriggers({ low })}
+                  disabled={!editable}
+                />
+                <TriggerField
+                  id="trigger-offline"
+                  label={t`Switch to BRB at or below`}
+                  sceneRole="offline"
+                  unit="kbps"
+                  value={triggers.offline ?? null}
+                  fallback={Math.min(150, Math.max(1, (triggers.low ?? 800) - 1))}
+                  onChange={(offline) => setTriggers({ offline })}
+                  disabled={!editable}
+                />
+              </div>
+              <ul className="grid gap-2.5 sm:grid-cols-3">
+                {bitrateRules(triggers).map((rule) => (
+                  <li
+                    key={rule.role}
+                    className="flex flex-col gap-1 rounded-xl border border-divider bg-sunken p-3"
+                  >
+                    <span className="flex items-center gap-2 text-sm font-bold">
+                      <span className={`size-2 rounded-full ${SCENE_ROLES[rule.role].dot}`} />
+                      {SCENE_ROLES[rule.role].label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{rule.range}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          <Section
+            title={t`Latency (RTT) triggers`}
+            description={t`Catch a struggling uplink before the bitrate drops. Only SRT servers report RTT.`}
+          >
+            <div className="flex flex-col gap-5 px-5 pb-5">
+              <TriggerScale
+                zones={rttZones(triggers)}
+                ticks={[0, 1250, 2500, 3750].map(formatKbps).concat(`${formatKbps(5000)}+ ms`)}
+                label={t`RTT scale: LOW at ${triggers.rtt ?? "off"}, BRB at ${triggers.rtt_offline ?? "off"} ms`}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TriggerField
+                  id="trigger-rtt"
+                  label={t`Switch to LOW at or above`}
+                  sceneRole="low"
+                  unit="ms"
+                  value={triggers.rtt ?? null}
+                  fallback={2500}
+                  onChange={(rtt) => setTriggers({ rtt })}
+                  disabled={!editable}
+                />
+                <TriggerField
+                  id="trigger-rtt-offline"
+                  label={t`Switch to BRB at or above`}
+                  sceneRole="offline"
+                  unit="ms"
+                  value={triggers.rtt_offline ?? null}
+                  fallback={Math.max(5000, (triggers.rtt ?? 2500) + 1)}
+                  onChange={(rtt_offline) => setTriggers({ rtt_offline })}
+                  disabled={!editable}
+                />
+              </div>
+            </div>
+          </Section>
+        </div>
+
+        <div className="flex flex-col gap-4 lg:col-span-5">
+          <Section title={t`Switching`}>
+            {switching().map((row) => (
+              <ToggleRow
+                key={row.key}
+                id={`behaviour-${row.key}`}
+                title={row.title}
+                description={row.description}
+                note={row.note}
+                checked={behaviour[row.key]}
+                onCheckedChange={(checked) => setBehaviour({ [row.key]: checked })}
+                disabled={!editable}
+              />
+            ))}
+            <label
+              htmlFor="retry-attempts"
+              className="flex min-h-16 items-center gap-4 border-t border-divider px-5 py-3"
+            >
+              <span className="flex flex-1 flex-col gap-0.5">
+                <span className="text-sm font-semibold">
+                  <Trans>Checks before switching</Trans>
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  <Trans>Bad checks in a row before leaving LIVE; one check per second.</Trans>
+                </span>
+              </span>
+              <Input
+                id="retry-attempts"
+                type="number"
+                min={0}
+                max={100}
+                value={behaviour.retry_attempts}
+                onChange={(event) => setBehaviour({ retry_attempts: Number(event.target.value) })}
+                disabled={!editable}
+                className="w-20 font-mono tabular"
+              />
+            </label>
+          </Section>
+
+          <Section title={t`Start, end & raids`}>
+            {startEnd().map((row) => (
+              <ToggleRow
+                key={row.key}
+                id={`behaviour-${row.key}`}
+                title={row.title}
+                description={row.description}
+                note={row.note}
+                checked={behaviour[row.key]}
+                onCheckedChange={(checked) => setBehaviour({ [row.key]: checked })}
+                disabled={!editable || (row.requires != null && !behaviour[row.requires])}
+              />
+            ))}
+            <RecordingScenesSetting
+              ids={behaviour.recording_scene_ids}
+              scenes={obs.data?.scenes}
+              obsAvailable={obs.isSuccess}
+              onChange={(recording_scene_ids) => setBehaviour({ recording_scene_ids })}
+              disabled={!editable || !obs.isSuccess}
+            />
+            <TimeoutSetting
+              setting="offline_timeout"
+              title={t`Stop when offline`}
+              description={t`End the stream once the BRB scene has been on air this long without a feed, and say so in chat.`}
+              minutesTitle={t`Minutes offline`}
+              minutesDescription={t`Counts while auto switch is on and BRB is on air; the feed coming back starts it over.`}
+              behaviour={behaviour}
+              saved={base.behaviour}
+              setBehaviour={setBehaviour}
+              disabled={!editable}
+            />
+            <TimeoutSetting
+              setting="ending_timeout"
+              title={t`Stop on the Ending scene`}
+              description={t`End the stream once the Ending scene has been on air this long, and say so in chat.`}
+              note={switcher.scenes.ending ? undefined : t`Needs Ending scene`}
+              minutesTitle={t`Minutes on Ending`}
+              minutesDescription={t`Counts while streaming with the Ending scene on air, even with auto switch off; leaving it starts it over.`}
+              behaviour={behaviour}
+              saved={base.behaviour}
+              setBehaviour={setBehaviour}
+              disabled={!editable}
+            />
+          </Section>
+        </div>
+      </div>
+
+      <SaveBar
+        dirty={!same(form, base)}
+        saving={save.isPending}
+        error={problem ?? (save.error ? errorMessage(save.error) : null)}
+        disabled={problem !== null}
+        onSave={() => save.mutate()}
+        onDiscard={() => {
+          setForm(base);
+          save.reset();
+        }}
+      />
+    </SwitcherBody>
+  );
+}
+
+/** Select the program scenes on which an active OBS recording is retained. */
+function RecordingScenesSetting({
+  ids,
+  scenes,
+  obsAvailable,
+  onChange,
+  disabled,
+}: {
+  ids: string[];
+  scenes: { uuid?: string | null; name: string }[] | undefined;
+  obsAvailable: boolean;
+  onChange: (ids: string[]) => void;
+  disabled: boolean;
+}) {
+  const selectable =
+    scenes?.filter((scene): scene is { uuid: string; name: string } => !!scene.uuid) ?? [];
+  const selected = ids.filter((id, index) => ids.indexOf(id) === index);
+  const availableIds = new Set(selectable.map((scene) => scene.uuid));
+  const unavailable = selected.filter((id) => !availableIds.has(id));
+  const availableSelectedNames = selected
+    .filter((id) => !unavailable.includes(id))
+    .map((id) => selectable.find((scene) => scene.uuid === id)?.name ?? id);
+  const summary =
+    availableSelectedNames.length > 0
+      ? availableSelectedNames.length <= 2
+        ? availableSelectedNames.join(", ")
+        : t`${availableSelectedNames.slice(0, 2).join(", ")} +${availableSelectedNames.length - 2} more`
+      : unavailable.length > 0
+        ? t`${unavailable.length} missing`
+        : t`Off`;
+  const clearUnavailable = () => onChange(selected.filter((id) => !unavailable.includes(id)));
+
+  return (
+    <div className="border-t border-divider px-5 py-4">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold">
+          <Trans>Only record on these scenes</Trans>
+        </span>
+        <span className="text-sm text-muted-foreground">
+          <Trans>
+            The recording pauses on any scene not picked here and resumes when you come back to one
+            that is. Leave it empty to record on every scene. If you resume it yourself on another
+            scene, it keeps recording until the next scene change.
+          </Trans>
+        </span>
+      </div>
+      {!obsAvailable ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {selected.length === 0
+            ? t`Connect OBS to choose scenes.`
+            : plural(selected.length, {
+                one: "Connect OBS to edit # selected scene.",
+                other: "Connect OBS to edit # selected scenes.",
+              })}
+        </p>
+      ) : selectable.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          <Trans>OBS did not return any scenes with UUIDs.</Trans>
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild disabled={disabled}>
+              <Button variant="outline" className="w-full justify-between">
+                <span className="truncate">{summary}</span>
+                <span className="ml-3 text-xs text-muted-foreground">
+                  {selected.length === 0 ? t`Select scenes` : t`${selected.length} selected`}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80">
+              {selectable.map((scene) => (
+                <DropdownMenuCheckboxItem
+                  key={scene.uuid}
+                  checked={selected.includes(scene.uuid)}
+                  onCheckedChange={(checked) => {
+                    onChange(
+                      checked
+                        ? [...selected, scene.uuid]
+                        : selected.filter((id) => id !== scene.uuid),
+                    );
+                  }}
+                  onSelect={(event) => event.preventDefault()}
+                >
+                  {scene.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {unavailable.length > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+              <span>
+                {plural(unavailable.length, {
+                  one: "# selected scene is no longer in OBS.",
+                  other: "# selected scenes are no longer in OBS.",
+                })}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearUnavailable}
+                disabled={disabled}
+              >
+                <Trans>Remove missing</Trans>
+              </Button>
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {selected.length === 0
+              ? t`Recording control is off until you pick at least one scene.`
+              : t`Recording stays on for ${summary}.`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A "Stop …" toggle and, while on, its minutes. */
+function TimeoutSetting({
+  setting,
+  title,
+  description,
+  note,
+  minutesTitle,
+  minutesDescription,
+  behaviour,
+  saved,
+  setBehaviour,
+  disabled,
+}: {
+  setting: TimeoutKey;
+  title: string;
+  description: string;
+  note?: string;
+  minutesTitle: string;
+  minutesDescription: string;
+  behaviour: Behaviour;
+  saved: Behaviour;
+  setBehaviour: (patch: Partial<Behaviour>) => void;
+  disabled: boolean;
+}) {
+  const minutes = behaviour[setting] ?? null;
+  const inputId = `${setting}-minutes`;
+  return (
+    <>
+      <ToggleRow
+        id={`behaviour-${setting}`}
+        title={title}
+        description={description}
+        note={note}
+        checked={minutes !== null}
+        onCheckedChange={(checked) =>
+          setBehaviour({
+            [setting]: checked ? (saved[setting] ?? TIMEOUT_FALLBACK[setting]) : null,
+          })
+        }
+        disabled={disabled}
+      />
+      {minutes !== null && (
+        <label
+          htmlFor={inputId}
+          className="flex min-h-16 items-center gap-4 border-t border-divider px-5 py-3"
+        >
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-semibold">{minutesTitle}</span>
+            <span className="text-sm text-muted-foreground">{minutesDescription}</span>
+          </span>
+          <Input
+            id={inputId}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={1440}
+            value={minutes}
+            onChange={(event) => setBehaviour({ [setting]: Number(event.target.value) })}
+            disabled={disabled}
+            className="w-20 font-mono tabular"
+          />
+        </label>
+      )}
+    </>
+  );
+}

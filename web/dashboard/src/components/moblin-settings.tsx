@@ -80,7 +80,7 @@ export function MoblinSettings() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-col gap-3 px-5 pb-5">
+      <div className="flex flex-col gap-3 border-t border-divider px-5 py-4">
         {hasPassword ? (
           canManage &&
           (canReadSecrets ? (
@@ -119,8 +119,10 @@ export function MoblinSettings() {
         checked={startWithStream}
         onCheckedChange={(checked) => save.mutate({ start_with_stream: checked })}
         disabled={!canManage || !hasPassword || save.isPending}
-        note={hasPassword ? undefined : t`Needs Moblin set up`}
       />
+      {!hasPassword && (
+        <p className="px-5 pb-3 text-sm text-muted-foreground">{t`Needs Moblin set up`}</p>
+      )}
       <ToggleRow
         id="moblin-stop-with-stream"
         title={t`Stop Moblin with the OBS stream`}
@@ -128,8 +130,10 @@ export function MoblinSettings() {
         checked={stopWithStream}
         onCheckedChange={(checked) => save.mutate({ stop_with_stream: checked })}
         disabled={!canManage || !hasPassword || save.isPending}
-        note={hasPassword ? undefined : t`Needs Moblin set up`}
       />
+      {!hasPassword && (
+        <p className="px-5 pb-3 text-sm text-muted-foreground">{t`Needs Moblin set up`}</p>
+      )}
     </div>
   );
 }

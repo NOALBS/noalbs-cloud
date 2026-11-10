@@ -164,7 +164,8 @@ export function ChannelsSection({ channels }: { channels: ChatChannel[] | undefi
                 <Trans>
                   Switch alerts are off for this switcher.{" "}
                   <Link
-                    to="/$workspace/s/$switcher/triggers"
+                    to="/$workspace/s/$switcher/switching"
+                    hash="rules"
                     params={{ workspace: workspace.url_slug, switcher: switcher.id }}
                     className="font-medium text-primary hover:underline"
                   >

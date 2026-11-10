@@ -51,9 +51,15 @@ export function SettingsHub() {
     {
       label: t`Scenes`,
       sub: scenes.length ? scenes.join(" · ") : t`None picked yet`,
-      to: "/$workspace/s/$switcher/scenes",
+      to: "/$workspace/s/$switcher/switching",
+      hash: "scenes",
     },
-    { label: t`Stream servers`, sub: serversSub, to: "/$workspace/s/$switcher/servers" },
+    {
+      label: t`Stream servers`,
+      sub: serversSub,
+      to: "/$workspace/s/$switcher/switching",
+      hash: "servers",
+    },
     {
       label: t`Chat & commands`,
       sub: t`Prefix ${switcher.chat.command_prefix}`,
@@ -62,7 +68,8 @@ export function SettingsHub() {
     {
       label: t`Switcher settings`,
       sub: t`OBS port ${switcher.obs.port} · browser-source link · BELABOX Cloud`,
-      to: "/$workspace/s/$switcher/obs",
+      to: "/$workspace/s/$switcher/settings",
+      hash: "",
     },
   ] as const;
 
@@ -85,8 +92,9 @@ export function SettingsHub() {
       )}
       {sections.map((section) => (
         <Link
-          key={section.to}
+          key={section.label}
           to={section.to}
+          hash={"hash" in section ? section.hash : undefined}
           params={params}
           className="flex min-h-14 items-center gap-3 border-b border-divider px-3.5 py-2"
         >

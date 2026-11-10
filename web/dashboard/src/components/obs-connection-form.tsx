@@ -47,8 +47,8 @@ export function ObsConnectionForm({ className }: { className?: string }) {
 
   return (
     <form onSubmit={submit} className={cn("flex flex-col gap-4", className)}>
-      <div className="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col divide-y divide-divider">
+        <div className="grid items-center gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(8rem,16rem)]">
           <Label htmlFor="obs-port">
             <Trans>Port</Trans>
           </Label>
@@ -63,7 +63,7 @@ export function ObsConnectionForm({ className }: { className?: string }) {
             className="font-mono tabular"
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="grid items-center gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(8rem,16rem)]">
           <Label htmlFor="obs-password">
             <Trans>Password</Trans>
           </Label>

@@ -143,7 +143,8 @@ function SetupPage() {
                   other: "# stream servers, tried in order.",
                 })}{" "}
             <Link
-              to="/$workspace/s/$switcher/servers"
+              to="/$workspace/s/$switcher/switching"
+              hash="servers"
               params={params}
               className="font-medium text-primary hover:underline"
             >
@@ -152,7 +153,7 @@ function SetupPage() {
           </p>
         ) : (
           <Button asChild className="self-start">
-            <Link to="/$workspace/s/$switcher/servers" params={params}>
+            <Link to="/$workspace/s/$switcher/switching" hash="servers" params={params}>
               <Trans>Add a stream server</Trans>
             </Link>
           </Button>
@@ -167,7 +168,8 @@ function SetupPage() {
         description={t`The scenes NOALBS switches between. They’re loaded from OBS once it’s connected.`}
       >
         <Link
-          to="/$workspace/s/$switcher/scenes"
+          to="/$workspace/s/$switcher/switching"
+          hash="scenes"
           params={params}
           className="text-sm font-medium text-primary hover:underline"
         >

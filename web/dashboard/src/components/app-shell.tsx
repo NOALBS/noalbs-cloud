@@ -284,7 +284,7 @@ export function AppShell({
                 <Trans>History</Trans>
               </Link>
               <Link
-                to="/$workspace/s/$switcher/triggers"
+                to="/$workspace/s/$switcher/settings"
                 params={{ ...params, switcher: current.id }}
                 className={cn(TAB_CLASS, settingsActive && "text-primary")}
               >
@@ -490,7 +490,8 @@ function ConnectChip({
       canControlPrograms={canManageConnectPrograms(details.data.connect_programs, actor)}
       settingsLink={
         <Link
-          to="/$workspace/s/$switcher/obs"
+          to="/$workspace/s/$switcher/devices"
+          hash="connect"
           params={{ workspace: workspace.url_slug, switcher: switcher.id }}
           className="font-semibold text-primary hover:underline"
         >

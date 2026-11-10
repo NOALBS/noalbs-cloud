@@ -52,11 +52,14 @@ import { Route as AppOrgsOrganizationLiveRouteImport } from './routes/_app/orgs/
 import { Route as AppOrgsOrganizationTeamRouteImport } from './routes/_app/orgs/$organization/team'
 import { Route as AppWorkspaceSSwitcherIndexRouteImport } from './routes/_app/$workspace/s/$switcher/index'
 import { Route as AppWorkspaceSSwitcherChatRouteImport } from './routes/_app/$workspace/s/$switcher/chat'
+import { Route as AppWorkspaceSSwitcherDevicesRouteImport } from './routes/_app/$workspace/s/$switcher/devices'
 import { Route as AppWorkspaceSSwitcherLiveRouteImport } from './routes/_app/$workspace/s/$switcher/live'
 import { Route as AppWorkspaceSSwitcherObsRouteImport } from './routes/_app/$workspace/s/$switcher/obs'
 import { Route as AppWorkspaceSSwitcherScenesRouteImport } from './routes/_app/$workspace/s/$switcher/scenes'
 import { Route as AppWorkspaceSSwitcherServersRouteImport } from './routes/_app/$workspace/s/$switcher/servers'
+import { Route as AppWorkspaceSSwitcherSettingsRouteImport } from './routes/_app/$workspace/s/$switcher/settings'
 import { Route as AppWorkspaceSSwitcherSetupRouteImport } from './routes/_app/$workspace/s/$switcher/setup'
+import { Route as AppWorkspaceSSwitcherSwitchingRouteImport } from './routes/_app/$workspace/s/$switcher/switching'
 import { Route as AppWorkspaceSSwitcherTriggersRouteImport } from './routes/_app/$workspace/s/$switcher/triggers'
 import { Route as AppWorkspaceSSwitcherHistoryIndexRouteImport } from './routes/_app/$workspace/s/$switcher/history/index'
 import { Route as AppWorkspaceSSwitcherHistoryStreamRouteImport } from './routes/_app/$workspace/s/$switcher/history/$stream'
@@ -287,6 +290,12 @@ const AppWorkspaceSSwitcherChatRoute =
     path: '/chat',
     getParentRoute: () => AppWorkspaceSSwitcherRoute,
   } as any)
+const AppWorkspaceSSwitcherDevicesRoute =
+  AppWorkspaceSSwitcherDevicesRouteImport.update({
+    id: '/devices',
+    path: '/devices',
+    getParentRoute: () => AppWorkspaceSSwitcherRoute,
+  } as any)
 const AppWorkspaceSSwitcherLiveRoute =
   AppWorkspaceSSwitcherLiveRouteImport.update({
     id: '/live',
@@ -311,10 +320,22 @@ const AppWorkspaceSSwitcherServersRoute =
     path: '/servers',
     getParentRoute: () => AppWorkspaceSSwitcherRoute,
   } as any)
+const AppWorkspaceSSwitcherSettingsRoute =
+  AppWorkspaceSSwitcherSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AppWorkspaceSSwitcherRoute,
+  } as any)
 const AppWorkspaceSSwitcherSetupRoute =
   AppWorkspaceSSwitcherSetupRouteImport.update({
     id: '/setup',
     path: '/setup',
+    getParentRoute: () => AppWorkspaceSSwitcherRoute,
+  } as any)
+const AppWorkspaceSSwitcherSwitchingRoute =
+  AppWorkspaceSSwitcherSwitchingRouteImport.update({
+    id: '/switching',
+    path: '/switching',
     getParentRoute: () => AppWorkspaceSSwitcherRoute,
   } as any)
 const AppWorkspaceSSwitcherTriggersRoute =
@@ -378,11 +399,14 @@ export interface FileRoutesByFullPath {
   '/admin/workspaces/': typeof AppAdminWorkspacesIndexRoute
   '/orgs/$organization/': typeof AppOrgsOrganizationIndexRoute
   '/$workspace/s/$switcher/chat': typeof AppWorkspaceSSwitcherChatRoute
+  '/$workspace/s/$switcher/devices': typeof AppWorkspaceSSwitcherDevicesRoute
   '/$workspace/s/$switcher/live': typeof AppWorkspaceSSwitcherLiveRoute
   '/$workspace/s/$switcher/obs': typeof AppWorkspaceSSwitcherObsRoute
   '/$workspace/s/$switcher/scenes': typeof AppWorkspaceSSwitcherScenesRoute
   '/$workspace/s/$switcher/servers': typeof AppWorkspaceSSwitcherServersRoute
+  '/$workspace/s/$switcher/settings': typeof AppWorkspaceSSwitcherSettingsRoute
   '/$workspace/s/$switcher/setup': typeof AppWorkspaceSSwitcherSetupRoute
+  '/$workspace/s/$switcher/switching': typeof AppWorkspaceSSwitcherSwitchingRoute
   '/$workspace/s/$switcher/triggers': typeof AppWorkspaceSSwitcherTriggersRoute
   '/$workspace/s/$switcher/': typeof AppWorkspaceSSwitcherIndexRoute
   '/$workspace/s/$switcher/history/$stream': typeof AppWorkspaceSSwitcherHistoryStreamRoute
@@ -425,11 +449,14 @@ export interface FileRoutesByTo {
   '/admin/workspaces': typeof AppAdminWorkspacesIndexRoute
   '/orgs/$organization': typeof AppOrgsOrganizationIndexRoute
   '/$workspace/s/$switcher/chat': typeof AppWorkspaceSSwitcherChatRoute
+  '/$workspace/s/$switcher/devices': typeof AppWorkspaceSSwitcherDevicesRoute
   '/$workspace/s/$switcher/live': typeof AppWorkspaceSSwitcherLiveRoute
   '/$workspace/s/$switcher/obs': typeof AppWorkspaceSSwitcherObsRoute
   '/$workspace/s/$switcher/scenes': typeof AppWorkspaceSSwitcherScenesRoute
   '/$workspace/s/$switcher/servers': typeof AppWorkspaceSSwitcherServersRoute
+  '/$workspace/s/$switcher/settings': typeof AppWorkspaceSSwitcherSettingsRoute
   '/$workspace/s/$switcher/setup': typeof AppWorkspaceSSwitcherSetupRoute
+  '/$workspace/s/$switcher/switching': typeof AppWorkspaceSSwitcherSwitchingRoute
   '/$workspace/s/$switcher/triggers': typeof AppWorkspaceSSwitcherTriggersRoute
   '/$workspace/s/$switcher': typeof AppWorkspaceSSwitcherIndexRoute
   '/$workspace/s/$switcher/history/$stream': typeof AppWorkspaceSSwitcherHistoryStreamRoute
@@ -479,11 +506,14 @@ export interface FileRoutesById {
   '/_app/admin/workspaces/': typeof AppAdminWorkspacesIndexRoute
   '/_app/orgs/$organization/': typeof AppOrgsOrganizationIndexRoute
   '/_app/$workspace/s/$switcher/chat': typeof AppWorkspaceSSwitcherChatRoute
+  '/_app/$workspace/s/$switcher/devices': typeof AppWorkspaceSSwitcherDevicesRoute
   '/_app/$workspace/s/$switcher/live': typeof AppWorkspaceSSwitcherLiveRoute
   '/_app/$workspace/s/$switcher/obs': typeof AppWorkspaceSSwitcherObsRoute
   '/_app/$workspace/s/$switcher/scenes': typeof AppWorkspaceSSwitcherScenesRoute
   '/_app/$workspace/s/$switcher/servers': typeof AppWorkspaceSSwitcherServersRoute
+  '/_app/$workspace/s/$switcher/settings': typeof AppWorkspaceSSwitcherSettingsRoute
   '/_app/$workspace/s/$switcher/setup': typeof AppWorkspaceSSwitcherSetupRoute
+  '/_app/$workspace/s/$switcher/switching': typeof AppWorkspaceSSwitcherSwitchingRoute
   '/_app/$workspace/s/$switcher/triggers': typeof AppWorkspaceSSwitcherTriggersRoute
   '/_app/$workspace/s/$switcher/': typeof AppWorkspaceSSwitcherIndexRoute
   '/_app/$workspace/s/$switcher/history/$stream': typeof AppWorkspaceSSwitcherHistoryStreamRoute
@@ -533,11 +563,14 @@ export interface FileRouteTypes {
     | '/admin/workspaces/'
     | '/orgs/$organization/'
     | '/$workspace/s/$switcher/chat'
+    | '/$workspace/s/$switcher/devices'
     | '/$workspace/s/$switcher/live'
     | '/$workspace/s/$switcher/obs'
     | '/$workspace/s/$switcher/scenes'
     | '/$workspace/s/$switcher/servers'
+    | '/$workspace/s/$switcher/settings'
     | '/$workspace/s/$switcher/setup'
+    | '/$workspace/s/$switcher/switching'
     | '/$workspace/s/$switcher/triggers'
     | '/$workspace/s/$switcher/'
     | '/$workspace/s/$switcher/history/$stream'
@@ -580,11 +613,14 @@ export interface FileRouteTypes {
     | '/admin/workspaces'
     | '/orgs/$organization'
     | '/$workspace/s/$switcher/chat'
+    | '/$workspace/s/$switcher/devices'
     | '/$workspace/s/$switcher/live'
     | '/$workspace/s/$switcher/obs'
     | '/$workspace/s/$switcher/scenes'
     | '/$workspace/s/$switcher/servers'
+    | '/$workspace/s/$switcher/settings'
     | '/$workspace/s/$switcher/setup'
+    | '/$workspace/s/$switcher/switching'
     | '/$workspace/s/$switcher/triggers'
     | '/$workspace/s/$switcher'
     | '/$workspace/s/$switcher/history/$stream'
@@ -633,11 +669,14 @@ export interface FileRouteTypes {
     | '/_app/admin/workspaces/'
     | '/_app/orgs/$organization/'
     | '/_app/$workspace/s/$switcher/chat'
+    | '/_app/$workspace/s/$switcher/devices'
     | '/_app/$workspace/s/$switcher/live'
     | '/_app/$workspace/s/$switcher/obs'
     | '/_app/$workspace/s/$switcher/scenes'
     | '/_app/$workspace/s/$switcher/servers'
+    | '/_app/$workspace/s/$switcher/settings'
     | '/_app/$workspace/s/$switcher/setup'
+    | '/_app/$workspace/s/$switcher/switching'
     | '/_app/$workspace/s/$switcher/triggers'
     | '/_app/$workspace/s/$switcher/'
     | '/_app/$workspace/s/$switcher/history/$stream'
@@ -953,6 +992,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkspaceSSwitcherChatRouteImport
       parentRoute: typeof AppWorkspaceSSwitcherRoute
     }
+    '/_app/$workspace/s/$switcher/devices': {
+      id: '/_app/$workspace/s/$switcher/devices'
+      path: '/devices'
+      fullPath: '/$workspace/s/$switcher/devices'
+      preLoaderRoute: typeof AppWorkspaceSSwitcherDevicesRouteImport
+      parentRoute: typeof AppWorkspaceSSwitcherRoute
+    }
     '/_app/$workspace/s/$switcher/live': {
       id: '/_app/$workspace/s/$switcher/live'
       path: '/live'
@@ -981,11 +1027,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkspaceSSwitcherServersRouteImport
       parentRoute: typeof AppWorkspaceSSwitcherRoute
     }
+    '/_app/$workspace/s/$switcher/settings': {
+      id: '/_app/$workspace/s/$switcher/settings'
+      path: '/settings'
+      fullPath: '/$workspace/s/$switcher/settings'
+      preLoaderRoute: typeof AppWorkspaceSSwitcherSettingsRouteImport
+      parentRoute: typeof AppWorkspaceSSwitcherRoute
+    }
     '/_app/$workspace/s/$switcher/setup': {
       id: '/_app/$workspace/s/$switcher/setup'
       path: '/setup'
       fullPath: '/$workspace/s/$switcher/setup'
       preLoaderRoute: typeof AppWorkspaceSSwitcherSetupRouteImport
+      parentRoute: typeof AppWorkspaceSSwitcherRoute
+    }
+    '/_app/$workspace/s/$switcher/switching': {
+      id: '/_app/$workspace/s/$switcher/switching'
+      path: '/switching'
+      fullPath: '/$workspace/s/$switcher/switching'
+      preLoaderRoute: typeof AppWorkspaceSSwitcherSwitchingRouteImport
       parentRoute: typeof AppWorkspaceSSwitcherRoute
     }
     '/_app/$workspace/s/$switcher/triggers': {
@@ -1049,11 +1109,14 @@ const AppAdminRouteRouteWithChildren = AppAdminRouteRoute._addFileChildren(
 
 interface AppWorkspaceSSwitcherRouteChildren {
   AppWorkspaceSSwitcherChatRoute: typeof AppWorkspaceSSwitcherChatRoute
+  AppWorkspaceSSwitcherDevicesRoute: typeof AppWorkspaceSSwitcherDevicesRoute
   AppWorkspaceSSwitcherLiveRoute: typeof AppWorkspaceSSwitcherLiveRoute
   AppWorkspaceSSwitcherObsRoute: typeof AppWorkspaceSSwitcherObsRoute
   AppWorkspaceSSwitcherScenesRoute: typeof AppWorkspaceSSwitcherScenesRoute
   AppWorkspaceSSwitcherServersRoute: typeof AppWorkspaceSSwitcherServersRoute
+  AppWorkspaceSSwitcherSettingsRoute: typeof AppWorkspaceSSwitcherSettingsRoute
   AppWorkspaceSSwitcherSetupRoute: typeof AppWorkspaceSSwitcherSetupRoute
+  AppWorkspaceSSwitcherSwitchingRoute: typeof AppWorkspaceSSwitcherSwitchingRoute
   AppWorkspaceSSwitcherTriggersRoute: typeof AppWorkspaceSSwitcherTriggersRoute
   AppWorkspaceSSwitcherIndexRoute: typeof AppWorkspaceSSwitcherIndexRoute
   AppWorkspaceSSwitcherHistoryStreamRoute: typeof AppWorkspaceSSwitcherHistoryStreamRoute
@@ -1062,11 +1125,14 @@ interface AppWorkspaceSSwitcherRouteChildren {
 
 const AppWorkspaceSSwitcherRouteChildren: AppWorkspaceSSwitcherRouteChildren = {
   AppWorkspaceSSwitcherChatRoute: AppWorkspaceSSwitcherChatRoute,
+  AppWorkspaceSSwitcherDevicesRoute: AppWorkspaceSSwitcherDevicesRoute,
   AppWorkspaceSSwitcherLiveRoute: AppWorkspaceSSwitcherLiveRoute,
   AppWorkspaceSSwitcherObsRoute: AppWorkspaceSSwitcherObsRoute,
   AppWorkspaceSSwitcherScenesRoute: AppWorkspaceSSwitcherScenesRoute,
   AppWorkspaceSSwitcherServersRoute: AppWorkspaceSSwitcherServersRoute,
+  AppWorkspaceSSwitcherSettingsRoute: AppWorkspaceSSwitcherSettingsRoute,
   AppWorkspaceSSwitcherSetupRoute: AppWorkspaceSSwitcherSetupRoute,
+  AppWorkspaceSSwitcherSwitchingRoute: AppWorkspaceSSwitcherSwitchingRoute,
   AppWorkspaceSSwitcherTriggersRoute: AppWorkspaceSSwitcherTriggersRoute,
   AppWorkspaceSSwitcherIndexRoute: AppWorkspaceSSwitcherIndexRoute,
   AppWorkspaceSSwitcherHistoryStreamRoute:

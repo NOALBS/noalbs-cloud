@@ -60,7 +60,7 @@ export function BelaboxSettings() {
 
   return (
     <div className="flex flex-col">
-      <form onSubmit={submit} className="flex flex-col gap-3 px-5 pb-5">
+      <form onSubmit={submit} className="flex flex-col gap-3 border-t border-divider px-5 py-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="belabox-key">
             <Trans>BELABOX remote secret URL</Trans>
@@ -123,8 +123,10 @@ export function BelaboxSettings() {
         checked={startWithStream}
         onCheckedChange={(checked) => save.mutate({ start_with_stream: checked })}
         disabled={!canManage || !hasKey || save.isPending}
-        note={hasKey ? undefined : t`Needs the secret URL`}
       />
+      {!hasKey && (
+        <p className="px-5 pb-3 text-sm text-muted-foreground">{t`Needs the secret URL`}</p>
+      )}
       <ToggleRow
         id="belabox-stop-with-stream"
         title={t`Stop BELABOX with the OBS stream`}
@@ -132,8 +134,10 @@ export function BelaboxSettings() {
         checked={stopWithStream}
         onCheckedChange={(checked) => save.mutate({ stop_with_stream: checked })}
         disabled={!canManage || !hasKey || save.isPending}
-        note={hasKey ? undefined : t`Needs the secret URL`}
       />
+      {!hasKey && (
+        <p className="px-5 pb-3 text-sm text-muted-foreground">{t`Needs the secret URL`}</p>
+      )}
       <p className="border-t border-divider px-5 py-3 text-xs text-muted-foreground">
         <Trans>
           NOALBS Cloud works with BELABOX Cloud but is not affiliated with or endorsed by BELABOX.
