@@ -2105,11 +2105,11 @@ msgstr "Źródło przeglądarki działa; czekam na OBS. Sprawdź powyżej port i
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Źródło przeglądarki lub Connect połączone: najpierw nadające (od najdłuższej transmisji), potem z OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Źródło przeglądarki lub Connect połączone"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Brak połączonego bota"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Nie jest połączone żadne źródło przeglądarki ani żaden klient Connect."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

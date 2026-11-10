@@ -2105,11 +2105,11 @@ msgstr "Nettleserkilden er oppe; venter på OBS. Sjekk WebSocket-porten og passo
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Nettleserkilde eller Connect tilkoblet: live først (lengst først), deretter med OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Nettleserkilde eller Connect tilkoblet"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Ingen bot er tilkoblet"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Ingen nettleserkilde eller Connect-klient er tilkoblet."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

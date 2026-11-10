@@ -2105,11 +2105,11 @@ msgstr "ブラウザソースは接続済みです。OBSを待っています。
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "ブラウザソースまたはConnect接続済み：配信中を先に（長い順）、次にOBS接続中の順です。"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "ブラウザソースまたはConnect接続済み"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "ボットが接続されていません"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "ブラウザソースもConnectクライアントも接続されていません。"
 
 #: src/lib/org-audit.ts
 msgid "no cap"

@@ -2105,11 +2105,11 @@ msgstr "Джерело «Браузер» працює; очікую OBS. Пер
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Джерело «Браузер» або Connect підключено: спочатку ті, що в ефірі (найдовші першими), далі з OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Джерело «Браузер» або Connect підключено"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Жоден бот не підключений"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Жодне джерело «Браузер» чи клієнт Connect не підключено."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

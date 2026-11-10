@@ -2105,11 +2105,11 @@ msgstr "Tarayıcı kaynağı çalışıyor; OBS bekleniyor. Yukarıdaki WebSocke
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Tarayıcı kaynağı veya Connect bağlı: önce yayındakiler (en uzun süredir yayında olan başta), sonra OBS ile bağlı olanlar."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Tarayıcı kaynağı veya Connect bağlı"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Bağlı bot yok"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Hiçbir tarayıcı kaynağı veya Connect istemcisi bağlı değil."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

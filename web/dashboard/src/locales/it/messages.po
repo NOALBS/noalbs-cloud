@@ -2105,11 +2105,11 @@ msgstr "La sorgente browser è attiva; in attesa di OBS. Controlla porta e passw
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Sorgente browser o Connect connesso: prima quelli in diretta (dal più lungo), poi quelli con OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Sorgente browser o Connect connesso"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Nessun bot connesso"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Nessuna sorgente browser né alcun client Connect è connesso."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

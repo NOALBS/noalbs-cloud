@@ -2105,11 +2105,11 @@ msgstr "瀏覽器來源已連線，正在等待 OBS。請檢查上方的 WebSock
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "瀏覽器來源或 Connect 已連線：開台中的優先（時間最長的在前），接著是已連接 OBS 的。"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "瀏覽器來源或 Connect 已連線"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "未連接機器人"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "沒有已連線的瀏覽器來源或 Connect 用戶端。"
 
 #: src/lib/org-audit.ts
 msgid "no cap"

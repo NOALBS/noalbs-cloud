@@ -2105,11 +2105,11 @@ msgstr "브라우저 소스는 연결됐고 OBS를 기다리는 중이에요. �
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "브라우저 소스 또는 Connect 연결됨: 방송 중인 스위처 먼저(방송 시간이 긴 순), 그다음 OBS 연결된 스위처."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "브라우저 소스 또는 Connect 연결됨"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "연결된 봇이 없어요"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "연결된 브라우저 소스나 Connect 클라이언트가 없습니다."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

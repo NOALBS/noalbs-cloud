@@ -2105,11 +2105,11 @@ msgstr "Browserbron is actief; wachten op OBS. Controleer de WebSocket-poort en 
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Browserbron of Connect verbonden: eerst live (langst eerst), daarna met OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Browserbron of Connect verbonden"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Er is geen bot verbonden"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Er is geen browserbron of Connect-client verbonden."
 
 #: src/lib/org-audit.ts
 msgid "no cap"

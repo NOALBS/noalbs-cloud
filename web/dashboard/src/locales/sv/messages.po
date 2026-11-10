@@ -2105,11 +2105,11 @@ msgstr "Webbläsarkällan är uppe; väntar på OBS. Kontrollera WebSocket-porte
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect connected: live first (longest first), then with OBS."
-msgstr ""
+msgstr "Webbläsarkälla eller Connect ansluten: live först (längst först), sedan med OBS."
 
 #: src/routes/_app/admin/status.tsx
 msgid "Browser source or Connect up"
-msgstr ""
+msgstr "Webbläsarkälla eller Connect ansluten"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5509,7 +5509,7 @@ msgstr "Ingen bot är ansluten"
 
 #: src/routes/_app/admin/status.tsx
 msgid "No browser source or Connect client is connected."
-msgstr ""
+msgstr "Ingen webbläsarkälla eller Connect-klient är ansluten."
 
 #: src/lib/org-audit.ts
 msgid "no cap"
