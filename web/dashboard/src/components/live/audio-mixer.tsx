@@ -29,6 +29,7 @@ import {
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenAudio } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
+import { TileControls } from "./tile";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -315,10 +316,7 @@ export function AudioMixer({
 
   return (
     <section aria-label={t`Audio`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">
-          <Trans>Audio</Trans>
-        </h2>
+      <TileControls>
         {obsConnected &&
           (editing ? (
             <span className="flex items-center gap-1">
@@ -355,16 +353,16 @@ export function AudioMixer({
               {inputs.length > 0 && (
                 <button
                   type="button"
+                  aria-label={t`Customize`}
                   onClick={() => setEditing(true)}
                   className={cn(HEADER_BUTTON, "ml-1 text-primary")}
                 >
-                  <SlidersHorizontal className="size-3.5" />
-                  <Trans>Customize</Trans>
+                  <SlidersHorizontal className="size-3.5" aria-label={t`Customize audio`} />
                 </button>
               )}
             </span>
           ))}
-      </div>
+      </TileControls>
 
       {editing && (
         <p className="text-xs text-muted-foreground">
@@ -376,24 +374,22 @@ export function AudioMixer({
       )}
 
       {!obsConnected && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+        <p className="py-3 text-sm text-muted-foreground">
           <Trans>Audio appears once OBS is connected.</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-28 rounded-2xl" />}
       {obsConnected && list.isError && !list.data && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          {errorMessage(list.error)}
-        </p>
+        <p className="py-3 text-sm text-muted-foreground">{errorMessage(list.error)}</p>
       )}
       {list.data && inputs.length === 0 && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+        <p className="py-3 text-sm text-muted-foreground">
           <Trans>Nothing on this scene has audio.</Trans>
         </p>
       )}
 
       {editing && inputs.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {inputs.map((input) => {
             const key = sceneKey(input);
             const shown = !hiddenSet.has(key);
@@ -436,15 +432,16 @@ export function AudioMixer({
       {!editing && inputs.length > 0 && listed.length === 0 && (
         <button
           type="button"
+          aria-label={t`Customize`}
           onClick={() => setEditing(true)}
-          className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
+          className="py-3 text-left text-sm text-muted-foreground hover:underline"
         >
           <Trans>All audio inputs are hidden. Tap to pick some.</Trans>
         </button>
       )}
 
       {!editing && listed.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {listed.map((input) => (
             <AudioStrip
               key={input.name}
@@ -548,7 +545,7 @@ function AudioStrip({
 
 function GlobalTag() {
   return (
-    <span className="rounded bg-primary-soft px-1.5 py-px text-[10px] font-semibold tracking-wider text-primary-soft-foreground uppercase">
+    <span className="text-[10px] text-muted-foreground">
       <Trans>Global</Trans>
     </span>
   );

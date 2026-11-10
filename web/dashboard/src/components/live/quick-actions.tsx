@@ -111,7 +111,7 @@ interface ControlProps {
 }
 
 const VARIANT = {
-  tile: "min-h-16 rounded-2xl px-4 text-[15px]",
+  tile: "min-h-16 justify-start rounded-xl px-3 text-left text-sm",
   compact: "h-10 rounded-[10px] px-3.5 text-sm",
 };
 const BASE =
@@ -132,7 +132,14 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
             className={cn(className, "border-primary bg-primary text-primary-foreground")}
           >
             <Play className="size-4" />
-            <Trans>Start stream</Trans>
+            <span>
+              <Trans>Start stream</Trans>
+              {variant === "tile" && (
+                <span className="block text-[11px] font-normal opacity-70">
+                  <Trans>asks to confirm</Trans>
+                </span>
+              )}
+            </span>
           </button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -169,7 +176,14 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
           className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
         >
           <Square className="size-4" />
-          <Trans>Stop stream</Trans>
+          <span>
+            <Trans>Stop stream</Trans>
+            {variant === "tile" && (
+              <span className="block text-[11px] font-normal opacity-70">
+                <Trans>asks to confirm</Trans>
+              </span>
+            )}
+          </span>
         </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -218,12 +232,29 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
             : "fill-idle text-idle",
         )}
       />
-      <span className="font-mono tabular">
-        {recording
-          ? paused
-            ? t`REC paused`
-            : `REC ${status?.recording_started_at ? formatUptime(status.recording_started_at, now) : ""}`
-          : t`Record`}
+      <span className="tabular-nums">
+        {variant === "tile" ? (
+          <>
+            <Trans>Record</Trans>
+            <span className="block font-display text-[11px] font-normal text-muted-foreground">
+              {recording
+                ? paused
+                  ? t`Paused`
+                  : status?.recording_started_at
+                    ? formatUptime(status.recording_started_at, now)
+                    : t`Recording`
+                : t`off`}
+            </span>
+          </>
+        ) : recording ? (
+          paused ? (
+            t`REC paused`
+          ) : (
+            `REC ${status?.recording_started_at ? formatUptime(status.recording_started_at, now) : ""}`
+          )
+        ) : (
+          t`Record`
+        )}
       </span>
     </button>
   );
@@ -268,7 +299,14 @@ export function FixButton({ controls, disabled, variant }: Omit<ControlProps, "s
       className={cn(BASE, VARIANT[variant], "bg-card")}
     >
       <Wrench className={cn("size-4", fix.isPending && "animate-pulse")} />
-      <Trans>Fix feed</Trans>
+      <span>
+        <Trans>Fix feed</Trans>
+        {variant === "tile" && (
+          <span className="block text-[11px] font-normal text-muted-foreground">
+            <Trans>reconnect sources</Trans>
+          </span>
+        )}
+      </span>
     </button>
   );
 }
@@ -280,7 +318,8 @@ export function MarkerButton({
   disabled,
   variant,
   className,
-}: ControlProps & { className?: string }) {
+  markerCount,
+}: ControlProps & { className?: string; markerCount?: number }) {
   const { marker } = controls;
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
@@ -296,7 +335,14 @@ export function MarkerButton({
           className={cn(BASE, VARIANT[variant], "bg-card", className)}
         >
           <Bookmark className="size-4" />
-          <Trans>Marker</Trans>
+          <span>
+            <Trans>Marker</Trans>
+            {variant === "tile" && markerCount != null && (
+              <span className="block text-[11px] font-normal text-muted-foreground">
+                <Trans>{markerCount} this stream</Trans>
+              </span>
+            )}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))]">

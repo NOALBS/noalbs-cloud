@@ -6,7 +6,7 @@ import { type FormEvent, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys } from "@/api/queries";
-import type { ObsScenes, Scenes } from "@/api/types";
+import type { FeedState, ObsScenes, Scenes } from "@/api/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,21 +32,37 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenScenes } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
+import { lookForState } from "./feed-state";
+import { TileControls } from "./tile";
 
 const roleTags = (): [keyof Scenes, string][] => [
-  ["live", t`LIVE SCENE`],
-  ["low", t`LOW SCENE`],
-  ["offline", t`BRB SCENE`],
-  ["starting", "STARTING"],
-  ["ending", "ENDING"],
-  ["privacy", "PRIVACY"],
-  ["refresh", "REFRESH"],
+  ["live", t`LIVE`],
+  ["low", t`LOW`],
+  ["offline", t`BRB`],
+  ["starting", t`Starting`],
+  ["ending", t`Ending`],
+  ["privacy", t`Privacy`],
+  ["refresh", t`Refresh`],
 ];
 
 const TILE =
-  "flex min-h-19 flex-col items-start justify-between gap-1.5 rounded-xl p-3 text-left transition-colors";
+  "flex min-h-17 min-w-0 flex-col items-start justify-between gap-1.5 border-b border-r border-divider p-3 text-left transition-colors";
 const HEADER_BUTTON =
   "flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium hover:bg-surface-2";
+
+export function sceneGroups(visible: ObsScenes["scenes"], roles: Scenes, filter: string) {
+  if (visible.length <= 12) return [{ withRole: null, items: visible }];
+  const matches = visible.filter((scene) =>
+    scene.name.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()),
+  );
+  return [true, false].map((withRole) => ({
+    withRole,
+    items: matches.filter(
+      (scene) =>
+        roleTags().some(([key]) => scene.uuid != null && roles[key] === scene.uuid) === withRole,
+    ),
+  }));
+}
 
 /**
  * OBS's scenes as big tap targets; the one on air is highlighted. "Customize"
@@ -60,6 +76,8 @@ export function SceneGrid({
   canControl,
   canManage,
   obsConnected,
+  streaming = false,
+  feedState = "live",
 }: {
   path: { workspace_id: string; switcher_id: string };
   scenes: Scenes;
@@ -68,10 +86,13 @@ export function SceneGrid({
   /** May add and remove scenes in OBS (members who manage switchers, not while paused). */
   canManage: boolean;
   obsConnected: boolean;
+  streaming?: boolean;
+  feedState?: FeedState;
 }) {
   const queryClient = useQueryClient();
   const [hidden, setHidden] = useHiddenScenes(path.switcher_id);
   const [editing, setEditing] = useState(false);
+  const [filter, setFilter] = useState("");
   // Adding and removing scenes in OBS: a mode of its own, so a tap meant to
   // switch scenes can't remove one.
   const [managing, setManaging] = useState(false);
@@ -117,7 +138,7 @@ export function SceneGrid({
   });
 
   const roleOf = (uuid: string | null | undefined) =>
-    roleTags().find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? "SCENE";
+    roleTags().find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? t`No role`;
 
   const hiddenSet = new Set(hidden);
   const all = list.data?.scenes ?? [];
@@ -126,6 +147,7 @@ export function SceneGrid({
   // The scene on air always shows, hidden or not.
   const visible = all.filter((scene) => !hiddenSet.has(sceneKey(scene)) || isCurrent(scene));
   const hiddenCount = all.length - visible.length;
+  const groups = sceneGroups(visible, scenes, filter);
   const anyHidden = all.some((scene) => hiddenSet.has(sceneKey(scene)));
 
   const toggle = (key: string) =>
@@ -133,10 +155,7 @@ export function SceneGrid({
 
   return (
     <section aria-label={t`Scenes`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">
-          <Trans>Scenes</Trans>
-        </h2>
+      <TileControls>
         {list.data &&
           (managing ? (
             <button
@@ -172,25 +191,25 @@ export function SceneGrid({
                   : t`Synced from OBS`}
               <button
                 type="button"
+                aria-label={t`Customize`}
                 onClick={() => setEditing(true)}
                 className={cn(HEADER_BUTTON, "text-primary")}
               >
-                <SlidersHorizontal className="size-3.5" />
-                <Trans>Customize</Trans>
+                <SlidersHorizontal className="size-3.5" aria-label={t`Customize`} />
               </button>
               {canManage && (
                 <button
                   type="button"
+                  aria-label={t`Manage scenes`}
                   onClick={() => setManaging(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
-                  <Pencil className="size-3.5" />
-                  <Trans>Edit</Trans>
+                  <Pencil className="size-3.5" aria-label={t`Edit`} />
                 </button>
               )}
             </span>
           ))}
-      </div>
+      </TileControls>
 
       <NewSceneDialog
         path={path}
@@ -292,7 +311,7 @@ export function SceneGrid({
       )}
 
       {!obsConnected && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+        <p className="py-3 text-sm text-muted-foreground">
           <Trans>Scenes appear once OBS is connected.</Trans>
         </p>
       )}
@@ -335,52 +354,98 @@ export function SceneGrid({
         </div>
       )}
 
+      {list.data && !editing && !managing && visible.length > 12 && (
+        <Input
+          aria-label={t`Filter scenes`}
+          placeholder={t`Filter scenes…`}
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+        />
+      )}
+      {visible.length > 12 && groups.every((group) => group.items.length === 0) && (
+        <p className="py-3 text-sm text-muted-foreground">
+          <Trans>No scenes match.</Trans>
+        </p>
+      )}
       {list.data && !editing && !managing && visible.length > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {visible.map((scene) => {
-            const current = isCurrent(scene);
-            const pending = switchScene.isPending && switchScene.variables === scene.uuid;
-            return (
-              <button
-                key={sceneKey(scene)}
-                type="button"
-                // Only the scene being switched to waits: on a slow connection the
-                // other tiles stay usable, and the switches go out in tap order.
-                disabled={!canControl || !scene.uuid || current || pending}
-                aria-pressed={current}
-                onClick={() => scene.uuid && switchScene.mutate(scene.uuid)}
-                className={cn(
-                  TILE,
-                  "disabled:cursor-default",
-                  current
-                    ? "border-2 border-primary bg-primary-soft"
-                    : "border bg-card enabled:hover:bg-surface-2",
-                  pending && "animate-pulse",
-                )}
-              >
-                <span className="text-sm font-semibold">{scene.name}</span>
-                <span
-                  className={cn(
-                    "flex items-center gap-1.5 text-[11px] font-semibold tracking-wider",
-                    current ? "text-offline" : "text-muted-foreground",
-                  )}
-                >
-                  {current && (
-                    <span className="size-1.5 rounded-full bg-offline" aria-hidden="true" />
-                  )}
-                  {current ? t`ON AIR` : roleOf(scene.uuid)}
-                </span>
-              </button>
-            );
-          })}
+        <div
+          className={
+            visible.length > 12
+              ? "max-h-80 overflow-y-auto columns-1 gap-4 @min-[600px]:columns-2"
+              : "grid grid-cols-2 @min-[420px]:grid-cols-3"
+          }
+        >
+          {groups.map(({ withRole, items }) => (
+            <div key={String(withRole)} className="contents">
+              {withRole !== null && items.length > 0 && (
+                <h3 className="break-after-avoid py-2 text-xs font-semibold text-muted-foreground">
+                  {withRole ? t`With a role` : t`Other`}
+                </h3>
+              )}
+              {items.map((scene) => {
+                const current = isCurrent(scene);
+                const pending = switchScene.isPending && switchScene.variables === scene.uuid;
+                return (
+                  <button
+                    key={sceneKey(scene)}
+                    type="button"
+                    // Only the scene being switched to waits: on a slow connection the
+                    // other tiles stay usable, and the switches go out in tap order.
+                    disabled={!canControl || !scene.uuid || current || pending}
+                    aria-pressed={current}
+                    onClick={() => scene.uuid && switchScene.mutate(scene.uuid)}
+                    className={cn(
+                      TILE,
+                      "disabled:cursor-default",
+                      "relative w-full break-inside-avoid enabled:hover:bg-surface-2",
+                      visible.length > 12 && "min-h-12 flex-row items-center border-r-0",
+                      pending && "animate-pulse",
+                    )}
+                  >
+                    <span className="text-sm font-semibold">{scene.name}</span>
+                    <span
+                      className={cn(
+                        "flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground",
+                      )}
+                    >
+                      <span className="font-normal text-muted-foreground">
+                        {roleOf(scene.uuid)}
+                      </span>
+                      {current && (
+                        <span
+                          className={cn(
+                            "rounded px-1.5 py-0.5 text-[10px] font-semibold",
+                            streaming
+                              ? `${lookForState(feedState).soft} ${lookForState(feedState).text}`
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {streaming ? t`On air` : t`In OBS`}
+                        </span>
+                      )}
+                    </span>
+                    {current && (
+                      <span
+                        className={cn(
+                          "absolute inset-x-0 bottom-0 h-0.5",
+                          streaming ? lookForState(feedState).fill : "bg-foreground",
+                        )}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
 
       {list.data && !editing && !managing && visible.length === 0 && (
         <button
           type="button"
+          aria-label={t`Customize`}
           onClick={() => setEditing(true)}
-          className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
+          className="py-3 text-left text-sm text-muted-foreground hover:underline"
         >
           <Trans>All scenes are hidden. Tap to pick some.</Trans>
         </button>

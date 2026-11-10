@@ -1,9 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { StreamServer } from "@/api/types";
-import { Badge } from "@/components/ui/badge";
 import { formatKbps } from "@/lib/live-format";
-import { currentLocale } from "@/lib/locale";
 import { kindInfo } from "@/lib/stream-server-kinds";
 import { cn } from "@/lib/utils";
 import type { Point } from "@/live/reducer";
@@ -21,60 +19,50 @@ export function ServerCard({
   now: number;
   inUse: boolean;
 }) {
-  const last = points[points.length - 1];
-  const fresh = last && now - last.at < 5000;
+  const last = points.at(-1);
+  const fresh = last != null && now - last.at < 5000;
   const look = lookForState(fresh ? last.state : "offline");
-
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 rounded-2xl border bg-card p-3.5",
-        inUse && "border-primary-soft-border",
-        !server.enabled && "opacity-60",
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="rounded-md border px-1.5 font-mono text-[11px] text-muted-foreground">
-            P{server.priority}
+    <div className={cn("flex min-w-0 items-center gap-3 py-3", !server.enabled && "opacity-60")}>
+      <span
+        className={cn("size-1.5 shrink-0 rounded-full", server.enabled ? look.fill : "bg-idle")}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className="text-sm font-semibold">{server.name}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {kindInfo(server.kind).label}
+            {inUse && (
+              <>
+                {" "}
+                · <Trans>in use</Trans>
+              </>
+            )}
           </span>
-          <span className="truncate text-sm font-semibold">{server.name}</span>
-        </span>
-        <Badge className="bg-primary-soft text-[10px] tracking-wider text-primary-soft-foreground uppercase">
-          {kindInfo(server.kind).label}
-        </Badge>
+        </div>
+        <p className="mt-1 font-display text-xs text-muted-foreground tabular-nums">
+          {!server.enabled ? (
+            t`Disabled`
+          ) : fresh ? (
+            <>
+              {formatKbps(last.bitrate)} <Trans>kbps</Trans> ·{" "}
+              {last.rtt != null ? Math.round(last.rtt) : "—"} <Trans>ms</Trans>
+            </>
+          ) : (
+            t`No feed`
+          )}
+        </p>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="w-28 shrink-0 font-mono text-xl font-semibold tabular">
-          {fresh ? formatKbps(last.bitrate) : "—"}
-          <span className="text-xs font-normal text-muted-foreground">
-            {" "}
-            <Trans>kbps</Trans>
-          </span>
-        </span>
-        <BitrateChart
-          points={points}
-          now={now}
-          low={null}
-          offline={null}
-          thresholds={false}
-          tone={look.text}
-          height={34}
-          className="flex-1"
-        />
-      </div>
-      <span className="flex items-center gap-2 font-mono text-xs text-muted-foreground tabular">
-        {!server.enabled
-          ? t`Disabled`
-          : fresh
-            ? `${last.rtt != null ? `RTT ${Math.round(last.rtt)} ms · ` : ""}${look.label.toLocaleLowerCase(currentLocale())}`
-            : t`No feed`}
-        {inUse && (
-          <span className="rounded bg-primary px-1.5 font-sans text-[10px] font-bold text-primary-foreground">
-            <Trans>IN USE</Trans>
-          </span>
-        )}
-      </span>
+      <BitrateChart
+        points={points}
+        now={now}
+        low={null}
+        offline={null}
+        thresholds={false}
+        tone={look.text}
+        height={28}
+        className="max-w-20 shrink-0"
+      />
     </div>
   );
 }

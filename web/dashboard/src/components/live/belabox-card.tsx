@@ -120,6 +120,7 @@ export function BelaboxCard({
   canManage,
   labels,
   settingsLink,
+  paused = false,
 }: {
   status: BelaboxStatus | null | undefined;
   history: Record<string, Point[]>;
@@ -133,6 +134,7 @@ export function BelaboxCard({
   /** The names given to the interfaces, by interface key. */
   labels: Record<string, string>;
   settingsLink: { workspace: string; switcher: string };
+  paused?: boolean;
 }) {
   const controls = useBelaboxControls(path);
   const saveLabels = useSaveLabels(path);
@@ -151,12 +153,14 @@ export function BelaboxCard({
   }[view.kind];
 
   return (
-    <section aria-label="BELABOX" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
+    <section aria-label="BELABOX" className="flex flex-col gap-3">
+      {paused && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>Controls are off while the switcher is paused.</Trans>
+        </p>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">
-            <Trans>BELABOX</Trans>
-          </span>
           <span
             className={cn(
               "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
@@ -209,7 +213,7 @@ export function BelaboxCard({
 
       {online && (
         <>
-          <span className="font-mono text-xl font-semibold tabular">
+          <span className="font-display text-3xl font-semibold tabular-nums">
             {formatKbps(online.total_kbps)}
             <span className="text-xs font-normal text-muted-foreground">
               {" "}
@@ -367,7 +371,7 @@ function MaxBitrate({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
+    <div className="flex flex-col gap-1.5 border-b border-divider py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs tracking-wider text-muted-foreground uppercase">
           <Trans>Max bitrate</Trans>

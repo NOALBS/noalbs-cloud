@@ -72,7 +72,7 @@ export function ObsStatsPopover({
 }
 
 /** Polls while mounted (the popover is open); two readings give the bitrate. */
-function ObsStatsBody({ path }: { path: Path }) {
+export function ObsStatsBody({ path }: { path: Path }) {
   const query = useQuery({
     ...obsStatsQuery(path.workspace_id, path.switcher_id),
     refetchInterval: OBS_STATS_INTERVAL,

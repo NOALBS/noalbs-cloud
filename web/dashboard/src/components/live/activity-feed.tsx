@@ -15,10 +15,12 @@ export function ActivityFeed({
   workspaceId,
   switcherId,
   live,
+  limit,
 }: {
   workspaceId: string;
   switcherId: string;
   live: SwitcherEvent[];
+  limit?: number;
 }) {
   const backlog = useInfiniteQuery(eventsQuery(workspaceId, switcherId));
   const seen = new Set(live.map((event) => event.id));
@@ -27,41 +29,50 @@ export function ActivityFeed({
 
   return (
     <section aria-label={t`Activity`} className="flex flex-col gap-2.5">
-      <h2 className="font-semibold">
-        <Trans>Activity</Trans>
-      </h2>
-      <div className="flex max-h-96 flex-col overflow-y-auto overscroll-contain rounded-2xl border bg-card lg:max-h-[27rem]">
+      <div className="flex max-h-96 flex-col overflow-y-auto overscroll-contain">
         {backlog.isPending && <Skeleton className="m-4 h-24" />}
-        {!backlog.isPending && events.length === 0 && (
+        {backlog.isError && (
+          <p className="py-3 text-sm text-muted-foreground">
+            <Trans>Couldn’t load activity.</Trans>{" "}
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => void backlog.refetch()}
+            >
+              <Trans>Retry</Trans>
+            </button>
+          </p>
+        )}
+        {!backlog.isPending && !backlog.isError && events.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
             <Trans>Nothing yet. Scene switches and stream changes show up here.</Trans>
           </p>
         )}
         <ol>
-          {events.map((event) => {
+          {events.slice(0, limit).map((event) => {
             const { title, detail } = describeEvent(event);
             return (
               <li
                 key={event.id}
-                className="flex flex-col gap-0.5 border-b border-divider px-4 py-2.5 last:border-b-0"
+                className="grid grid-cols-[4rem_1fr] items-baseline gap-x-3 border-b border-divider py-2.5 last:border-b-0"
               >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold">{title}</span>
-                  <time
-                    dateTime={event.created_at}
-                    className="font-mono text-[11px] text-muted-foreground tabular"
-                  >
-                    {new Date(event.created_at).toLocaleTimeString(currentLocale(), {
-                      hourCycle: "h23",
-                    })}
-                  </time>
+                <time
+                  dateTime={event.created_at}
+                  className="font-display text-[11px] text-muted-foreground tabular-nums"
+                >
+                  {new Date(event.created_at).toLocaleTimeString(currentLocale(), {
+                    hourCycle: "h23",
+                  })}
+                </time>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{title}</span>
+                  <span className="block text-xs text-muted-foreground">{detail}</span>
                 </span>
-                <span className="text-xs text-muted-foreground">{detail}</span>
               </li>
             );
           })}
         </ol>
-        {backlog.hasNextPage && (
+        {limit == null && backlog.hasNextPage && (
           <button
             type="button"
             onClick={() => void backlog.fetchNextPage()}

@@ -5,10 +5,11 @@ const WIDTH = 760;
 
 /**
  * Bitrate over the last two minutes, with the LOW and BRB triggers as dashed
- * lines (from the mockup). Pure SVG: no chart library needed for one line.
+ * lines. All series share the same scale and time window.
  */
 export function BitrateChart({
   points,
+  series,
   now,
   low,
   offline,
@@ -17,7 +18,8 @@ export function BitrateChart({
   thresholds = true,
   className,
 }: {
-  points: Point[];
+  points?: Point[];
+  series?: { id: string; points: Point[]; tone: string; filled: boolean }[];
   now: number;
   low: number | null | undefined;
   offline: number | null | undefined;
@@ -28,17 +30,32 @@ export function BitrateChart({
   className?: string;
 }) {
   const pad = 6;
-  const max = Math.max(8000, ...points.map((point) => point.bitrate * 1.1));
-  const start = chartEnd(points, now) - HISTORY_SECONDS * 1000;
+  const lines = series ?? [{ id: "primary", points: points ?? [], tone, filled: true }];
+  const allPoints = lines.flatMap((line) => line.points);
+  const max = Math.max(
+    8000,
+    low ?? 0,
+    offline ?? 0,
+    ...allPoints.map((point) => point.bitrate * 1.1),
+  );
+  const end = allPoints.length
+    ? Math.max(
+        ...lines.filter((line) => line.points.length).map((line) => chartEnd(line.points, now)),
+      )
+    : now;
+  const start = end - HISTORY_SECONDS * 1000;
   const x = (at: number) => ((at - start) / (HISTORY_SECONDS * 1000)) * WIDTH;
   const y = (bitrate: number) => height - pad - (Math.min(bitrate, max) / max) * (height - pad * 2);
 
-  const line = points
-    // Points just past the left edge keep the line running to it; the SVG clips them.
-    .filter((point) => point.at >= start - HISTORY_MARGIN_SECONDS * 1000)
-    .map((point) => `${x(point.at).toFixed(1)},${y(point.bitrate).toFixed(1)}`);
-  const first = line[0]?.split(",")[0];
-  const last = line[line.length - 1]?.split(",")[0];
+  const paths = lines.map((series) => {
+    const line = series.points
+      // Points just past the left edge keep the line running to it; the SVG clips them.
+      .filter((point) => point.at >= start - HISTORY_MARGIN_SECONDS * 1000)
+      .map((point) => `${x(point.at).toFixed(1)},${y(point.bitrate).toFixed(1)}`);
+    const first = line[0]?.split(",")[0];
+    const last = line[line.length - 1]?.split(",")[0];
+    return { ...series, line, first, last };
+  });
 
   return (
     <svg
@@ -72,21 +89,26 @@ export function BitrateChart({
           vectorEffect="non-scaling-stroke"
         />
       )}
-      {line.length > 1 && (
-        <>
-          <polygon
-            points={`${first},${height} ${line.join(" ")} ${last},${height}`}
-            className={cn("fill-current opacity-10", tone)}
-          />
-          <polyline
-            points={line.join(" ")}
-            className={cn("fill-none stroke-current", tone)}
-            strokeWidth="2"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </>
+      {paths.map(
+        ({ id, line, first, last, tone, filled }) =>
+          line.length > 1 && (
+            <g key={id}>
+              {filled && (
+                <polygon
+                  points={`${first},${height} ${line.join(" ")} ${last},${height}`}
+                  className={cn("fill-current opacity-10", tone)}
+                />
+              )}
+              <polyline
+                points={line.join(" ")}
+                className={cn("fill-none stroke-current", tone)}
+                strokeWidth="2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          ),
       )}
     </svg>
   );

@@ -528,6 +528,11 @@ msgstr "{0} sur {1} (offre {2})"
 msgid "{0} of {1} steps done"
 msgstr "{0} étapes sur {1} terminées"
 
+#. placeholder {0}: tile.span
+#: src/components/live/layout-editor.tsx
+msgid "{0} of {cols} columns"
+msgstr ""
+
 #. placeholder {0}: organization.usage.team
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "{0} on the team"
@@ -826,10 +831,6 @@ msgstr "{label} déconnecté"
 msgid "{label} sign-in isn’t configured on this server."
 msgstr "La connexion {label} n’est pas configurée sur ce serveur."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "{label} stats"
-msgstr "Stats {label}"
-
 #: src/components/usage-bar.tsx
 msgid "{label}: {used} of {max}"
 msgstr "{label} : {used} sur {max}"
@@ -862,6 +863,10 @@ msgstr "L’équipe de {managedBy} peut l’utiliser. Pas les admins ni les opé
 #: src/lib/obs-preview.ts
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "L’équipe de {managedBy} le voit aussi hors antenne. Les admins et les opérateurs le voient uniquement en direct."
+
+#: src/components/live/quick-actions.tsx
+msgid "{markerCount} this stream"
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
@@ -1016,7 +1021,7 @@ msgid "<0>{0}</0>per {1} / {2}"
 msgstr "<0>{0}</0>par {1} / {2}"
 
 #. placeholder {0}: pcObsLabel(status.pc.obs)
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>{connectDeviceName} is connected, but OBS isn’t.</0> {0}."
 msgstr "<0>{connectDeviceName} est connecté, mais pas OBS.</0> {0}."
 
@@ -1035,20 +1040,20 @@ msgstr "<0>NOALBS a suspendu cette organisation</0> {0} : {1}. Les switchers de
 msgid "<0>NOALBS suspended this workspace:</0> {0} Switchers are paused and chat commands are off."
 msgstr "<0>NOALBS a suspendu cet espace de travail :</0> {0} Les switchers sont en pause et les commandes de chat sont désactivées."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>Paused.</0> This workspace has more switchers than its plan includes, so this one stays connected but doesn't switch or take commands. Upgrade the plan, or delete a switcher you no longer use."
 msgstr "<0>En pause.</0> Cet espace de travail a plus de switchers que son offre n’en inclut : celui-ci reste connecté, mais ne bascule plus et ne prend plus de commandes. Changez d’offre ou supprimez un switcher dont vous ne vous servez plus."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>Reconnecting to NOALBS…</0> This page is out of date until it’s back. Switching keeps running without it; check your phone’s signal."
 msgstr "<0>Reconnexion à NOALBS…</0> Cette page n’est plus à jour d’ici là. Les changements de scène continuent de fonctionner sans elle ; vérifiez le signal de votre téléphone."
 
 #. placeholder {0}: workspace.suspension.reason
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>Suspended by NOALBS.</0> {0} This switcher stays connected but doesn't switch or take commands. Questions: <1>support@noalbs.com</1>"
 msgstr "<0>Suspendu par NOALBS.</0> {0} Ce switcher reste connecté, mais ne bascule plus et ne prend plus de commandes. Questions : <1>support@noalbs.com</1>"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>The browser source can’t reach OBS.</0> Check that WebSocket is on in OBS (Tools → WebSocket Server Settings) and that the port and password match Setup."
 msgstr "<0>La source navigateur n’arrive pas à joindre OBS.</0> Vérifiez que WebSocket est activé dans OBS (Tools → WebSocket Server Settings) et que le port et le mot de passe correspondent à ceux de Configuration."
 
@@ -1056,7 +1061,7 @@ msgstr "<0>La source navigateur n’arrive pas à joindre OBS.</0> Vérifiez que
 msgid "<0>This workspace is paused.</0> Switchers are paused and chat commands are off."
 msgstr "<0>Cet espace de travail est en pause.</0> Les switchers sont en pause et les commandes de chat sont désactivées."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "<0>This workspace is paused.</0> This switcher stays connected but doesn't switch or take commands."
 msgstr "<0>Cet espace de travail est en pause.</0> Ce switcher reste connecté, mais ne bascule plus et ne prend plus de commandes."
 
@@ -1238,6 +1243,10 @@ msgstr "Compte introuvable"
 msgid "Account settings"
 msgstr "Réglages du compte"
 
+#: src/components/live/layout.ts
+msgid "Actions"
+msgstr ""
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1264,6 +1273,7 @@ msgid "Active today"
 msgstr "Actifs aujourd’hui"
 
 #: src/components/live/activity-feed.tsx
+#: src/components/live/layout.ts
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -1326,6 +1336,10 @@ msgstr "Ajouter un marqueur"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "Ajoutez-en un pour connecter votre OBS. La configuration prend quelques minutes."
 
+#: src/components/live/layout-editor.tsx
+msgid "Add panel"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 msgid "Add program"
 msgstr "Ajouter un programme"
@@ -1353,6 +1367,10 @@ msgstr "Ajouter la source"
 #: src/routes/_app/$workspace/overview.tsx
 msgid "Add switcher"
 msgstr "Ajouter le switcher"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Add the browser source to OBS"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Add the server your encoder streams to, such as BELABOX Cloud or your own MediaMTX. OBS plays your feed from it, and NOALBS reads its stats to pick a scene."
@@ -1447,6 +1465,10 @@ msgstr "Admins"
 msgid "Admins and operators see it off air too."
 msgstr "Les admins et les opérateurs le voient aussi hors antenne."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "After step {index}"
+msgstr ""
+
 #: src/components/chat/chat-links.tsx
 msgid "Alerts off"
 msgstr "Alertes désactivées"
@@ -1481,6 +1503,15 @@ msgstr "Tout"
 msgid "All {0}"
 msgstr "Toutes les {0}"
 
+#. placeholder {0}: all.length
+#: src/components/live/phone-scenes.tsx
+msgid "All {0} scenes"
+msgstr ""
+
+#: src/components/live/phone.tsx
+msgid "All activity"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 msgid "All audio inputs are hidden. Tap to pick some."
 msgstr "Toutes les entrées audio sont masquées. Touchez pour en choisir."
@@ -1502,10 +1533,18 @@ msgstr "Tout va bien."
 msgid "All notices"
 msgstr "Toutes les annonces"
 
+#: src/components/live/layout-editor.tsx
+msgid "All panels are shown."
+msgstr ""
+
 #. placeholder {0}: currency.toUpperCase()
 #: src/components/admin/products.tsx
 msgid "All prices use {0}: one subscription can’t mix currencies."
 msgstr "Tous les prix utilisent {0} : un abonnement ne peut pas mélanger plusieurs devises."
+
+#: src/components/live/phone-scenes.tsx
+msgid "All scenes are hidden."
+msgstr ""
 
 #: src/components/live/scene-grid.tsx
 msgid "All scenes are hidden. Tap to pick some."
@@ -1692,7 +1731,7 @@ msgstr "Comme l’ordinateur d’OBS la nomme, p. ex. Arial. Vide garde la polic
 
 #. placeholder {0}: workspace.managed_by.name
 #: src/components/app-shell.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "Ask {0} about it."
 msgstr "Parlez-en à {0}."
 
@@ -1708,6 +1747,10 @@ msgstr "Demandez à l’un de ses propriétaires ou admins d’autoriser l’acc
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Asked the browser source to reconnect"
 msgstr "Demande de reconnexion envoyée à la source navigateur"
+
+#: src/components/live/quick-actions.tsx
+msgid "asks to confirm"
+msgstr ""
 
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
@@ -1734,6 +1777,7 @@ msgstr "Au moins 3 caractères : lettres, chiffres et tirets."
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/layout.ts
 msgid "Audio"
 msgstr "Audio"
 
@@ -1764,13 +1808,19 @@ msgstr "Journal d’audit"
 
 #: src/components/app-shell.tsx
 #: src/components/language-menu.tsx
+#: src/components/live/phone-actions.tsx
 msgid "Auto"
 msgstr "Auto"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Auto switch"
 msgstr "Bascule auto"
+
+#: src/components/live/hero.tsx
+msgid "Auto switch is off"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -1857,11 +1907,16 @@ msgstr "Bande"
 msgid "Battery"
 msgstr "Batterie"
 
+#. placeholder {0}: connected.battery_level
+#: src/components/live/device-summary.tsx
+msgid "Battery {0}%"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Before the stream goes live."
 msgstr "Avant le passage en direct."
 
-#: src/components/live/belabox-card.tsx
+#: src/components/live/layout.ts
 msgid "BELABOX"
 msgstr "BELABOX"
 
@@ -1882,6 +1937,10 @@ msgstr "BELABOX Cloud n’est pas configuré pour ce switcher. Ajoutez votre URL
 #: src/components/live/belabox-card.tsx
 msgid "BELABOX Cloud refused the secret URL. <0>Check it in the settings</0>"
 msgstr "BELABOX Cloud a refusé l’URL secrète. <0>Vérifiez-la dans les réglages</0>"
+
+#: src/components/live/device-summary.tsx
+msgid "BELABOX Cloud refused the secret URL. Check it in settings."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "BELABOX Cloud refused the secret URL. Paste it again above."
@@ -2004,14 +2063,6 @@ msgstr "Facturation désactivée"
 msgid "Billing period"
 msgstr "Période de facturation"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate"
-msgstr "Débit"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate · {serverName}"
-msgstr "Débit · {serverName}"
-
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "bitrate {0} kbps"
@@ -2075,9 +2126,13 @@ msgstr "En bas à gauche"
 msgid "Bottom right"
 msgstr "En bas à droite"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "BRB"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
@@ -2085,12 +2140,7 @@ msgstr "BRB {0}"
 msgid "BRB / offline"
 msgstr "BRB / hors ligne"
 
-#: src/components/live/scene-grid.tsx
-msgid "BRB SCENE"
-msgstr "SCÈNE BRB"
-
 #: src/components/live/source-editor.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Browser source"
 msgstr "Source navigateur"
 
@@ -2429,6 +2479,10 @@ msgstr "Choisir un réseau…"
 msgid "Choose the new owner"
 msgstr "Choisir le nouveau propriétaire"
 
+#: src/components/live/phone.tsx
+msgid "Choose which sections appear and their order."
+msgstr ""
+
 #: src/components/live/obs-preview.tsx
 msgid "Choose who sees it off air"
 msgstr "Choisir qui le voit hors antenne"
@@ -2506,6 +2560,10 @@ msgstr "Commandes"
 msgid "Commands from these accounts are ignored, e.g. other bots. Bots connected to NOALBS are always ignored."
 msgstr "Les commandes de ces comptes sont ignorées, par exemple d’autres bots. Les bots connectés à NOALBS sont toujours ignorés."
 
+#: src/components/live/layout-editor.tsx
+msgid "Compact"
+msgstr ""
+
 #: src/routes/_app/admin/organizations/index.tsx
 msgid "Companies that run client workspaces for their customers, paid from a pool you set."
 msgstr "Entreprises qui gèrent des espaces de travail clients pour leurs clients finaux, financés par une réserve que vous définissez."
@@ -2546,7 +2604,6 @@ msgid "Connect"
 msgstr "Connecter"
 
 #: src/components/app-shell.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect · {connectDeviceName}"
 msgstr "Connect · {connectDeviceName}"
 
@@ -2573,6 +2630,7 @@ msgid "Connect by signing in as the bot account (not your own) when the platform
 msgstr "Connectez-vous avec le compte du bot (pas le vôtre) quand la plateforme le demande."
 
 #: src/components/app-shell.tsx
+#: src/components/live/live-banners.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Ordinateur Connect"
@@ -2647,12 +2705,12 @@ msgstr "Watchdog Connect modifié"
 msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
 msgstr "Connectez votre chaîne pour utiliser les commandes de chat avec ce switcher. Activez les alertes pour que ses changements de scène automatiques soient publiés dans le chat."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
 msgstr "Connectez votre serveur de stream"
 
 #: src/components/app-shell.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "connected"
 msgstr "connecté"
 
@@ -2706,6 +2764,7 @@ msgid "Connected to the network"
 msgstr "Connecté au réseau"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connecting to BELABOX Cloud…"
 msgstr "Connexion à BELABOX Cloud…"
@@ -2715,13 +2774,15 @@ msgstr "Connexion à BELABOX Cloud…"
 msgid "Connecting was cancelled."
 msgstr "La connexion a été annulée."
 
+#: src/components/live/device-summary.tsx
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "Connexion…"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "CONNECTING…"
 msgstr "CONNEXION…"
 
@@ -2738,6 +2799,7 @@ msgid "Connection test"
 msgstr "Test de connexion"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
 msgid "Connects to BELABOX Cloud while OBS is open with the browser source."
 msgstr "Se connecte à BELABOX Cloud quand OBS est ouvert avec la source navigateur."
 
@@ -2769,6 +2831,12 @@ msgstr "Moblin contrôlé"
 #: src/lib/organizations.ts
 msgid "Controls"
 msgstr "Contrôles"
+
+#: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
+#: src/components/live/moblin-card.tsx
+msgid "Controls are off while the switcher is paused."
+msgstr ""
 
 #: src/components/connect-settings.tsx
 #: src/components/copy-field.tsx
@@ -2810,6 +2878,10 @@ msgstr "Copiez l’<0>URL secrète BELABOX remote</0> depuis votre compte <1>BEL
 msgid "Copy the link now: it won’t be shown again. It works once and expires {0}."
 msgstr "Copiez le lien maintenant : il ne sera plus affiché. Il fonctionne une seule fois et expire {0}."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Could not load stream servers."
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "Couldn't cancel the subscription with the payment provider, so nothing was deleted. Try again in a moment."
 msgstr "Impossible d’annuler l’abonnement auprès du prestataire de paiement : rien n’a été supprimé. Réessayez dans un instant."
@@ -2829,6 +2901,18 @@ msgstr "Impossible de connecter le compte. Veuillez réessayer."
 #: src/lib/chat.ts
 msgid "Couldn’t connect. Please try again."
 msgstr "Connexion impossible. Veuillez réessayer."
+
+#: src/components/live/activity-feed.tsx
+msgid "Couldn’t load activity."
+msgstr ""
+
+#: src/components/live/markers.tsx
+msgid "Couldn’t load markers."
+msgstr ""
+
+#: src/components/live/phone-scenes.tsx
+msgid "Couldn’t load scenes."
+msgstr ""
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3084,6 +3168,14 @@ msgstr "Bots des clients finaux"
 msgid "Customize"
 msgstr "Personnaliser"
 
+#: src/components/live/audio-mixer.tsx
+msgid "Customize audio"
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "Customize sources"
+msgstr ""
+
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Sombre"
@@ -3098,6 +3190,7 @@ msgid "Decline"
 msgstr "Refuser"
 
 #: src/components/app-shell.tsx
+#: src/components/live/layout-editor.tsx
 msgid "Default"
 msgstr ""
 
@@ -3229,6 +3322,10 @@ msgstr "Suppression…"
 msgid "Description"
 msgstr "Description"
 
+#: src/components/live/device-summary.tsx
+msgid "Details"
+msgstr ""
+
 #: src/components/user-avatar.tsx
 #: src/routes/login.tsx
 msgid "Dev login"
@@ -3237,6 +3334,15 @@ msgstr "Connexion de développement"
 #: src/components/connect-settings.tsx
 msgid "Device removed"
 msgstr "Appareil retiré"
+
+#: src/components/live/device-summary.tsx
+#: src/components/live/phone.tsx
+msgid "Device status and controls"
+msgstr ""
+
+#: src/components/live/layout.ts
+msgid "Devices"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3305,9 +3411,12 @@ msgid "Dismiss"
 msgstr "Masquer"
 
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/hero.tsx
+#: src/components/live/layout-editor.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Done"
 msgstr "Terminé"
 
@@ -3380,7 +3489,6 @@ msgstr "Chaque serveur peut remplacer les scènes LIVE, LOW et BRB, par exemple 
 
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
-#: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
 msgstr "Modifier"
@@ -3402,6 +3510,10 @@ msgstr "Modifier {label}"
 msgid "Edit {name}"
 msgstr "Modifier {name}"
 
+#: src/components/live/layout-editor.tsx
+msgid "Edit layout"
+msgstr ""
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "Modifier l’annonce"
@@ -3413,6 +3525,10 @@ msgstr "Modifier le programme"
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
 msgstr "Modifier la combinaison de serveurs"
+
+#: src/components/live/source-list.tsx
+msgid "Edit sources"
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Edit…"
@@ -3530,6 +3646,8 @@ msgstr "Terminée {0}"
 msgid "Ended a notice"
 msgstr "Annonce terminée"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Ending"
@@ -3704,6 +3822,15 @@ msgstr "Remplir"
 msgid "Filter log lines"
 msgstr "Filtrer les lignes du journal"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Filter scenes"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Filter scenes…"
+msgstr ""
+
 #: src/components/history/raw-explorer.tsx
 msgid "Find a field"
 msgstr "Trouver un champ"
@@ -3717,6 +3844,7 @@ msgstr "Terminer la configuration"
 msgid "Fit"
 msgstr "Ajuster"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Fix feed"
 msgstr "Réparer le flux"
@@ -3737,6 +3865,11 @@ msgstr "Police"
 #: src/components/live/source-editor.tsx
 msgid "Font size"
 msgstr "Taille de police"
+
+#. placeholder {0}: formatOffset((now - lastFresh) / 1000)
+#: src/components/live/hero.tsx
+msgid "for {0}"
+msgstr ""
 
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "For abuse or non-payment: pauses the switchers of every client and silences their chat. The team and customers see the reason."
@@ -3871,6 +4004,7 @@ msgid "Hid {0}"
 msgstr "Source masquée : {0}"
 
 #: src/components/admin/products.tsx
+#: src/components/live/source-list.tsx
 #: src/lib/billing.ts
 msgid "Hidden"
 msgstr "Masqué"
@@ -3901,6 +4035,10 @@ msgstr "Masquer"
 #: src/components/secret-url-input.tsx
 msgid "Hide {label}"
 msgstr "Masquer {label}"
+
+#: src/components/live/layout-editor.tsx
+msgid "Hide {name}"
+msgstr ""
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
@@ -4071,18 +4209,23 @@ msgstr "Dans Moblin, ouvrez <0>Settings → Remote control</0> et réglez le <1>
 msgid "in OBS"
 msgstr "dans OBS"
 
+#: src/components/live/hero.tsx
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/phone.tsx
+#: src/components/live/scene-grid.tsx
+msgid "In OBS"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "Dans OBS, ouvrez <0>Tools → WebSocket Server Settings</0>, activez le serveur WebSocket et saisissez ici son port et son mot de passe (<1>Show Connect Info</1> affiche les deux)."
 
+#: src/components/live/hero.tsx
+#: src/components/live/server-card.tsx
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "in use"
 msgstr "utilisé"
-
-#: src/components/live/server-card.tsx
-msgid "IN USE"
-msgstr "UTILISÉ"
 
 #: src/routes/_app/admin/users/index.tsx
 msgid "Inactive 30+ days"
@@ -4351,13 +4494,16 @@ msgid "Joining…"
 msgstr "Connexion…"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
+#: src/components/live/hero.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/phone.tsx
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
 #: src/components/live/moblin-card.tsx
 msgid "kbps sent"
 msgstr "kbps envoyés"
@@ -4389,6 +4535,7 @@ msgstr "Continuer l’enregistrement"
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Keep streaming"
 msgstr "Continuer le stream"
@@ -4445,9 +4592,9 @@ msgstr ""
 msgid "Larger"
 msgstr ""
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Last 2 min"
-msgstr "2 dernières min"
+#: src/components/live/hero.tsx
+msgid "last 2 min"
+msgstr ""
 
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
@@ -4473,6 +4620,14 @@ msgstr "Latence"
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Latency (RTT) triggers"
 msgstr "Paliers de latence (RTT)"
+
+#: src/components/live/layout-editor.tsx
+msgid "Layout controls"
+msgstr ""
+
+#: src/components/live/layout-editor.tsx
+msgid "Layout preset"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/general.tsx
 #: src/routes/_app/orgs/$organization/team.tsx
@@ -4640,9 +4795,14 @@ msgstr "Affiché, mais personne ne peut encore l’acheter."
 msgid "Live"
 msgstr "Direct"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Live feed"
-msgstr "Flux en direct"
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "LIVE"
+msgstr ""
+
+#: src/components/live/phone-actions.tsx
+msgid "Live controls"
+msgstr ""
 
 #. placeholder {0}: status.uptime
 #: src/components/live/moblin-card.tsx
@@ -4660,13 +4820,17 @@ msgstr "En direct"
 msgid "LIVE NOW"
 msgstr "EN DIRECT"
 
-#: src/components/live/scene-grid.tsx
-msgid "LIVE SCENE"
-msgstr "SCÈNE LIVE"
+#: src/components/live/phone.tsx
+msgid "Live settings"
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
 msgstr "Stats envoyées en direct"
+
+#: src/components/live/hero.tsx
+msgid "LIVE, LOW and BRB scenes set"
+msgstr ""
 
 #: src/components/live/activity-feed.tsx
 #: src/components/orgs/audit-log.tsx
@@ -4699,12 +4863,18 @@ msgstr "Chargement des journaux…"
 msgid "Loading programs…"
 msgstr "Chargement des programmes…"
 
+#: src/components/live/phone-scenes.tsx
+msgid "Loading scenes…"
+msgstr ""
+
 #: src/components/live/activity-feed.tsx
+#: src/components/live/markers.tsx
 #: src/components/live/obs-preview.tsx
 #: src/components/moblin-settings.tsx
 #: src/components/orgs/audit-log.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Loading…"
 msgstr "Chargement…"
@@ -4781,9 +4951,13 @@ msgstr "Lire la playlist en boucle"
 msgid "Low"
 msgstr "Faible"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "LOW"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
@@ -4794,10 +4968,6 @@ msgstr "Débit faible"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "DÉBIT FAIBLE"
-
-#: src/components/live/scene-grid.tsx
-msgid "LOW SCENE"
-msgstr "SCÈNE LOW"
 
 #. placeholder {0}: addon.name
 #: src/components/billing/addon-card.tsx
@@ -4834,6 +5004,14 @@ msgstr "Lien d’invitation d’équipe créé ({0})"
 #: src/components/create-switcher-dialog.tsx
 msgid "Main switcher"
 msgstr "Switcher principal"
+
+#: src/components/live/layout-editor.tsx
+msgid "Make {name} narrower"
+msgstr ""
+
+#: src/components/live/layout-editor.tsx
+msgid "Make {name} wider"
+msgstr ""
 
 #: src/components/transfer-ownership.tsx
 msgid "Make {targetName} the owner?"
@@ -4880,6 +5058,10 @@ msgstr "Gérez les ordinateurs appairés à ce switcher et choisissez qui peut c
 msgid "Manage members, switchers or billing"
 msgstr "Gérer les membres, les switchers ou la facturation"
 
+#: src/components/live/scene-grid.tsx
+msgid "Manage scenes"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Manage stream servers"
 msgstr "Gérer les serveurs de stream"
@@ -4911,6 +5093,7 @@ msgid "Mark this moment on the stream"
 msgstr "Marquer ce moment du stream"
 
 #: src/components/history/markers-panel.tsx
+#: src/components/live/markers.tsx
 #: src/components/live/quick-actions.tsx
 #: src/lib/history.ts
 #: src/lib/live-format.ts
@@ -4932,6 +5115,7 @@ msgid "Marker: {0}"
 msgstr "Marqueur : {0}"
 
 #: src/components/history/markers-panel.tsx
+#: src/components/live/layout.ts
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Markers"
 msgstr "Marqueurs"
@@ -4939,6 +5123,11 @@ msgstr "Marqueurs"
 #: src/components/live/quick-actions.tsx
 msgid "Markers go on a running stream"
 msgstr "Les marqueurs se posent sur un stream en cours"
+
+#. placeholder {0}: formatKbps(online.max_br)
+#: src/components/live/device-summary.tsx
+msgid "Max {0} kbps"
+msgstr ""
 
 #: src/components/live/belabox-card.tsx
 msgid "Max bitrate"
@@ -5021,7 +5210,7 @@ msgstr "Minutes sur Fin"
 msgid "Missing session cookie"
 msgstr "Cookie de session manquant"
 
-#: src/components/live/moblin-card.tsx
+#: src/components/live/layout.ts
 msgid "Moblin"
 msgstr "Moblin"
 
@@ -5079,6 +5268,7 @@ msgstr "Moblin est configuré. Son mot de passe et son URL sont masqués pour le
 msgid "Moblin isn't connected. Check its remote control settings (Streamer)."
 msgstr "Moblin n’est pas connecté. Vérifiez ses réglages de contrôle à distance (Streamer)."
 
+#: src/components/live/device-summary.tsx
 #: src/components/live/moblin-card.tsx
 msgid "Moblin isn’t connected. Check Settings → Remote control → Streamer in Moblin."
 msgstr "Moblin n’est pas connecté. Vérifiez Settings → Remote control → Streamer dans Moblin."
@@ -5234,9 +5424,23 @@ msgstr "Plus de réglages"
 msgid "Move {0}"
 msgstr "Déplacer {0}"
 
+#. placeholder {0}: names[id]
+#: src/components/live/phone.tsx
+msgid "Move {0} down"
+msgstr ""
+
+#. placeholder {0}: names[id]
+#: src/components/live/phone.tsx
+msgid "Move {0} up"
+msgstr ""
+
 #: src/components/scene-rules-section.tsx
 msgid "Move {label}"
 msgstr "Déplacer {label}"
+
+#: src/components/live/layout-editor.tsx
+msgid "Move {name}"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
@@ -5267,9 +5471,14 @@ msgstr "Passage à Free le {0} ; {1} reste actif jusque-là."
 msgid "MRR"
 msgstr "MRR"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/server-card.tsx
 msgid "ms"
 msgstr "ms"
+
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
+msgid "ms RTT"
+msgstr ""
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5355,6 +5564,10 @@ msgstr "Scène Fin requise"
 #: src/components/moblin-settings.tsx
 msgid "Needs Moblin set up"
 msgstr "Configuration de Moblin requise"
+
+#: src/components/live/tile.tsx
+msgid "Needs OBS"
+msgstr ""
 
 #: src/components/orgs/chat-bot-section.tsx
 #: src/routes/_app/admin/chat-bots.tsx
@@ -5483,6 +5696,10 @@ msgstr "Plus récents d’abord"
 msgid "Newest users"
 msgstr "Derniers utilisateurs"
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Next"
+msgstr ""
+
 #: src/components/admin/list-controls.tsx
 msgid "Next page"
 msgstr "Page suivante"
@@ -5573,14 +5790,25 @@ msgstr "Aucun client pour l’instant. Créez-en un pour configurer son switcher
 msgid "No computers are paired yet."
 msgstr "Aucun ordinateur n’est encore appairé."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "No devices connected."
+msgstr ""
+
 #: src/lib/triggers.ts
 msgid "no feed"
 msgstr "pas de flux"
 
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
 #: src/components/live/server-card.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "No feed"
 msgstr "Pas de flux"
+
+#. placeholder {0}: formatOffset((now - fresh) / 1000)
+#: src/components/live/phone.tsx
+msgid "No feed for {0}"
+msgstr ""
 
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
@@ -5590,6 +5818,11 @@ msgstr "Aucun flux depuis {0} min sur BRB : le stream a été arrêté"
 #: src/components/history/state-bar.tsx
 msgid "No feed recorded"
 msgstr "Aucun flux enregistré"
+
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
+msgid "No feed yet"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "No free URL was found for this name"
@@ -5618,6 +5851,14 @@ msgstr "Plus proposé"
 #: src/components/history/markers-panel.tsx
 msgid "No markers on this stream."
 msgstr "Aucun marqueur sur ce stream."
+
+#: src/components/live/markers.tsx
+msgid "No markers yet"
+msgstr ""
+
+#: src/components/live/phone-scenes.tsx
+msgid "No matching scenes."
+msgstr ""
 
 #: src/components/live/belabox-card.tsx
 msgid "No network interfaces reported."
@@ -5675,10 +5916,27 @@ msgstr "Pas de prix : c’est l’offre gratuite."
 msgid "No programs have been added yet."
 msgstr "Aucun programme n’a encore été ajouté."
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "No role"
+msgstr ""
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "No scene"
 msgstr "Aucune scène"
+
+#: src/components/live/scene-grid.tsx
+msgid "No scenes match."
+msgstr ""
+
+#: src/components/live/phone-scenes.tsx
+msgid "No scenes yet."
+msgstr ""
+
+#: src/components/live/phone.tsx
+msgid "No server in use"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5706,10 +5964,6 @@ msgstr "Pas de carte SIM"
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
 msgstr "Aucune stat de ce serveur."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "No stream server"
-msgstr "Aucun serveur de stream"
 
 #: src/components/history/raw-explorer.tsx
 msgid "No stream server reported stats during this stream."
@@ -5811,6 +6065,10 @@ msgstr "NOALBS n’a pas répondu à temps. Vérifiez votre connexion et réessa
 #: src/api/client.ts
 msgid "NOALBS isn't answering right now. Try again in a moment."
 msgstr "NOALBS ne répond pas pour le moment. Réessayez dans un instant."
+
+#: src/components/live/hero.tsx
+msgid "NOALBS needs OBS open with the browser source active."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "NOALBS only switches while OBS is streaming (you can change that under Switching), so start the stream in OBS first. Then turn off your encoder"
@@ -5959,12 +6217,13 @@ msgid "Not claimed"
 msgstr "Pas encore rejoint"
 
 #: src/components/app-shell.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "not connected"
 msgstr "non connecté"
 
 #: src/components/belabox/modem-panel.tsx
+#: src/components/live/device-summary.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/phone.tsx
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "Non connecté"
@@ -5998,6 +6257,10 @@ msgstr "Ça ne se connecte pas ?"
 #: src/routes/_app/admin/status.tsx
 msgid "not created yet"
 msgstr "pas encore créé"
+
+#: src/components/live/hero.tsx
+msgid "Not done"
+msgstr ""
 
 #: src/lib/chat.ts
 msgid "Not every permission was allowed. Try again and allow them all."
@@ -6055,7 +6318,10 @@ msgstr "Pas vendu avec votre période de facturation."
 msgid "Not sold yearly"
 msgstr "Pas vendu à l’année"
 
+#: src/components/live/device-summary.tsx
+#: src/components/live/hero.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/phone.tsx
 msgid "Not streaming"
 msgstr "Pas en stream"
 
@@ -6068,6 +6334,11 @@ msgstr "PAS EN STREAM"
 msgid "Not suspended."
 msgstr "Non suspendu."
 
+#: src/components/live/hero.tsx
+msgid "Not switching while paused"
+msgstr ""
+
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Not yet"
 msgstr "Pas encore"
@@ -6161,6 +6432,7 @@ msgid "now"
 msgstr "maintenant"
 
 #: src/components/connect-controls.tsx
+#: src/components/live/layout.ts
 #: src/components/live/obs-stats-popover.tsx
 msgid "OBS"
 msgstr "OBS"
@@ -6173,6 +6445,7 @@ msgstr "OBS a déjà une source ou une scène de ce nom."
 msgid "OBS command"
 msgstr "Commande OBS"
 
+#: src/components/live/hero.tsx
 #: src/lib/admin.ts
 #: src/lib/connect.ts
 #: src/lib/live-format.ts
@@ -6238,6 +6511,7 @@ msgid "OBS doesn’t know its size yet (it isn’t showing anything), so the box
 msgstr "OBS ne connaît pas encore sa taille (elle n’affiche rien), donc le cadre commence au centre."
 
 #. placeholder {0}: status?.current_scene ? ` (${status.current_scene.name})` : ""
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "OBS goes live with the scene on air now{0}."
 msgstr "OBS passe en direct avec la scène actuellement à l’antenne{0}."
@@ -6254,6 +6528,11 @@ msgstr "OBS n’a pas encore indiqué sa scène."
 msgid "OBS is in safe mode"
 msgstr "OBS est en mode sans échec"
 
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
+msgid "OBS is offline"
+msgstr ""
+
 #: src/lib/connect.ts
 msgid "OBS is waiting for input"
 msgstr "OBS attend une action"
@@ -6262,7 +6541,13 @@ msgstr "OBS attend une action"
 msgid "OBS isn’t connected to Connect on {connectDevice}."
 msgstr "OBS n’est pas connecté à Connect sur {connectDevice}."
 
+#: src/components/live/hero.tsx
+msgid "OBS isn’t connected to Connect."
+msgstr ""
+
 #: src/components/live/obs-preview.tsx
+#: src/components/live/phone-scenes.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "OBS isn’t connected."
 msgstr "OBS n’est pas connecté."
 
@@ -6364,11 +6649,13 @@ msgstr "d’historique de stream conservés"
 msgid "Of the screen"
 msgstr "De l’image"
 
+#: src/components/live/quick-actions.tsx
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "désactivé"
 
 #: src/components/chat/chat-links.tsx
+#: src/components/live/device-summary.tsx
 #: src/components/trigger-field.tsx
 #: src/lib/connect.ts
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
@@ -6395,6 +6682,9 @@ msgstr "Désactivé : votre bot, ou le bot NOALBS partagé, répond pour chaque
 msgid "Offered"
 msgstr "Proposée"
 
+#: src/components/live/device-summary.tsx
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
 #: src/lib/organizations.ts
 msgid "Offline"
 msgstr "Hors ligne"
@@ -6441,7 +6731,10 @@ msgstr "sur {0}"
 msgid "On {0}"
 msgstr "Sur {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/hero.tsx
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/phone.tsx
+#: src/components/live/scene-grid.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "À l’antenne"
@@ -6624,11 +6917,12 @@ msgstr "Invitations ouvertes"
 msgid "Open network: no password"
 msgstr "Réseau ouvert : pas de mot de passe"
 
+#: src/components/live/live-banners.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
 msgstr "Ouvrir les réglages"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "Open Setup"
 msgstr "Ouvrir Configuration"
 
@@ -6677,6 +6971,7 @@ msgstr "Ouverture de Checkout…"
 msgid "Opening the workspace needs its permission. Everything you do there is shown to its owners and admins."
 msgstr "L’ouverture de l’espace de travail nécessite son autorisation. Tout ce que vous y faites est visible par ses propriétaires et admins."
 
+#: src/components/live/layout-editor.tsx
 #: src/lib/permissions.ts
 msgid "Operator"
 msgstr "Opérateur"
@@ -6740,6 +7035,8 @@ msgid "Original"
 msgstr "Originale"
 
 #: src/components/live/moblin-card.tsx
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
 msgid "Other"
 msgstr "Autre"
 
@@ -6832,6 +7129,9 @@ msgstr "Les factures passées conservent l’e-mail et la fin de carte qu’elle
 msgid "Pause, and resume when shown"
 msgstr "Mettre en pause, et reprendre à l’affichage"
 
+#: src/components/live/hero.tsx
+#: src/components/live/phone.tsx
+#: src/components/live/quick-actions.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
@@ -6953,6 +7253,7 @@ msgstr "Choisissez le serveur vers lequel votre encodeur envoie le stream et dep
 msgid "Pick two or more."
 msgstr "Choisissez-en deux ou plus."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Pick your LIVE, LOW and BRB scenes"
 msgstr "Choisissez vos scènes LIVE, LOW et BRB"
@@ -7057,6 +7358,10 @@ msgstr "Annonce publiée"
 msgid "Prefix {0}"
 msgstr "Préfixe {0}"
 
+#: src/components/live/layout-editor.tsx
+msgid "Preset"
+msgstr ""
+
 #: src/components/live/source-position.tsx
 msgid "Presets"
 msgstr "Préréglages"
@@ -7104,6 +7409,8 @@ msgstr "Navigation principale"
 msgid "Priority: higher is used more when stable"
 msgstr "Priorité : plus elle est élevée, plus la connexion est utilisée quand elle est stable"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/login.tsx
@@ -7169,10 +7476,6 @@ msgstr "Publisher (ID de stream)"
 #: src/components/live/obs-preview.tsx
 msgid "Quality"
 msgstr "Qualité"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Quick actions"
-msgstr "Actions rapides"
 
 #. placeholder {0}: connection.name
 #: src/components/live/moblin-card.tsx
@@ -7245,6 +7548,10 @@ msgstr "Reconnecter"
 msgid "Reconnect delay (s)"
 msgstr "Délai de reconnexion (s)"
 
+#: src/components/live/quick-actions.tsx
+msgid "reconnect sources"
+msgstr ""
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "Reconnecter la source navigateur ?"
@@ -7270,9 +7577,9 @@ msgstr "Reconnexion"
 msgid "Reconnecting {0}"
 msgstr "Reconnexion de {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "RECONNECTING…"
-msgstr "RECONNEXION…"
+#: src/components/live/phone.tsx
+msgid "Reconnecting…"
+msgstr ""
 
 #: src/components/live/moblin-card.tsx
 #: src/components/live/quick-actions.tsx
@@ -7288,6 +7595,7 @@ msgid "Recorded in the staff audit log."
 msgstr "Consigné dans le journal d’audit de l’équipe."
 
 #: src/components/live/moblin-card.tsx
+#: src/components/live/quick-actions.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Recording"
 msgstr "Enregistrement"
@@ -7324,6 +7632,8 @@ msgstr "L’enregistrement reste actif pour {summary}."
 msgid "Recording stopped"
 msgstr "Enregistrement arrêté"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7589,6 +7899,14 @@ msgstr "Échec de la requête ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "A demandé un journal OBS via Connect"
 
+#: src/components/live/layout-editor.tsx
+msgid "Reset to preset"
+msgstr ""
+
+#: src/components/live/layout-editor.tsx
+msgid "Resize {name}"
+msgstr ""
+
 #: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7633,6 +7951,11 @@ msgstr "Reprenez l’abonnement pour le modifier."
 #: src/lib/support.ts
 msgid "Resumed the subscription"
 msgstr "Abonnement repris"
+
+#: src/components/live/activity-feed.tsx
+#: src/components/live/phone-scenes.tsx
+msgid "Retry"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -7923,6 +8246,12 @@ msgstr "Remplacements de scènes"
 msgid "Scene switches"
 msgstr "Changements de scène"
 
+#: src/components/live/phone.tsx
+msgid "Scene switches and stream changes"
+msgstr ""
+
+#: src/components/live/layout.ts
+#: src/components/live/phone-scenes.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
@@ -7994,7 +8323,7 @@ msgid "See bitrate, servers and activity"
 msgstr "Voir le débit, les serveurs et l’activité"
 
 #: src/components/create-switcher-dialog.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "See plans"
 msgstr "Voir les offres"
@@ -8066,6 +8395,10 @@ msgstr "Le serveur est désactivé"
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server order"
 msgstr "Ordre des serveurs"
+
+#: src/components/live/hero.tsx
+msgid "Server receiving video"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Server type"
@@ -8142,6 +8475,10 @@ msgstr "Offre de {target} définie"
 msgid "Set to {0}"
 msgstr "Définir à {0}"
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Set up {name}"
+msgstr ""
+
 #: src/components/moblin-settings.tsx
 msgid "Set up Moblin"
 msgstr "Configurer Moblin"
@@ -8182,10 +8519,11 @@ msgstr "Configuration"
 msgid "Setup guide"
 msgstr "Guide de configuration"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "Setup help"
 msgstr "Aide à la configuration"
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Setup progress"
 msgstr "Progression de la configuration"
@@ -8236,6 +8574,11 @@ msgstr "Décale l’audio par rapport à la vidéo, de {AUDIO_DELAY_MIN} à {AUD
 #: src/routes/_app/workspaces/live.tsx
 msgid "Show"
 msgstr "Afficher"
+
+#. placeholder {0}: names[id]
+#: src/components/live/phone.tsx
+msgid "Show {0}"
+msgstr ""
 
 #: src/components/copy-field.tsx
 #: src/components/secret-url-input.tsx
@@ -8302,6 +8645,10 @@ msgstr "Source affichée ou masquée"
 msgid "Showing"
 msgstr "Affichée"
 
+#: src/components/live/source-list.tsx
+msgid "Shown"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8309,8 +8656,8 @@ msgid "SHOWN"
 msgstr "AFFICHÉ"
 
 #: src/components/live/source-list.tsx
-msgid "SHOWN · PARENT HIDDEN"
-msgstr "AFFICHÉ · PARENT MASQUÉ"
+msgid "Shown · parent hidden"
+msgstr ""
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
@@ -8471,6 +8818,7 @@ msgstr "Trier"
 msgid "Source"
 msgstr "Source"
 
+#: src/components/live/layout.ts
 #: src/components/live/source-list.tsx
 msgid "Sources"
 msgstr "Sources"
@@ -8551,6 +8899,7 @@ msgstr "Équipe : <0>cet espace de travail dans Admin</0> (définir son offre, 
 
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
+#: src/components/live/phone-actions.tsx
 msgid "Start"
 msgstr "Démarrer"
 
@@ -8571,10 +8920,11 @@ msgid "Start Moblin with the OBS stream"
 msgstr "Démarrer Moblin avec le stream OBS"
 
 #: src/components/connect-controls.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "Start OBS"
 msgstr "Démarrer OBS"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Start stream"
 msgstr "Démarrer le stream"
@@ -8584,6 +8934,7 @@ msgstr "Démarrer le stream"
 msgid "Start the hotspot on {0}"
 msgstr "Démarrer le hotspot sur {0}"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Start the stream?"
 msgstr "Démarrer le stream ?"
@@ -8612,6 +8963,8 @@ msgstr "Enregistrement démarré ou arrêté"
 msgid "Started or stopped the stream"
 msgstr "Stream démarré ou arrêté"
 
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Starting"
@@ -8677,6 +9030,7 @@ msgstr "Furtif activé"
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/phone-actions.tsx
 msgid "Stop"
 msgstr "Arrêter"
 
@@ -8737,6 +9091,7 @@ msgstr "Arrêter la vente"
 msgid "Stop selling {name}: {label}?"
 msgstr "Arrêter la vente de {name} : {label} ?"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Stop stream"
 msgstr "Arrêter le stream"
@@ -8753,6 +9108,7 @@ msgstr "Arrêter le stream BELABOX ?"
 msgid "Stop the Moblin stream?"
 msgstr "Arrêter le stream Moblin ?"
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Stop the stream?"
 msgstr "Arrêter le stream ?"
@@ -8787,6 +9143,7 @@ msgid "Stopped OBS through Connect"
 msgstr "A arrêté OBS via Connect"
 
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/live/layout.ts
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Stream"
 msgstr "Stream"
@@ -8827,10 +9184,10 @@ msgstr "Serveur de stream"
 msgid "Stream server not found"
 msgstr "Serveur de stream introuvable"
 
+#: src/components/live/layout.ts
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Stream servers"
 msgstr "Serveurs de stream"
@@ -8845,7 +9202,7 @@ msgstr "Serveurs de stream par switcher"
 msgid "Stream started"
 msgstr "Stream démarré"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/phone.tsx
 msgid "Stream status"
 msgstr "État du stream"
 
@@ -8860,6 +9217,11 @@ msgstr "URL du flux"
 #: src/components/live/source-editor.tsx
 msgid "Stream URL"
 msgstr "URL du flux"
+
+#: src/components/live/device-summary.tsx
+#: src/components/live/phone.tsx
+msgid "Streaming"
+msgstr ""
 
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
@@ -9154,6 +9516,10 @@ msgstr "Synchronisé depuis OBS"
 msgid "Synced from OBS {0}"
 msgstr "Synchronisé depuis OBS {0}"
 
+#: src/components/live/phone-scenes.tsx
+msgid "Tap a scene to switch it in OBS."
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
 msgstr "Touchez des entrées pour les afficher ou les masquer ici. Seul ce navigateur s’en souvient, et OBS n’est pas modifié."
@@ -9360,6 +9726,7 @@ msgid "The BELABOX is streaming. Stop it to change these settings."
 msgstr "Le BELABOX est en stream. Arrêtez-le pour modifier ces réglages."
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/device-summary.tsx
 msgid "The BELABOX isn’t connected to BELABOX Cloud. Check that it’s on and online."
 msgstr "Le BELABOX n’est pas connecté à BELABOX Cloud. Vérifiez qu’il est allumé et en ligne."
 
@@ -9387,6 +9754,10 @@ msgstr "Le BELABOX a refusé le mot de passe du hotspot"
 msgid "The BELABOX stops sending, so the stream server loses the feed."
 msgstr "Le BELABOX cesse d’envoyer : le serveur de stream perd le flux."
 
+#: src/components/live/hero.tsx
+msgid "The bitrate shows here once a server receives video."
+msgstr ""
+
 #: src/components/chat/chat-links.tsx
 msgid "the bot’s access was taken away"
 msgstr "l’accès du bot lui a été retiré"
@@ -9403,7 +9774,7 @@ msgstr "Le débit BRB doit être inférieur au débit LOW."
 msgid "The BRB RTT must be higher than the LOW RTT."
 msgstr "Le RTT BRB doit être supérieur au RTT LOW."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-banners.tsx
 msgid "The browser source isn’t connected. Open OBS with the NOALBS browser source active."
 msgstr "La source navigateur n’est pas connectée. Ouvrez OBS avec la source navigateur NOALBS active."
 
@@ -9569,10 +9940,6 @@ msgstr "Le port doit être compris entre 1 et 65535"
 #: src/lib/api-messages.ts
 msgid "The prefix must be 1 to 3 characters without spaces"
 msgstr "Le préfixe doit faire de 1 à 3 caractères, sans espaces"
-
-#: src/components/live/obs-preview.tsx
-msgid "The preview is off. Turn it on to see what OBS is showing."
-msgstr "L’aperçu est désactivé. Activez-le pour voir ce qu’affiche OBS."
 
 #: src/lib/api-messages.ts
 msgid "The preview is only shown while the stream is live."
@@ -9925,6 +10292,7 @@ msgid "This server didn’t report any stats during this stream."
 msgstr "Ce serveur n’a remonté aucune stat pendant ce stream."
 
 #: src/components/live/obs-stats-popover.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "This stream"
 msgstr "Ce stream"
 
@@ -9988,6 +10356,10 @@ msgstr "Cet espace de travail n’a encore souscrit à rien."
 msgid "This workspace pays through Stripe: its next Stripe event sets the plan back to what it pays for."
 msgstr "Cet espace de travail paie via Stripe : son prochain événement Stripe remet l’offre sur ce qu’il paie."
 
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Three steps, a couple of minutes. The Live page appears when they’re done."
+msgstr ""
+
 #: src/lib/org-audit.ts
 msgid "Through an invite link"
 msgstr "Via un lien d’invitation"
@@ -10005,6 +10377,10 @@ msgstr "Astuce : ajoutez un second serveur comme liaison de secours pour que NO
 #: src/lib/live-format.ts
 msgid "To {0} {1}"
 msgstr "Vers {0} {1}"
+
+#: src/components/live/layout-editor.tsx
+msgid "To move a panel, press Space, then use the arrow keys. Press Space again to drop, or Escape to cancel."
+msgstr ""
 
 #: src/lib/stream-server-kinds.ts
 msgid "Token"
@@ -10160,6 +10536,10 @@ msgstr "Offre inconnue"
 #: src/routes/_app/orgs/$organization/team.tsx
 msgid "Unknown user"
 msgstr "Utilisateur inconnu"
+
+#: src/components/live/hero.tsx
+msgid "Unknown while OBS is offline"
+msgstr ""
 
 #. placeholder {0}: channel.display_name
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -10401,6 +10781,10 @@ msgstr "En attente de Moblin… Saisissez le mot de passe et l’URL ci-dessus, 
 msgid "Waiting for OBS"
 msgstr "En attente d’OBS"
 
+#: src/components/live/phone.tsx
+msgid "Waiting for status"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Waiting for the browser source…"
 msgstr "En attente de la source navigateur…"
@@ -10638,6 +11022,11 @@ msgstr "WiFi, modems, audio et serveur du stream, envoyés au BELABOX via BELABO
 #: src/components/server-details-fields.tsx
 msgid "Will be removed"
 msgstr "Sera retiré"
+
+#: src/components/live/phone-scenes.tsx
+#: src/components/live/scene-grid.tsx
+msgid "With a role"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "With permission"
@@ -11003,6 +11392,7 @@ msgstr "Votre abonnement est actif."
 msgid "Your switchers, team and plan at a glance."
 msgstr "Vos switchers, votre équipe et votre offre en un coup d’œil."
 
+#: src/components/live/phone-actions.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Your viewers will see the stream end."
 msgstr "Vos spectateurs verront le stream se terminer."

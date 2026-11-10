@@ -221,6 +221,7 @@ export function MoblinCard({
   now,
   path,
   canControl,
+  paused = false,
 }: {
   status: MoblinStatus | null | undefined;
   /** Recent throughput per bonding connection, keyed by `bondingKeys`. */
@@ -228,6 +229,7 @@ export function MoblinCard({
   now: number;
   path: Path;
   canControl: boolean;
+  paused?: boolean;
 }) {
   const controls = useMoblinControls(path);
   const view = moblinView(status, now);
@@ -247,12 +249,14 @@ export function MoblinCard({
       : { label: t`NOT CONNECTED`, tone: "text-muted-foreground", fill: "bg-idle" };
 
   return (
-    <section aria-label="Moblin" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
+    <section aria-label="Moblin" className="flex flex-col gap-3">
+      {paused && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>Controls are off while the switcher is paused.</Trans>
+        </p>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">
-            <Trans>Moblin</Trans>
-          </span>
           <span
             className={cn(
               "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
@@ -324,7 +328,7 @@ function Details({
   return (
     <>
       <div className="flex flex-col">
-        <span className="font-mono text-xl font-semibold tabular">
+        <span className="font-display text-3xl font-semibold tabular-nums">
           {!status.streaming ? (
             t`Not live`
           ) : status.bitrate_kbps != null ? (
@@ -619,7 +623,7 @@ function Zoom({
   const busy = controls.zoom.isPending || controls.zoomPreset.isPending;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
+    <div className="flex flex-col gap-1.5 border-b border-divider py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs tracking-wider text-muted-foreground uppercase">
           <Trans>Zoom</Trans>

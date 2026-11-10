@@ -28,7 +28,7 @@ import {
   WIDTH_OPTIONS,
   watchingLine,
 } from "@/lib/obs-preview";
-import { cn } from "@/lib/utils";
+import { TileControls } from "./tile";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -138,6 +138,7 @@ export function ObsPreview({
   streaming,
   offAirAllowed,
   privacyLink,
+  onVisibilityChange,
 }: {
   path: Path;
   obsConnected: boolean;
@@ -145,11 +146,13 @@ export function ObsPreview({
   offAirAllowed: boolean;
   /** Route params for the switcher settings, for those who may change who sees it. */
   privacyLink?: { workspace: string; switcher: string };
+  onVisibilityChange?: (visible: boolean) => void;
 }) {
   const desktop = useMediaQuery(DESKTOP);
   const [settings, update] = usePreviewSettings();
   const [showSettings, setShowSettings] = useState(false);
   const on = previewOn(settings, desktop);
+  useEffect(() => onVisibilityChange?.(on), [on, onVisibilityChange]);
   const hidden = !streaming && !offAirAllowed;
   const { frame, problem } = useObsFrames(
     path.workspace_id,
@@ -165,19 +168,36 @@ export function ObsPreview({
   });
   const watching = obsConnected && watchers.data ? watchingLine(watchers.data) : null;
 
-  // Laid out like the other Live sections: heading above, content below, and
-  // the controls under it on the right.
   return (
-    <section aria-label={t`OBS preview`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center">
-        <h2 className="font-semibold">
+    <section
+      aria-label={t`OBS preview`}
+      className={on ? "flex min-w-0 flex-col gap-2.5" : "contents"}
+    >
+      <TileControls>
+        <span className="flex items-center gap-2 whitespace-nowrap">
           <Trans>Preview</Trans>
-        </h2>
-      </div>
+          {on && ` · ${settings.fps} fps`}
+          <Switch
+            checked={on}
+            onCheckedChange={(enabled) => update({ enabled })}
+            aria-label={t`Show the OBS preview`}
+          />
+          {on && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t`Preview settings`}
+              aria-expanded={showSettings}
+              onClick={() => setShowSettings((shown) => !shown)}
+            >
+              <Settings2 />
+            </Button>
+          )}
+        </span>
+      </TileControls>
 
-      {/* One box: the picture, a footer bar with the controls, and the settings. */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
-        {on ? (
+      {on && (
+        <div className="flex flex-col overflow-hidden rounded-lg">
           <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
             {frame && obsConnected && !hidden && (
               <img
@@ -208,70 +228,47 @@ export function ObsPreview({
               )
             )}
           </div>
-        ) : (
-          <p className="px-4 py-6 text-sm text-muted-foreground">
-            <Trans>The preview is off. Turn it on to see what OBS is showing.</Trans>
-          </p>
-        )}
 
-        {watching && (
-          <p className="flex items-center gap-1.5 border-t border-divider px-4 py-2 text-xs text-muted-foreground">
-            <Eye className="size-3.5 shrink-0" aria-hidden />
-            {watching}
-          </p>
-        )}
+          {watching && (
+            <p className="flex items-center gap-1.5 border-t border-divider px-4 py-2 text-xs text-muted-foreground">
+              <Eye className="size-3.5 shrink-0" aria-hidden />
+              {watching}
+            </p>
+          )}
 
-        <div className="flex min-h-11 items-center justify-between gap-2 border-t border-divider py-1.5 pr-2.5 pl-4">
-          <p className="text-xs text-muted-foreground">
-            {on &&
-              frame &&
-              !hidden &&
-              t`${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
-          </p>
-          <span className="flex items-center gap-2">
-            {on && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t`Preview settings`}
-                aria-expanded={showSettings}
-                onClick={() => setShowSettings((shown) => !shown)}
-                className={cn(showSettings && "bg-surface-2")}
-              >
-                <Settings2 />
-              </Button>
-            )}
-            <Switch
-              checked={on}
-              onCheckedChange={(enabled) => update({ enabled })}
-              aria-label={t`Show the OBS preview`}
-            />
-          </span>
-        </div>
-
-        {on && showSettings && (
-          <div className="grid grid-cols-3 gap-2 border-t border-divider p-3">
-            <PreviewSelect
-              label={t`Rate`}
-              value={settings.fps}
-              options={FPS_OPTIONS.map((fps) => ({ value: fps, label: fpsLabel(fps) }))}
-              onChange={(fps) => update({ fps })}
-            />
-            <PreviewSelect
-              label={t`Size`}
-              value={settings.width}
-              options={WIDTH_OPTIONS.map((width) => ({ value: width, label: `${width} px` }))}
-              onChange={(width) => update({ width })}
-            />
-            <PreviewSelect
-              label={t`Quality`}
-              value={settings.quality}
-              options={qualityOptions().map((option) => ({ ...option }))}
-              onChange={(quality) => update({ quality })}
-            />
+          <div className="flex items-center gap-2 py-1.5">
+            <p className="text-xs text-muted-foreground">
+              {on &&
+                frame &&
+                !hidden &&
+                t`${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
+            </p>
           </div>
-        )}
-      </div>
+
+          {on && showSettings && (
+            <div className="grid grid-cols-3 gap-2 border-t border-divider p-3">
+              <PreviewSelect
+                label={t`Rate`}
+                value={settings.fps}
+                options={FPS_OPTIONS.map((fps) => ({ value: fps, label: fpsLabel(fps) }))}
+                onChange={(fps) => update({ fps })}
+              />
+              <PreviewSelect
+                label={t`Size`}
+                value={settings.width}
+                options={WIDTH_OPTIONS.map((width) => ({ value: width, label: `${width} px` }))}
+                onChange={(width) => update({ width })}
+              />
+              <PreviewSelect
+                label={t`Quality`}
+                value={settings.quality}
+                options={qualityOptions().map((option) => ({ ...option }))}
+                onChange={(quality) => update({ quality })}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

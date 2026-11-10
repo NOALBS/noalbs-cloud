@@ -71,10 +71,11 @@ import {
   withRemoved,
 } from "@/lib/obs-sources";
 import { cn } from "@/lib/utils";
+import { TileControls } from "./tile";
 
 /** Like the scene tiles, so both grids read the same. */
 const TILE =
-  "flex min-h-19 flex-col items-start justify-between gap-1.5 rounded-xl p-3 text-left transition-colors";
+  "flex min-h-10 min-w-0 items-center justify-between gap-2 border-b border-divider py-2 text-left transition-colors";
 
 const HEADER_BUTTON =
   "flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium hover:bg-surface-2";
@@ -98,6 +99,7 @@ export function SourceList({
   canControl,
   canEditSources,
   obsConnected,
+  columns = false,
 }: {
   path: { workspace_id: string; switcher_id: string };
   /** The scene on air (UUID, else name), so a switch loads the new scene's sources. */
@@ -106,6 +108,7 @@ export function SourceList({
   /** May add and edit sources (members who manage switchers, not while paused). */
   canEditSources: boolean;
   obsConnected: boolean;
+  columns?: boolean;
 }) {
   const [hidden, setHidden] = useHiddenSources(path.switcher_id);
   const [editing, setEditing] = useState(false);
@@ -247,10 +250,7 @@ export function SourceList({
 
   return (
     <section aria-label={t`Sources`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">
-          <Trans>Sources</Trans>
-        </h2>
+      <TileControls>
         {list.data &&
           (onScene.length > 0 || canEditSources) &&
           (arranging ? (
@@ -284,26 +284,26 @@ export function SourceList({
               {onScene.length > 0 && (
                 <button
                   type="button"
+                  aria-label={t`Customize`}
                   onClick={() => setEditing(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
-                  <SlidersHorizontal className="size-3.5" />
-                  <Trans>Customize</Trans>
+                  <SlidersHorizontal className="size-3.5" aria-label={t`Customize sources`} />
                 </button>
               )}
               {canArrange && (
                 <button
                   type="button"
+                  aria-label={t`Edit sources`}
                   onClick={() => setArranging(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
-                  <Pencil className="size-3.5" />
-                  <Trans>Edit</Trans>
+                  <Pencil className="size-3.5" aria-label={t`Edit sources`} />
                 </button>
               )}
             </span>
           ))}
-      </div>
+      </TileControls>
 
       <SourceEditorDialog path={path} target={editor} onClose={() => setEditor(null)} />
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
@@ -382,19 +382,17 @@ export function SourceList({
       )}
 
       {!obsConnected && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+        <p className="py-3 text-sm text-muted-foreground">
           <Trans>Sources appear once OBS is connected.</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-32 rounded-2xl" />}
       {obsConnected && list.isError && !list.data && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          {errorMessage(list.error)}
-        </p>
+        <p className="py-3 text-sm text-muted-foreground">{errorMessage(list.error)}</p>
       )}
 
       {list.data && sections.length === 0 && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+        <p className="py-3 text-sm text-muted-foreground">
           <Trans>This scene has no sources.</Trans>
         </p>
       )}
@@ -406,8 +404,9 @@ export function SourceList({
         listedSections.length === 0 && (
           <button
             type="button"
+            aria-label={t`Customize`}
             onClick={() => setEditing(true)}
-            className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
+            className="py-3 text-left text-sm text-muted-foreground hover:underline"
           >
             <Trans>All sources are hidden. Tap to pick some.</Trans>
           </button>
@@ -446,7 +445,7 @@ export function SourceList({
                 items={section.items.map(({ source }) => sourceKey(source))}
                 strategy={verticalListSortingStrategy}
               >
-                <ul className="flex flex-col divide-y divide-divider rounded-xl border">
+                <ul className="flex flex-col divide-y divide-divider">
                   {section.items.map(({ source }) => {
                     const editable = canEditSources && editableKind(source) !== null;
                     const canRemove = canEditSources && removable(source);
@@ -528,7 +527,7 @@ export function SourceList({
               </SortableContext>
             </DndContext>
           ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <div className={cn("grid gap-x-4", columns ? "grid-cols-2" : "grid-cols-1")}>
               {section.items.map(({ source, shown }) => {
                 const key = sourceKey(source);
                 const Icon = SOURCE_ICONS[sourceKind(source)];
@@ -583,8 +582,8 @@ export function SourceList({
                       TILE,
                       "disabled:cursor-default",
                       source.enabled
-                        ? "border-2 border-primary bg-primary-soft"
-                        : "border border-dashed border-border-strong bg-transparent text-muted-foreground",
+                        ? "enabled:hover:bg-surface-2"
+                        : "text-muted-foreground enabled:hover:bg-surface-2",
                       source.enabled && !shown && "opacity-60",
                       pending && "animate-pulse",
                     )}
@@ -592,8 +591,7 @@ export function SourceList({
                     {name}
                     <span
                       className={cn(
-                        "flex items-center gap-1.5 text-[11px] font-semibold tracking-wider",
-                        source.enabled && "text-primary-soft-foreground",
+                        "flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground",
                       )}
                     >
                       {source.enabled ? (
@@ -601,7 +599,9 @@ export function SourceList({
                       ) : (
                         <EyeOff className="size-3" aria-hidden="true" />
                       )}
-                      {source.enabled ? (shown ? t`SHOWN` : t`SHOWN · PARENT HIDDEN`) : t`HIDDEN`}
+                      <span className="sr-only">
+                        {source.enabled ? (shown ? t`Shown` : t`Shown · parent hidden`) : t`Hidden`}
+                      </span>
                     </span>
                   </button>
                 );
