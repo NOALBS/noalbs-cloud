@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Read;
 use tokio::{
     net,
-    sync::{mpsc, oneshot},
+    sync::{Notify, mpsc, oneshot},
     task::JoinHandle,
 };
 use tokio_tungstenite::tungstenite::{
@@ -62,10 +62,16 @@ const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(15);
 /// takes 1 MB at most anyway; this only has to fit the biggest OBS answer.
 const MAX_MESSAGE_SIZE: usize = 4 << 20;
 
+/// How often to try NATS at startup, [`NATS_CONNECT_RETRY_DELAY`] apart.
+const NATS_CONNECT_ATTEMPTS: u32 = 5;
+const NATS_CONNECT_RETRY_DELAY: Duration = Duration::from_secs(1);
+/// What a connection reads at once. Nearly every message is far smaller, and
+/// the default (128 KiB) is kept by every open connection.
+const READ_BUFFER_SIZE: usize = 16 << 10;
+
 /// Everything connections share.
 struct Shared {
     nats: async_nats::Client,
-    js: jetstream::Context,
     stores: live::Stores,
     belabox_url: String,
     db: db::DbPool,
@@ -78,9 +84,8 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     tracing::info!(host = %config.host, port = config.port, "Running obs-link");
 
     let listener = net::TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
-    let nats = live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
-        .connect(&config.nats_url)
-        .await?;
+    let nats_connected = Arc::new(Notify::new());
+    let nats = connect_nats(&config, nats_connected.clone()).await?;
     let js = jetstream::new(nats.clone());
     let stores = live::Stores::open(&js)
         .await
@@ -96,9 +101,10 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     let reqwest =
         crate::stream_servers::http_client(APP_USER_AGENT, config.allow_private_stats_urls)?;
 
+    let stores_keeper = tokio::spawn(keep_stores(js, nats_connected));
+
     let shared = Arc::new(Shared {
         nats,
-        js,
         stores,
         belabox_url: config.belabox_url.clone(),
         db,
@@ -126,7 +132,54 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         }
     }
 
+    stores_keeper.abort();
     Ok(())
+}
+
+/// Connects to NATS. A pod that just started can be refused for a moment (its
+/// network policy isn't in place yet), so a few tries before giving up.
+/// `connected` hears of every (re)connection, see [`keep_stores`].
+async fn connect_nats(config: &Config, connected: Arc<Notify>) -> Result<async_nats::Client> {
+    let mut attempt = 1;
+    loop {
+        let connected = connected.clone();
+        let options =
+            live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
+                .event_callback(move |event| {
+                    let connected = connected.clone();
+                    async move {
+                        if matches!(event, async_nats::Event::Connected) {
+                            connected.notify_one();
+                        }
+                    }
+                });
+        match options.connect(&config.nats_url).await {
+            Ok(nats) => return Ok(nats),
+            Err(error) if attempt < NATS_CONNECT_ATTEMPTS => {
+                tracing::warn!(%error, attempt, "Couldn't connect to NATS; trying again");
+                attempt += 1;
+                tokio::time::sleep(NATS_CONNECT_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
+
+/// The buckets and the stats stream live in NATS's memory, so a NATS that
+/// restarted has none of them: writing a status fails, and every switcher shows
+/// as offline, until they exist again. Makes them again whenever we're back.
+async fn keep_stores(js: jetstream::Context, connected: Arc<Notify>) {
+    loop {
+        connected.notified().await;
+        let mut delay = Duration::from_secs(1);
+        // JetStream may take a moment longer than the connection.
+        while let Err(error) = live::Stores::open(&js).await {
+            tracing::warn!(%error, "Couldn't open the live stores after connecting to NATS; trying again");
+            tokio::time::sleep(delay).await;
+            delay = (delay * 2).min(Duration::from_secs(30));
+        }
+        tracing::debug!("Live stores are in place");
+    }
 }
 
 async fn handle_connection(
@@ -138,7 +191,12 @@ async fn handle_connection(
     // The path says who connects: a Moblin at `/moblin/<switcher ID>`, else a
     // browser source (`/link`, or anything older URLs use).
     let mut path = String::new();
+    // Requests are small and sent one by one: don't hold one back to fill a packet.
+    if let Err(error) = stream.set_nodelay(true) {
+        tracing::debug!(%error, "Couldn't turn off Nagle's algorithm");
+    }
     let config = WebSocketConfig::default()
+        .read_buffer_size(READ_BUFFER_SIZE)
         .max_message_size(Some(MAX_MESSAGE_SIZE))
         .max_frame_size(Some(MAX_MESSAGE_SIZE));
     let handshake = tokio_tungstenite::accept_hdr_async_with_config(
@@ -1021,7 +1079,6 @@ impl Connection {
             switcher_id: session.switcher_id,
             db: self.shared.db.clone(),
             nats: self.shared.nats.clone(),
-            js: self.shared.js.clone(),
             reqwest: self.shared.reqwest.clone(),
             allow_private_stats_urls: self.shared.allow_private_stats_urls,
             status: session.status.clone(),

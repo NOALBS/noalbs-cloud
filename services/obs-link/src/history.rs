@@ -2,7 +2,7 @@
 //! [`db::streams::BUCKET_SECONDS`] buckets per server, which the switcher writes
 //! to the database as each bucket fills (see `db::streams`).
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use chrono::{DateTime, Utc};
 use db::streams::{BUCKET_SECONDS, Bucket, StateSeconds};
@@ -56,11 +56,12 @@ struct Acc {
     live: i32,
     low: i32,
     offline: i32,
-    raw: Option<serde_json::Value>,
+    /// The latest raw stats, shared with the switcher until the bucket is written.
+    raw: Option<Arc<serde_json::Value>>,
 }
 
 impl Acc {
-    fn add(&mut self, sample: &ServerSample, raw: Option<&serde_json::Value>) {
+    fn add(&mut self, sample: &ServerSample, raw: Option<&Arc<serde_json::Value>>) {
         let bitrate = i32::try_from(sample.bitrate).unwrap_or(i32::MAX);
         if self.samples == 0 {
             self.bitrate_min = bitrate;
@@ -83,7 +84,7 @@ impl Acc {
             &mut self.offline,
         );
         if let Some(raw) = raw {
-            self.raw = Some(raw.clone());
+            self.raw = Some(Arc::clone(raw));
         }
     }
 
@@ -101,7 +102,7 @@ impl Acc {
             live_seconds: self.live,
             low_seconds: self.low,
             offline_seconds: self.offline,
-            raw: self.raw,
+            raw: self.raw.map(Arc::unwrap_or_clone),
         }
     }
 }
@@ -143,7 +144,7 @@ impl Recorder {
     pub fn add(
         &mut self,
         sample: &StatsSample,
-        raw: &HashMap<Uuid, serde_json::Value>,
+        raw: &HashMap<Uuid, Arc<serde_json::Value>>,
         state: FeedState,
     ) -> Option<Flush> {
         let bucket_at = bucket_start(sample.at);
@@ -191,7 +192,7 @@ impl Recorder {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, sync::Arc};
 
     use chrono::{DateTime, TimeDelta, Utc};
     use live::{FeedState, ServerSample, StatsSample};
@@ -233,7 +234,7 @@ mod tests {
     fn a_bucket_is_flushed_when_the_next_one_starts() {
         let server = Uuid::new_v4();
         let mut recorder = Recorder::new(Uuid::new_v4());
-        let raw = HashMap::from([(server, serde_json::json!({ "n": 1 }))]);
+        let raw = HashMap::from([(server, Arc::new(serde_json::json!({ "n": 1 })))]);
 
         for (second, bitrate, rtt) in [
             (0, 5000, Some(80.0)),
@@ -243,7 +244,7 @@ mod tests {
             let flush = recorder.add(&sample(second, server, bitrate, rtt), &raw, FeedState::Live);
             assert!(flush.is_none());
         }
-        let raw = HashMap::from([(server, serde_json::json!({ "n": 2 }))]);
+        let raw = HashMap::from([(server, Arc::new(serde_json::json!({ "n": 2 })))]);
         let flush = recorder
             .add(&sample(10, server, 4000, None), &raw, FeedState::Low)
             .expect("the first bucket is done");
