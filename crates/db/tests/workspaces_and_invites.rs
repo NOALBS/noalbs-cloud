@@ -57,16 +57,31 @@ async fn a_workspace_changes_its_name_and_url_and_frees_the_old_url(pool: PgPool
         .unwrap()
         .unwrap();
     assert_eq!(
-        (moved.name.as_str(), moved.url_slug.as_str()),
+        (
+            moved.workspace.name.as_str(),
+            moved.workspace.url_slug.as_str()
+        ),
         ("old-url", "new-url")
     );
+    assert_eq!(moved.previous_url_slug, "old-url");
     let renamed = workspaces::update(&pool, workspace_id, Some("Renamed"), None)
         .await
         .unwrap()
         .unwrap();
     assert_eq!(
-        (renamed.name.as_str(), renamed.url_slug.as_str()),
+        (
+            renamed.workspace.name.as_str(),
+            renamed.workspace.url_slug.as_str()
+        ),
         ("Renamed", "new-url")
+    );
+    // What it replaced: the name it had, and the URL it kept.
+    assert_eq!(
+        (
+            renamed.previous_name.as_str(),
+            renamed.previous_url_slug.as_str()
+        ),
+        ("old-url", "new-url")
     );
 
     // The new URL finds it, the old one no longer does and is free again.
@@ -99,6 +114,33 @@ async fn a_workspace_changes_its_name_and_url_and_frees_the_old_url(pool: PgPool
         .await
         .unwrap();
     assert!(missing.is_none());
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn url_changes_at_once_each_report_the_url_they_replaced(pool: PgPool) {
+    let (workspace_id, _) = workspace_with_owner(&pool, "first-url").await;
+
+    // Someone's change is under way: it holds the row.
+    let mut ahead = pool.begin().await.unwrap();
+    sqlx::query("UPDATE workspaces SET url_slug = 'second-url' WHERE id = $1")
+        .bind(workspace_id)
+        .execute(&mut *ahead)
+        .await
+        .unwrap();
+
+    // Ours started when the row still said `first-url`, and waits for theirs.
+    let behind = tokio::spawn({
+        let pool = pool.clone();
+        async move { workspaces::update(&pool, workspace_id, None, Some("third-url")).await }
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    assert!(!behind.is_finished());
+    ahead.commit().await.unwrap();
+
+    // It replaced what theirs left, not what it first saw.
+    let updated = behind.await.unwrap().unwrap().unwrap();
+    assert_eq!(updated.previous_url_slug, "second-url");
+    assert_eq!(updated.workspace.url_slug, "third-url");
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

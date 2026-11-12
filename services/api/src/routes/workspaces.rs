@@ -326,16 +326,16 @@ async fn update_workspace(
     Json(request): Json<UpdateWorkspace>,
 ) -> ApiResult<Json<WorkspaceDto>> {
     let access = authorized.into_access();
-    let previous = db::workspaces::get_by_id(&state.db, access.workspace_id)
+    let current = db::workspaces::get_by_id(&state.db, access.workspace_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Workspace not found"))?;
     // What it already has isn't a change (nor a URL to check against itself).
     let name = match request.name.as_deref().map(validate::name).transpose()? {
-        Some(name) if name != previous.name => Some(name),
+        Some(name) if name != current.name => Some(name),
         _ => None,
     };
     let url_slug = match request.url_slug.as_deref() {
-        Some(url_slug) if url_slug != previous.url_slug => {
+        Some(url_slug) if url_slug != current.url_slug => {
             validate::url_slug(url_slug)?;
             Some(url_slug)
         }
@@ -343,41 +343,49 @@ async fn update_workspace(
     };
 
     if name.is_some() || url_slug.is_some() {
-        let workspace = db::workspaces::update(&state.db, access.workspace_id, name, url_slug)
+        // What it replaced comes from the update itself: `current` may be behind
+        // when someone else changed the workspace in between.
+        let db::workspaces::UpdatedWorkspace {
+            workspace,
+            previous_name,
+            previous_url_slug,
+        } = db::workspaces::update(&state.db, access.workspace_id, name, url_slug)
             .await
             .map_err(slug_conflict)?
             .ok_or_else(|| ApiError::not_found("Workspace not found"))?;
-        // The customer's name is on its invoices. Best effort: the rename stands either way.
-        if let (Some(name), Some(billing), Some(customer)) =
-            (name, &state.billing, &workspace.stripe_customer_id)
-            && let Err(error) = billing.stripe.set_customer_name(customer, name).await
-        {
-            tracing::warn!(%error, workspace_id = %workspace.id, "Couldn't rename the Stripe customer");
-        }
-    }
 
-    if let Some(name) = name {
-        record_in_client(
-            &state,
-            &access,
-            "client_renamed",
-            Some(name),
-            serde_json::json!({ "previous_name": previous.name }),
-        )
-        .await?;
-    }
-    if let Some(url_slug) = url_slug {
-        record_in_client(
-            &state,
-            &access,
-            "client_url_changed",
-            None,
-            serde_json::json!({
-                "previous_url_slug": previous.url_slug,
-                "url_slug": url_slug,
-            }),
-        )
-        .await?;
+        if workspace.name != previous_name {
+            // The customer's name is on its invoices. Best effort: the rename stands either way.
+            if let (Some(billing), Some(customer)) = (&state.billing, &workspace.stripe_customer_id)
+                && let Err(error) = billing
+                    .stripe
+                    .set_customer_name(customer, &workspace.name)
+                    .await
+            {
+                tracing::warn!(%error, workspace_id = %workspace.id, "Couldn't rename the Stripe customer");
+            }
+            record_in_client(
+                &state,
+                &access,
+                "client_renamed",
+                Some(&workspace.name),
+                serde_json::json!({ "previous_name": previous_name }),
+            )
+            .await?;
+        }
+        if workspace.url_slug != previous_url_slug {
+            record_in_client(
+                &state,
+                &access,
+                "client_url_changed",
+                None,
+                serde_json::json!({
+                    "previous_url_slug": previous_url_slug,
+                    "url_slug": workspace.url_slug,
+                }),
+            )
+            .await?;
+        }
     }
 
     Ok(Json(

@@ -58,6 +58,12 @@ export function ChangeWorkspaceUrl() {
         params: { workspace: updated.url_slug },
         replace: true,
       });
+      // Forget the old address, or going Back to it would show the workspace from
+      // the cache (a refetch that fails keeps the data it had).
+      queryClient.removeQueries({
+        queryKey: workspaceBySlugQuery(workspace.url_slug).queryKey,
+        exact: true,
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
         // An organization lists its clients by their URL.
