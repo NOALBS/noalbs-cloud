@@ -266,6 +266,73 @@ pub fn connect_options(user: Option<&str>, password: Option<&str>) -> async_nats
     }
 }
 
+/// How often [`connect`] tries NATS at startup, [`CONNECT_RETRY_DELAY`] apart.
+const CONNECT_ATTEMPTS: u32 = 5;
+const CONNECT_RETRY_DELAY: Duration = Duration::from_secs(1);
+
+/// How many times a client has connected to NATS: it changes on every
+/// (re)connection. A reconnection may be to a NATS that restarted, which has
+/// forgotten the buckets, the stats stream and every consumer on them.
+pub type Connections = tokio::sync::watch::Receiver<u64>;
+
+/// Connects a service to NATS, with `options` (made anew for every try: see
+/// [`connect_options`]). A pod that just started can be refused for a moment
+/// (its network policy isn't in place yet), so a few tries before giving up.
+pub async fn connect(
+    url: &str,
+    options: impl Fn() -> async_nats::ConnectOptions,
+) -> Result<(async_nats::Client, Connections), async_nats::ConnectError> {
+    let (connected, connections) = tokio::sync::watch::channel(0);
+    let mut attempt = 1;
+    loop {
+        let connected = connected.clone();
+        let options = options().event_callback(move |event| {
+            let connected = connected.clone();
+            async move {
+                if matches!(event, async_nats::Event::Connected) {
+                    connected.send_modify(|count| *count += 1);
+                }
+            }
+        });
+        match options.connect(url).await {
+            Ok(nats) => return Ok((nats, connections)),
+            Err(error) if attempt < CONNECT_ATTEMPTS => {
+                tracing::warn!(%error, attempt, "Couldn't connect to NATS; trying again");
+                attempt += 1;
+                tokio::time::sleep(CONNECT_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+}
+
+/// The buckets and the stats stream live in NATS's memory, so a NATS that
+/// restarted has none of them: writing a status fails, and every switcher shows
+/// as offline, until they exist again. Makes them again whenever we're back
+/// (runs until aborted).
+pub async fn keep_stores(js: jetstream::Context, connections: Connections) {
+    reopen(connections, "live stores", || Stores::open(&js)).await;
+}
+
+/// Runs `open` (which makes `what`, e.g. a service's own buckets, if missing)
+/// after every (re)connection to NATS, again until it works. Runs until aborted.
+pub async fn reopen<T, E, F>(mut connections: Connections, what: &str, open: impl Fn() -> F)
+where
+    F: Future<Output = Result<T, E>>,
+    E: std::fmt::Display,
+{
+    while connections.changed().await.is_ok() {
+        let mut delay = Duration::from_secs(1);
+        // JetStream may take a moment longer than the connection.
+        while let Err(error) = open().await {
+            tracing::warn!(%error, "Couldn't open the {what} after connecting to NATS; trying again");
+            tokio::time::sleep(delay).await;
+            delay = (delay * 2).min(Duration::from_secs(30));
+        }
+        tracing::debug!("The {what} are in place");
+    }
+}
+
 /// KV bucket of per-switcher action claims: `<action>.<switcher ID>` is set
 /// while a mutating OBS action (a fix, a stream start or stop) may still be in
 /// flight. `control` claims one to refuse a second, overlapping command.

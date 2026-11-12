@@ -232,6 +232,10 @@ async fn live_feed(
     let switcher_id = access.switcher.id;
     let key = live::status_key(switcher_id);
 
+    // Before anything is opened on this connection, so a reconnection after is seen.
+    let mut nats_connections = state.nats_connections.clone();
+    nats_connections.borrow_and_update();
+
     // Subscribe before reading the current status, so no change slips through.
     let status_updates = state.stores.status.watch(&key).await.map_err(nats_error)?;
     let belabox_updates = state.stores.belabox.watch(&key).await.map_err(nats_error)?;
@@ -294,11 +298,19 @@ async fn live_feed(
         device_event("belabox", current_belabox.as_deref()),
         device_event("moblin", current_moblin.as_deref()),
     ];
+    // A NATS that restarted has forgotten the consumers behind this feed, which
+    // would stay open and silent. Ending it has the browser open a new one.
+    let reconnected = async move {
+        if nats_connections.changed().await.is_err() {
+            std::future::pending::<()>().await;
+        }
+    };
     let feed = stream::iter(initial)
         .chain(stream::select(
             stream::select(status_updates, device_updates),
             stream::select(stats, events),
         ))
+        .take_until(reconnected)
         .map(Ok);
 
     Ok(Sse::new(feed).keep_alive(KeepAlive::new().interval(Duration::from_secs(15))))

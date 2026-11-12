@@ -41,23 +41,30 @@ async fn main() -> Result<()> {
     let shutdown_manager = ShutdownManager::new();
 
     let shutdown_handle = shutdown_manager.handle();
-    let app_handle = tokio::spawn(async move {
-        if let Err(error) = app::run(config, shutdown_handle).await {
-            tracing::error!(%error, "Application error");
-        }
-    });
+    let app_handle = tokio::spawn(app::run(config, shutdown_handle));
 
-    tokio::select! {
+    // An application error (NATS or the database unreachable at startup) ends
+    // the process as a failure, so whatever runs us sees it.
+    let failed = tokio::select! {
         () = shutdown::stop_requested() => {
             tracing::info!("Shutdown signal received. Exiting...");
+            false
         }
-        _ = app_handle => {
-            tracing::info!("Application task completed. Exiting...");
+        ended = app_handle => {
+            match &ended {
+                Ok(Ok(())) => tracing::info!("Application task completed. Exiting..."),
+                Ok(Err(error)) => tracing::error!(%error, "Application error"),
+                Err(error) => tracing::error!(%error, "Application task failed"),
+            }
+            !matches!(ended, Ok(Ok(())))
         }
-    }
+    };
 
     shutdown_manager.shutdown().await;
     telemetry.shutdown();
 
+    if failed {
+        std::process::exit(1);
+    }
     Ok(())
 }

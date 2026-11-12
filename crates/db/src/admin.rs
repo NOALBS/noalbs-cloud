@@ -168,21 +168,37 @@ pub struct ActiveCounts {
     pub switchers: i64,
 }
 
-/// Rolling activity, including live connections whose last identify may be old.
+/// Rolling activity since each of `cutoffs` (in their order), including live
+/// connections whose last identify may be old.
+///
+/// Every user's last activity is worked out once, for all the cutoffs, in one
+/// pass over the tables: asking it per user (as [`list_users`] does for a page)
+/// took about a second per cutoff with 2,500 users.
 pub async fn active_counts(
     pool: &PgPool,
-    cutoff: DateTime<Utc>,
+    cutoffs: &[DateTime<Utc>],
     connected: &[Uuid],
-) -> Result<ActiveCounts> {
-    Ok(sqlx::query_as(concat!(
-        "SELECT (SELECT count(*) ",
-        users_with_activity!(),
-        " WHERE users.disabled_at IS NULL AND activity.last_active_at >= $1) AS users,
-        (SELECT count(*) FROM switchers WHERE last_seen_at >= $1 OR id = ANY($2)) AS switchers"
-    ))
-    .bind(cutoff)
+) -> Result<Vec<ActiveCounts>> {
+    Ok(sqlx::query_as(
+        "
+        WITH activity AS MATERIALIZED (
+            SELECT greatest(max(sessions.updated_at), max(connections.updated_at)) AS last_active_at
+            FROM users
+            JOIN oauth2_connections AS connections ON connections.user_id = users.id
+            LEFT JOIN user_sessions AS sessions ON sessions.oauth2_connection_id = connections.id
+            WHERE users.disabled_at IS NULL
+            GROUP BY users.id
+        )
+        SELECT (SELECT count(*) FROM activity WHERE last_active_at >= cutoff) AS users,
+               (SELECT count(*) FROM switchers
+                WHERE last_seen_at >= cutoff OR id = ANY($2)) AS switchers
+        FROM unnest($1::timestamptz[]) WITH ORDINALITY AS windows (cutoff, position)
+        ORDER BY position
+        ",
+    )
+    .bind(cutoffs)
     .bind(connected)
-    .fetch_one(pool)
+    .fetch_all(pool)
     .await?)
 }
 

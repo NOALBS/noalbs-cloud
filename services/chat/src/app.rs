@@ -78,11 +78,12 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
         max_connections: config.postgres_max_connections,
     })
     .await?;
-    let nats = live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
-        .request_timeout(Some(Duration::from_millis(config.nats_request_timeout)))
-        .connect(&config.nats_url)
-        .await
-        .map_err(Error::nats)?;
+    let (nats, nats_connections) = live::connect(&config.nats_url, || {
+        live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
+            .request_timeout(Some(Duration::from_millis(config.nats_request_timeout)))
+    })
+    .await
+    .map_err(Error::nats)?;
     let js = jetstream::new(nats.clone());
     let buckets = Buckets::open(&js).await?;
     let stores = live::Stores::open(&js).await.map_err(Error::nats)?;
@@ -137,6 +138,11 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
         tokio::spawn(events::run(state.clone())),
         tokio::spawn(notify::run(state.clone())),
         tokio::spawn(tokens::keep_alive(state.clone())),
+        tokio::spawn(crate::kv::keep_buckets(
+            js.clone(),
+            nats_connections.clone(),
+        )),
+        tokio::spawn(live::keep_stores(js, nats_connections)),
     ];
     let kick_raids = tokio::spawn(kick::raids::run(state.clone()));
     let youtube_chats = tokio::spawn(youtube::watcher::run(state.clone()));
