@@ -535,14 +535,29 @@ pub async fn slug_exists(pool: &PgPool, url_slug: &str) -> Result<bool> {
     Ok(exists)
 }
 
+/// Changes a workspace's name, its URL slug, or both (`None` keeps what it has).
+/// A slug another workspace has is a `workspaces_url_slug_key` violation, and
+/// then nothing changes. The old slug is free for anyone at once.
 #[tracing::instrument(skip(pool))]
-pub async fn rename(pool: &PgPool, workspace_id: Uuid, name: &str) -> Result<Option<Workspace>> {
-    let workspace =
-        sqlx::query_as::<_, Workspace>("UPDATE workspaces SET name = $2 WHERE id = $1 RETURNING *")
-            .bind(workspace_id)
-            .bind(name)
-            .fetch_optional(pool)
-            .await?;
+pub async fn update(
+    pool: &PgPool,
+    workspace_id: Uuid,
+    name: Option<&str>,
+    url_slug: Option<&str>,
+) -> Result<Option<Workspace>> {
+    let workspace = sqlx::query_as::<_, Workspace>(
+        "
+        UPDATE workspaces
+        SET name = COALESCE($2, name), url_slug = COALESCE($3, url_slug)
+        WHERE id = $1
+        RETURNING *
+        ",
+    )
+    .bind(workspace_id)
+    .bind(name)
+    .bind(url_slug)
+    .fetch_optional(pool)
+    .await?;
 
     Ok(workspace)
 }

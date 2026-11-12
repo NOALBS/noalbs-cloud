@@ -4790,7 +4790,7 @@
         "tags": [
           "workspaces"
         ],
-        "summary": "Rename a workspace.",
+        "summary": "Rename a workspace, change its URL, or both.",
         "operationId": "update_workspace",
         "parameters": [
           {
@@ -4823,7 +4823,26 @@
               }
             }
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`slug_taken`",
             "content": {
               "application/json": {
                 "schema": {
@@ -25526,12 +25545,20 @@
       },
       "UpdateWorkspace": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "description": "What to change about a workspace; a field left out stays as it is.",
         "properties": {
           "name": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url_slug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The new URL. The old one stops working at once and is free for anyone."
           }
         }
       },

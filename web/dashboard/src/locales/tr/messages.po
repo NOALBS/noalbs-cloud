@@ -2164,6 +2164,7 @@ msgstr "Kaldırılamıyor: {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
@@ -2203,6 +2204,7 @@ msgstr "Bitrate düşmeden önce zorlanan bağlantıyı yakala. RTT’yi yalnız
 msgid "Center"
 msgstr "Orta"
 
+#: src/components/change-workspace-url.tsx
 #: src/components/support-access.tsx
 msgid "Change"
 msgstr "Değiştir"
@@ -2218,6 +2220,14 @@ msgstr "Fiyatı değiştir"
 #: src/routes/_app/invite.$token.tsx
 msgid "Change the plan or billing"
 msgstr "Planı veya faturalandırmayı değiştir"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change the workspace URL"
+msgstr "Çalışma alanının URL’sini değiştir"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change URL"
+msgstr "URL’yi değiştir"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -2309,6 +2319,10 @@ msgstr "Geçiş davranışını değiştirdi"
 #: src/lib/support.ts
 msgid "Changed the switching triggers"
 msgstr "Geçiş tetiklerini değiştirdi"
+
+#: src/lib/org-audit.ts
+msgid "Changed the URL of {subject}"
+msgstr "{subject} URL’si değiştirildi"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Changes"
@@ -7858,6 +7872,7 @@ msgstr "Kaydetmek onu OBS’te hemen değiştirir."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -9500,6 +9515,10 @@ msgstr "Çevrimdışı zaman aşımı 1 ile 1440 dakika arasında olmalı"
 msgid "The offline timeout must be between 1 and 1440 minutes."
 msgstr "Çevrimdışı zaman aşımı 1 ile 1440 dakika arasında olmalı."
 
+#: src/components/change-workspace-url.tsx
+msgid "The old address stops working straight away and someone else can take it, so bookmarks and links to this workspace need updating. OBS browser sources keep working."
+msgstr "Eski adres hemen çalışmayı bırakır ve başka biri onu alabilir; bu yüzden bu çalışma alanına giden yer imlerinin ve bağlantıların güncellenmesi gerekir. OBS tarayıcı kaynakları çalışmaya devam eder."
+
 #: src/lib/api-messages.ts
 msgid "The order must list every stream server of this switcher exactly once"
 msgstr "Sıralama, bu switcher’ın her yayın sunucusunu tam bir kez içermeli"
@@ -10676,6 +10695,10 @@ msgstr "Çalışma alanı yeniden adlandırıldı"
 #: src/components/app-shell.tsx
 msgid "Workspace settings"
 msgstr "Çalışma alanı ayarları"
+
+#: src/components/change-workspace-url.tsx
+msgid "Workspace URL changed"
+msgstr "Çalışma alanının URL’si değiştirildi"
 
 #: src/components/admin/admin-shell.tsx
 #: src/components/app-shell.tsx

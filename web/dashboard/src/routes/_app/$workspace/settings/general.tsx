@@ -6,6 +6,7 @@ import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
+import { ChangeWorkspaceUrl } from "@/components/change-workspace-url";
 import { ManagedNotice } from "@/components/orgs/managed-notice";
 import { Page, Section } from "@/components/page";
 import { SupportAccess } from "@/components/support-access";
@@ -79,8 +80,8 @@ function GeneralSettings() {
   return (
     <Page title={t`Settings`} description={t`The basics of this workspace.`}>
       <Section title={t`Workspace`}>
-        <form onSubmit={submit} className="flex flex-col gap-5 px-5 pb-5">
-          <div className="flex max-w-md flex-col gap-2">
+        <div className="flex flex-col gap-5 px-5 pb-5">
+          <form onSubmit={submit} className="flex max-w-md flex-col gap-2">
             <Label htmlFor="workspace-name">
               <Trans>Name</Trans>
             </Label>
@@ -104,16 +105,19 @@ function GeneralSettings() {
             {rename.error && (
               <p className="text-sm text-destructive">{errorMessage(rename.error)}</p>
             )}
-          </div>
+          </form>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold">
               <Trans>URL</Trans>
             </span>
-            <span className="font-mono text-sm text-muted-foreground">
-              {window.location.host}/{workspace.url_slug}
-            </span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="font-mono text-sm break-all text-muted-foreground">
+                {window.location.host}/{workspace.url_slug}
+              </span>
+              {canManage && <ChangeWorkspaceUrl />}
+            </div>
           </div>
-        </form>
+        </div>
       </Section>
 
       <Section title={t`Your role`}>

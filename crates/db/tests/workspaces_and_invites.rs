@@ -47,6 +47,61 @@ async fn names_may_repeat_but_slugs_may_not(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn a_workspace_changes_its_name_and_url_and_frees_the_old_url(pool: PgPool) {
+    let (workspace_id, owner) = workspace_with_owner(&pool, "old-url").await;
+    workspace_with_owner(&pool, "neighbour").await;
+
+    // Only what is given changes.
+    let moved = workspaces::update(&pool, workspace_id, None, Some("new-url"))
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (moved.name.as_str(), moved.url_slug.as_str()),
+        ("old-url", "new-url")
+    );
+    let renamed = workspaces::update(&pool, workspace_id, Some("Renamed"), None)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (renamed.name.as_str(), renamed.url_slug.as_str()),
+        ("Renamed", "new-url")
+    );
+
+    // The new URL finds it, the old one no longer does and is free again.
+    let found = workspaces::get_summary_by_slug(&pool, "new-url", owner)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(found.id, workspace_id);
+    assert!(!workspaces::slug_exists(&pool, "old-url").await.unwrap());
+    workspaces::create(&pool, owner, "Second", "old-url")
+        .await
+        .unwrap();
+
+    // Someone else's URL is refused, and the name given with it doesn't change either.
+    let taken = workspaces::update(&pool, workspace_id, Some("Sneaky"), Some("neighbour"))
+        .await
+        .unwrap_err();
+    assert_eq!(taken.constraint(), Some("workspaces_url_slug_key"));
+    let unchanged = workspaces::get_by_id(&pool, workspace_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (unchanged.name.as_str(), unchanged.url_slug.as_str()),
+        ("Renamed", "new-url")
+    );
+
+    // A workspace that isn't there: nothing to change.
+    let missing = workspaces::update(&pool, Uuid::new_v4(), Some("Ghost"), None)
+        .await
+        .unwrap();
+    assert!(missing.is_none());
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn only_owned_workspaces_count_toward_the_limit(pool: PgPool) {
     let user = users::create(&pool).await.unwrap().id;
     // Being a member elsewhere doesn't count.

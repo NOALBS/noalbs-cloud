@@ -2164,6 +2164,7 @@ msgstr "無法移除：{blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
@@ -2203,6 +2204,7 @@ msgstr "在位元率下降之前先發現上行連線不穩。只有 SRT 伺服�
 msgid "Center"
 msgstr "置中"
 
+#: src/components/change-workspace-url.tsx
 #: src/components/support-access.tsx
 msgid "Change"
 msgstr "變更"
@@ -2218,6 +2220,14 @@ msgstr "變更價格"
 #: src/routes/_app/invite.$token.tsx
 msgid "Change the plan or billing"
 msgstr "變更方案或帳務"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change the workspace URL"
+msgstr "變更工作區 URL"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change URL"
+msgstr "變更 URL"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -2309,6 +2319,10 @@ msgstr "變更了切換行為"
 #: src/lib/support.ts
 msgid "Changed the switching triggers"
 msgstr "變更了切換觸發值"
+
+#: src/lib/org-audit.ts
+msgid "Changed the URL of {subject}"
+msgstr "已變更 {subject} 的 URL"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Changes"
@@ -7858,6 +7872,7 @@ msgstr "儲存後會立即在 OBS 生效。"
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -9500,6 +9515,10 @@ msgstr "離線逾時必須介於 1 到 1440 分鐘之間"
 msgid "The offline timeout must be between 1 and 1440 minutes."
 msgstr "離線逾時必須介於 1 到 1440 分鐘之間。"
 
+#: src/components/change-workspace-url.tsx
+msgid "The old address stops working straight away and someone else can take it, so bookmarks and links to this workspace need updating. OBS browser sources keep working."
+msgstr "舊位址會立即失效，而且其他人可以取用，因此指向此工作區的書籤和連結需要更新。OBS 瀏覽器來源會繼續運作。"
+
 #: src/lib/api-messages.ts
 msgid "The order must list every stream server of this switcher exactly once"
 msgstr "順序必須列出這個切換器的每台串流伺服器各一次"
@@ -10676,6 +10695,10 @@ msgstr "工作區已重新命名"
 #: src/components/app-shell.tsx
 msgid "Workspace settings"
 msgstr "工作區設定"
+
+#: src/components/change-workspace-url.tsx
+msgid "Workspace URL changed"
+msgstr "工作區 URL 已變更"
 
 #: src/components/admin/admin-shell.tsx
 #: src/components/app-shell.tsx

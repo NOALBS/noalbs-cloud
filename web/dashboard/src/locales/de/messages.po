@@ -2164,6 +2164,7 @@ msgstr "Kann nicht entfernt werden: {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
@@ -2203,6 +2204,7 @@ msgstr "Erkenne einen schwächelnden Uplink, bevor die Bitrate einbricht. Nur SR
 msgid "Center"
 msgstr "Mitte"
 
+#: src/components/change-workspace-url.tsx
 #: src/components/support-access.tsx
 msgid "Change"
 msgstr "Ändern"
@@ -2218,6 +2220,14 @@ msgstr "Preis ändern"
 #: src/routes/_app/invite.$token.tsx
 msgid "Change the plan or billing"
 msgstr "Tarif oder Abrechnung ändern"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change the workspace URL"
+msgstr "Workspace-URL ändern"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change URL"
+msgstr "URL ändern"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -2309,6 +2319,10 @@ msgstr "Umschaltverhalten geändert"
 #: src/lib/support.ts
 msgid "Changed the switching triggers"
 msgstr "Umschalt-Auslöser geändert"
+
+#: src/lib/org-audit.ts
+msgid "Changed the URL of {subject}"
+msgstr "URL von {subject} geändert"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Changes"
@@ -7858,6 +7872,7 @@ msgstr "Speichern ändert sie sofort in OBS."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -9500,6 +9515,10 @@ msgstr "Das Offline-Timeout muss zwischen 1 und 1440 Minuten liegen"
 msgid "The offline timeout must be between 1 and 1440 minutes."
 msgstr "Das Offline-Timeout muss zwischen 1 und 1440 Minuten liegen."
 
+#: src/components/change-workspace-url.tsx
+msgid "The old address stops working straight away and someone else can take it, so bookmarks and links to this workspace need updating. OBS browser sources keep working."
+msgstr "Die alte Adresse funktioniert sofort nicht mehr und kann von jemand anderem übernommen werden. Lesezeichen und Links zu diesem Workspace müssen also angepasst werden. OBS-Browserquellen funktionieren weiter."
+
 #: src/lib/api-messages.ts
 msgid "The order must list every stream server of this switcher exactly once"
 msgstr "Die Reihenfolge muss jeden Stream-Server dieses Switchers genau einmal enthalten"
@@ -10676,6 +10695,10 @@ msgstr "Workspace umbenannt"
 #: src/components/app-shell.tsx
 msgid "Workspace settings"
 msgstr "Workspace-Einstellungen"
+
+#: src/components/change-workspace-url.tsx
+msgid "Workspace URL changed"
+msgstr "Workspace-URL geändert"
 
 #: src/components/admin/admin-shell.tsx
 #: src/components/app-shell.tsx
