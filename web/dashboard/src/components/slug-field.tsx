@@ -7,10 +7,10 @@ import { slugAvailableQuery } from "@/api/queries";
 import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { translateApiMessage } from "@/lib/api-messages";
-import { SLUG_MIN_LENGTH, slugify } from "@/lib/slug";
+import { SLUG_MIN_LENGTH, slugInput, slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
-/** How a new workspace's URL stands: what it is and whether it can be used. */
+/** How a workspace's URL-to-be stands: what it is and whether it can be used. */
 export interface SlugStatus {
   slug: string;
   checking: boolean;
@@ -27,7 +27,8 @@ export interface SlugStatus {
  * The URL of a new workspace: it follows `name` until `custom` is typed by hand,
  * and is checked for availability once you stop typing. Something with a URL
  * space of its own (an organization) passes `check: false`: the API refuses a
- * taken or reserved one when it's created.
+ * taken or reserved one when it's created. So does a workspace changing its URL,
+ * while the field still holds the one it has.
  */
 export function useSlugStatus(name: string, custom: string | null, check = true): SlugStatus {
   const slug = custom ?? slugify(name);
@@ -86,9 +87,11 @@ export function SlugField({
         <input
           id={id}
           value={status.slug}
-          onChange={(event) => onChange(slugify(event.target.value) || event.target.value)}
+          onChange={(event) => onChange(slugInput(event.target.value))}
           className="h-full min-w-0 flex-1 bg-transparent pr-3 font-mono text-sm outline-none"
           spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
         />
       </div>
       <p

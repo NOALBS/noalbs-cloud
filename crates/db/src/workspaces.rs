@@ -535,16 +535,49 @@ pub async fn slug_exists(pool: &PgPool, url_slug: &str) -> Result<bool> {
     Ok(exists)
 }
 
-#[tracing::instrument(skip(pool))]
-pub async fn rename(pool: &PgPool, workspace_id: Uuid, name: &str) -> Result<Option<Workspace>> {
-    let workspace =
-        sqlx::query_as::<_, Workspace>("UPDATE workspaces SET name = $2 WHERE id = $1 RETURNING *")
-            .bind(workspace_id)
-            .bind(name)
-            .fetch_optional(pool)
-            .await?;
+/// A workspace after [`update`], with the name and URL slug it replaced.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct UpdatedWorkspace {
+    #[sqlx(flatten)]
+    pub workspace: Workspace,
+    pub previous_name: String,
+    pub previous_url_slug: String,
+}
 
-    Ok(workspace)
+/// Changes a workspace's name, its URL slug, or both (`None` keeps what it has).
+/// A slug another workspace has is a `workspaces_url_slug_key` violation, and
+/// then nothing changes. The old slug is free for anyone at once.
+///
+/// What it had before comes from the row as this update locked it, so two
+/// changes at once each report the value they really replaced.
+#[tracing::instrument(skip(pool))]
+pub async fn update(
+    pool: &PgPool,
+    workspace_id: Uuid,
+    name: Option<&str>,
+    url_slug: Option<&str>,
+) -> Result<Option<UpdatedWorkspace>> {
+    let updated = sqlx::query_as::<_, UpdatedWorkspace>(
+        "
+        UPDATE workspaces
+        SET name = COALESCE($2, workspaces.name),
+            url_slug = COALESCE($3, workspaces.url_slug)
+        FROM (
+            SELECT id, name, url_slug FROM workspaces WHERE id = $1 FOR UPDATE
+        ) AS previous
+        WHERE workspaces.id = previous.id
+        RETURNING workspaces.*,
+            previous.name AS previous_name,
+            previous.url_slug AS previous_url_slug
+        ",
+    )
+    .bind(workspace_id)
+    .bind(name)
+    .bind(url_slug)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(updated)
 }
 
 /// Sets the plan a workspace is entitled to. `plan_code` must exist in `plans`.

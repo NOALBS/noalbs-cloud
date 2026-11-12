@@ -2164,6 +2164,7 @@ msgstr "Retrait impossible : {blockedBy}"
 #: src/components/belabox/modem-panel.tsx
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/billing/confirm-button.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/scene-grid.tsx
@@ -2203,6 +2204,7 @@ msgstr "Repérez une liaison en difficulté avant que le débit ne chute. Seuls 
 msgid "Center"
 msgstr "Centre"
 
+#: src/components/change-workspace-url.tsx
 #: src/components/support-access.tsx
 msgid "Change"
 msgstr "Modifier"
@@ -2218,6 +2220,14 @@ msgstr "Modifier le prix"
 #: src/routes/_app/invite.$token.tsx
 msgid "Change the plan or billing"
 msgstr "Changer l’offre ou la facturation"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change the workspace URL"
+msgstr "Modifier l’URL de l’espace de travail"
+
+#: src/components/change-workspace-url.tsx
+msgid "Change URL"
+msgstr "Modifier l’URL"
 
 #. placeholder {0}: event.data.source
 #: src/lib/live-format.ts
@@ -2309,6 +2319,10 @@ msgstr "Comportement de bascule modifié"
 #: src/lib/support.ts
 msgid "Changed the switching triggers"
 msgstr "Paliers de bascule modifiés"
+
+#: src/lib/org-audit.ts
+msgid "Changed the URL of {subject}"
+msgstr "URL de {subject} modifiée"
 
 #: src/routes/_app/orgs/$organization/activity.tsx
 msgid "Changes"
@@ -7858,6 +7872,7 @@ msgstr "Enregistrer la modifie tout de suite dans OBS."
 
 #: src/components/belabox-settings.tsx
 #: src/components/belabox/settings-dialog.tsx
+#: src/components/change-workspace-url.tsx
 #: src/components/obs-connection-form.tsx
 #: src/components/orgs/bulk-dialogs.tsx
 #: src/components/orgs/client-dialog.tsx
@@ -9500,6 +9515,10 @@ msgstr "Le temps d’attente hors ligne doit être compris entre 1 et 1440 minut
 msgid "The offline timeout must be between 1 and 1440 minutes."
 msgstr "Le temps d’attente hors ligne doit être compris entre 1 et 1440 minutes."
 
+#: src/components/change-workspace-url.tsx
+msgid "The old address stops working straight away and someone else can take it, so bookmarks and links to this workspace need updating. OBS browser sources keep working."
+msgstr "L’ancienne adresse cesse de fonctionner immédiatement et quelqu’un d’autre peut la prendre : les favoris et les liens vers cet espace de travail sont à mettre à jour. Les sources navigateur OBS continuent de fonctionner."
+
 #: src/lib/api-messages.ts
 msgid "The order must list every stream server of this switcher exactly once"
 msgstr "L’ordre doit lister chaque serveur de stream de ce switcher exactement une fois"
@@ -10676,6 +10695,10 @@ msgstr "Espace de travail renommé"
 #: src/components/app-shell.tsx
 msgid "Workspace settings"
 msgstr "Réglages de l’espace de travail"
+
+#: src/components/change-workspace-url.tsx
+msgid "Workspace URL changed"
+msgstr "URL de l’espace de travail modifiée"
 
 #: src/components/admin/admin-shell.tsx
 #: src/components/app-shell.tsx

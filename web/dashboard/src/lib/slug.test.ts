@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inviteTokenFrom, slugify } from "./slug";
+import { inviteTokenFrom, slugInput, slugify } from "./slug";
 
 describe("slugify", () => {
   it("makes URL-safe slugs", () => {
@@ -13,6 +13,21 @@ describe("slugify", () => {
     const slug = slugify(`${"a".repeat(49)} b`);
     expect(slug.length).toBeLessThanOrEqual(50);
     expect(slug.endsWith("-")).toBe(false);
+  });
+});
+
+describe("slugInput", () => {
+  it("lets a dash be typed between words", () => {
+    expect(slugInput("nomad-")).toBe("nomad-");
+    expect(slugInput("nomad-l")).toBe("nomad-l");
+    expect(slugInput("nomad ")).toBe("nomad-");
+  });
+
+  it("keeps what is typed to what a slug can hold", () => {
+    expect(slugInput("-Nomad  Live!")).toBe("nomad-live-");
+    expect(slugInput("Café--Crème")).toBe("cafe-creme");
+    expect(slugInput("!")).toBe("");
+    expect(slugInput("a".repeat(60))).toHaveLength(50);
   });
 });
 

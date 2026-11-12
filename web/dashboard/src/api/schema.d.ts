@@ -1494,7 +1494,7 @@ export interface paths {
         delete: operations["delete_workspace"];
         options?: never;
         head?: never;
-        /** Rename a workspace. */
+        /** Rename a workspace, change its URL, or both. */
         patch: operations["update_workspace"];
         trace?: never;
     };
@@ -7681,8 +7681,11 @@ export interface components {
         UpdateTeamMember: {
             role: components["schemas"]["OrganizationRole"];
         };
+        /** @description What to change about a workspace; a field left out stays as it is. */
         UpdateWorkspace: {
-            name: string;
+            name?: string | null;
+            /** @description The new URL. The old one stops working at once and is free for anyone. */
+            url_slug?: string | null;
         };
         /**
          * @description What a VLC source does while it isn't shown.
@@ -11142,7 +11145,24 @@ export interface operations {
                     "application/json": components["schemas"]["WorkspaceDto"];
                 };
             };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `slug_taken` */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { translateApiMessage } from "@/lib/api-messages";
 import { errorMessage } from "@/lib/errors";
-import { inviteTokenFrom, SLUG_MIN_LENGTH, slugify } from "@/lib/slug";
+import { inviteTokenFrom, SLUG_MIN_LENGTH, slugInput, slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
 interface WelcomeSearch {
@@ -139,7 +139,7 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
           <input
             id="workspace-slug"
             value={slug}
-            onChange={(event) => setCustomSlug(slugify(event.target.value) || event.target.value)}
+            onChange={(event) => setCustomSlug(slugInput(event.target.value))}
             className="h-full min-w-0 flex-1 bg-transparent pr-3 font-mono text-sm outline-none"
             spellCheck={false}
             aria-describedby="slug-status"

@@ -42,6 +42,17 @@ describe("describeAudit", () => {
     ).toBe("No change");
   });
 
+  it("shows a client's old and new URL", () => {
+    expect(
+      describeAudit(
+        entry("client_url_changed", "Nomad Live", {
+          previous_url_slug: "nomad",
+          url_slug: "nomad-live",
+        }),
+      ),
+    ).toEqual({ title: "Changed the URL of Nomad Live", detail: "/nomad → /nomad-live" });
+  });
+
   it("counts bulk actions and names what was deleted", () => {
     expect(describeAudit(entry("clients_imported", null, { requested: 5, created: 4 }))).toEqual({
       title: "Imported 4 clients",

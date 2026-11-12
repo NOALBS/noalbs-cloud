@@ -54,6 +54,11 @@ export function describeAudit(entry: OrganizationAuditEntry): { title: string; d
         title: t`Renamed ${text(details.previous_name) ?? t`a client`} to ${subject}`,
         detail: "",
       };
+    case "client_url_changed":
+      return {
+        title: t`Changed the URL of ${subject}`,
+        detail: `/${text(details.previous_url_slug) ?? ""} → /${text(details.url_slug) ?? ""}`,
+      };
     case "client_deleted":
       return { title: t`Deleted ${subject}`, detail: `/${text(details.url_slug) ?? ""}` };
     case "clients_imported": {
