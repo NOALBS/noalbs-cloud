@@ -21,6 +21,8 @@ use crate::{
 pub struct ApiState {
     pub db: db::DbPool,
     pub nats: async_nats::Client,
+    /// Changes whenever the NATS connection is made again (`live::Connections`).
+    pub nats_connections: live::Connections,
     pub http: reqwest::Client,
     pub oauth: OAuthProviders,
     /// Whether `POST /auth/dev-login` is enabled.
@@ -235,17 +237,19 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         max_connections: config.postgres_max_connections,
     })
     .await?;
-    let nats = live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
-        .request_timeout(Some(tokio::time::Duration::from_millis(
-            config.nats_request_timeout,
-        )))
-        .connect(&config.nats_url)
-        .await?;
+    let (nats, nats_connections) = live::connect(&config.nats_url, || {
+        live::connect_options(config.nats_user.as_deref(), config.nats_password.as_deref())
+            .request_timeout(Some(tokio::time::Duration::from_millis(
+                config.nats_request_timeout,
+            )))
+    })
+    .await?;
 
     let js = async_nats::jetstream::new(nats.clone());
     let stores = live::Stores::open(&js)
         .await
         .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
+    let stores_keeper = tokio::spawn(live::keep_stores(js, nats_connections.clone()));
 
     history::spawn_upkeep(db.clone(), shutdown_handle.clone());
     crate::privacy::spawn_upkeep(db.clone(), shutdown_handle.clone());
@@ -255,8 +259,9 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     let state = ApiState {
         db,
         nats,
+        nats_connections,
         stores,
-        http: reqwest::Client::new(),
+        http: http_client(),
         oauth: OAuthProviders::from_config(&config),
         dev_login: config.dev_login,
         allow_private_stats_urls: config.allow_private_stats_urls,
@@ -318,7 +323,23 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     })
     .await?;
 
+    stores_keeper.abort();
     Ok(())
+}
+
+/// How long a call to a platform (signing in, looking someone up) may take.
+const HTTP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+const HTTP_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// The HTTP client for calling Twitch, Kick and YouTube. Without a timeout a
+/// platform that stops answering would hold the request for as long as the
+/// visitor waits.
+fn http_client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .timeout(HTTP_TIMEOUT)
+        .connect_timeout(HTTP_CONNECT_TIMEOUT)
+        .build()
+        .expect("the HTTP client builds, like reqwest::Client::new()")
 }
 
 async fn root() -> &'static str {

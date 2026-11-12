@@ -99,10 +99,11 @@ async fn refresh(state: &ApiState) -> Result<Snapshot, String> {
         .collect();
     let now = Utc::now();
     let mut snapshot = Snapshot::default();
-    for (index, (_, days)) in WINDOWS.iter().enumerate() {
-        let counts = db::admin::active_counts(&state.db, now - TimeDelta::days(*days), &connected)
-            .await
-            .map_err(|error| error.to_string())?;
+    let cutoffs = WINDOWS.map(|(_, days)| now - TimeDelta::days(days));
+    let counts = db::admin::active_counts(&state.db, &cutoffs, &connected)
+        .await
+        .map_err(|error| error.to_string())?;
+    for (index, counts) in counts.into_iter().enumerate().take(WINDOWS.len()) {
         snapshot.users[index] = counts.users as u64;
         snapshot.switchers[index] = counts.switchers as u64;
     }

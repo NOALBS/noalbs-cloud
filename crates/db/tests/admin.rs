@@ -175,10 +175,17 @@ async fn user_named(pool: &PgPool, name: &str) -> Uuid {
 #[sqlx::test(migrator = "db::MIGRATOR")]
 async fn rolling_metrics_use_activity_and_live_switchers(pool: PgPool) {
     let now = Utc::now();
-    assert_eq!(
-        admin::active_counts(&pool, now, &[]).await.unwrap().users,
-        0
-    );
+    let since = |pool: &PgPool, cutoff, connected: &[Uuid]| {
+        let (pool, connected) = (pool.clone(), connected.to_vec());
+        async move {
+            let counts = admin::active_counts(&pool, &[cutoff], &connected)
+                .await
+                .unwrap();
+            assert_eq!(counts.len(), 1);
+            (counts[0].users, counts[0].switchers)
+        }
+    };
+    assert_eq!(since(&pool, now, &[]).await.0, 0);
     let user = user_named(&pool, "metrics").await;
     sqlx::query("ALTER TABLE oauth2_connections DISABLE TRIGGER oauth2_connections_set_updated_at")
         .execute(&pool)
@@ -202,28 +209,55 @@ async fn rolling_metrics_use_activity_and_live_switchers(pool: PgPool) {
         .execute(&pool)
         .await
         .unwrap();
-    for (days, users, switchers) in [(1, 0, 0), (7, 1, 0), (30, 1, 1)] {
-        let counts = admin::active_counts(&pool, now - TimeDelta::days(days), &[])
-            .await
-            .unwrap();
-        assert_eq!((counts.users, counts.switchers), (users, switchers));
-    }
-    let live = admin::active_counts(&pool, now, &[switcher.id, switcher.id])
+    // Every window comes back from one query, in the order asked.
+    let windows = [1, 7, 30].map(|days| now - TimeDelta::days(days));
+    let counts = admin::active_counts(&pool, &windows, &[]).await.unwrap();
+    assert_eq!(
+        counts
+            .iter()
+            .map(|counts| (counts.users, counts.switchers))
+            .collect::<Vec<_>>(),
+        [(0, 0), (1, 0), (1, 1)]
+    );
+    assert_eq!(
+        since(&pool, now, &[switcher.id, switcher.id]).await.1,
+        1,
+        "a connected switcher counts, once"
+    );
+
+    // A session used since then counts too, and two of them are still one user;
+    // someone who never signed in again isn't counted at all.
+    user_named(&pool, "elsewhere").await;
+    for hours in [2, 3] {
+        sqlx::query(
+            "INSERT INTO user_sessions (oauth2_connection_id, expires_at, updated_at)
+             SELECT id, $1, $2 FROM oauth2_connections WHERE user_id = $3",
+        )
+        .bind(now + TimeDelta::days(30))
+        .bind(now - TimeDelta::hours(hours))
+        .bind(user)
+        .execute(&pool)
         .await
         .unwrap();
-    assert_eq!(live.switchers, 1);
+    }
+    sqlx::query("UPDATE oauth2_connections SET updated_at = $1 WHERE user_id <> $2")
+        .bind(now - TimeDelta::days(60))
+        .bind(user)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let counts = admin::active_counts(&pool, &windows, &[]).await.unwrap();
+    assert_eq!(
+        counts.iter().map(|counts| counts.users).collect::<Vec<_>>(),
+        [1, 1, 1]
+    );
+
     sqlx::query("UPDATE users SET disabled_at = now() WHERE id = $1")
         .bind(user)
         .execute(&pool)
         .await
         .unwrap();
-    assert_eq!(
-        admin::active_counts(&pool, now - TimeDelta::days(30), &[])
-            .await
-            .unwrap()
-            .users,
-        0
-    );
+    assert_eq!(since(&pool, now - TimeDelta::days(30), &[]).await.0, 0);
     sqlx::query("INSERT INTO connect_devices (switcher_id, name, os, app_version, token_hash, last_seen_at) VALUES ($1, 'PC', 'linux', '1', 'hash', $2)")
         .bind(switcher.id).bind(now - TimeDelta::days(2)).execute(&pool).await.unwrap();
     let devices = admin::device_counts(&pool, now, &[]).await.unwrap();
