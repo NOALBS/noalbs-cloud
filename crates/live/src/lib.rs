@@ -310,16 +310,26 @@ pub async fn connect(
 /// restarted has none of them: writing a status fails, and every switcher shows
 /// as offline, until they exist again. Makes them again whenever we're back
 /// (runs until aborted).
-pub async fn keep_stores(js: jetstream::Context, mut connections: Connections) {
+pub async fn keep_stores(js: jetstream::Context, connections: Connections) {
+    reopen(connections, "live stores", || Stores::open(&js)).await;
+}
+
+/// Runs `open` (which makes `what`, e.g. a service's own buckets, if missing)
+/// after every (re)connection to NATS, again until it works. Runs until aborted.
+pub async fn reopen<T, E, F>(mut connections: Connections, what: &str, open: impl Fn() -> F)
+where
+    F: Future<Output = Result<T, E>>,
+    E: std::fmt::Display,
+{
     while connections.changed().await.is_ok() {
         let mut delay = Duration::from_secs(1);
         // JetStream may take a moment longer than the connection.
-        while let Err(error) = Stores::open(&js).await {
-            tracing::warn!(%error, "Couldn't open the live stores after connecting to NATS; trying again");
+        while let Err(error) = open().await {
+            tracing::warn!(%error, "Couldn't open the {what} after connecting to NATS; trying again");
             tokio::time::sleep(delay).await;
             delay = (delay * 2).min(Duration::from_secs(30));
         }
-        tracing::debug!("Live stores are in place");
+        tracing::debug!("The {what} are in place");
     }
 }
 

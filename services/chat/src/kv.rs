@@ -96,6 +96,13 @@ impl Buckets {
     }
 }
 
+/// The buckets live in NATS's memory, so a NATS that restarted has none of
+/// them, and every claim, lease, cooldown and "seen before" fails until they
+/// exist again. Makes them again whenever we're back (runs until aborted).
+pub async fn keep_buckets(js: jetstream::Context, connections: live::Connections) {
+    live::reopen(connections, "chat buckets", || Buckets::open(&js)).await;
+}
+
 async fn bucket(
     js: &jetstream::Context,
     name: &str,
