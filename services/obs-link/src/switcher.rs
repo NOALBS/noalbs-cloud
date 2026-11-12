@@ -11,7 +11,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use async_nats::jetstream;
 use chrono::Utc;
 use db::stream_servers::{self, StreamServer, StreamServerKind};
 use live::{
@@ -86,7 +85,6 @@ pub struct Deps {
     pub switcher_id: Uuid,
     pub db: db::DbPool,
     pub nats: async_nats::Client,
-    pub js: jetstream::Context,
     pub reqwest: reqwest::Client,
     /// See `Config::allow_private_stats_urls`.
     pub allow_private_stats_urls: bool,
@@ -191,6 +189,10 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
     runtime.spawn_server_tasks(&stats_tx);
 
     let mut tick = tokio::time::interval(Duration::from_secs(1));
+    // A check that took long (OBS answering slowly) isn't followed at once by
+    // the ones it held up: each would count towards `retry_attempts` and
+    // publish another sample, with nothing new to look at.
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     let mut ticks: u32 = 0;
 
     loop {
@@ -462,7 +464,7 @@ impl Runtime {
                 .collect(),
         };
         self.publish_stats(&sample).await;
-        let raw: HashMap<Uuid, serde_json::Value> = if self.recorder.is_some() {
+        let raw: HashMap<Uuid, Arc<serde_json::Value>> = if self.recorder.is_some() {
             fresh
                 .iter()
                 .filter(|(_, stats)| !stats.raw_stats.is_null())
@@ -622,8 +624,10 @@ impl Runtime {
         }
         match serde_json::to_vec(sample) {
             Ok(payload) => {
+                // A plain publish: the stats stream stores it all the same, and
+                // the check doesn't depend on JetStream acknowledging it.
                 let subject = live::stats_subject(self.id());
-                if let Err(error) = self.deps.js.publish(subject, payload.into()).await {
+                if let Err(error) = self.deps.nats.publish(subject, payload.into()).await {
                     tracing::warn!(%error, "Failed to publish stats");
                 }
             }

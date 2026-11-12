@@ -85,8 +85,9 @@ pub struct StreamServerStats {
 
     pub switch_type: switcher::SwitchType,
 
-    /// The raw JSON stats fetched from the stream server
-    pub raw_stats: serde_json::Value,
+    /// The raw JSON stats fetched from the stream server (shared: the switcher
+    /// hands the latest to the stream history every second).
+    pub raw_stats: Arc<serde_json::Value>,
 
     /// The timestamp of when these stats were fetched
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -226,7 +227,7 @@ pub fn report(
         bitrate,
         rtt,
         switch_type,
-        raw_stats,
+        raw_stats: Arc::new(raw_stats),
         timestamp: chrono::Utc::now(),
     });
 }
@@ -245,6 +246,9 @@ pub trait Fetcher: Send {
 /// Runs a fetcher once a second until the switcher aborts the task.
 pub async fn poll<F: Fetcher>(mut fetcher: F) {
     let mut timer = time::interval(Duration::from_secs(1));
+    // Never faster than once a second: a server that timed out for a while
+    // isn't sent every missed request the moment it answers again.
+    timer.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
 
     loop {
         timer.tick().await;
