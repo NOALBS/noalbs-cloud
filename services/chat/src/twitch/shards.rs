@@ -238,14 +238,9 @@ async fn run_session(state: &State, shard: u32) -> Result<()> {
                 keepalive = next_keepalive;
                 tracing::info!(shard, "Twitch moved the shard session");
             }
-            Ok(Message::Chat {
-                message_id,
-                message,
-            }) => {
-                if seen_first(state, &message_id).await {
-                    inbound::publish(state, &message).await;
-                }
-            }
+            // Not checked for a repeat here: most messages aren't commands, and the
+            // handler checks the ones that might be (`InboundMessage::delivery_id`).
+            Ok(Message::Chat { message, .. }) => inbound::publish(state, &message).await,
             Ok(Message::Raid {
                 message_id,
                 from_id,
@@ -300,7 +295,7 @@ async fn run_session(state: &State, shard: u32) -> Result<()> {
     }
 }
 
-/// Twitch may deliver a message twice (e.g. around a reconnect); only the first counts.
+/// Twitch may deliver an event twice (e.g. around a reconnect); only the first counts.
 async fn seen_first(state: &State, message_id: &str) -> bool {
     kv::first_time(&state.buckets.seen, &kv::key(&["twitch", message_id]))
         .await

@@ -1,6 +1,7 @@
 //! `POST /chat/webhooks/kick`, served by every instance (the load balancer
-//! picks one). A delivery is checked, recorded as seen (Kick retries, possibly
-//! to another instance) and published for handling; Kick gets its 200 at once.
+//! picks one). A delivery is checked and published for handling, with its ID
+//! (Kick retries, possibly to another instance; the handler runs a command
+//! once); Kick gets its 200 at once.
 //! <https://docs.kick.com/events/webhook-security>
 
 use axum::{
@@ -15,7 +16,6 @@ use serde::Deserialize;
 use crate::{
     app::State,
     inbound::{self, Chatter, InboundMessage},
-    kv,
 };
 
 /// Deliveries older (or newer) than this are refused, so a captured one can't be replayed later.
@@ -52,15 +52,14 @@ pub async fn handle(
         tracing::warn!("Refused a Kick webhook with a bad signature");
         return StatusCode::UNAUTHORIZED;
     }
-    match kv::first_time(&state.buckets.seen, &kv::key(&["kick", message_id])).await {
-        Ok(true) => {}
-        Ok(false) => return StatusCode::OK,
-        Err(error) => tracing::warn!(%error, "Couldn't check for a repeated Kick delivery"),
-    }
-
     if header("Kick-Event-Type") == Some(super::CHAT_MESSAGE) {
         match parse_chat(&body) {
-            Ok(message) => inbound::publish(&state, &message).await,
+            Ok(mut message) => {
+                // Kick retries, possibly to another instance: the handler runs a
+                // command once per delivery.
+                message.delivery_id = Some(message_id.to_owned());
+                inbound::publish(&state, &message).await;
+            }
             Err(error) => tracing::warn!(%error, "Couldn't read a Kick chat message"),
         }
     }
@@ -162,6 +161,7 @@ pub fn parse_chat(body: &[u8]) -> serde_json::Result<InboundMessage> {
     // Founders (the first subscribers) show that badge instead.
     let subscriber = has(&["subscriber", "founder"]);
     Ok(InboundMessage {
+        delivery_id: None,
         platform: db::chat::ChatPlatform::Kick,
         channel_id: event.broadcaster.user_id.to_string(),
         bot_id: None,

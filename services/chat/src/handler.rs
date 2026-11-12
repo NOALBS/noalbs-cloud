@@ -6,7 +6,8 @@
 //! bot. With several, replies start with `[<switcher name>]`.
 //!
 //! Most messages aren't commands, so they are dropped on what [`crate::cache`]
-//! holds (the channel's links, with their prefixes): no database query.
+//! holds (the channel's links, with their prefixes, and each switcher's command
+//! words): no database query, and nothing written to NATS.
 
 use std::sync::Arc;
 
@@ -98,6 +99,18 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
     if !might_be_a_command(&links, message) {
         return Ok(());
     }
+    // Only now, for the few messages that might be commands: was this delivery
+    // handled already? (If that can't be told, it runs: better twice than not.)
+    if let Some(seen) = message.seen_key() {
+        match kv::first_time(&state.buckets.seen, &seen).await {
+            Ok(true) => {}
+            Ok(false) => {
+                tracing::debug!(channel = message.channel_id, "A repeated delivery");
+                return Ok(());
+            }
+            Err(error) => tracing::warn!(%error, "Couldn't check for a repeated delivery"),
+        }
+    }
     // Bots never command each other (or themselves).
     if state
         .cache
@@ -129,6 +142,25 @@ async fn handle_link(
     link: &ChatLink,
     several: bool,
 ) -> Result<()> {
+    // Most messages with the prefix are someone else's (another bot's `!so`):
+    // the switcher's command words, kept for a moment, say so without a query.
+    let Some(candidate) = commands::parse(&message.text, &link.command_prefix) else {
+        return Ok(());
+    };
+    let words = state
+        .cache
+        .commands
+        .get_or_load(link.switcher_id, || async {
+            db::chat_commands::list_for_switcher(&state.db, link.switcher_id)
+                .await
+                .map(Arc::new)
+        })
+        .await?;
+    if commands::resolve(&candidate.word, &words).is_none() {
+        tracing::debug!(word = candidate.word, "Not a command of this switcher");
+        return Ok(());
+    }
+
     let Some(switcher) = db::switchers::get(&state.db, link.switcher_id).await? else {
         return Ok(());
     };
@@ -145,6 +177,8 @@ async fn handle_link(
     {
         return Ok(());
     }
+    // Read again, not from the cache: a command turned off or restricted a
+    // moment ago stays that way.
     let commands = db::chat_commands::list_for_switcher(&state.db, switcher.id).await?;
     let Some(command) = commands::resolve(&invocation.word, &commands) else {
         tracing::debug!(word = invocation.word, "Not a command of this switcher");
@@ -290,6 +324,7 @@ mod tests {
             channel_id: "100".into(),
             bot_id: bot.map(str::to_owned),
             message_id: "m".into(),
+            delivery_id: None,
             chatter: Chatter {
                 id: "5".into(),
                 login: "viewer".into(),

@@ -162,12 +162,13 @@ pub fn decode(text: &str) -> serde_json::Result<Message> {
                 // Founders (the first subscribers) show that badge instead.
                 let subscriber = has(&["subscriber", "founder"]);
                 Message::Chat {
-                    message_id: metadata.message_id,
+                    message_id: metadata.message_id.clone(),
                     message: InboundMessage {
                         platform: db::chat::ChatPlatform::Twitch,
                         channel_id: event.broadcaster_user_id,
                         bot_id,
                         message_id: event.message_id,
+                        delivery_id: Some(metadata.message_id),
                         chatter: Chatter {
                             id: event.chatter_user_id,
                             login: event.chatter_user_login,
@@ -267,6 +268,10 @@ mod tests {
         assert_eq!(message.channel_id, "100");
         assert_eq!(message.bot_id.as_deref(), Some("1"));
         assert_eq!(message.message_id, "cc106a89");
+        // The delivery (what Twitch may repeat), not the chat message: two bots
+        // reading one channel each get their own.
+        assert_eq!(message.delivery_id.as_deref(), Some("m1"));
+        assert_eq!(message.seen_key().as_deref(), Some("twitch.m1"));
         assert_eq!(message.chatter.login, "mod_bob");
         assert!(message.chatter.moderator);
         assert!(!message.chatter.vip);
