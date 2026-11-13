@@ -72,12 +72,14 @@ impl Attribution {
         Some(self.intents.remove(index).0)
     }
 
-    /// The scene on air, when first seen (e.g. read from OBS on start).
+    /// The scene on air, as read from OBS (on start or after a reconnect). The
+    /// name is kept from the first sighting, for the activity feed; the UUID
+    /// always follows OBS, so a pick isn't dropped against a stale scene.
     pub fn scene_seen(&mut self, uuid: Option<Uuid>, name: &str) {
         if self.scene.is_none() {
             self.scene = Some(name.to_owned());
-            self.scene_uuid = uuid;
         }
+        self.scene_uuid = uuid;
     }
 
     pub fn scene(&self) -> Option<String> {
@@ -104,10 +106,15 @@ impl Attribution {
         }
 
         let from = self.scene.replace(name.to_owned());
-        self.scene_uuid = uuid;
+        let from_uuid = std::mem::replace(&mut self.scene_uuid, uuid);
         // Taken even when nothing changed: it has had its answer.
         let intent = uuid.and_then(|uuid| self.take(&IntentAction::Scene { uuid }));
-        if from.as_deref() == Some(name) {
+        // The UUID follows OBS across reconnects; the name may be stale.
+        let unchanged = match (from_uuid, uuid) {
+            (Some(before), Some(now)) => before == now,
+            _ => from.as_deref() == Some(name),
+        };
+        if unchanged {
             return SceneChange::Unchanged;
         }
 
@@ -128,6 +135,27 @@ mod tests {
 
     fn uuid(n: u128) -> Uuid {
         Uuid::from_u128(n)
+    }
+
+    #[test]
+    fn a_pick_after_a_reconnect_uses_the_scene_obs_reports() {
+        let mut attribution = Attribution::default();
+        attribution.scene_seen(Some(uuid(1)), "LIVE");
+        // OBS changed to BRB while disconnected, then reconnected.
+        attribution.scene_seen(Some(uuid(2)), "BRB");
+        attribution.add_intent(Intent {
+            action: IntentAction::Scene { uuid: uuid(1) },
+            by: "kate (Web)".into(),
+            picked: true,
+        });
+        assert_eq!(
+            attribution.scene_changed(Some(uuid(1)), "LIVE"),
+            SceneChange::Changed {
+                from: Some("LIVE".into()),
+                by: Some("kate (Web)".into()),
+                picked: true,
+            }
+        );
     }
 
     #[test]
