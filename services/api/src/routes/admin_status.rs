@@ -537,7 +537,10 @@ async fn twitch_status(state: &ApiState) -> ApiResult<TwitchStatusDto> {
                 unauthorized: false,
                 message: error.message().to_owned(),
             })?;
-        let (shards, subscriptions) = tokio::join!(
+        // A failed shard lookup ends it there, without waiting for the pages of
+        // subscriptions (their result is an `Ok`, so it never ends the shards'
+        // lookup: failed subscriptions still leave the shards to show).
+        let (shards, subscriptions) = tokio::try_join!(
             async {
                 match &conduit_id {
                     Some(conduit_id) => {
@@ -547,9 +550,9 @@ async fn twitch_status(state: &ApiState) -> ApiResult<TwitchStatusDto> {
                     None => Ok(Vec::new()),
                 }
             },
-            oauth::twitch::subscriptions(&state.http, provider, &token),
-        );
-        status.shards = shards?
+            async { Ok(oauth::twitch::subscriptions(&state.http, provider, &token).await) },
+        )?;
+        status.shards = shards
             .into_iter()
             .map(|shard| ShardDto {
                 id: shard.id,
