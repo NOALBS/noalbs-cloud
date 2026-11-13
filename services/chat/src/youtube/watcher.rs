@@ -11,7 +11,11 @@
 //! can answer in it. Text messages become [`InboundMessage`]s like Twitch's and
 //! Kick's.
 
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::Duration,
+};
 
 use chrono::{DateTime, Utc};
 use db::chat::{ChatPlatform, TokenOwner, YouTubeChannel};
@@ -32,6 +36,8 @@ use crate::{
 const REFRESH: Duration = Duration::from_secs(60);
 /// How often the switchers' streaming state is checked.
 const CHECK_STREAMING: Duration = Duration::from_secs(5);
+/// How many channels are checked at the same time.
+const CHANNELS_AT_ONCE: usize = 16;
 /// After a switcher starts streaming, how many lookups come sooner.
 const EARLY_CHECKS: u32 = 3;
 const EARLY_CHECK_EVERY: Duration = Duration::from_secs(15);
@@ -218,20 +224,30 @@ impl Watcher {
     /// Starts and stops following as the switchers start and stop streaming.
     async fn check(&mut self, state: &State) {
         let now = Instant::now();
-        for (id, watched) in &mut self.channels {
-            let mut streaming = false;
-            for switcher_id in &watched.channel.switcher_ids {
-                if state
-                    .control
-                    .status(*switcher_id)
-                    .await
-                    .is_some_and(|status| status.streaming)
-                {
-                    streaming = true;
-                    break;
+        // A few channels at a time rather than one after another: each status is a
+        // round trip to NATS, and this runs every [`CHECK_STREAMING`]. A channel's
+        // switchers are still read in turn, up to the first that streams.
+        let channels: Vec<(String, Vec<Uuid>)> = self
+            .channels
+            .iter()
+            .map(|(id, watched)| (id.clone(), watched.channel.switcher_ids.clone()))
+            .collect();
+        let live: HashSet<String> = futures_util::stream::iter(channels)
+            .map(|(id, switcher_ids)| async move {
+                for switcher_id in switcher_ids {
+                    let status = state.control.status(switcher_id).await;
+                    if status.is_some_and(|status| status.streaming) {
+                        return Some(id);
+                    }
                 }
-            }
-            if !streaming {
+                None
+            })
+            .buffer_unordered(CHANNELS_AT_ONCE)
+            .filter_map(std::future::ready)
+            .collect()
+            .await;
+        for (id, watched) in &mut self.channels {
+            if !live.contains(id) {
                 if !matches!(watched.chat, Chat::Idle) {
                     tracing::debug!(channel = id, "No switcher streams: not following");
                     close(state, id, &watched.chat).await;
@@ -544,15 +560,13 @@ async fn handle_response(
         {
             ended = true;
         }
-        let Some(message) = inbound_message(channel_id, item, skip_before) else {
+        let Some(mut message) = inbound_message(channel_id, item, skip_before) else {
             continue;
         };
-        let seen = kv::key(&["youtube", &message.message_id]);
-        match kv::first_time(&state.buckets.seen, &seen).await {
-            Ok(true) => inbound::publish(state, &message).await,
-            Ok(false) => {}
-            Err(error) => tracing::warn!(%error, "Couldn't check a YouTube message"),
-        }
+        // A new stream starts with the chat's recent messages again: the handler
+        // runs a command once per message.
+        message.delivery_id = Some(message.message_id.clone());
+        inbound::publish(state, &message).await;
     }
     ended
 }
@@ -590,6 +604,7 @@ fn inbound_message(
         .trim_start_matches('@')
         .to_owned();
     Some(InboundMessage {
+        delivery_id: None,
         platform: ChatPlatform::YouTube,
         channel_id: channel_id.to_owned(),
         bot_id: None,
