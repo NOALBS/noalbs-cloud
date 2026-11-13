@@ -1,64 +1,21 @@
-# Target directory (build artifacts)
-target/
-**/target/
+# For the Rust images (services/Dockerfile, built from the repository root).
+# The dashboard's build context is web/dashboard, which has its own.
+#
+# Only the Cargo workspace goes in, so nothing else at the root (the dashboard,
+# Connect, a local node_modules) reaches the build or invalidates its cache.
+*
+!Cargo.toml
+!Cargo.lock
+!crates/
+!services/
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Local settings.
+**/config.toml
+**/.env*
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-
-# Documentation
-*.md
-README*
-docs/
-
-# Development files
-.env
-.env.local
-.env.development
-.env.test
-
-# Logs
-*.log
-logs/
-
-# Nix files (not needed in container)
-flake.nix
-flake.lock
-
-# Test files
+# Not needed to build. changed-images.mjs leaves tests and Markdown out too
+# when it decides which images to rebuild.
 **/tests/
-**/*_test.rs
-**/*_tests.rs
-
-# Backup files
-*.bak
-*.backup
-
-# Temporary files
-tmp/
-temp/
-
-# Docker files (avoid recursive copying)
-Dockerfile*
-docker-compose*.yml
-.dockerignore
-
-# CI/CD files
-.github/
-.gitlab-ci.yml
-Jenkinsfile
-
-# Cache directories
-.cache/
-node_modules/
+**/*.md
+**/target/
+services/Dockerfile

@@ -33,6 +33,7 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       web: ${{ steps.filter.outputs.web }}
       api-types: ${{ steps.filter.outputs.api-types }}
+      images: ${{ steps.filter.outputs.images }}
 
     steps:
       - name: Checkout
@@ -59,6 +60,13 @@ jobs:
               - "web/dashboard/src/api/schema.d.ts"
               - "web/dashboard/package.json"
               - "web/dashboard/pnpm-lock.yaml"
+            # What decides how the images are built, rather than what's in them
+            # (the jobs above build that).
+            images:
+              - ".dockerignore"
+              - "services/Dockerfile"
+              - "web/dashboard/.dockerignore"
+              - "web/dashboard/Dockerfile"
 
   check:
     name: Check
@@ -204,3 +212,39 @@ jobs:
 
       - name: Check for changes
         run: git diff --exit-code -- web/dashboard/openapi.json web/dashboard/src/api/schema.d.ts
+
+  # The images are otherwise first built by the release, on main. This builds
+  # them (without pushing) when a Dockerfile or .dockerignore changes, so a
+  # mistake there shows up on the pull request.
+  images:
+    name: Image (${{ matrix.service }})
+    needs: changes
+    if: needs.changes.outputs.images == 'true'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { service: api, context: ., dockerfile: services/Dockerfile }
+          - { service: obs-link, context: ., dockerfile: services/Dockerfile }
+          - { service: chat, context: ., dockerfile: services/Dockerfile }
+          - { service: db-migrator, context: ., dockerfile: services/Dockerfile }
+          - { service: dashboard, context: web/dashboard, dockerfile: web/dashboard/Dockerfile }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          platforms: linux/amd64
+          build-args: SERVICE=${{ matrix.service }}
+          # Reads the release's cache; only the release writes it.
+          cache-from: type=gha,scope=${{ matrix.service }}
