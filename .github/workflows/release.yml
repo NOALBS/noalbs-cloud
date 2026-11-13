@@ -23,7 +23,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -43,6 +42,7 @@ jobs:
     # images as :latest. Skipping this job skips the ones that need it.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     outputs:
       matrix: ${{ steps.changes.outputs.matrix }}
@@ -70,6 +70,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.services != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # The only job that pushes images.
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
@@ -126,6 +132,7 @@ jobs:
     needs: [changes, docker]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     concurrency:
       group: deploy-manifests

@@ -15,6 +15,7 @@ jobs:
   verify:
     name: Verify release version
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - name: Check tag and app versions
@@ -64,6 +65,7 @@ jobs:
           - platform: macos
             os: macos-15
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -142,6 +144,7 @@ jobs:
     name: Publish GitHub release
     needs: [verify, build]
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
