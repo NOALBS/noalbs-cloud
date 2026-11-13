@@ -23,9 +23,6 @@ pub struct Attribution {
     own_switch: Option<(Uuid, Instant)>,
     /// The scene last known to be on air, as logged.
     scene: Option<Scene>,
-    /// The scene OBS last said is on air, in a scene list or a change. A list
-    /// can be ahead of the changes still queued, or follow a reconnect.
-    on_air: Option<Scene>,
 }
 
 #[derive(Debug, Clone)]
@@ -68,9 +65,9 @@ impl Attribution {
     pub fn add_intent(&mut self, intent: Intent) {
         if let IntentAction::Scene { uuid } = intent.action
             && self
-                .on_air
+                .scene
                 .as_ref()
-                .is_some_and(|on_air| on_air.uuid == Some(uuid))
+                .is_some_and(|scene| scene.uuid == Some(uuid))
         {
             return;
         }
@@ -91,17 +88,20 @@ impl Attribution {
         Some(self.intents.remove(index).0)
     }
 
-    /// The scene on air, as read from OBS's scene list. Logged only when first
-    /// seen: a change OBS reports after the list is still logged.
+    /// The scene on air, as read from OBS's scene list. Taken only when none
+    /// is known: a list can be ahead of the changes OBS has queued for us, and
+    /// those are still logged in order.
     pub fn scene_seen(&mut self, uuid: Option<Uuid>, name: &str) {
-        let seen = Scene {
-            uuid,
-            name: name.to_owned(),
-        };
         if self.scene.is_none() {
-            self.scene = Some(seen.clone());
+            self.set_scene(uuid, name);
         }
-        self.on_air = Some(seen);
+    }
+
+    /// OBS disconnected: the scene may change before it's back, so the next
+    /// scene list is taken as what's on air.
+    pub fn obs_lost(&mut self) {
+        self.scene = None;
+        self.own_switch = None;
     }
 
     pub fn scene(&self) -> Option<String> {
@@ -114,15 +114,11 @@ impl Attribution {
         self.set_scene(Some(uuid), name);
     }
 
-    fn set_scene(&mut self, uuid: Option<Uuid>, name: &str) -> (Option<Scene>, Option<Scene>) {
-        let scene = Scene {
+    fn set_scene(&mut self, uuid: Option<Uuid>, name: &str) -> Option<Scene> {
+        self.scene.replace(Scene {
             uuid,
             name: name.to_owned(),
-        };
-        (
-            self.scene.replace(scene.clone()),
-            self.on_air.replace(scene),
-        )
+        })
     }
 
     /// Classifies a scene change reported by OBS and remembers the new scene.
@@ -136,14 +132,7 @@ impl Attribution {
             return SceneChange::Own;
         }
 
-        let (logged, on_air) = self.set_scene(uuid, name);
-        // A scene list read while this change was queued already shows it, so
-        // the change is from the logged scene. A list showing another scene
-        // (e.g. changed in OBS while disconnected) is the one changed from.
-        let before = match on_air {
-            Some(on_air) if !on_air.is(uuid, name) => Some(on_air),
-            _ => logged,
-        };
+        let before = self.set_scene(uuid, name);
         // Taken even when nothing changed: it has had its answer.
         let intent = uuid.and_then(|uuid| self.take(&IntentAction::Scene { uuid }));
         if before.as_ref().is_some_and(|before| before.is(uuid, name)) {
@@ -174,6 +163,7 @@ mod tests {
         let mut attribution = Attribution::default();
         attribution.scene_seen(Some(uuid(1)), "LIVE");
         // OBS changed to BRB while disconnected, then reconnected.
+        attribution.obs_lost();
         attribution.scene_seen(Some(uuid(2)), "BRB");
         attribution.add_intent(Intent {
             action: IntentAction::Scene { uuid: uuid(1) },
@@ -212,6 +202,27 @@ mod tests {
         assert_eq!(
             attribution.scene_changed(Some(uuid(2)), "BRB"),
             SceneChange::Unchanged
+        );
+    }
+
+    #[test]
+    fn changes_queued_behind_a_scene_list_are_logged_in_order() {
+        let mut attribution = Attribution::default();
+        attribution.scene_seen(Some(uuid(1)), "LIVE");
+        // OBS went to BRB, then Starting, before the list was read.
+        attribution.scene_seen(Some(uuid(3)), "Starting");
+        let from_obs = |from: &str| SceneChange::Changed {
+            from: Some(from.into()),
+            by: None,
+            picked: false,
+        };
+        assert_eq!(
+            attribution.scene_changed(Some(uuid(2)), "BRB"),
+            from_obs("LIVE")
+        );
+        assert_eq!(
+            attribution.scene_changed(Some(uuid(3)), "Starting"),
+            from_obs("BRB")
         );
     }
 

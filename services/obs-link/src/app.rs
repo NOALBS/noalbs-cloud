@@ -986,6 +986,11 @@ impl Connection {
         } else {
             self.stop_switcher();
             if let Some(session) = self.session.as_ref() {
+                session
+                    .attribution
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .obs_lost();
                 session.status.update(|status| {
                     reset_obs_status(status);
                 });
