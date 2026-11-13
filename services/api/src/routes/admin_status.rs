@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, HashMap};
 use async_nats::jetstream;
 use axum::{Json, extract::State};
 use chrono::{DateTime, Utc};
-use futures_util::{StreamExt, TryStreamExt};
+use futures_util::{StreamExt, TryStreamExt, future::OptionFuture};
 use live::{FeedState, SwitcherStatus};
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -177,19 +177,29 @@ async fn admin_status(
     State(state): State<ApiState>,
     _staff: Staff,
 ) -> ApiResult<Json<AdminStatusDto>> {
-    let counts = db::admin::chat_counts(&state.db).await?;
-
-    let (statuses, switchers_error) = match switcher_statuses(&state).await {
-        Ok(statuses) => (statuses, None),
-        Err(error) => (Vec::new(), Some(error)),
-    };
-    let mut switchers = count_switchers(&statuses);
-    switchers.total = counts.switchers;
-    let connected = connected_switchers(&state, &statuses).await?;
-
     let js = jetstream::new(state.nats.clone());
     let environment = state.chat_environment.clone();
-    let (heartbeats, claims, instances_error) = match chat_buckets(&js, &environment).await {
+    let configured = |platform| state.oauth.is_configured(platform);
+
+    // All asked at once: Twitch and Kick take 150 to 200 ms a call from the
+    // cluster, which one after the other came to most of a second.
+    let (counts, switchers, buckets, twitch, kick, youtube, revoked) = tokio::join!(
+        db::admin::chat_counts(&state.db),
+        switchers(&state),
+        chat_buckets(&js, &environment),
+        OptionFuture::from(configured(LoginPlatform::Twitch).then(|| twitch_status(&state))),
+        OptionFuture::from(configured(LoginPlatform::Kick).then(|| kick_status(&state))),
+        OptionFuture::from(
+            configured(LoginPlatform::YouTube).then(|| youtube_status(&js, &environment))
+        ),
+        db::admin::revoked_grants(&state.db),
+    );
+
+    let counts = counts?;
+    let (mut switchers, connected, switchers_error) = switchers?;
+    switchers.total = counts.switchers;
+
+    let (heartbeats, claims, instances_error) = match buckets {
         Ok((heartbeats, claims)) => (heartbeats, claims, None),
         Err(error) => (Vec::new(), Vec::new(), Some(error)),
     };
@@ -200,23 +210,16 @@ async fn admin_status(
         time::OffsetDateTime::now_utc(),
     );
 
-    let twitch = if state.oauth.is_configured(LoginPlatform::Twitch) {
-        Some(twitch_status(&state, &claims, counts.twitch_subscriptions).await?)
-    } else {
-        None
-    };
-    let kick = if state.oauth.is_configured(LoginPlatform::Kick) {
-        Some(kick_status(&state, counts.kick_subscriptions).await)
-    } else {
-        None
-    };
-    let youtube = if state.oauth.is_configured(LoginPlatform::YouTube) {
-        Some(youtube_status(&js, &environment).await)
-    } else {
-        None
-    };
-    let revoked = db::admin::revoked_grants(&state.db)
-        .await?
+    let mut twitch = twitch.transpose()?;
+    if let Some(twitch) = &mut twitch {
+        twitch.recorded = counts.twitch_subscriptions;
+        name_holders(&mut twitch.shards, &environment, &claims);
+    }
+    let mut kick = kick;
+    if let Some(kick) = &mut kick {
+        kick.recorded = counts.kick_subscriptions;
+    }
+    let revoked = revoked?
         .into_iter()
         .map(|grant| RevokedGrantDto {
             kind: grant.kind,
@@ -246,6 +249,19 @@ async fn admin_status(
             revoked,
         },
     }))
+}
+
+/// The switcher counts (without the total), the connected switchers, and the
+/// error if obs-link's status bucket couldn't be read.
+async fn switchers(
+    state: &ApiState,
+) -> ApiResult<(SwitcherCountsDto, Vec<ConnectedSwitcherDto>, Option<String>)> {
+    let (statuses, error) = match switcher_statuses(state).await {
+        Ok(statuses) => (statuses, None),
+        Err(error) => (Vec::new(), Some(error)),
+    };
+    let connected = connected_switchers(state, &statuses).await?;
+    Ok((count_switchers(&statuses), connected, error))
 }
 
 /// Every connected switcher's status, from obs-link's bucket.
@@ -481,15 +497,28 @@ fn counts(names: impl IntoIterator<Item = String>) -> Vec<NamedCountDto> {
         .collect()
 }
 
-async fn twitch_status(
-    state: &ApiState,
-    claims: &[(String, String)],
-    recorded: i64,
-) -> ApiResult<TwitchStatusDto> {
+/// Names the instance holding each shard, from the chat service's claims.
+fn name_holders(shards: &mut [ShardDto], environment: &str, claims: &[(String, String)]) {
+    let holders: HashMap<u32, &str> = claims
+        .iter()
+        .filter_map(|(key, holder)| Some((shard_number(environment, key)?, holder.as_str())))
+        .collect();
+    for shard in shards {
+        shard.instance = shard
+            .id
+            .parse::<u32>()
+            .ok()
+            .and_then(|n| holders.get(&n))
+            .map(|holder| (*holder).to_owned());
+    }
+}
+
+/// What Twitch says about the conduit and the subscriptions. The caller fills
+/// in `recorded` and who holds each shard.
+async fn twitch_status(state: &ApiState) -> ApiResult<TwitchStatusDto> {
     let conduit_id = db::chat::platform_state(&state.db, "twitch_conduit_id").await?;
     let mut status = TwitchStatusDto {
         conduit_id: conduit_id.clone(),
-        recorded,
         ..TwitchStatusDto::default()
     };
     let result: Result<(), PlatformError> = async {
@@ -508,31 +537,27 @@ async fn twitch_status(
                 unauthorized: false,
                 message: error.message().to_owned(),
             })?;
-        if let Some(conduit_id) = &conduit_id {
-            let holders: HashMap<u32, &str> = claims
-                .iter()
-                .filter_map(|(key, holder)| {
-                    Some((shard_number(&state.chat_environment, key)?, holder.as_str()))
-                })
-                .collect();
-            status.shards =
-                oauth::twitch::conduit_shards(&state.http, provider, &token, conduit_id)
-                    .await?
-                    .into_iter()
-                    .map(|shard| ShardDto {
-                        instance: shard
-                            .id
-                            .parse::<u32>()
-                            .ok()
-                            .and_then(|n| holders.get(&n))
-                            .map(|holder| (*holder).to_owned()),
-                        id: shard.id,
-                        status: shard.status,
-                    })
-                    .collect();
-        }
-        let (subscriptions, total_cost, max_total_cost) =
-            oauth::twitch::subscriptions(&state.http, provider, &token).await?;
+        let (shards, subscriptions) = tokio::join!(
+            async {
+                match &conduit_id {
+                    Some(conduit_id) => {
+                        oauth::twitch::conduit_shards(&state.http, provider, &token, conduit_id)
+                            .await
+                    }
+                    None => Ok(Vec::new()),
+                }
+            },
+            oauth::twitch::subscriptions(&state.http, provider, &token),
+        );
+        status.shards = shards?
+            .into_iter()
+            .map(|shard| ShardDto {
+                id: shard.id,
+                status: shard.status,
+                instance: None,
+            })
+            .collect();
+        let (subscriptions, total_cost, max_total_cost) = subscriptions?;
         status.total_cost = total_cost;
         status.max_total_cost = max_total_cost;
         status.subscriptions_by_status = counts(subscriptions.iter().map(|sub| sub.status.clone()));
@@ -558,11 +583,9 @@ async fn twitch_status(
     Ok(status)
 }
 
-async fn kick_status(state: &ApiState, recorded: i64) -> KickStatusDto {
-    let mut status = KickStatusDto {
-        recorded,
-        ..KickStatusDto::default()
-    };
+/// How many subscriptions Kick has for the app. The caller fills in `recorded`.
+async fn kick_status(state: &ApiState) -> KickStatusDto {
+    let mut status = KickStatusDto::default();
     let result = async {
         let provider = state.oauth.provider(LoginPlatform::Kick).ok()?;
         let token = match state
@@ -649,6 +672,17 @@ mod tests {
                 },
             ]
         );
+
+        let shard = |id: &str| super::ShardDto {
+            id: id.to_owned(),
+            status: "enabled".into(),
+            instance: None,
+        };
+        let mut shards = [shard("0"), shard("1"), shard("7")];
+        super::name_holders(&mut shards, "env1", &claims);
+        let holders: Vec<_> = shards.iter().map(|s| s.instance.as_deref()).collect();
+        assert_eq!(holders, [Some("chat-a"), Some("vps:2"), None]);
+
         assert_eq!(shard_number("env1", "env1.shard.12"), Some(12));
         assert_eq!(shard_number("env1", "env2.shard.1"), None);
     }
