@@ -351,10 +351,18 @@ impl Control {
     /// Tells obs-link who is about to do `action`, so the resulting OBS change is
     /// attributed to them in the activity feed.
     pub async fn announce(&self, switcher_id: Uuid, action: IntentAction, by: &str) {
-        let intent = Intent {
-            action,
-            by: by.to_owned(),
-        };
+        self.announce_intent(
+            switcher_id,
+            Intent {
+                action,
+                by: by.to_owned(),
+                picked: false,
+            },
+        )
+        .await;
+    }
+
+    async fn announce_intent(&self, switcher_id: Uuid, intent: Intent) {
         match serde_json::to_vec(&intent) {
             Ok(payload) => {
                 if let Err(error) = self
@@ -370,9 +378,27 @@ impl Control {
     }
 
     pub async fn switch_scene(&self, switcher_id: Uuid, uuid: Uuid, by: &str) -> Result<()> {
+        self.switch(switcher_id, uuid, by, false).await
+    }
+
+    /// Switches to the scene someone picked in the dashboard. Unlike a
+    /// command's [`switch_scene`](Self::switch_scene), which answers where it
+    /// was asked, chat is told about this one (`dashboard_switch_notification`).
+    pub async fn pick_scene(&self, switcher_id: Uuid, uuid: Uuid, by: &str) -> Result<()> {
+        self.switch(switcher_id, uuid, by, true).await
+    }
+
+    async fn switch(&self, switcher_id: Uuid, uuid: Uuid, by: &str, picked: bool) -> Result<()> {
         let obs = self.controllable_obs(switcher_id).await?;
-        self.announce(switcher_id, IntentAction::Scene { uuid }, by)
-            .await;
+        self.announce_intent(
+            switcher_id,
+            Intent {
+                action: IntentAction::Scene { uuid },
+                by: by.to_owned(),
+                picked,
+            },
+        )
+        .await;
         obs.switch_scene_uuid(uuid).await?;
         Ok(())
     }

@@ -15091,6 +15091,7 @@
           "only_switch_when_streaming",
           "instantly_switch_on_recover",
           "auto_switch_notification",
+          "dashboard_switch_notification",
           "retry_attempts",
           "auto_stop_on_raid",
           "announce_raid",
@@ -15109,11 +15110,15 @@
           },
           "auto_switch_notification": {
             "type": "boolean",
-            "description": "Post in chat when a scene switches."
+            "description": "Post in chat when the switcher switches scenes on its own."
           },
           "bitrate_switcher_enabled": {
             "type": "boolean",
             "description": "Switch scenes automatically using the triggers."
+          },
+          "dashboard_switch_notification": {
+            "type": "boolean",
+            "description": "Post in chat when someone picks a scene in the dashboard."
           },
           "ending_timeout": {
             "type": [
@@ -16463,7 +16468,7 @@
         "properties": {
           "auto_switch_notification": {
             "type": "boolean",
-            "description": "Post this switcher's automatic switches in the channel."
+            "description": "Post this switcher's scene switches in the channel: its own and the\nscenes picked in the dashboard, whichever the switcher announces."
           }
         }
       },
@@ -16543,7 +16548,7 @@
         "properties": {
           "auto_switch_notification": {
             "type": "boolean",
-            "description": "This switcher's automatic switches are posted here (while the switcher's\nown `auto_switch_notification` is on)."
+            "description": "This switcher's scene switches are posted here: its own (while the\nswitcher's `auto_switch_notification` is on) and the scenes picked in the\ndashboard (`dashboard_switch_notification`)."
           },
           "bot": {
             "oneOf": [
@@ -18233,6 +18238,10 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "picked": {
+                    "type": "boolean",
+                    "description": "Someone picked this scene in the dashboard, rather than a chat\ncommand or a refresh passing through it. Chat is told about these\n(`dashboard_switch_notification`)."
                   },
                   "reason": {
                     "$ref": "#/components/schemas/SwitchReason"

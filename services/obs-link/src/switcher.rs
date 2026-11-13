@@ -365,7 +365,7 @@ impl Runtime {
             uuid: list.current_program_scene_uuid,
             name: list.current_program_scene_name,
         };
-        self.attribution().scene_seen(&current.name);
+        self.attribution().scene_seen(current.uuid, &current.name);
         if self.current_scene.as_ref() != Some(&current) {
             self.current_scene = Some(current.clone());
             self.deps
@@ -543,6 +543,7 @@ impl Runtime {
         self.attribution().add_intent(Intent {
             action: action.clone(),
             by: by.into(),
+            picked: false,
         });
         match self.obs.stream(false).await {
             Ok(()) => self.record(event(minutes)).await,
@@ -656,6 +657,7 @@ impl Runtime {
                     server,
                     bitrate,
                     rtt,
+                    picked: false,
                 })
                 .await;
             }
@@ -967,7 +969,7 @@ impl Runtime {
         self.reconcile_scene_recording().await;
 
         let change = self.attribution().scene_changed(uuid, &name);
-        let SceneChange::Changed { from, by } = change else {
+        let SceneChange::Changed { from, by, picked } = change else {
             // A repeat, or our own switch coming back: nothing new to log.
             return;
         };
@@ -983,6 +985,7 @@ impl Runtime {
             server: None,
             bitrate: None,
             rtt: None,
+            picked,
         })
         .await;
     }

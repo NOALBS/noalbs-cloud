@@ -1802,14 +1802,6 @@ msgstr "Automatisk · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "Automatisk skift mellem LIVE / LOW / BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "Automatiske sceneskift bliver slået op her"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "Automatiske sceneskift bliver ikke slået op her"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connect-watchdog ændret"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "Forbind din kanal for at bruge chatkommandoer med denne switcher. Slå notifikationer til for at få dens automatiske sceneskift slået op i chatten."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "Forbind din kanal for at bruge chatkommandoer med denne switcher. Slå notifikationer til for at få dens sceneskift slået op i chatten."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "Tilpas"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Mørk"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "Notifikation om skift fra dashboardet"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "Placering…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "Slå op i chatten, når en scene skifter automatisk. Vælg kanalerne på siden Chat."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "Slå op i chatten, når nogen skifter scene fra dashboardet. Vælg kanalerne på siden Chat."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "Slå meddelelse op"
@@ -7929,6 +7929,14 @@ msgstr "Scene-tilsidesættelser"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Sceneskift"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "Sceneskift bliver slået op her"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "Sceneskift bliver ikke slået op her"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

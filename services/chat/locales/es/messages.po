@@ -92,11 +92,11 @@ msgstr "Cambiado a la escena Final"
 msgid "Switched to the Refresh scene"
 msgstr "Cambiado a la escena Actualizar"
 
-msgid "Chat notifications on"
-msgstr "Notificaciones del chat activadas"
+msgid "Automatic switch notifications on"
+msgstr "Notificaciones de cambios automáticos activadas"
 
-msgid "Chat notifications off"
-msgstr "Notificaciones del chat desactivadas"
+msgid "Automatic switch notifications off"
+msgstr "Notificaciones de cambios automáticos desactivadas"
 
 msgid "Auto stop on raid on"
 msgstr "Parada automática en raid activada"

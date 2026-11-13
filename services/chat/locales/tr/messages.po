@@ -92,11 +92,11 @@ msgstr "Bitiş sahnesine geçildi"
 msgid "Switched to the Refresh scene"
 msgstr "Yenile sahnesine geçildi"
 
-msgid "Chat notifications on"
-msgstr "Sohbet bildirimleri açık"
+msgid "Automatic switch notifications on"
+msgstr "Otomatik geçiş bildirimleri açık"
 
-msgid "Chat notifications off"
-msgstr "Sohbet bildirimleri kapalı"
+msgid "Automatic switch notifications off"
+msgstr "Otomatik geçiş bildirimleri kapalı"
 
 msgid "Auto stop on raid on"
 msgstr "Raid'de otomatik durdurma açık"

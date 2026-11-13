@@ -1802,14 +1802,6 @@ msgstr "Automatisch · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "Automatisch wisselen tussen LIVE, LOW en BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "Automatische scènewissels worden hier gepost"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "Automatische scènewissels worden hier niet gepost"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connect-watchdog gewijzigd"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "Verbind je kanaal om chatopdrachten met deze switcher te gebruiken. Zet meldingen aan om de automatische scènewissels in de chat te laten posten."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "Verbind je kanaal om chatopdrachten met deze switcher te gebruiken. Zet meldingen aan om de scènewissels in de chat te laten posten."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "Aanpassen"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Donker"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "Melding bij wissel vanaf het dashboard"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "Plaatsing…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "Post in de chat wanneer een scène automatisch wisselt. Kies de kanalen op de pagina Chat."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "Post in de chat wanneer iemand vanaf het dashboard van scène wisselt. Kies de kanalen op de pagina Chat."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "Melding plaatsen"
@@ -7929,6 +7929,14 @@ msgstr "Scène-overschrijvingen"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Scènewissels"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "Scènewissels worden hier gepost"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "Scènewissels worden hier niet gepost"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

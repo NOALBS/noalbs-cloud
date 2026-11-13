@@ -77,13 +77,15 @@ export function ChannelsSection({ channels }: { channels: ChatChannel[] | undefi
   const { workspace, switcher, canManage } = useSwitcher();
   const providers = useQuery(providersQuery);
   const available = PLATFORMS.filter((platform) => providers.data?.[platform.path]);
-  // The switcher-wide setting (Switching page) comes first.
-  const notifies = switcher.behaviour.auto_switch_notification;
+  // The switcher-wide settings (Switching page) come first: with neither on,
+  // there is nothing for a channel to opt out of.
+  const notifies =
+    switcher.behaviour.auto_switch_notification || switcher.behaviour.dashboard_switch_notification;
 
   return (
     <Section
       title={t`Channels`}
-      description={t`Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat.`}
+      description={t`Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat.`}
       actions={
         canManage &&
         !!channels?.length &&
@@ -273,11 +275,7 @@ function ChannelRow({
           size="sm"
           aria-pressed={on}
           aria-label={t`Switch alerts in ${channel.display_name}`}
-          title={
-            on
-              ? t`Automatic scene switches are posted here`
-              : t`Automatic scene switches aren’t posted here`
-          }
+          title={on ? t`Scene switches are posted here` : t`Scene switches aren’t posted here`}
           disabled={!canManage || notify.isPending}
           onClick={() => notify.mutate(!on)}
           className={cn(

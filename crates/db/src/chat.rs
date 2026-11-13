@@ -855,8 +855,9 @@ pub struct SwitcherChannel {
     pub bot_platform_user_id: Option<String>,
     /// The channel controls other switchers too (so posts name the switcher).
     pub shared: bool,
-    /// This switcher's automatic switches are posted here (when the switcher
-    /// has `auto_switch_notification` on).
+    /// This switcher's scene switches are posted here: its own (when it has
+    /// `auto_switch_notification` on) and the scenes picked in the dashboard
+    /// (`dashboard_switch_notification`).
     pub auto_switch_notification: bool,
 }
 

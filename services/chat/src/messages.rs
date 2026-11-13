@@ -25,6 +25,8 @@ pub enum Msg {
     /// No scene of this kind is picked for the switcher.
     NoScene(SceneKind),
     NoSceneMatch(String),
+    /// `!switch` switched, or someone picked the scene in the dashboard
+    /// (`dashboard_switch_notification`).
     SwitchedTo(String),
     /// `!live`, `!privacy`, `!starting` or `!ending` switched.
     SwitchedToKind(SceneKind),
@@ -367,8 +369,10 @@ fn switched_to_kind(lang: &str, kind: SceneKind) -> String {
 
 fn toggled(lang: &str, flag: ChatFlag, value: bool) -> String {
     match (flag, value) {
-        (ChatFlag::AutoSwitchNotification, true) => tr!(lang, "Chat notifications on"),
-        (ChatFlag::AutoSwitchNotification, false) => tr!(lang, "Chat notifications off"),
+        (ChatFlag::AutoSwitchNotification, true) => tr!(lang, "Automatic switch notifications on"),
+        (ChatFlag::AutoSwitchNotification, false) => {
+            tr!(lang, "Automatic switch notifications off")
+        }
         (ChatFlag::AutoStopOnRaid, true) => tr!(lang, "Auto stop on raid on"),
         (ChatFlag::AutoStopOnRaid, false) => tr!(lang, "Auto stop on raid off"),
         (ChatFlag::PublicCommands, true) => tr!(lang, "Public commands on"),

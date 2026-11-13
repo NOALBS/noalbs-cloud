@@ -605,6 +605,11 @@ pub enum EventDetail {
         server: Option<String>,
         bitrate: Option<u32>,
         rtt: Option<f64>,
+        /// Someone picked this scene in the dashboard, rather than a chat
+        /// command or a refresh passing through it. Chat is told about these
+        /// (`dashboard_switch_notification`).
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        picked: bool,
     },
     StreamStarted {
         by: Option<String>,
@@ -894,6 +899,10 @@ pub struct SwitcherEvent {
 pub struct Intent {
     pub action: IntentAction,
     pub by: String,
+    /// For a scene: someone picked it in the dashboard (see `picked` on
+    /// [`EventDetail::SceneSwitched`]).
+    #[serde(default)]
+    pub picked: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -981,6 +990,17 @@ mod tests {
                 server: Some("BELABOX Cloud".into()),
                 bitrate: Some(640),
                 rtt: None,
+                picked: false,
+            },
+            EventDetail::SceneSwitched {
+                from: Some("LOW".into()),
+                to: "Just Chatting".into(),
+                reason: SwitchReason::Dashboard,
+                by: Some("kate (Web)".into()),
+                server: None,
+                bitrate: None,
+                rtt: None,
+                picked: true,
             },
             EventDetail::StreamStarted {
                 by: Some("mod_kate".into()),

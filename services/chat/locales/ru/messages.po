@@ -92,11 +92,11 @@ msgstr "Сцена переключена на «Конец»"
 msgid "Switched to the Refresh scene"
 msgstr "Сцена переключена на «Обновление»"
 
-msgid "Chat notifications on"
-msgstr "Уведомления в чате: вкл."
+msgid "Automatic switch notifications on"
+msgstr "Уведомления об автоматических переключениях: вкл."
 
-msgid "Chat notifications off"
-msgstr "Уведомления в чате: выкл."
+msgid "Automatic switch notifications off"
+msgstr "Уведомления об автоматических переключениях: выкл."
 
 msgid "Auto stop on raid on"
 msgstr "Автостоп при рейде: вкл."

@@ -1926,7 +1926,7 @@ async fn switch_scene(
     let by = access.workspace.display_name(&state).await?;
     state
         .control()
-        .switch_scene(access.switcher.id, request.scene_uuid, &by)
+        .pick_scene(access.switcher.id, request.scene_uuid, &by)
         .await
         .map_err(control_error)?;
 

@@ -92,11 +92,11 @@ msgstr "Overgeschakeld naar de Einde-scène"
 msgid "Switched to the Refresh scene"
 msgstr "Overgeschakeld naar de Vernieuwen-scène"
 
-msgid "Chat notifications on"
-msgstr "Chatmeldingen aan"
+msgid "Automatic switch notifications on"
+msgstr "Meldingen van automatische wissels aan"
 
-msgid "Chat notifications off"
-msgstr "Chatmeldingen uit"
+msgid "Automatic switch notifications off"
+msgstr "Meldingen van automatische wissels uit"
 
 msgid "Auto stop on raid on"
 msgstr "Automatisch stoppen bij raid aan"

@@ -91,11 +91,11 @@ msgstr "已切换到结尾场景"
 msgid "Switched to the Refresh scene"
 msgstr "已切换到刷新场景"
 
-msgid "Chat notifications on"
-msgstr "聊天通知已开启"
+msgid "Automatic switch notifications on"
+msgstr "自动切换通知已开启"
 
-msgid "Chat notifications off"
-msgstr "聊天通知已关闭"
+msgid "Automatic switch notifications off"
+msgstr "自动切换通知已关闭"
 
 msgid "Auto stop on raid on"
 msgstr "突袭时自动停止已开启"

@@ -1802,14 +1802,6 @@ msgstr "Automatiskt · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "Automatiskt byte mellan LIVE, LOW och BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "Automatiska scenbyten publiceras här"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "Automatiska scenbyten publiceras inte här"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connect-watchdog ändrad"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "Anslut din kanal för att använda chattkommandon med den här switchern. Slå på aviseringar så publiceras dess automatiska scenbyten i chatten."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "Anslut din kanal för att använda chattkommandon med den här switchern. Slå på aviseringar så publiceras dess scenbyten i chatten."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "Anpassa"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Mörkt"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "Avisering vid byte från dashboarden"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "Placering…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "Publicera i chatten när en scen byts automatiskt. Välj kanalerna på sidan Chatt."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "Publicera i chatten när någon byter scen från dashboarden. Välj kanalerna på sidan Chatt."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "Publicera meddelande"
@@ -7929,6 +7929,14 @@ msgstr "Scenöverstyrningar"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Scenbyten"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "Scenbyten publiceras här"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "Scenbyten publiceras inte här"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx
