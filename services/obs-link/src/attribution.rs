@@ -97,9 +97,9 @@ impl Attribution {
         }
     }
 
-    /// OBS disconnected: the scene may change before it's back, so the next
-    /// scene list is taken as what's on air.
-    pub fn obs_lost(&mut self) {
+    /// Scene changes are no longer followed (OBS disconnected, or the switcher
+    /// is paused), so the next scene list is taken as what's on air.
+    pub fn stopped_watching(&mut self) {
         self.scene = None;
         self.own_switch = None;
     }
@@ -162,8 +162,8 @@ mod tests {
     fn a_pick_after_a_reconnect_uses_the_scene_obs_reports() {
         let mut attribution = Attribution::default();
         attribution.scene_seen(Some(uuid(1)), "LIVE");
-        // OBS changed to BRB while disconnected, then reconnected.
-        attribution.obs_lost();
+        // OBS changed to BRB while disconnected or paused, then came back.
+        attribution.stopped_watching();
         attribution.scene_seen(Some(uuid(2)), "BRB");
         attribution.add_intent(Intent {
             action: IntentAction::Scene { uuid: uuid(1) },

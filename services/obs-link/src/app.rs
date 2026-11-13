@@ -986,11 +986,6 @@ impl Connection {
         } else {
             self.stop_switcher();
             if let Some(session) = self.session.as_ref() {
-                session
-                    .attribution
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .obs_lost();
                 session.status.update(|status| {
                     reset_obs_status(status);
                 });
@@ -1065,9 +1060,18 @@ impl Connection {
     }
 
     fn stop_switcher(&mut self) {
-        if let Some(running) = self.session.as_mut().and_then(|s| s.switcher.take()) {
+        let Some(session) = self.session.as_mut() else {
+            return;
+        };
+        if let Some(running) = session.switcher.take() {
             running.task.abort();
         }
+        // OBS events are dropped until a switcher runs again.
+        session
+            .attribution
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .stopped_watching();
     }
 
     async fn handle_control(&mut self, control: Control) -> Result<Flow> {
