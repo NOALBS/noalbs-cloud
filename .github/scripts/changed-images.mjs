@@ -18,6 +18,9 @@ import { dirname, join, relative } from "node:path";
 
 const IMAGE = "ghcr.io/noalbs/noalbs-cloud";
 const RUST_SERVICES = ["api", "obs-link", "chat", "db-migrator"];
+// One file for all of them (the service is a build argument), so a change to
+// it rebuilds them all.
+const RUST_DOCKERFILE = "services/Dockerfile";
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
 const gitOk = (...args) => {
@@ -64,6 +67,7 @@ function rustInputs() {
       "Cargo.toml",
       "Cargo.lock",
       ".dockerignore",
+      RUST_DOCKERFILE,
       ...[...seen].map((name) => crates.get(name).dir),
       // Left out of the image by .dockerignore.
       ":(exclude,glob)**/tests/**",
@@ -78,7 +82,7 @@ function images() {
   return [
     ...RUST_SERVICES.map((service) => ({
       service,
-      dockerfile: `services/${service}/Dockerfile`,
+      dockerfile: RUST_DOCKERFILE,
       context: ".",
       paths: rust[service],
     })),
