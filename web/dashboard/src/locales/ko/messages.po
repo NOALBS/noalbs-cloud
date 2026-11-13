@@ -1802,14 +1802,6 @@ msgstr "자동 · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "LIVE / LOW / BRB 자동 전환"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "자동 장면 전환이 여기에 게시돼요"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "자동 장면 전환이 여기에 게시되지 않아요"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connect 워치독 변경됨"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "이 스위처에서 채팅 명령어를 쓰려면 채널을 연결하세요. 알림을 켜면 자동 장면 전환이 채팅에 게시돼요."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "이 스위처에서 채팅 명령어를 쓰려면 채널을 연결하세요. 알림을 켜면 장면 전환이 채팅에 게시돼요."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "사용자 지정"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "다크"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "대시보드 전환 알림"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "배치…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "장면이 자동으로 전환되면 채팅에 게시해요. 채널은 채팅 페이지에서 선택하세요."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "누군가 대시보드에서 장면을 전환하면 채팅에 게시해요. 채널은 채팅 페이지에서 선택하세요."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "공지 게시"
@@ -7929,6 +7929,14 @@ msgstr "장면 재지정"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "장면 전환"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "장면 전환이 여기에 게시돼요"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "장면 전환이 여기에 게시되지 않아요"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

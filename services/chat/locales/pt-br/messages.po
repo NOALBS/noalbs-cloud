@@ -92,11 +92,11 @@ msgstr "Trocado para a cena Encerramento"
 msgid "Switched to the Refresh scene"
 msgstr "Trocado para a cena Atualizar"
 
-msgid "Chat notifications on"
-msgstr "Notificações no chat ligadas"
+msgid "Automatic switch notifications on"
+msgstr "Notificações de trocas automáticas ligadas"
 
-msgid "Chat notifications off"
-msgstr "Notificações no chat desligadas"
+msgid "Automatic switch notifications off"
+msgstr "Notificações de trocas automáticas desligadas"
 
 msgid "Auto stop on raid on"
 msgstr "Parada automática no raid ligada"

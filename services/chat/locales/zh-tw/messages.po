@@ -92,11 +92,11 @@ msgstr "已切換至結尾場景"
 msgid "Switched to the Refresh scene"
 msgstr "已切換至重新整理場景"
 
-msgid "Chat notifications on"
-msgstr "聊天室通知已開啟"
+msgid "Automatic switch notifications on"
+msgstr "自動切換通知已開啟"
 
-msgid "Chat notifications off"
-msgstr "聊天室通知已關閉"
+msgid "Automatic switch notifications off"
+msgstr "自動切換通知已關閉"
 
 msgid "Auto stop on raid on"
 msgstr "揪團時自動停止已開啟"

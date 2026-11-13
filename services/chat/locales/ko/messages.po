@@ -91,11 +91,11 @@ msgstr "종료 장면으로 전환했어요"
 msgid "Switched to the Refresh scene"
 msgstr "새로고침 장면으로 전환했어요"
 
-msgid "Chat notifications on"
-msgstr "채팅 알림 켜짐"
+msgid "Automatic switch notifications on"
+msgstr "자동 전환 알림 켜짐"
 
-msgid "Chat notifications off"
-msgstr "채팅 알림 꺼짐"
+msgid "Automatic switch notifications off"
+msgstr "자동 전환 알림 꺼짐"
 
 msgid "Auto stop on raid on"
 msgstr "레이드 시 자동 중지 켜짐"

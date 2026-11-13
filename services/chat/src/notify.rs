@@ -1,8 +1,9 @@
 //! Chat notifications: when a switcher changes scenes on its own and has
-//! `auto_switch_notification` on, its linked channels hear about it, except those
-//! whose link has notifications off; a stream stopped by the offline or ending timeout is
-//! said in every linked channel. Every instance listens to the switchers'
-//! events in one queue group, so each switch is announced once.
+//! `auto_switch_notification` on, or someone picks a scene in the dashboard and it
+//! has `dashboard_switch_notification` on, its linked channels hear about it,
+//! except those whose link has alerts off; a stream stopped by the offline or
+//! ending timeout is said in every linked channel. Every instance listens to the
+//! switchers' events in one queue group, so each switch is announced once.
 
 use futures_util::StreamExt;
 use live::{EventDetail, SwitchReason, SwitcherEvent};
@@ -53,15 +54,20 @@ pub async fn run(state: State) {
 /// Which linked channels hear a notification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Audience {
-    /// Those that want automatic switch notifications (the switcher's
-    /// `auto_switch_notification` and the link's own).
-    Switches,
+    /// Those with alerts on, when the switcher announces its own switches
+    /// (`auto_switch_notification`).
+    AutoSwitches,
+    /// Those with alerts on, when the switcher announces scenes picked in the
+    /// dashboard (`dashboard_switch_notification`).
+    DashboardSwitches,
     /// All of them: the stream is ending, like NOALBS always said.
     Everyone,
 }
 
-/// What to say about an event, if anything: the switcher's own switches (the
-/// ones someone asked for are answered already) and the offline and ending timeouts.
+/// What to say about an event, if anything: the switcher's own switches, a
+/// scene picked in the dashboard (a command's switch is answered where it was
+/// asked; one made in OBS itself isn't ours to announce) and the offline and
+/// ending timeouts.
 pub fn notification(detail: &EventDetail) -> Option<(Msg, Audience)> {
     match detail {
         EventDetail::SceneSwitched {
@@ -78,8 +84,11 @@ pub fn notification(detail: &EventDetail) -> Option<(Msg, Audience)> {
                 bitrate: *bitrate,
                 rtt: *rtt,
             },
-            Audience::Switches,
+            Audience::AutoSwitches,
         )),
+        EventDetail::SceneSwitched {
+            to, picked: true, ..
+        } => Some((Msg::SwitchedTo(to.clone()), Audience::DashboardSwitches)),
         EventDetail::OfflineTimeout { .. } => Some((Msg::OfflineTimeout, Audience::Everyone)),
         EventDetail::EndingTimeout { .. } => Some((Msg::EndingTimeout, Audience::Everyone)),
         _ => None,
@@ -90,14 +99,19 @@ async fn announce(state: &State, switcher_id: Uuid, msg: &Msg, audience: Audienc
     let Some(switcher) = db::switchers::get(&state.db, switcher_id).await? else {
         return Ok(());
     };
-    let switches_only = audience == Audience::Switches;
-    if switches_only && !switcher.auto_switch_notification {
+    let wanted = match audience {
+        Audience::AutoSwitches => switcher.auto_switch_notification,
+        Audience::DashboardSwitches => switcher.dashboard_switch_notification,
+        Audience::Everyone => true,
+    };
+    if !wanted {
         return Ok(());
     }
+    let alerts_only = audience != Audience::Everyone;
     let channels = db::chat::channels_of_switcher(&state.db, switcher_id).await?;
     let text = messages::text(&switcher.language, msg);
     for channel in channels {
-        if switches_only && !channel.auto_switch_notification {
+        if alerts_only && !channel.auto_switch_notification {
             continue;
         }
         let (Some(bot_id), Some(bot_user_id)) =
@@ -140,6 +154,7 @@ mod tests {
     use live::{EventDetail, SwitchReason};
 
     use super::{Audience, notification};
+    use crate::messages::Msg;
 
     fn switched(reason: SwitchReason) -> EventDetail {
         EventDetail::SceneSwitched {
@@ -150,15 +165,45 @@ mod tests {
             server: Some("BELABOX Cloud".into()),
             bitrate: Some(640),
             rtt: None,
+            picked: false,
+        }
+    }
+
+    /// A switch someone asked for: `picked` in the dashboard, or not (a chat
+    /// command, a refresh).
+    fn asked(picked: bool) -> EventDetail {
+        EventDetail::SceneSwitched {
+            from: Some("LIVE".into()),
+            to: "Just Chatting".into(),
+            reason: SwitchReason::Dashboard,
+            by: Some("kate (Web)".into()),
+            server: None,
+            bitrate: None,
+            rtt: None,
+            picked,
         }
     }
 
     #[test]
-    fn only_automatic_switches_are_announced() {
+    fn automatic_and_picked_switches_are_announced() {
         assert!(notification(&switched(SwitchReason::Auto)).is_some());
+        assert!(notification(&asked(true)).is_some());
+        // A command answered where it was asked, and a change made in OBS.
+        assert!(notification(&asked(false)).is_none());
         assert!(notification(&switched(SwitchReason::Dashboard)).is_none());
         assert!(notification(&switched(SwitchReason::Obs)).is_none());
         assert!(notification(&EventDetail::ObsConnected).is_none());
+    }
+
+    #[test]
+    fn a_picked_scene_is_said_where_alerts_are_on() {
+        assert_eq!(
+            notification(&asked(true)),
+            Some((
+                Msg::SwitchedTo("Just Chatting".into()),
+                Audience::DashboardSwitches
+            ))
+        );
     }
 
     #[test]
@@ -171,6 +216,6 @@ mod tests {
             assert_eq!(audience, Audience::Everyone);
         }
         let (_, audience) = notification(&switched(SwitchReason::Auto)).expect("announced");
-        assert_eq!(audience, Audience::Switches);
+        assert_eq!(audience, Audience::AutoSwitches);
     }
 }

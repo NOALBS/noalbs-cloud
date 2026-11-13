@@ -149,8 +149,9 @@ pub struct ChatChannelDto {
     pub bot: Option<SpeakingBotDto>,
     /// How many other switchers (in any workspace) the channel controls too.
     pub other_links: i64,
-    /// This switcher's automatic switches are posted here (while the switcher's
-    /// own `auto_switch_notification` is on).
+    /// This switcher's scene switches are posted here: its own (while the
+    /// switcher's `auto_switch_notification` is on) and the scenes picked in the
+    /// dashboard (`dashboard_switch_notification`).
     pub auto_switch_notification: bool,
 }
 
@@ -422,7 +423,8 @@ async fn unlink_channel(
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ChannelLinkSettings {
-    /// Post this switcher's automatic switches in the channel.
+    /// Post this switcher's scene switches in the channel: its own and the
+    /// scenes picked in the dashboard, whichever the switcher announces.
     pub auto_switch_notification: bool,
 }
 

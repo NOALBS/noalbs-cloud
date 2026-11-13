@@ -1802,14 +1802,6 @@ msgstr "自動 · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "LIVE / LOW / BRBの自動切り替え"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "シーンの自動切り替えはここに投稿されます"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "シーンの自動切り替えはここに投稿されません"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connectのウォッチドッグを変更"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "チャンネルを接続すると、このスイッチャーでチャットコマンドを使えます。アラートをオンにすると、シーンの自動切り替えがチャットに投稿されます。"
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "チャンネルを接続すると、このスイッチャーでチャットコマンドを使えます。アラートをオンにすると、シーンの切り替えがチャットに投稿されます。"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "カスタマイズ"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "ダーク"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "ダッシュボード切り替えの通知"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "配置…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "シーンが自動で切り替わったときにチャットに投稿します。チャンネルは「チャット」ページで選択してください。"
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "ダッシュボードからシーンが切り替えられたときにチャットに投稿します。チャンネルは「チャット」ページで選択してください。"
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "お知らせを投稿"
@@ -7929,6 +7929,14 @@ msgstr "シーンの上書き"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "シーン切り替え"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "シーンの切り替えはここに投稿されます"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "シーンの切り替えはここに投稿されません"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

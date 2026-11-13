@@ -92,11 +92,11 @@ msgstr "Skiftet til Slut-scenen"
 msgid "Switched to the Refresh scene"
 msgstr "Skiftet til Opdater-scenen"
 
-msgid "Chat notifications on"
-msgstr "Chatnotifikationer slået til"
+msgid "Automatic switch notifications on"
+msgstr "Notifikationer om automatiske sceneskift slået til"
 
-msgid "Chat notifications off"
-msgstr "Chatnotifikationer slået fra"
+msgid "Automatic switch notifications off"
+msgstr "Notifikationer om automatiske sceneskift slået fra"
 
 msgid "Auto stop on raid on"
 msgstr "Auto-stop ved raid slået til"

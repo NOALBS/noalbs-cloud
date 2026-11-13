@@ -1802,14 +1802,6 @@ msgstr "Automatico · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "Cambio automatico LIVE / LOW / BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "I cambi di scena automatici vengono pubblicati qui"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "I cambi di scena automatici non vengono pubblicati qui"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Watchdog di Connect modificato"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "Connetti il tuo canale per usare i comandi di chat con questo switcher. Attiva le notifiche per far pubblicare in chat i cambi di scena automatici."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "Connetti il tuo canale per usare i comandi di chat con questo switcher. Attiva le notifiche per far pubblicare in chat i cambi di scena."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "Personalizza"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Scuro"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "Notifica dei cambi dalla dashboard"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "Posizione…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "Pubblica in chat quando una scena cambia automaticamente. Scegli i canali nella pagina Chat e comandi."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "Pubblica in chat quando qualcuno cambia scena dalla dashboard. Scegli i canali nella pagina Chat e comandi."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "Pubblica avviso"
@@ -7929,6 +7929,14 @@ msgstr "Override delle scene"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Cambi di scena"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "I cambi di scena vengono pubblicati qui"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "I cambi di scena non vengono pubblicati qui"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

@@ -4133,10 +4133,12 @@ export interface components {
         BehaviourDto: {
             announce_raid: boolean;
             auto_stop_on_raid: boolean;
-            /** @description Post in chat when a scene switches. */
+            /** @description Post in chat when the switcher switches scenes on its own. */
             auto_switch_notification: boolean;
             /** @description Switch scenes automatically using the triggers. */
             bitrate_switcher_enabled: boolean;
+            /** @description Post in chat when someone picks a scene in the dashboard. */
+            dashboard_switch_notification: boolean;
             /**
              * Format: int32
              * @description Stop the stream after this many minutes on the Ending scene (1–1440);
@@ -4589,7 +4591,10 @@ export interface components {
             workspace: string;
         };
         ChannelLinkSettings: {
-            /** @description Post this switcher's automatic switches in the channel. */
+            /**
+             * @description Post this switcher's scene switches in the channel: its own and the
+             *     scenes picked in the dashboard, whichever the switcher announces.
+             */
             auto_switch_notification: boolean;
         };
         Chat: {
@@ -4612,8 +4617,9 @@ export interface components {
         /** @description A channel linked to a switcher. */
         ChatChannelDto: {
             /**
-             * @description This switcher's automatic switches are posted here (while the switcher's
-             *     own `auto_switch_notification` is on).
+             * @description This switcher's scene switches are posted here: its own (while the
+             *     switcher's `auto_switch_notification` is on) and the scenes picked in the
+             *     dashboard (`dashboard_switch_notification`).
              */
             auto_switch_notification: boolean;
             bot?: components["schemas"]["SpeakingBotDto"] | null;
@@ -5150,6 +5156,12 @@ export interface components {
                 /** @description Who did it, for dashboard switches. */
                 by?: string | null;
                 from?: string | null;
+                /**
+                 * @description Someone picked this scene in the dashboard, rather than a chat
+                 *     command or a refresh passing through it. Chat is told about these
+                 *     (`dashboard_switch_notification`).
+                 */
+                picked?: boolean;
                 reason: components["schemas"]["SwitchReason"];
                 /** Format: double */
                 rtt?: number | null;

@@ -91,11 +91,11 @@ msgstr "終了シーンに切り替えました"
 msgid "Switched to the Refresh scene"
 msgstr "更新シーンに切り替えました"
 
-msgid "Chat notifications on"
-msgstr "チャット通知：オン"
+msgid "Automatic switch notifications on"
+msgstr "自動切り替えの通知：オン"
 
-msgid "Chat notifications off"
-msgstr "チャット通知：オフ"
+msgid "Automatic switch notifications off"
+msgstr "自動切り替えの通知：オフ"
 
 msgid "Auto stop on raid on"
 msgstr "レイド時の自動停止：オン"

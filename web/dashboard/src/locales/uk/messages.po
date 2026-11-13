@@ -1802,14 +1802,6 @@ msgstr "Автоматично · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "Автоматичне перемикання LIVE / LOW / BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "Автоматичні перемикання сцен публікуються тут"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "Автоматичні перемикання сцен не публікуються тут"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Watchdog Connect змінено"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "Підключи свій канал, щоб використовувати команди чату з цим світчером. Увімкни сповіщення, щоб його автоматичні перемикання сцен публікувалися в чаті."
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "Підключи свій канал, щоб використовувати команди чату з цим світчером. Увімкни сповіщення, щоб його перемикання сцен публікувалися в чаті."
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "Налаштувати"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "Темна"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "Сповіщення про перемикання з панелі"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "Розташування…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "Публікувати в чаті, коли сцена перемикається автоматично. Канали вибери на сторінці «Чат»."
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "Публікувати в чаті, коли хтось перемикає сцену з панелі керування. Канали вибери на сторінці «Чат»."
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "Опублікувати оголошення"
@@ -7929,6 +7929,14 @@ msgstr "Перевизначення сцен"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Перемикання сцен"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "Перемикання сцен публікуються тут"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "Перемикання сцен не публікуються тут"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

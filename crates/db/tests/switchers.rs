@@ -141,6 +141,7 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
             only_switch_when_streaming: switcher.only_switch_when_streaming,
             instantly_switch_on_recover: switcher.instantly_switch_on_recover,
             auto_switch_notification: switcher.auto_switch_notification,
+            dashboard_switch_notification: false,
             retry_attempts: switcher.retry_attempts,
             auto_stop_on_raid: switcher.auto_stop_on_raid,
             announce_raid: switcher.announce_raid,
@@ -157,6 +158,9 @@ async fn recording_scenes_default_empty_and_round_trip(pool: PgPool) {
     .unwrap();
     assert_eq!(updated.recording_scene_ids, scenes);
     assert!(updated.switch_to_offline_on_raid);
+    // On until someone turns it off.
+    assert!(switcher.dashboard_switch_notification);
+    assert!(!updated.dashboard_switch_notification);
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]

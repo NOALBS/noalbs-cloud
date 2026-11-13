@@ -74,6 +74,12 @@ const switching = (): {
     description: t`Post in chat when a scene switches automatically. Pick the channels on the Chat page.`,
     note: t`Needs chat bot`,
   },
+  {
+    key: "dashboard_switch_notification",
+    title: t`Dashboard switch notification`,
+    description: t`Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page.`,
+    note: t`Needs chat bot`,
+  },
 ];
 
 const startEnd = (): ReturnType<typeof switching> => [

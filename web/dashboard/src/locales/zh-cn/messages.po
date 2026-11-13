@@ -1802,14 +1802,6 @@ msgstr "自动 · {cause}"
 msgid "Automatic LIVE / LOW / BRB switching"
 msgstr "自动切换 LIVE / LOW / BRB"
 
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches are posted here"
-msgstr "自动场景切换会发布到此处"
-
-#: src/components/chat/chat-links.tsx
-msgid "Automatic scene switches aren’t posted here"
-msgstr "自动场景切换不会发布到此处"
-
 #: src/components/slug-field.tsx
 #: src/lib/billing.ts
 #: src/routes/_app/welcome.tsx
@@ -2660,8 +2652,8 @@ msgid "Connect watchdog changed"
 msgstr "Connect 看门狗已更改"
 
 #: src/components/chat/chat-links.tsx
-msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its automatic scene switches posted in chat."
-msgstr "连接你的频道，即可在此切换器上使用聊天命令。开启提醒后，自动场景切换会发布到聊天中。"
+msgid "Connect your channel to use chat commands with this switcher. Turn on alerts to have its scene switches posted in chat."
+msgstr "连接你的频道，即可在此切换器上使用聊天命令。开启提醒后，场景切换会发布到聊天中。"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Connect your stream server"
@@ -3102,6 +3094,10 @@ msgstr "自定义"
 #: src/components/app-shell.tsx
 msgid "Dark"
 msgstr "深色"
+
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Dashboard switch notification"
+msgstr "控制台切换通知"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "Days of stream history"
@@ -7044,6 +7040,10 @@ msgstr "位置…"
 msgid "Post in chat when a scene switches automatically. Pick the channels on the Chat page."
 msgstr "自动切换场景时在聊天中发布。请在“聊天与命令”页面选择频道。"
 
+#: src/routes/_app/$workspace/s/$switcher/triggers.tsx
+msgid "Post in chat when someone switches scenes from the dashboard. Pick the channels on the Chat page."
+msgstr "有人通过控制台切换场景时在聊天中发布。请在“聊天与命令”页面选择频道。"
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Post notice"
 msgstr "发布公告"
@@ -7929,6 +7929,14 @@ msgstr "场景覆盖"
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "场景切换"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches are posted here"
+msgstr "场景切换会发布到此处"
+
+#: src/components/chat/chat-links.tsx
+msgid "Scene switches aren’t posted here"
+msgstr "场景切换不会发布到此处"
 
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx

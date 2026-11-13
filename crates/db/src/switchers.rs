@@ -34,6 +34,7 @@ pub struct Switcher {
     pub only_switch_when_streaming: bool,
     pub instantly_switch_on_recover: bool,
     pub auto_switch_notification: bool,
+    pub dashboard_switch_notification: bool,
 
     pub retry_attempts: i32,
 
@@ -365,6 +366,7 @@ pub struct Behaviour {
     pub only_switch_when_streaming: bool,
     pub instantly_switch_on_recover: bool,
     pub auto_switch_notification: bool,
+    pub dashboard_switch_notification: bool,
     pub retry_attempts: i32,
     pub auto_stop_on_raid: bool,
     pub announce_raid: bool,
@@ -399,7 +401,8 @@ pub async fn set_behaviour(
             switch_to_live = $12,
             offline_timeout = $13,
             ending_timeout = $14,
-            switch_to_offline_on_raid = $15
+            switch_to_offline_on_raid = $15,
+            dashboard_switch_notification = $16
         WHERE id = $1
         RETURNING *
         ",
@@ -419,6 +422,7 @@ pub async fn set_behaviour(
     .bind(behaviour.offline_timeout)
     .bind(behaviour.ending_timeout)
     .bind(behaviour.switch_to_offline_on_raid)
+    .bind(behaviour.dashboard_switch_notification)
     .fetch_one(pool)
     .await?;
 

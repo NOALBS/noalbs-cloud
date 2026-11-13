@@ -120,8 +120,10 @@ pub struct BehaviourDto {
     pub only_switch_when_streaming: bool,
     /// Go back to LIVE as soon as the feed recovers.
     pub instantly_switch_on_recover: bool,
-    /// Post in chat when a scene switches.
+    /// Post in chat when the switcher switches scenes on its own.
     pub auto_switch_notification: bool,
+    /// Post in chat when someone picks a scene in the dashboard.
+    pub dashboard_switch_notification: bool,
     /// How many bad checks in a row before switching away from LIVE.
     pub retry_attempts: i32,
     pub auto_stop_on_raid: bool,
@@ -149,6 +151,7 @@ impl From<BehaviourDto> for Behaviour {
             only_switch_when_streaming: b.only_switch_when_streaming,
             instantly_switch_on_recover: b.instantly_switch_on_recover,
             auto_switch_notification: b.auto_switch_notification,
+            dashboard_switch_notification: b.dashboard_switch_notification,
             retry_attempts: b.retry_attempts,
             auto_stop_on_raid: b.auto_stop_on_raid,
             announce_raid: b.announce_raid,
@@ -272,6 +275,7 @@ impl From<Switcher> for SwitcherDto {
                 only_switch_when_streaming: s.only_switch_when_streaming,
                 instantly_switch_on_recover: s.instantly_switch_on_recover,
                 auto_switch_notification: s.auto_switch_notification,
+                dashboard_switch_notification: s.dashboard_switch_notification,
                 retry_attempts: s.retry_attempts,
                 auto_stop_on_raid: s.auto_stop_on_raid,
                 announce_raid: s.announce_raid,
