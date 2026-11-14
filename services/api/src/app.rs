@@ -119,7 +119,9 @@ pub struct BrowserSourceLinks {
 impl BrowserSourceLinks {
     pub fn new(page: &str) -> Self {
         Self {
-            page: page.to_owned(),
+            page: reqwest::Url::parse(page)
+                .map(String::from)
+                .unwrap_or_else(|_| page.to_owned()),
         }
     }
 
@@ -425,6 +427,16 @@ mod link_tests {
         assert_eq!(links.link_url(), "wss://app.noalbs.com/link");
         let dev = BrowserSourceLinks::new("http://192.168.1.20:5173/source/");
         assert_eq!(dev.link_url(), "ws://192.168.1.20:5173/link");
+    }
+
+    #[test]
+    fn link_page_is_normalized_before_matching_its_source_url() {
+        let links = BrowserSourceLinks::new("https://APP.noalbs.com:443/source/");
+        assert_eq!(links.page(), "https://app.noalbs.com/source/");
+        assert!(obs_actions::browser::is_link_page(
+            &links.url("tok"),
+            links.page()
+        ));
     }
 }
 
