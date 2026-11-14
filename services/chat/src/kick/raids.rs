@@ -145,9 +145,13 @@ impl Watcher {
                 return;
             }
         };
-        self.channels.retain(|id, _| wanted.contains(id));
-        self.failed.retain(|id, _| wanted.contains(id));
-        for id in &wanted {
+        let wanted: HashMap<String, String> = wanted
+            .into_iter()
+            .map(|channel| (channel.platform_channel_id, channel.login))
+            .collect();
+        self.channels.retain(|id, _| wanted.contains_key(id));
+        self.failed.retain(|id, _| wanted.contains_key(id));
+        for (id, login) in &wanted {
             if self.channels.contains_key(id)
                 || self
                     .failed
@@ -160,6 +164,7 @@ impl Watcher {
                 Ok(channel) => {
                     tracing::info!(
                         channel = id,
+                        channel_login = login,
                         slug = channel.slug,
                         topics = ?channel.topics,
                         "Watching a Kick channel for raids"
@@ -168,7 +173,7 @@ impl Watcher {
                     self.channels.insert(id.clone(), channel);
                 }
                 Err(error) => {
-                    tracing::warn!(%error, channel = id, "Couldn't find a Kick channel's IDs for its raids");
+                    tracing::warn!(%error, channel = id, channel_login = login, "Couldn't find a Kick channel's IDs for its raids");
                     self.failed.insert(id.clone(), Instant::now());
                 }
             }

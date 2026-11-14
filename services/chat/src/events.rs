@@ -142,10 +142,10 @@ async fn raiding(
             switch_to_offline(state, &switcher, status.active_server_id, &by).await;
         }
         if let Err(error) = state.control.stream(switcher.id, false, &by).await {
-            tracing::warn!(%error, switcher = %switcher.id, "Couldn't stop the stream after a raid");
+            tracing::warn!(%error, switcher = %switcher.id, switcher_name = %switcher.name, "Couldn't stop the stream after a raid");
             continue;
         }
-        tracing::info!(switcher = %switcher.id, "Stopped the stream after a raid");
+        tracing::info!(switcher = %switcher.id, switcher_name = %switcher.name, "Stopped the stream after a raid");
         if !switcher.announce_raid {
             continue;
         }
@@ -163,7 +163,16 @@ async fn raiding(
         if several {
             text = format!("[{}] {text}", switcher.name);
         }
-        send(state, platform, channel_id, bot_id, bot_user_id, &text).await;
+        send(
+            state,
+            platform,
+            channel_id,
+            &link.channel_login,
+            bot_id,
+            bot_user_id,
+            &text,
+        )
+        .await;
     }
     Ok(())
 }
@@ -189,7 +198,7 @@ async fn switch_to_offline(
         return;
     };
     if let Err(error) = state.control.switch_scene(switcher.id, scene, by).await {
-        tracing::warn!(%error, switcher = %switcher.id, "Couldn't show the BRB scene after a raid");
+        tracing::warn!(%error, switcher = %switcher.id, switcher_name = %switcher.name, "Couldn't show the BRB scene after a raid");
     }
 }
 
@@ -206,6 +215,7 @@ async fn send(
     state: &State,
     platform: ChatPlatform,
     channel_id: &str,
+    channel_login: &str,
     bot_id: Uuid,
     bot_user_id: &str,
     text: &str,
@@ -214,8 +224,10 @@ async fn send(
         id: bot_id,
         platform_user_id: bot_user_id,
     };
-    if let Err(error) = reply::send(state, platform, channel_id, &bot, text, None).await {
-        tracing::warn!(%error, channel_id, "Couldn't post in chat");
+    if let Err(error) =
+        reply::send(state, platform, channel_id, channel_login, &bot, text, None).await
+    {
+        tracing::warn!(%error, channel = channel_id, channel_login, "Couldn't post in chat");
     }
 }
 

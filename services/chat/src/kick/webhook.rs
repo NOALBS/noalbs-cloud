@@ -164,6 +164,11 @@ pub fn parse_chat(body: &[u8]) -> serde_json::Result<InboundMessage> {
         delivery_id: None,
         platform: db::chat::ChatPlatform::Kick,
         channel_id: event.broadcaster.user_id.to_string(),
+        channel_login: event
+            .broadcaster
+            .channel_slug
+            .clone()
+            .unwrap_or_else(|| event.broadcaster.username.to_lowercase()),
         bot_id: None,
         message_id: event.message_id,
         chatter: Chatter {

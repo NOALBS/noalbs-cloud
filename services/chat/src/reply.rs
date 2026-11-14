@@ -44,11 +44,21 @@ pub async fn send(
     state: &State,
     platform: ChatPlatform,
     channel_id: &str,
+    channel_login: &str,
     bot: &Bot<'_>,
     text: &str,
     reply_to: Option<&str>,
 ) -> Result<()> {
-    let posted = post(state, platform, channel_id, bot, text, reply_to).await;
+    let posted = post(
+        state,
+        platform,
+        channel_id,
+        channel_login,
+        bot,
+        text,
+        reply_to,
+    )
+    .await;
     metrics::reply(platform, posted.as_ref().map_or("error", |outcome| outcome));
     posted.map(|_| ())
 }
@@ -58,6 +68,7 @@ async fn post(
     state: &State,
     platform: ChatPlatform,
     channel_id: &str,
+    channel_login: &str,
     bot: &Bot<'_>,
     text: &str,
     reply_to: Option<&str>,
@@ -67,7 +78,11 @@ async fn post(
         ChatPlatform::YouTube => match youtube::live_chat_of(state, channel_id).await? {
             Some(live_chat_id) => Some(live_chat_id),
             None => {
-                tracing::debug!(channel_id, "Dropped a YouTube reply: no live chat");
+                tracing::debug!(
+                    channel = channel_id,
+                    channel_login,
+                    "Dropped a YouTube reply: no live chat"
+                );
                 return Ok("no_live_chat");
             }
         },
@@ -83,7 +98,11 @@ async fn post(
     )
     .await?
     {
-        tracing::warn!(channel_id, "Dropped a chat reply: rate limited");
+        tracing::warn!(
+            channel = channel_id,
+            channel_login,
+            "Dropped a chat reply: rate limited"
+        );
         return Ok("rate_limited");
     }
     let text = truncate(platform, text);
