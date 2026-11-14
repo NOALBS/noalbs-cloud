@@ -52,7 +52,7 @@ pub async fn run(state: State) {
         let state = state.clone();
         tokio::spawn(async move {
             if let Err(error) = handle(&state, &message).await {
-                tracing::warn!(%error, channel = message.channel_id, "Couldn't handle a chat message");
+                tracing::warn!(%error, channel = %message.channel_label(), "Couldn't handle a chat message");
             }
             drop(permit);
         });
@@ -90,7 +90,7 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
     let links = answering(links, message);
     if links.is_empty() {
         tracing::debug!(
-            channel = message.channel_id,
+            channel = %message.channel_label(),
             bot = message.bot_id,
             "No switcher answers in this channel for this bot"
         );
@@ -105,7 +105,7 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
         match kv::first_time(&state.buckets.seen, &seen).await {
             Ok(true) => {}
             Ok(false) => {
-                tracing::debug!(channel = message.channel_id, "A repeated delivery");
+                tracing::debug!(channel = %message.channel_label(), "A repeated delivery");
                 return Ok(());
             }
             Err(error) => tracing::warn!(%error, "Couldn't check for a repeated delivery"),
@@ -130,7 +130,7 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
     let several = links.len() > 1;
     for link in &links {
         if let Err(error) = handle_link(state, message, link, several).await {
-            tracing::warn!(%error, switcher = %link.switcher_id, "A chat command failed");
+            tracing::warn!(%error, switcher = %link.switcher_id, switcher_name = link.switcher_name, "A chat command failed");
         }
     }
     Ok(())
@@ -157,7 +157,11 @@ async fn handle_link(
         })
         .await?;
     if commands::resolve(&candidate.word, &words).is_none() {
-        tracing::debug!(word = candidate.word, "Not a command of this switcher");
+        tracing::debug!(
+            word = candidate.word,
+            switcher = link.switcher_name,
+            "Not a command of this switcher"
+        );
         return Ok(());
     }
 
@@ -181,7 +185,11 @@ async fn handle_link(
     // moment ago stays that way.
     let commands = db::chat_commands::list_for_switcher(&state.db, switcher.id).await?;
     let Some(command) = commands::resolve(&invocation.word, &commands) else {
-        tracing::debug!(word = invocation.word, "Not a command of this switcher");
+        tracing::debug!(
+            word = invocation.word,
+            switcher = link.switcher_name,
+            "Not a command of this switcher"
+        );
         return Ok(());
     };
     let role = role_of(state, message, link, switcher.mod_commands_enabled).await?;
@@ -217,6 +225,7 @@ async fn handle_link(
         chat.command = command.command,
         chat.platform = platform,
         switcher.id = %switcher.id,
+        switcher.name = switcher.name,
     );
     run_command(
         state,
@@ -240,7 +249,7 @@ async fn run_command(
     command: &str,
     args: &[String],
 ) -> Result<()> {
-    tracing::info!(command, ?args, chatter = message.chatter.id, "Chat command");
+    tracing::info!(command, ?args, chatter = %message.chatter.login, channel = %message.channel_label(), "Chat command");
     crate::metrics::command(message.platform, command);
     let platform = message.platform.label();
     let language = switcher.language.clone();
@@ -268,6 +277,7 @@ async fn run_command(
         state,
         message.platform,
         &message.channel_id,
+        message.channel_label(),
         &reply::Bot {
             id: bot_id,
             platform_user_id: bot_user_id,
@@ -311,6 +321,7 @@ mod tests {
             switcher_id: Uuid::new_v4(),
             switcher_name: "Main".into(),
             workspace_id: Uuid::new_v4(),
+            channel_login: "channel".into(),
             command_prefix: "!".into(),
             bot_id: Some(Uuid::new_v4()),
             bot_platform_user_id: Some(bot.into()),
@@ -322,6 +333,7 @@ mod tests {
         InboundMessage {
             platform,
             channel_id: "100".into(),
+            channel_login: "channel".into(),
             bot_id: bot.map(str::to_owned),
             message_id: "m".into(),
             delivery_id: None,

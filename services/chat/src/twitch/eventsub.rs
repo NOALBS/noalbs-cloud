@@ -56,6 +56,7 @@ impl Subscription {
 #[derive(Debug, Deserialize)]
 struct ChatMessageEvent {
     broadcaster_user_id: String,
+    broadcaster_user_login: String,
     chatter_user_id: String,
     chatter_user_login: String,
     chatter_user_name: String,
@@ -166,6 +167,7 @@ pub fn decode(text: &str) -> serde_json::Result<Message> {
                     message: InboundMessage {
                         platform: db::chat::ChatPlatform::Twitch,
                         channel_id: event.broadcaster_user_id,
+                        channel_login: event.broadcaster_user_login,
                         bot_id,
                         message_id: event.message_id,
                         delivery_id: Some(metadata.message_id),
@@ -286,7 +288,7 @@ mod tests {
                 r#"{{"metadata":{{"message_id":"m1","message_type":"notification"}},
                 "payload":{{"subscription":{{"id":"sub1","type":"channel.chat.message",
                     "condition":{{"broadcaster_user_id":"100","user_id":"1"}}}},
-                  "event":{{"broadcaster_user_id":"100","chatter_user_id":"55","chatter_user_login":"bob",
+                  "event":{{"broadcaster_user_id":"100","broadcaster_user_login":"kate","chatter_user_id":"55","chatter_user_login":"bob",
                     "chatter_user_name":"Bob","message_id":"x","message":{{"text":"!bitrate"}},
                     "badges":{badges}}}}}}}"#
             );

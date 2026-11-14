@@ -621,7 +621,7 @@ async fn trigger(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Reply {
         return Ok(Msg::InvalidTriggers(error));
     }
     db::switchers::set_triggers(&ctx.state.db, switcher.id, triggers).await?;
-    notify_config(ctx.state, switcher.id).await;
+    notify_config(ctx.state, switcher).await;
     Ok(Msg::TriggerSet {
         trigger: kind,
         value,
@@ -629,13 +629,13 @@ async fn trigger(ctx: &Ctx<'_>, command: &str, args: &[String]) -> Reply {
 }
 
 /// Tells obs-link that the switcher's settings changed.
-async fn notify_config(state: &State, switcher_id: Uuid) {
+async fn notify_config(state: &State, switcher: &db::switchers::Switcher) {
     if let Err(error) = state
         .nats
-        .publish(live::config_subject(switcher_id), "{}".into())
+        .publish(live::config_subject(switcher.id), "{}".into())
         .await
     {
-        tracing::warn!(%error, %switcher_id, "Failed to notify obs-link of a config change");
+        tracing::warn!(%error, switcher = %switcher.name, "Failed to notify obs-link of a config change");
     }
 }
 

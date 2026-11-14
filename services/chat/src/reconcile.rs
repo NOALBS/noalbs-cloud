@@ -33,6 +33,8 @@ pub struct Want {
     pub platform: ChatPlatform,
     pub event_type: &'static str,
     pub channel_id: String,
+    /// The channel's login, for logs; empty where none applies.
+    pub login: String,
     /// The reading bot on Twitch; empty on Kick.
     pub bot_id: String,
 }
@@ -40,7 +42,11 @@ pub struct Want {
 /// What the links need: chat per channel and speaking bot, raids where a
 /// linked switcher stops the stream on raiding out (Twitch, `raid_channels`), and
 /// one revocation subscription for the Twitch app. `twitch` says whether Twitch is configured.
-pub fn wants(chat: &[WantedSubscription], raid_channels: &[String], twitch: bool) -> Vec<Want> {
+pub fn wants(
+    chat: &[WantedSubscription],
+    raid_channels: &[db::chat::RaidChannel],
+    twitch: bool,
+) -> Vec<Want> {
     let mut wants: Vec<Want> = chat
         .iter()
         .filter_map(|wanted| {
@@ -53,6 +59,7 @@ pub fn wants(chat: &[WantedSubscription], raid_channels: &[String], twitch: bool
                     ChatPlatform::YouTube => return None,
                 },
                 channel_id: wanted.platform_channel_id.clone(),
+                login: wanted.login.clone(),
                 bot_id: wanted.platform_bot_id.clone(),
             })
         })
@@ -60,7 +67,8 @@ pub fn wants(chat: &[WantedSubscription], raid_channels: &[String], twitch: bool
     wants.extend(raid_channels.iter().map(|channel| Want {
         platform: ChatPlatform::Twitch,
         event_type: twitch::RAID_OUT,
-        channel_id: channel.clone(),
+        channel_id: channel.platform_channel_id.clone(),
+        login: channel.login.clone(),
         bot_id: String::new(),
     }));
     if twitch {
@@ -68,6 +76,7 @@ pub fn wants(chat: &[WantedSubscription], raid_channels: &[String], twitch: bool
             platform: ChatPlatform::Twitch,
             event_type: twitch::AUTH_REVOKE,
             channel_id: String::new(),
+            login: String::new(),
             bot_id: String::new(),
         });
     }
@@ -255,7 +264,11 @@ pub async fn reconcile(state: &State, sweep: bool) -> Result<()> {
     }
     for sub in delete {
         if let Err(error) = unsubscribe(state, sub).await {
-            tracing::warn!(%error, channel = sub.platform_channel_id, "Couldn't unsubscribe");
+            tracing::warn!(
+                %error,
+                channel = %sub.login.as_deref().unwrap_or(&sub.platform_channel_id),
+                "Couldn't unsubscribe"
+            );
         }
     }
     for want in create {
@@ -263,7 +276,8 @@ pub async fn reconcile(state: &State, sweep: bool) -> Result<()> {
             tracing::warn!(
                 %error,
                 platform = want.platform.as_str(),
-                channel = want.channel_id,
+                channel = %want.channel_id,
+                channel_login = want.login,
                 "Couldn't subscribe to a channel"
             );
         }
@@ -456,6 +470,7 @@ mod tests {
             platform,
             platform_channel_id: channel.into(),
             platform_bot_id: bot.into(),
+            login: format!("login-{channel}"),
         }
     }
 
@@ -467,6 +482,14 @@ mod tests {
             platform_channel_id: channel.into(),
             platform_bot_id: bot.into(),
             platform_subscription_id: format!("sub-{channel}-{bot}"),
+            login: Some(format!("login-{channel}")),
+        }
+    }
+
+    fn raid_channel(channel: &str) -> db::chat::RaidChannel {
+        db::chat::RaidChannel {
+            platform_channel_id: channel.into(),
+            login: format!("login-{channel}"),
         }
     }
 
@@ -509,7 +532,7 @@ mod tests {
     fn outgoing_raids_where_wanted_and_one_revocation_subscription() {
         let wants = wants(
             &[wanted(ChatPlatform::Twitch, "100", "1")],
-            &["300".to_owned()],
+            &[raid_channel("300")],
             true,
         );
         assert_eq!(

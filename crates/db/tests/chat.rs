@@ -50,11 +50,12 @@ fn youtube(id: &'static str, login: &'static str) -> PlatformAccount<'static> {
     }
 }
 
-fn wanted(platform: ChatPlatform, channel: &str, bot: &str) -> WantedSubscription {
+fn wanted(platform: ChatPlatform, channel: &str, login: &str, bot: &str) -> WantedSubscription {
     WantedSubscription {
         platform,
         platform_channel_id: channel.into(),
         platform_bot_id: bot.into(),
+        login: login.into(),
     }
 }
 
@@ -246,8 +247,8 @@ async fn own_bots_speak_only_on_plans_that_allow_them(pool: PgPool) {
     assert_eq!(
         chat::wanted_subscriptions(&pool).await.unwrap(),
         [
-            wanted(ChatPlatform::Twitch, "100", "1"),
-            wanted(ChatPlatform::Kick, "200", ""),
+            wanted(ChatPlatform::Twitch, "100", "kate", "1"),
+            wanted(ChatPlatform::Kick, "200", "bikes", ""),
         ]
     );
     let kick_link = chat::channels_for_switcher(&pool, b.switcher)
@@ -267,9 +268,9 @@ async fn own_bots_speak_only_on_plans_that_allow_them(pool: PgPool) {
     assert_eq!(
         chat::wanted_subscriptions(&pool).await.unwrap(),
         [
-            wanted(ChatPlatform::Twitch, "100", "1"),
-            wanted(ChatPlatform::Twitch, "100", "4"),
-            wanted(ChatPlatform::Kick, "200", ""),
+            wanted(ChatPlatform::Twitch, "100", "kate", "1"),
+            wanted(ChatPlatform::Twitch, "100", "kate", "4"),
+            wanted(ChatPlatform::Kick, "200", "bikes", ""),
         ]
     );
 
@@ -284,7 +285,7 @@ async fn own_bots_speak_only_on_plans_that_allow_them(pool: PgPool) {
         .unwrap();
     assert_eq!(
         chat::wanted_subscriptions(&pool).await.unwrap(),
-        [wanted(ChatPlatform::Twitch, "100", "1")]
+        [wanted(ChatPlatform::Twitch, "100", "kate", "1")]
     );
 
     // Without any Twitch bot, Twitch channels can't be read.
@@ -532,8 +533,11 @@ async fn raids_notifications_revocations_and_ignored_chatters(pool: PgPool) {
     assert_eq!(
         chat::raid_channels(&pool, ChatPlatform::Twitch)
             .await
-            .unwrap(),
-        ["100"]
+            .unwrap()
+            .iter()
+            .map(|channel| (channel.platform_channel_id.as_str(), channel.login.as_str()))
+            .collect::<Vec<_>>(),
+        [("100", "kate")]
     );
     // B has no Kick channel; A's is listed once A stops after raids too.
     assert!(
@@ -550,8 +554,11 @@ async fn raids_notifications_revocations_and_ignored_chatters(pool: PgPool) {
     assert_eq!(
         chat::raid_channels(&pool, ChatPlatform::Kick)
             .await
-            .unwrap(),
-        ["200"]
+            .unwrap()
+            .iter()
+            .map(|channel| (channel.platform_channel_id.as_str(), channel.login.as_str()))
+            .collect::<Vec<_>>(),
+        [("200", "kate")]
     );
 
     // Where switcher A posts: both its channels; the Twitch one is shared with B.
@@ -731,6 +738,7 @@ async fn youtube_channels_are_followed_not_subscribed(pool: PgPool) {
         [chat::YouTubeChannel {
             id: channel.id,
             platform_channel_id: "UCkate".into(),
+            login: "kate".into(),
             switcher_ids: both.to_vec(),
         }]
     );
