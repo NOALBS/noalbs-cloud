@@ -123,6 +123,10 @@ impl BrowserSourceLinks {
         }
     }
 
+    pub fn page(&self) -> &str {
+        &self.page
+    }
+
     /// The page URL with the connect token in the fragment, which browsers never
     /// send to a server.
     pub fn url(&self, connect_token: &str) -> String {

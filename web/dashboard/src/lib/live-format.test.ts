@@ -197,6 +197,19 @@ describe("describeEvent", () => {
     });
   });
 
+  it("names the browser sources reloaded", () => {
+    expect(
+      describeEvent({
+        ...base,
+        kind: "browser_sources_reloaded",
+        data: { sources: ["Chat", "Alerts"], by: null },
+      }),
+    ).toEqual({
+      title: "Reloaded Chat, Alerts",
+      detail: "from the dashboard",
+    });
+  });
+
   it("describes a marker", () => {
     const marker = { marker_id: "m", offset_seconds: 3725 };
     expect(

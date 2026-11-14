@@ -2900,6 +2900,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/browser-sources/reload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reload browser sources on the scene on air (including nested scenes and
+         *     groups), silently skipping NOALBS Cloud's own OBS link source.
+         */
+        post: operations["reload_browser_sources"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/existing-sources": {
         parameters: {
             query?: never;
@@ -3232,6 +3252,23 @@ export interface paths {
          */
         put: operations["place_source"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/reload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reload one browser source, except NOALBS Cloud's own OBS link. */
+        post: operations["reload_source"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5262,6 +5299,14 @@ export interface components {
             /** @enum {string} */
             kind: "feed_fixed";
         } | {
+            /** @description Browser pages were reloaded from the dashboard. */
+            data: {
+                by?: string | null;
+                sources: string[];
+            };
+            /** @enum {string} */
+            kind: "browser_sources_reloaded";
+        } | {
             /** @description A marker was added to the running stream (dashboard button or `!marker`). */
             data: {
                 by?: string | null;
@@ -6755,6 +6800,15 @@ export interface components {
         /** @description Where to send the browser next. */
         RedirectDto: {
             url: string;
+        };
+        ReloadSource: {
+            name: string;
+        };
+        ReloadedBrowserSources: {
+            /** @description The scene that was on air. */
+            scene: string;
+            /** @description The browser sources successfully told to reload; empty when none. */
+            sources: string[];
         };
         RemoveScene: {
             /** Format: uuid */
@@ -14690,6 +14744,47 @@ export interface operations {
             };
         };
     };
+    reload_browser_sources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reloaded browser sources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReloadedBrowserSources"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     existing_sources: {
         parameters: {
             query?: never;
@@ -15655,6 +15750,67 @@ export interface operations {
             };
             /** @description `source_not_found` */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_error` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    reload_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReloadSource"];
+            };
+        };
+        responses: {
+            /** @description Reloaded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `source_not_found` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `not_browser_source` or `link_source` */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

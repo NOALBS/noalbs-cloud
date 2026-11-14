@@ -151,6 +151,11 @@ export function describeEvent(event: SwitcherEvent): { title: string; detail: st
         title: t`Fixed the feed`,
         detail: `${event.data.sources.join(", ")} ${by(event.data.by, t`from the dashboard`)}`,
       };
+    case "browser_sources_reloaded":
+      return {
+        title: t`Reloaded ${event.data.sources.join(", ")}`,
+        detail: by(event.data.by, t`from the dashboard`),
+      };
     case "marker_created":
       return {
         title: event.data.description ? t`Marker: ${event.data.description}` : t`Marker`,

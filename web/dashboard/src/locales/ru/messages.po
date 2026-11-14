@@ -5521,6 +5521,10 @@ msgstr "Бот не подключён"
 msgid "No browser source or Connect client is connected."
 msgstr "Ни источник «Браузер», ни клиент Connect не подключён."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "Нет источников браузера для перезагрузки в сцене {scene}"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "без ограничений"
@@ -7351,6 +7355,26 @@ msgstr "Сервер релея"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Перезагружать, когда его сцена выходит в эфир"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "Перезагрузить страницу"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "Перезагрузить страницы"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "Перезагрузить источники браузера в текущей сцене"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "Перезагружено: {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

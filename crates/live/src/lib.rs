@@ -659,6 +659,11 @@ pub enum EventDetail {
         sources: Vec<String>,
         by: Option<String>,
     },
+    /// Browser pages were reloaded from the dashboard.
+    BrowserSourcesReloaded {
+        sources: Vec<String>,
+        by: Option<String>,
+    },
     /// A marker was added to the running stream (dashboard button or `!marker`).
     MarkerCreated {
         marker_id: Uuid,
@@ -1008,6 +1013,10 @@ mod tests {
             EventDetail::FeedFixed {
                 sources: vec!["BELABOX SRT".into()],
                 by: Some("mod_kate (Twitch chat)".into()),
+            },
+            EventDetail::BrowserSourcesReloaded {
+                sources: vec!["Chat".into()],
+                by: Some("kate".into()),
             },
             EventDetail::MarkerCreated {
                 marker_id: Uuid::nil(),

@@ -10253,6 +10253,67 @@
         }
       }
     },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/browser-sources/reload": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Reload browser sources on the scene on air (including nested scenes and\ngroups), silently skipping NOALBS Cloud's own OBS link source.",
+        "operationId": "reload_browser_sources",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reloaded browser sources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReloadedBrowserSources"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/existing-sources": {
       "get": {
         "tags": [
@@ -11696,6 +11757,90 @@
           },
           "404": {
             "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/reload": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Reload one browser source, except NOALBS Cloud's own OBS link.",
+        "operationId": "reload_source",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReloadSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Reloaded"
+          },
+          "404": {
+            "description": "`source_not_found`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`not_browser_source` or `link_source`",
             "content": {
               "application/json": {
                 "schema": {
@@ -18626,6 +18771,43 @@
           },
           {
             "type": "object",
+            "description": "Browser pages were reloaded from the dashboard.",
+            "required": [
+              "data",
+              "kind"
+            ],
+            "properties": {
+              "data": {
+                "type": "object",
+                "description": "Browser pages were reloaded from the dashboard.",
+                "required": [
+                  "sources"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "browser_sources_reloaded"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
             "description": "A marker was added to the running stream (dashboard button or `!marker`).",
             "required": [
               "data",
@@ -22852,6 +23034,37 @@
         "properties": {
           "url": {
             "type": "string"
+          }
+        }
+      },
+      "ReloadSource": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ReloadedBrowserSources": {
+        "type": "object",
+        "required": [
+          "scene",
+          "sources"
+        ],
+        "properties": {
+          "scene": {
+            "type": "string",
+            "description": "The scene that was on air."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The browser sources successfully told to reload; empty when none."
           }
         }
       },

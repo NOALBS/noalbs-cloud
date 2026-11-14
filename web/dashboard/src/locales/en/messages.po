@@ -5521,6 +5521,10 @@ msgstr "No bot is connected"
 msgid "No browser source or Connect client is connected."
 msgstr "No browser source or Connect client is connected."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "No browser sources to reload on {scene}"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "no cap"
@@ -7351,6 +7355,26 @@ msgstr "Relay server"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Reload it when its scene goes on air"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "Reload page"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "Reload pages"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "Reload the browser sources on the scene on air"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "Reloaded {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

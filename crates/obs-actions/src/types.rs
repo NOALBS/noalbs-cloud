@@ -599,6 +599,12 @@ pub enum RequestKind<'a> {
         #[serde(rename = "inputName")]
         input_name: &'a str,
     },
+    /// Presses a button in an input's properties, e.g. a browser source's `refreshnocache`.
+    #[serde(rename_all = "camelCase")]
+    PressInputPropertiesButton {
+        input_name: &'a str,
+        property_name: &'a str,
+    },
     /// Merged into the input's settings (`overlay` defaults to true).
     #[serde(rename_all = "camelCase")]
     SetInputSettings {
@@ -695,6 +701,32 @@ mod tests {
                     "requestId": "1",
                     "requestType": "SetCurrentProgramScene",
                     "requestData": { "sceneUuid": "3f1c7b0e-6a51-4c1f-9b53-2c0d1b8a9e10" }
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn pressing_an_input_properties_button_uses_its_name_and_property() {
+        let request = ObsRequest::Request(Request {
+            id: "1",
+            kind: RequestKind::PressInputPropertiesButton {
+                input_name: "Browser",
+                property_name: "refreshnocache",
+            },
+        });
+
+        assert_eq!(
+            serde_json::to_value(&request).unwrap(),
+            serde_json::json!({
+                "op": 6,
+                "d": {
+                    "requestId": "1",
+                    "requestType": "PressInputPropertiesButton",
+                    "requestData": {
+                        "inputName": "Browser",
+                        "propertyName": "refreshnocache",
+                    }
                 }
             })
         );

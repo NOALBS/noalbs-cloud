@@ -5521,6 +5521,10 @@ msgstr "Ingen bot er tilkoblet"
 msgid "No browser source or Connect client is connected."
 msgstr "Ingen nettleserkilde eller Connect-klient er tilkoblet."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "Ingen nettleserkilder å laste inn på nytt i {scene}"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "ingen grense"
@@ -7351,6 +7355,26 @@ msgstr "Reléserver"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Last den inn på nytt når scenen går i sending"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "Last inn siden på nytt"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "Last inn sider på nytt"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "Last inn nettleserkildene i scenen som er på lufta på nytt"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "Lastet inn på nytt: {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx
