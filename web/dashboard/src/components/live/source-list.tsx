@@ -27,6 +27,7 @@ import {
   Move,
   Pencil,
   Plus,
+  RotateCw,
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
@@ -146,6 +147,30 @@ export function SourceList({
         queryKey: queryKeys.obsSources(path.workspace_id, path.switcher_id),
       }),
   });
+  const reloadSource = useMutation({
+    mutationFn: (source: ObsSource) =>
+      unwrap(
+        api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/reload", {
+          params: { path },
+          body: { name: source.name },
+        }),
+      ),
+    onSuccess: (_, source) => toast.success(t`Reloaded ${source.name}`),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  const reloadBrowserSources = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/browser-sources/reload", {
+          params: { path },
+        }),
+      ),
+    onSuccess: ({ scene, sources }) =>
+      sources.length > 0
+        ? toast.success(t`Reloaded ${sources.join(", ")}`)
+        : toast.info(t`No browser sources to reload on ${scene}`),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
   const [removing, setRemoving] = useState<ObsSource | null>(null);
   const remove = useMutation({
     mutationFn: (source: ObsSource) =>
@@ -230,6 +255,9 @@ export function SourceList({
   });
 
   const sections = sourceSections(list.data?.sources ?? []);
+  const hasBrowserSources = sections.some((section) =>
+    section.items.some(({ source }) => sourceKind(source) === "browser"),
+  );
   const hiddenSet = new Set(hidden);
   const listedSections = keptSections(sections, hiddenSet);
   const onScene = [
@@ -281,6 +309,23 @@ export function SourceList({
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {hiddenHere > 0 && t`${hiddenHere} hidden`}
+              {canControl && hasBrowserSources && (
+                <button
+                  type="button"
+                  disabled={reloadBrowserSources.isPending}
+                  onClick={() => reloadBrowserSources.mutate()}
+                  className={cn(
+                    HEADER_BUTTON,
+                    "text-primary disabled:pointer-events-none disabled:opacity-50",
+                  )}
+                  title={t`Reload the browser sources on the scene on air`}
+                >
+                  <RotateCw
+                    className={cn("size-3.5", reloadBrowserSources.isPending && "animate-spin")}
+                  />
+                  <Trans>Reload pages</Trans>
+                </button>
+              )}
               {onScene.length > 0 && (
                 <button
                   type="button"
@@ -485,6 +530,12 @@ export function SourceList({
                                   >
                                     <Move />
                                     <Trans>Position…</Trans>
+                                  </DropdownMenuItem>
+                                )}
+                                {canControl && sourceKind(source) === "browser" && (
+                                  <DropdownMenuItem onSelect={() => reloadSource.mutate(source)}>
+                                    <RotateCw />
+                                    <Trans>Reload page</Trans>
                                   </DropdownMenuItem>
                                 )}
                                 {canDuplicate && (

@@ -5521,6 +5521,10 @@ msgstr "Bağlı bot yok"
 msgid "No browser source or Connect client is connected."
 msgstr "Hiçbir tarayıcı kaynağı veya Connect istemcisi bağlı değil."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "{scene} sahnesinde yeniden yüklenecek tarayıcı kaynağı yok"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "sınır yok"
@@ -7351,6 +7355,26 @@ msgstr "Relay sunucusu"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Sahnesi yayına girdiğinde yeniden yükle"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "Sayfayı yeniden yükle"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "Sayfaları yeniden yükle"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "Canlı sahnedeki tarayıcı kaynaklarını yeniden yükle"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "Yeniden yüklendi: {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

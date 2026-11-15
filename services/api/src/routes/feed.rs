@@ -68,6 +68,8 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(set_streaming))
         .routes(routes!(set_recording))
         .routes(routes!(fix_feed))
+        .routes(routes!(reload_source))
+        .routes(routes!(reload_browser_sources))
         .routes(routes!(set_auto_switch))
 }
 
@@ -420,6 +422,16 @@ pub fn control_error(error: control::Error) -> ApiError {
             StatusCode::NOT_FOUND,
             "source_not_found",
             "That source isn't in the scene anymore. Reload the list.",
+        ),
+        control::Error::NotBrowserSource => ApiError::new(
+            StatusCode::CONFLICT,
+            "not_browser_source",
+            "Only browser sources can be reloaded.",
+        ),
+        control::Error::LinkSource => ApiError::new(
+            StatusCode::CONFLICT,
+            "link_source",
+            "This is NOALBS Cloud's own browser source: reloading it would drop the connection to OBS.",
         ),
         control::Error::NotEditable => ApiError::new(
             StatusCode::CONFLICT,
@@ -2015,6 +2027,70 @@ async fn fix_feed(
         .map_err(control_error)?;
 
     Ok(Json(FixedFeed { scene, sources }))
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ReloadSource {
+    pub name: String,
+}
+
+/// Reload one browser source, except NOALBS Cloud's own OBS link.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/source/reload", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    request_body = ReloadSource,
+    responses(
+        (status = NO_CONTENT, description = "Reloaded"),
+        (status = NOT_FOUND, description = "`source_not_found`", body = ErrorBody),
+        (status = CONFLICT, description = "`not_browser_source` or `link_source`", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn reload_source(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherControl>,
+    Json(request): Json<ReloadSource>,
+) -> ApiResult<StatusCode> {
+    let access = authorized.into_access();
+    let by = access.workspace.display_name(&state).await?;
+    state
+        .control()
+        .reload_browser_source(access.switcher.id, &request.name, state.links.page(), &by)
+        .await
+        .map_err(control_error)?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ReloadedBrowserSources {
+    /// The scene that was on air.
+    pub scene: String,
+    /// The browser sources successfully told to reload; empty when none.
+    pub sources: Vec<String>,
+}
+
+/// Reload browser sources on the scene on air (including nested scenes and
+/// groups), silently skipping NOALBS Cloud's own OBS link source.
+#[utoipa::path(post, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/browser-sources/reload", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses(
+        (status = OK, description = "Reloaded browser sources", body = ReloadedBrowserSources),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn reload_browser_sources(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherControl>,
+) -> ApiResult<Json<ReloadedBrowserSources>> {
+    let access = authorized.into_access();
+    let by = access.workspace.display_name(&state).await?;
+    let (scene, sources) = state
+        .control()
+        .reload_browser_sources(access.switcher.id, state.links.page(), &by)
+        .await
+        .map_err(control_error)?;
+
+    Ok(Json(ReloadedBrowserSources { scene, sources }))
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

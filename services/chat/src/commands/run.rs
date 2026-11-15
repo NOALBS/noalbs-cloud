@@ -106,6 +106,8 @@ fn failure(error: control::Error) -> Msg {
         control::Error::NoSceneIds => Msg::NoSceneIds,
         control::Error::SourceNotFound
         | control::Error::InputNotFound
+        | control::Error::NotBrowserSource
+        | control::Error::LinkSource
         | control::Error::InvalidVolume => Msg::Failed,
         // Sources are added and edited from the dashboard only.
         control::Error::NotEditable

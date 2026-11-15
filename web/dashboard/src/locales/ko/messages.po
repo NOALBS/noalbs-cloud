@@ -5521,6 +5521,10 @@ msgstr "연결된 봇이 없어요"
 msgid "No browser source or Connect client is connected."
 msgstr "연결된 브라우저 소스나 Connect 클라이언트가 없습니다."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "{scene}에서 다시 불러올 브라우저 소스가 없습니다"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "제한 없음"
@@ -7351,6 +7355,26 @@ msgstr "릴레이 서버"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "장면이 송출되면 다시 불러오기"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "페이지 다시 불러오기"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "페이지 다시 불러오기"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "방송 중인 장면의 브라우저 소스 다시 불러오기"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "{0} 다시 불러왔습니다"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

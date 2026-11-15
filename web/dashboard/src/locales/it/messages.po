@@ -5521,6 +5521,10 @@ msgstr "Nessun bot connesso"
 msgid "No browser source or Connect client is connected."
 msgstr "Nessuna sorgente browser né alcun client Connect è connesso."
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "Nessuna sorgente browser da ricaricare in {scene}"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "nessun limite"
@@ -7351,6 +7355,26 @@ msgstr "Server relay"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "Ricaricala quando la sua scena va in onda"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "Ricarica pagina"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "Ricarica pagine"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "Ricarica le sorgenti browser della scena in onda"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "Ricaricate: {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

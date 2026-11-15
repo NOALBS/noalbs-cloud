@@ -8,6 +8,7 @@ use std::time::Duration;
 use async_nats::{Client, ConnectOptions};
 
 pub mod audio;
+pub mod browser;
 pub mod error;
 #[cfg(test)]
 mod fake;
