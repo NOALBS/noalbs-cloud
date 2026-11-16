@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { columnsFor, paneDefinitions, preset, read, storageKey } from "./pane-layout";
+import { columnsFor, fitPreset, paneDefinitions, preset, read, storageKey } from "./pane-layout";
 
 const ids = paneDefinitions.map((pane) => pane.id) as string[];
 
@@ -32,6 +32,44 @@ describe("pane layout", () => {
   it("keeps Program/Preview out of streamer mode", () => {
     for (const cols of [12, 24, 36])
       expect(preset("streamer", cols).map((item) => item.i)).not.toContain("monitors");
+  });
+
+  it("includes Streamer audio and OBS health in complete rows without holes", () => {
+    for (const cols of [12, 24, 36]) {
+      const layout = preset("streamer", cols);
+      expect(layout.map((item) => item.i)).toEqual(expect.arrayContaining(["audio", "obs"]));
+      const height = Math.max(...layout.map((item) => item.y + item.h));
+      expect(layout.reduce((area, item) => area + item.w * item.h, 0)).toBe(cols * height);
+    }
+    expect(storageKey("s1", "streamer")).toContain(":v22:");
+    expect(storageKey("s1", "operator")).toContain(":v21:");
+  });
+
+  it.each([12, 24, 36])("keeps default rows complete when content grows at %s columns", (cols) => {
+    const layout = preset("streamer", cols);
+    const needs = Object.fromEntries(
+      layout.map((item, index) => [item.i, item.h + (index % 3) * 4]),
+    );
+    const fitted = fitPreset(layout, needs);
+    expect(layout).toEqual(preset("streamer", cols));
+    const height = Math.max(...fitted.map((item) => item.y + item.h));
+    expect(fitted.reduce((area, item) => area + item.w * item.h, 0)).toBe(cols * height);
+    for (const a of fitted) {
+      expect(a.h).toBeGreaterThanOrEqual(needs[a.i] ?? 0);
+      for (const b of fitted)
+        if (a !== b)
+          expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h).toBe(
+            false,
+          );
+    }
+  });
+
+  it("leaves empty layouts and invalid or absent size requests alone", () => {
+    expect(fitPreset([], { preview: 30 })).toEqual([]);
+    const layout = preset("streamer", 24);
+    expect(
+      fitPreset(layout, { preview: Number.NaN, audio: Number.POSITIVE_INFINITY, absent: 50 }),
+    ).toEqual(layout);
   });
 
   it("reads a saved layout and ignores a broken one", () => {

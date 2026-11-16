@@ -89,35 +89,38 @@ const presets: Record<Mode, Record<number, Spot[]>> = {
       ["bitrate", 0, 15, 6, 13],
       ["servers", 6, 15, 6, 13],
       ["scenes", 0, 28, 12, 9],
-      ["sources", 0, 37, 6, 18],
-      ["audio", 6, 37, 6, 18],
-      ["belabox", 0, 55, 6, 26],
-      ["moblin", 6, 55, 6, 26],
-      ["activity", 0, 81, 12, 16],
+      ["sources", 0, 37, 6, 20],
+      ["audio", 6, 37, 6, 20],
+      ["obs", 0, 57, 6, 22],
+      ["activity", 6, 57, 6, 22],
+      ["belabox", 0, 79, 6, 32],
+      ["moblin", 6, 79, 6, 32],
     ],
     24: [
       ["preview", 0, 0, 7, 15],
       ["on-air", 7, 0, 4, 15],
       ["bitrate", 11, 0, 7, 15],
       ["scenes", 0, 15, 18, 9],
-      ["sources", 0, 24, 5, 26],
-      ["audio", 5, 24, 6, 26],
-      ["moblin", 11, 24, 7, 26],
+      ["sources", 0, 24, 9, 20],
+      ["audio", 9, 24, 9, 20],
+      ["belabox", 0, 44, 9, 32],
+      ["moblin", 9, 44, 9, 32],
       ["servers", 18, 0, 6, 12],
-      ["belabox", 18, 12, 6, 22],
-      ["activity", 18, 34, 6, 16],
+      ["obs", 18, 12, 6, 22],
+      ["activity", 18, 34, 6, 42],
     ],
     36: [
       ["preview", 0, 0, 10, 17],
       ["on-air", 10, 0, 6, 17],
       ["bitrate", 16, 0, 12, 17],
       ["scenes", 0, 17, 28, 9],
-      ["sources", 0, 26, 7, 26],
-      ["audio", 7, 26, 7, 26],
-      ["belabox", 14, 26, 7, 26],
-      ["moblin", 21, 26, 7, 26],
+      ["sources", 0, 26, 7, 32],
+      ["audio", 7, 26, 7, 32],
+      ["belabox", 14, 26, 7, 32],
+      ["moblin", 21, 26, 7, 32],
       ["servers", 28, 0, 8, 12],
-      ["activity", 28, 12, 8, 40],
+      ["obs", 28, 12, 8, 22],
+      ["activity", 28, 34, 8, 24],
     ],
   },
 };
@@ -134,7 +137,7 @@ const phonePreset: PaneId[] = [
 ];
 
 export const storageKey = (switcherId: string, mode: Mode) =>
-  `noalbs-live-layout:v21:${switcherId}:${mode}`;
+  `noalbs-live-layout:v${mode === "streamer" ? 22 : 21}:${switcherId}:${mode}`;
 
 export function preset(mode: Mode, cols: number): Layout {
   return (presets[mode][cols] ?? []).map(([i, x, y, w, h]) => ({
@@ -144,6 +147,22 @@ export function preset(mode: Mode, cols: number): Layout {
     w,
     h,
     minH: MIN_H,
+  }));
+}
+
+export function fitPreset(layout: Layout, needs: Record<string, number>): Layout {
+  const growth: { at: number; by: number }[] = [];
+  const before = (y: number) => growth.reduce((sum, row) => sum + (row.at <= y ? row.by : 0), 0);
+  for (const item of [...layout].sort((a, b) => a.y + a.h - (b.y + b.h))) {
+    const end = item.y + item.h;
+    const height = item.h + before(end) - before(item.y);
+    const extra = (needs[item.i] ?? 0) - height;
+    if (Number.isFinite(extra) && extra > 0) growth.push({ at: end, by: extra });
+  }
+  return layout.map((item) => ({
+    ...item,
+    y: item.y + before(item.y),
+    h: item.h + before(item.y + item.h) - before(item.y),
   }));
 }
 
@@ -282,9 +301,10 @@ export function PaneLayout({
       (saved.value.grids[cols] ?? preset(mode, cols)).filter((item) => offered(item.i as PaneId)),
     [saved.value.grids, cols, mode, offeredKey],
   );
+  const fitRows = mode === "streamer" && !saved.value.grids[cols];
   const fittedLayout = useMemo(
     () =>
-      layout.map((item) => {
+      (fitRows ? fitPreset(layout, needs) : layout).map((item) => {
         // The fewest columns that keep the pane's content from being squeezed.
         const column = (width - GAP * (cols - 1)) / cols;
         const px = paneDefinitions.find((pane) => pane.id === item.i)?.min ?? 0;
@@ -293,7 +313,7 @@ export function PaneLayout({
         // The minimum limits resizing; it never widens a pane already placed, which would push others around.
         return { ...item, h: Math.max(item.h, minH), minW: Math.min(minW, item.w), minH };
       }),
-    [layout, needs, width, cols],
+    [layout, needs, width, cols, fitRows],
   );
   const order = (
     phone ? (saved.value.phone ?? phonePreset) : layout.map((item) => item.i as PaneId)

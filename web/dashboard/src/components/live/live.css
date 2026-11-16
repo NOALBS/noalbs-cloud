@@ -155,18 +155,63 @@
   pointer-events: none;
 }
 
-/* Immersive: the page without the app's sidebar. Not browser fullscreen. */
+.live-root {
+  position: relative;
+}
+.live-header-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.live-page > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: -24px -32px 0;
+  padding: 12px 32px;
+  gap: 8px;
+  background: var(--color-background);
+}
 @media (min-width: 768px) {
-  .live-root[data-immersive="true"] {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    overflow: auto;
-    background: var(--color-background);
-  }
-  body.live-immersive {
+  .live-root[data-stuck="true"] .live-page > header h1 > span > span:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
+}
+@media (max-width: 767px) {
+  .live-page > header {
+    top: 60px;
+    margin: -20px -16px 0;
+    padding: 8px 16px;
+  }
+  .live-page > header > div {
+    width: 100%;
+  }
+  .live-page > header > div:last-child > div {
+    justify-content: space-between;
+  }
+}
+
+/* Immersive: the page without the app's sidebar. Not browser fullscreen. */
+.live-root[data-immersive="true"] {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: auto;
+  background: var(--color-background);
+}
+.live-root[data-immersive="true"] .live-page > header {
+  top: 0;
+}
+body.live-immersive {
+  overflow: hidden;
 }
 
 /* Hold to confirm: the fill runs left to right for the hold. */

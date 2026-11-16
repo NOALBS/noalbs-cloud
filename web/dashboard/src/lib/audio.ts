@@ -115,10 +115,10 @@ function read(): string | null {
 }
 
 /**
- * The viewer's choice to show levels, kept in this browser. Off until turned on:
- * every level update costs the streamer's upload and the viewer's data.
+ * The viewer's choice to show levels, kept in this browser. The caller supplies
+ * the default; an explicit choice wins in every mode.
  */
-export function useMetersSetting() {
+export function useMetersSetting(defaultOn = false) {
   const [stored, setStored] = useState(read);
   const set = useCallback((on: boolean) => {
     const value = on ? "on" : "off";
@@ -129,5 +129,5 @@ export function useMetersSetting() {
     }
     setStored(value);
   }, []);
-  return [stored === "on", set] as const;
+  return [stored === null ? defaultOn : stored === "on", set] as const;
 }

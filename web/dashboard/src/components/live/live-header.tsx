@@ -1,4 +1,5 @@
 import { Keyboard, Maximize2, Minimize2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { SwitcherStatus } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -7,6 +8,27 @@ import { cn } from "@/lib/utils";
 import { streamState } from "./live-status";
 import { type ObsControls, RecordButton, StreamButton } from "./quick-actions";
 import type { useOperator } from "./use-operator";
+
+export function LiveHeaderAnchor({ top }: { top: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const anchor = ref.current;
+    const root = anchor?.closest<HTMLElement>(".live-root");
+    if (!anchor || !root || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        root.dataset.stuck = String(!entry?.isIntersecting);
+      },
+      { rootMargin: `-${top}px 0px 0px 0px` },
+    );
+    observer.observe(anchor);
+    return () => {
+      observer.disconnect();
+      delete root.dataset.stuck;
+    };
+  }, [top]);
+  return <span ref={ref} className="live-header-anchor" aria-hidden="true" />;
+}
 
 /** The on-air timer beside the page title. */
 export function LiveTimer({
@@ -40,26 +62,70 @@ export function LiveTimer({
         ? "OBS disconnected"
         : live
           ? status?.stream_started_at
-            ? formatUptime(status.stream_started_at, now)
+            ? `ON AIR ${formatUptime(status.stream_started_at, now)}`
             : "On air"
           : "Off air"}
     </span>
   );
 }
 
-/** Desktop header controls: mode, immersive, record and the stream button. */
+export function RecordingStatus({
+  status,
+  now,
+}: {
+  status: SwitcherStatus | null | undefined;
+  now: number;
+}) {
+  const unknown = streamState(status, now) === "unknown";
+  return (
+    <span
+      className={cn(
+        "font-mono text-xs tabular",
+        unknown ? "text-low" : status?.recording ? "text-offline" : "text-muted-foreground",
+      )}
+    >
+      REC{" "}
+      {unknown
+        ? "unknown"
+        : !status?.recording
+          ? "off"
+          : status.recording_paused
+            ? "paused"
+            : status.recording_started_at
+              ? formatUptime(status.recording_started_at, now)
+              : "recording"}
+    </span>
+  );
+}
+
+/** Header controls, with read-only recording status on phones. */
 export function LiveHeaderControls({
   operator,
   status,
   controls,
   disabled,
+  now,
 }: {
   operator: ReturnType<typeof useOperator>;
   status: SwitcherStatus | null | undefined;
   controls: ObsControls;
   disabled: boolean;
+  now: number;
 }) {
-  if (!operator.desktop) return null;
+  if (!operator.desktop)
+    return (
+      <>
+        <RecordingStatus status={status} now={now} />
+        <Button
+          variant="outline"
+          size="icon-sm"
+          aria-label={operator.immersive ? "Exit immersive" : "Immersive"}
+          onClick={operator.toggleImmersive}
+        >
+          {operator.immersive ? <Minimize2 /> : <Maximize2 />}
+        </Button>
+      </>
+    );
   return (
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: a two-button mode switch */}

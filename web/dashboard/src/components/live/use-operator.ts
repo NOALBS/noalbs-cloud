@@ -140,13 +140,13 @@ export function useOperator(
     } catch {}
   }, [path.switcher_id, state]);
   useEffect(() => {
-    document.body.classList.toggle("live-immersive", desktop && immersive);
+    document.body.classList.toggle("live-immersive", immersive);
     try {
       localStorage.setItem(immersiveKey, String(immersive));
     } catch {}
     window.dispatchEvent(new Event("resize"));
     return () => document.body.classList.remove("live-immersive");
-  }, [desktop, immersive]);
+  }, [immersive]);
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
@@ -204,7 +204,7 @@ export function useOperator(
     pending: mutation.isPending,
     help: enabled && help,
     setHelp,
-    immersive: desktop && immersive,
+    immersive,
     toggleImmersive,
   };
 }

@@ -140,26 +140,26 @@ export function BelaboxCard({
   const online = view.kind === "online" ? view.status : null;
 
   const chip = {
-    loading: { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" },
-    idle: { label: t`NOT CONNECTED`, tone: "text-muted-foreground", fill: "bg-idle" },
-    connecting: { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" },
-    invalid_key: { label: t`KEY REFUSED`, tone: "text-offline", fill: "bg-offline" },
-    offline: { label: t`OFFLINE`, tone: "text-offline", fill: "bg-offline" },
+    loading: { label: t`Encoder connecting…`, tone: "text-muted-foreground", fill: "bg-idle" },
+    idle: { label: t`Encoder not connected`, tone: "text-muted-foreground", fill: "bg-idle" },
+    connecting: { label: t`Encoder connecting…`, tone: "text-muted-foreground", fill: "bg-idle" },
+    invalid_key: { label: t`Encoder key refused`, tone: "text-offline", fill: "bg-offline" },
+    offline: { label: t`Encoder offline`, tone: "text-offline", fill: "bg-offline" },
     online: online?.streaming
-      ? { label: t`STREAMING`, tone: "text-live", fill: "bg-live" }
-      : { label: t`READY`, tone: "text-muted-foreground", fill: "bg-idle" },
+      ? { label: t`Encoder streaming`, tone: "text-live", fill: "bg-live" }
+      : { label: t`Encoder ready`, tone: "text-muted-foreground", fill: "bg-idle" },
   }[view.kind];
 
   return (
     <section aria-label="BELABOX" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
           <span data-pane-title className="text-sm font-semibold">
             <Trans>BELABOX</Trans>
           </span>
           <span
             className={cn(
-              "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
+              "flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold",
               chip.tone,
             )}
           >
@@ -454,8 +454,6 @@ function InterfaceRow({
   const modem = modemLabel(netif);
   const label = interfaceLabel(netif, labels);
   const title = interfaceTitle(netif, labels);
-  // On its own line under the row, so a long modem or error text wraps instead of being cut.
-  // A named interface keeps its real name here: the name follows the device, not the port.
   const detail = [label ? netif.name : "", netif.error ?? (modem || (netif.enabled ? "" : "off"))]
     .filter(Boolean)
     .join(" · ");
@@ -464,10 +462,8 @@ function InterfaceRow({
     <li className={cn("flex flex-col gap-0.5 py-2", !netif.enabled && "opacity-60")}>
       <div className="flex items-center gap-3">
         <span
-          className={cn(
-            "w-20 shrink-0 text-sm font-semibold",
-            label ? "break-words" : "font-mono break-all",
-          )}
+          className={cn("w-20 shrink-0 truncate text-sm font-semibold", !label && "font-mono")}
+          title={title}
         >
           {canRename && netif.key ? (
             <RenameInterface
@@ -505,9 +501,10 @@ function InterfaceRow({
       {detail && (
         <span
           className={cn(
-            "text-[11px] break-words",
+            "truncate text-[11px]",
             netif.error ? "text-destructive-foreground" : "text-muted-foreground",
           )}
+          title={detail}
         >
           {detail}
         </span>
@@ -542,10 +539,11 @@ function RenameInterface({
       <PopoverTrigger asChild>
         <button
           type="button"
-          title={t`Name this interface`}
+          title={title}
+          aria-label={t`Rename interface ${title}`}
           className="group flex max-w-full items-center gap-1 text-left font-[inherit] hover:text-primary"
         >
-          <span className="min-w-0">{title}</span>
+          <span className="min-w-0 truncate">{title}</span>
           <Pencil className="size-3 shrink-0 text-muted-foreground group-hover:text-primary" />
         </button>
       </PopoverTrigger>

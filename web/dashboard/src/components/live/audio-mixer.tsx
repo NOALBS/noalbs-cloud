@@ -229,7 +229,7 @@ function paint(el: HTMLDivElement, state: MeterState) {
 /**
  * OBS's Audio Mixer for the scene on air: a strip per input with its meters
  * (while levels are on, which has OBS send them), a fader and a mute button. Levels are
- * off until the viewer turns them on (per browser); they stop while the
+ * a per-browser choice; they stop while the
  * tab is hidden. "Customize" hides inputs from the card for this viewer (on every
  * scene), like the Sources card.
  */
@@ -238,14 +238,16 @@ export function AudioMixer({
   scene,
   canControl,
   obsConnected,
+  defaultMeters = false,
 }: {
   path: Path;
   /** The scene on air (UUID, else name), so a switch loads the new scene's inputs. */
   scene: string | null;
   canControl: boolean;
   obsConnected: boolean;
+  defaultMeters?: boolean;
 }) {
-  const [metersOn, setMetersOn] = useMetersSetting();
+  const [metersOn, setMetersOn] = useMetersSetting(defaultMeters);
   const [hidden, setHidden] = useHiddenAudio(path.switcher_id);
   const [editing, setEditing] = useState(false);
   const visible = useDocumentVisible();

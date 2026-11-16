@@ -16,7 +16,7 @@ import { ActivityFeed } from "@/components/live/activity-feed";
 import { AudioMixer } from "@/components/live/audio-mixer";
 import { BelaboxCard } from "@/components/live/belabox-card";
 import { BitratePane } from "@/components/live/bitrate-pane";
-import { LiveHeaderControls, LiveTimer } from "@/components/live/live-header";
+import { LiveHeaderAnchor, LiveHeaderControls, LiveTimer } from "@/components/live/live-header";
 import { streamState } from "@/components/live/live-status";
 import { MoblinCard } from "@/components/live/moblin-card";
 import { Monitors } from "@/components/live/monitors";
@@ -97,8 +97,9 @@ function LivePage() {
 
   return (
     <div ref={operator.root} className="live-root" data-immersive={operator.immersive}>
+      <LiveHeaderAnchor top={operator.desktop || operator.immersive ? 0 : 60} />
       <SwitcherPage
-        className="max-w-none"
+        className="live-page max-w-none"
         title={
           <span className="flex flex-wrap items-center gap-3">
             <span className="text-[17px] font-semibold tracking-tight">
@@ -137,7 +138,11 @@ function LivePage() {
                 />
               </ConnectDialog>
             ) : (
-              <Health ok={Boolean(status?.browser_source)} label={t`Browser source`} />
+              <Health
+                ok={Boolean(status?.browser_source)}
+                label={t`Browser source`}
+                shortLabel={t`Source`}
+              />
             )}
             {live.connection === "reconnecting" && <Health ok={false} label={t`Live feed`} />}
             <LiveHeaderControls
@@ -145,6 +150,7 @@ function LivePage() {
               status={status}
               controls={controls}
               disabled={disabled}
+              now={now}
             />
             <div ref={setLayoutHeader} className="contents" />
           </div>
@@ -486,6 +492,7 @@ function LivePage() {
             audio: (
               <AudioMixer
                 path={path}
+                defaultMeters={!operator.enabled}
                 scene={status?.current_scene?.uuid ?? status?.current_scene?.name ?? null}
                 canControl={canControl && !paused}
                 obsConnected={obsConnected}
@@ -590,14 +597,21 @@ function MobileActions({
 function Health({
   ok,
   label,
+  shortLabel,
   interactive,
   ...rest
-}: { ok: boolean; label: string; interactive?: boolean } & ComponentProps<"button">) {
+}: {
+  ok: boolean;
+  label: string;
+  shortLabel?: string;
+  interactive?: boolean;
+} & ComponentProps<"button">) {
   const content = (
     <>
       <span className={cn("size-1.5 shrink-0 rounded-full", ok ? "bg-live" : "bg-offline")} />
       {/* Labels can carry a user-chosen computer name. */}
-      <span className="max-w-56 truncate">{label}</span>
+      {shortLabel && <span className="md:hidden">{shortLabel}</span>}
+      <span className={cn("max-w-56 truncate", shortLabel && "hidden md:inline")}>{label}</span>
       <span className="sr-only">{ok ? t`connected` : t`not connected`}</span>
     </>
   );
