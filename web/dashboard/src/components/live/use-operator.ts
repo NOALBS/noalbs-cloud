@@ -32,6 +32,7 @@ export function useOperator(
   status: SwitcherStatus | null | undefined,
   disabled: boolean,
   events: SwitcherEvent[],
+  lastKnownScene?: SwitcherStatus["current_scene"],
 ) {
   const desktop = useMediaQuery("(min-width: 768px)");
   const [mode, setMode] = useState(() => {
@@ -66,9 +67,18 @@ export function useOperator(
   const [help, setHelp] = useState(false);
   const [immersive, setImmersive] = useState(readImmersive);
   const root = useRef<HTMLDivElement>(null);
+  const knownProgram = useRef<{ switcher: string; scene: Scene | null }>({
+    switcher: path.switcher_id,
+    scene: null,
+  });
+  if (knownProgram.current.switcher !== path.switcher_id)
+    knownProgram.current = { switcher: path.switcher_id, scene: null };
+  const reportedScene = status?.current_scene ?? lastKnownScene;
+  if (reportedScene?.uuid)
+    knownProgram.current.scene = { uuid: reportedScene.uuid, name: reportedScene.name };
   const program = status?.current_scene?.uuid
     ? { uuid: status.current_scene.uuid, name: status.current_scene.name }
-    : null;
+    : knownProgram.current.scene;
   const [hidden] = useHiddenScenes(path.switcher_id);
   const scenes = useQuery({
     ...obsScenesQuery(path.workspace_id, path.switcher_id),
@@ -156,12 +166,12 @@ export function useOperator(
               'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]',
             ),
           ),
-        button:
-          Boolean(target?.closest('button, a, [role="button"]')) &&
-          !target?.closest(".bus-cell, .scene-cell, .scene-bus-list"),
+        hold: Boolean(target?.closest("[data-live-hold]")),
       });
       if (!action) return;
       event.preventDefault();
+      event.stopPropagation();
+      if (event.repeat) return;
       if (action.action === "help") setHelp(true);
       else if (action.action === "immersive") toggleImmersive();
       else if (action.action === "take" || action.action === "cut") take();
@@ -173,8 +183,8 @@ export function useOperator(
         }
       }
     };
-    window.addEventListener("keydown", keydown);
-    return () => window.removeEventListener("keydown", keydown);
+    window.addEventListener("keydown", keydown, true);
+    return () => window.removeEventListener("keydown", keydown, true);
   });
   return {
     root,

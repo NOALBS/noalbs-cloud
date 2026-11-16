@@ -1,4 +1,6 @@
 import type { SwitcherStatus } from "@/api/types";
+import { cn } from "@/lib/utils";
+import { streamState } from "./live-status";
 import { Pane } from "./pane";
 import { FixButton, MarkerButton, type ObsControls } from "./quick-actions";
 
@@ -9,6 +11,7 @@ export function OnAirPane({
   disabled,
   by,
   paused,
+  lastKnownScene,
 }: {
   status: SwitcherStatus | null | undefined;
   controls: ObsControls;
@@ -16,24 +19,43 @@ export function OnAirPane({
   /** Who or what switched to this scene, when the activity feed knows. */
   by: string | undefined;
   paused: boolean;
+  lastKnownScene?: string;
 }) {
+  const state = streamState(status);
+  const unknown = state === "unknown";
   return (
-    <Pane title={status?.streaming ? "On air" : "In OBS"} label="On air" className="flex flex-col">
-      <p className="text-[28px] leading-tight font-semibold tracking-tight [overflow-wrap:anywhere]">
-        {status?.current_scene?.name ?? "—"}
+    <Pane
+      title={
+        unknown ? (
+          <span className="text-low">OBS disconnected</span>
+        ) : state === "live" ? (
+          "On air"
+        ) : (
+          "In OBS"
+        )
+      }
+      label="On air"
+      hint={unknown && lastKnownScene ? "Last known scene" : undefined}
+      className="flex flex-col"
+    >
+      <p
+        className={cn(
+          "text-[28px] leading-tight font-semibold tracking-tight [overflow-wrap:anywhere]",
+          unknown && "opacity-50",
+        )}
+      >
+        {status?.current_scene?.name ?? lastKnownScene ?? "—"}
       </p>
       <p className="mt-1.5 text-[13px] text-muted-foreground">
-        {status === undefined
-          ? "Connecting…"
-          : !status?.obs_connected
-            ? "OBS isn’t connected"
-            : paused
-              ? "Not switching while paused"
-              : by
-                ? `Switched by ${by}`
-                : status.auto_switch
-                  ? "Auto switch is on"
-                  : "Auto switch is off"}
+        {unknown
+          ? "Stream state unknown · waiting for OBS"
+          : paused
+            ? "Not switching while paused"
+            : by
+              ? `Switched by ${by}`
+              : status?.auto_switch
+                ? "Auto switch is on"
+                : "Auto switch is off"}
       </p>
       <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
         <FixButton controls={controls} disabled={disabled} variant="compact" />

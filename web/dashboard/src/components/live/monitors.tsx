@@ -64,8 +64,12 @@ export function Monitors({
     <section aria-label="Preview and Program" className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 gap-5">
         {studio && (
-          <div className={screen}>
-            <Label tone="bg-live" tag="PREVIEW" name={preview?.name} />
+          <div className={cn(screen, !connected && "opacity-50")}>
+            <Label
+              tone={connected ? "bg-live" : "bg-low"}
+              tag={connected ? "PREVIEW" : "PREVIEW · LAST KNOWN"}
+              name={preview?.name}
+            />
             <span className="px-6">
               <strong className="block text-lg font-semibold text-white">
                 {preview?.name ?? "Cue a scene below"}
@@ -74,10 +78,10 @@ export function Monitors({
             </span>
           </div>
         )}
-        <div className={screen}>
+        <div className={cn(screen, !connected && "opacity-50")}>
           <Label
-            tone={streaming ? "bg-offline" : "bg-idle"}
-            tag={streaming ? "ON AIR" : "PROGRAM"}
+            tone={!connected ? "bg-low" : streaming ? "bg-offline" : "bg-idle"}
+            tag={!connected ? "PROGRAM · LAST KNOWN" : streaming ? "ON AIR" : "PROGRAM · ACTIVE"}
             name={program?.name}
           />
           {allowed && on && frame ? (
@@ -85,7 +89,7 @@ export function Monitors({
           ) : (
             <span className="px-6">
               {!connected
-                ? "OBS isn’t connected"
+                ? "OBS disconnected · stream state unknown"
                 : !allowed
                   ? "Off air: the picture is private"
                   : !on

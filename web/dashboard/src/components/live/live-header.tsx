@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { formatUptime } from "@/lib/live-format";
 import { cn } from "@/lib/utils";
+import { streamState } from "./live-status";
 import { type ObsControls, RecordButton, StreamButton } from "./quick-actions";
 import type { useOperator } from "./use-operator";
 
@@ -15,16 +16,33 @@ export function LiveTimer({
   status: SwitcherStatus | null | undefined;
   now: number;
 }) {
-  const live = Boolean(status?.streaming);
+  const state = streamState(status, now);
+  const live = state === "live";
+  const unknown = state === "unknown";
   return (
     <span
       className={cn(
         "inline-flex h-8 items-center gap-2 rounded-full px-3 font-mono text-[13px] font-semibold tabular",
-        live ? "bg-offline/15 text-offline" : "bg-muted text-muted-foreground",
+        unknown
+          ? "bg-low/12 text-low"
+          : live
+            ? "bg-offline/15 text-offline"
+            : "bg-muted text-muted-foreground",
       )}
     >
-      <span className={cn("size-1.5 rounded-full", live ? "bg-offline" : "bg-idle")} />
-      {live && status?.stream_started_at ? formatUptime(status.stream_started_at, now) : "Off air"}
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          unknown ? "bg-low" : live ? "bg-offline" : "bg-idle",
+        )}
+      />
+      {unknown
+        ? "OBS disconnected"
+        : live
+          ? status?.stream_started_at
+            ? formatUptime(status.stream_started_at, now)
+            : "On air"
+          : "Off air"}
     </span>
   );
 }

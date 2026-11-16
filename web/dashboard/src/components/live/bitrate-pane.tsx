@@ -4,6 +4,7 @@ import { formatKbps } from "@/lib/live-format";
 import type { Point } from "@/live/reducer";
 import { BitrateChart } from "./bitrate-chart";
 import { lookFor } from "./feed-state";
+import { hasFeed, streamState } from "./live-status";
 import { Pane } from "./pane";
 import type { ObsControls } from "./quick-actions";
 
@@ -34,6 +35,9 @@ export function BitratePane({
 }) {
   const on = status ? status.auto_switch : enabled;
   const waiting = on && onlyWhileStreaming && status?.obs_connected && !status.streaming;
+  const available =
+    streamState(status, now) !== "unknown" && hasFeed(sample, now) && status?.state !== "offline";
+  const current = available ? sample : undefined;
   return (
     <Pane
       title="Bitrate"
@@ -56,16 +60,21 @@ export function BitratePane({
         </label>
       }
     >
+      {!available && (
+        <p role="status" className="mb-3 font-semibold text-offline">
+          No feed <span className="text-xs font-normal">· bitrate unavailable</span>
+        </p>
+      )}
       <div className="flex items-end gap-6">
         <div>
           <span className="font-mono text-[44px] leading-none font-medium tracking-tighter tabular">
-            {sample ? formatKbps(sample.bitrate) : "—"}
+            {current ? formatKbps(current.bitrate) : "—"}
           </span>
           <span className="ml-1.5 text-[13px] text-muted-foreground">kbps</span>
         </div>
         <div className="pb-1">
           <span className="font-mono text-xl font-medium tabular">
-            {sample?.rtt != null ? Math.round(sample.rtt) : "—"}
+            {current?.rtt != null ? Math.round(current.rtt) : "—"}
           </span>
           <span className="ml-1.5 text-[13px] text-muted-foreground">ms RTT</span>
         </div>
@@ -76,7 +85,7 @@ export function BitratePane({
           now={now}
           low={triggers.low}
           offline={triggers.offline}
-          tone={lookFor(status).text}
+          tone={available ? lookFor(status).text : "text-offline"}
         />
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted-foreground">

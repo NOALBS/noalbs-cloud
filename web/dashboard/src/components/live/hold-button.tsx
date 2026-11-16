@@ -57,6 +57,7 @@ export function HoldButton({
       disabled={disabled}
       className={cn("hold-button", className)}
       data-holding={holding}
+      data-live-hold
       onPointerDown={(event) => {
         if (event.button === 0) {
           event.currentTarget.setPointerCapture?.(event.pointerId);

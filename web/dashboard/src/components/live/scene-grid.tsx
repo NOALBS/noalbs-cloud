@@ -65,6 +65,8 @@ export function SceneGrid({
   path,
   scenes,
   currentUuid,
+  lastKnownUuid,
+  streaming,
   canControl,
   canManage,
   obsConnected,
@@ -76,6 +78,8 @@ export function SceneGrid({
   path: { workspace_id: string; switcher_id: string };
   scenes: Scenes;
   currentUuid: string | null | undefined;
+  lastKnownUuid?: string;
+  streaming: boolean;
   canControl: boolean;
   /** May add and remove scenes in OBS (members who manage switchers, not while paused). */
   canManage: boolean;
@@ -153,7 +157,8 @@ export function SceneGrid({
   const hiddenSet = new Set(hidden);
   const all = list.data?.scenes ?? [];
   const isCurrent = (scene: ObsScenes["scenes"][number]) =>
-    scene.uuid != null && scene.uuid === currentUuid;
+    scene.uuid != null && scene.uuid === (obsConnected ? currentUuid : lastKnownUuid);
+  const currentLabel = !obsConnected ? t`Last known` : streaming ? t`On air` : t`Active`;
   // The scene on air always shows, hidden or not.
   const visible = all.filter((scene) => !hiddenSet.has(sceneKey(scene)) || isCurrent(scene));
   const hiddenCount = all.length - visible.length;
@@ -175,6 +180,11 @@ export function SceneGrid({
         <h2 className="text-[15px] font-semibold tracking-tight">
           <Trans>Scenes</Trans>
         </h2>
+        {!obsConnected && list.data && (
+          <span className="min-w-0 flex-1 truncate text-xs text-low">
+            <Trans>OBS disconnected · last known scenes</Trans>
+          </span>
+        )}
         {list.data &&
           (managing ? (
             <Button
@@ -319,7 +329,7 @@ export function SceneGrid({
               const current = isCurrent(scene);
               const role = roleTags().find(([key]) => scene.uuid && scenes[key] === scene.uuid);
               const blocked = current
-                ? t`It’s on air: switch to another scene first.`
+                ? t`It’s the current scene: switch to another scene first.`
                 : role
                   ? t`The switcher uses it (${role[1]}): pick another on the Scenes page first.`
                   : null;
@@ -330,7 +340,7 @@ export function SceneGrid({
                 >
                   <span className="text-sm font-semibold">{scene.name}</span>
                   <span className="text-[11px] font-semibold tracking-wider text-muted-foreground">
-                    {current ? t`ON AIR` : roleOf(scene.uuid)}
+                    {current ? currentLabel : roleOf(scene.uuid)}
                   </span>
                   <Button
                     type="button"
@@ -362,9 +372,9 @@ export function SceneGrid({
         </p>
       )}
 
-      {!obsConnected && (
-        <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
-          <Trans>Scenes appear once OBS is connected.</Trans>
+      {!obsConnected && !list.data && (
+        <p className="text-sm text-low">
+          <Trans>OBS disconnected · no current scene data</Trans>
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-40 rounded-2xl" />}
@@ -426,6 +436,7 @@ export function SceneGrid({
           className={cn(
             "grid gap-2.5",
             view === "grid" ? "grid-cols-[repeat(auto-fill,minmax(150px,1fr))]" : "grid-cols-1",
+            !obsConnected && "opacity-50",
           )}
         >
           {shown.map((scene) => {
@@ -461,8 +472,11 @@ export function SceneGrid({
                   view === "grid"
                     ? "min-h-[76px] flex-col justify-between gap-2 px-3.5 py-3"
                     : "min-h-11 items-center gap-3 px-3.5 py-2",
-                  current && "border-offline/60 bg-offline/10",
-                  cued && "border-live/60 bg-live/10",
+                  current &&
+                    (obsConnected && streaming
+                      ? "border-offline/60 bg-offline/10"
+                      : "border-border-strong bg-surface-2"),
+                  cued && obsConnected && "border-live/60 bg-live/10",
                   pending && "animate-pulse",
                 )}
               >
@@ -474,12 +488,17 @@ export function SceneGrid({
                 >
                   <span className="truncate">
                     {current ? (
-                      <span className="font-semibold text-offline">
-                        <Trans>On air</Trans>
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          obsConnected && streaming ? "text-offline" : "text-muted-foreground",
+                        )}
+                      >
+                        {currentLabel}
                       </span>
                     ) : cued ? (
                       <span className="font-semibold text-live">
-                        <Trans>Preview</Trans>
+                        {obsConnected ? t`Preview` : t`Preview · last known`}
                       </span>
                     ) : (
                       roleOf(scene.uuid)

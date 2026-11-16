@@ -46,7 +46,7 @@ export function operatorHotkey(
     KeyboardEvent,
     "key" | "code" | "shiftKey" | "altKey" | "metaKey" | "ctrlKey" | "repeat" | "isComposing"
   >,
-  context: { desktop: boolean; editing: boolean; blocked: boolean; button: boolean },
+  context: { desktop: boolean; editing: boolean; blocked: boolean; hold: boolean },
 ):
   | { action: "scene"; index: number; direct: boolean }
   | { action: "take" | "cut" | "help" | "immersive" }
@@ -55,7 +55,7 @@ export function operatorHotkey(
     !context.desktop ||
     context.editing ||
     context.blocked ||
-    event.repeat ||
+    (event.repeat && event.key !== " " && event.key !== "Enter") ||
     event.isComposing ||
     event.altKey ||
     event.metaKey ||
@@ -68,7 +68,7 @@ export function operatorHotkey(
     /^(?:Digit|Numpad)([1-9])$/.exec(event.code)?.[1] ??
     (/^[1-9]$/.test(event.key) ? event.key : null);
   if (digit) return { action: "scene", index: Number(digit) - 1, direct: event.shiftKey };
-  if (context.button || event.shiftKey) return null;
+  if (context.hold || event.shiftKey) return null;
   if (event.key === " ") return { action: "take" };
   if (event.key === "Enter") return { action: "cut" };
   return null;

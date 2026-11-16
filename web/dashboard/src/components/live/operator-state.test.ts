@@ -8,7 +8,7 @@ import {
   switchedBy,
 } from "./operator-state";
 
-const context = { desktop: true, blocked: false, editing: false, button: false };
+const context = { desktop: true, blocked: false, editing: false, hold: false };
 const key = (key: string, more = {}) => ({
   key,
   code: "",
@@ -49,9 +49,13 @@ describe("operator shortcuts", () => {
     ])
       expect(operatorHotkey(key("1", change), context)).toBeNull();
   });
-  it("leaves focused buttons' Enter/Space to the button and has no stream/record shortcut", () => {
+  it("reserves Enter/Space for Take/Cut except on hold controls", () => {
+    expect(operatorHotkey(key(" "), context)).toEqual({ action: "take" });
+    expect(operatorHotkey(key("Enter"), context)).toEqual({ action: "cut" });
+    expect(operatorHotkey(key(" ", { repeat: true }), context)).toEqual({ action: "take" });
+    expect(operatorHotkey(key("Enter", { repeat: true }), context)).toEqual({ action: "cut" });
     for (const input of [" ", "Enter"])
-      expect(operatorHotkey(key(input), { ...context, button: true })).toBeNull();
+      expect(operatorHotkey(key(input), { ...context, hold: true })).toBeNull();
     for (const input of ["r", "s", "0", "Escape", "m"])
       expect(operatorHotkey(key(input), context)).toBeNull();
   });

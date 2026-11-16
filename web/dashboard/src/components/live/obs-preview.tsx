@@ -173,12 +173,20 @@ export function ObsPreview({
         <h2 className="font-semibold">
           <Trans>Preview</Trans>
         </h2>
+        {!obsConnected && (
+          <span className="ml-2 text-xs text-low">OBS disconnected · last known state</span>
+        )}
       </div>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
       <div className="flex flex-col overflow-hidden">
         {on ? (
-          <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
+          <div
+            className={cn(
+              "relative flex aspect-video items-center justify-center overflow-hidden bg-black",
+              !obsConnected && "opacity-50",
+            )}
+          >
             {frame && obsConnected && !hidden && (
               <img
                 src={frame.url}

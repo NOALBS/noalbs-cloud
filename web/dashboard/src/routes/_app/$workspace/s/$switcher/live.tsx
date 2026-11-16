@@ -17,6 +17,7 @@ import { AudioMixer } from "@/components/live/audio-mixer";
 import { BelaboxCard } from "@/components/live/belabox-card";
 import { BitratePane } from "@/components/live/bitrate-pane";
 import { LiveHeaderControls, LiveTimer } from "@/components/live/live-header";
+import { streamState } from "@/components/live/live-status";
 import { MoblinCard } from "@/components/live/moblin-card";
 import { Monitors } from "@/components/live/monitors";
 import { ObsPane } from "@/components/live/obs-pane";
@@ -67,26 +68,29 @@ function LivePage() {
   const canControl = can(actor, "switcher.control");
   const canControlConnectObs = canControlConnect(switcher.connect_obs_control, actor);
 
+  // The dashboard lost its own connection: OBS may still be streaming.
+  const feedDown = live.connection === "reconnecting";
   const status =
-    live.status && !isStale(live.status, now)
+    !feedDown &&
+    live.status &&
+    Number.isFinite(Date.parse(live.status.updated_at)) &&
+    !isStale(live.status, now)
       ? live.status
       : live.status === undefined
         ? undefined
         : null;
+  const obsConnected = streamState(status, now) !== "unknown";
   const connectDeviceName = status?.pc?.device_name ?? t`Connect computer`;
   const activeServer =
     servers.data?.find((server) => server.id === status?.active_server_id) ?? servers.data?.[0];
-  const sample = activeServer && status?.obs_connected ? latest(live, activeServer.id) : undefined;
+  const sample = activeServer && obsConnected ? latest(live, activeServer.id) : undefined;
   const params = { workspace: workspace.url_slug, switcher: switcher.id };
   const paused = Boolean(
     summaries.data?.find((summary) => summary.id === switcher.id)?.paused || status?.paused,
   );
-  const disabled = !canControl || !status?.obs_connected || paused;
-  // The dashboard lost its own connection (often the phone's signal): what's shown is
-  // out of date, and says nothing about OBS or the browser source.
-  const feedDown = live.connection === "reconnecting";
+  const disabled = !canControl || !obsConnected || paused;
   const [layoutHeader, setLayoutHeader] = useState<HTMLDivElement | null>(null);
-  const operator = useOperator(path, status, disabled, live.events);
+  const operator = useOperator(path, status, disabled, live.events, live.status?.current_scene);
   const { studio, preview: previewScene } = operator;
   const onAir = status?.current_scene;
   const [devicesTab, setDevicesTab] = useState<"belabox" | "moblin">("belabox");
@@ -296,7 +300,7 @@ function LivePage() {
               <Monitors
                 operator={operator}
                 path={path}
-                connected={Boolean(status?.obs_connected)}
+                connected={obsConnected}
                 streaming={Boolean(status?.streaming)}
                 offAirAllowed={seesPreviewOffAir(actor, switcher.preview_off_air)}
               />
@@ -308,6 +312,7 @@ function LivePage() {
                 disabled={disabled}
                 by={operator.by ?? undefined}
                 paused={paused}
+                lastKnownScene={operator.program?.name}
               />
             ),
             controls: (
@@ -330,7 +335,7 @@ function LivePage() {
             obs: (
               <ObsPane
                 path={path}
-                connected={Boolean(status?.obs_connected)}
+                connected={obsConnected}
                 connect={
                   status?.pc ? { deviceName: connectDeviceName, obs: status.pc.obs } : undefined
                 }
@@ -433,7 +438,7 @@ function LivePage() {
             preview: (
               <ObsPreview
                 path={path}
-                obsConnected={Boolean(status?.obs_connected)}
+                obsConnected={obsConnected}
                 streaming={Boolean(status?.streaming)}
                 offAirAllowed={seesPreviewOffAir(actor, switcher.preview_off_air)}
                 privacyLink={isOwner(actor) ? params : undefined}
@@ -444,6 +449,8 @@ function LivePage() {
                 path={path}
                 scenes={switcher.scenes}
                 currentUuid={onAir?.uuid}
+                lastKnownUuid={operator.program?.uuid}
+                streaming={Boolean(status?.streaming)}
                 previewUuid={studio ? previewScene?.uuid : undefined}
                 onPreviewSelect={studio ? operator.cue : undefined}
                 onProgramSelect={operator.cutScene}
@@ -462,18 +469,18 @@ function LivePage() {
                 }
                 canControl={canControl && !paused}
                 canManage={can(actor, "switcher.manage") && !paused && !isSupport(actor)}
-                obsConnected={Boolean(status?.obs_connected)}
+                obsConnected={obsConnected}
               />
             ),
             sources: (
               <SourceList
                 path={path}
                 scene={status?.current_scene?.uuid ?? status?.current_scene?.name ?? null}
-                programName={status?.streaming ? status.current_scene?.name : null}
+                programName={obsConnected && status?.streaming ? status.current_scene?.name : null}
                 previewName={studio ? previewScene?.name : undefined}
                 canControl={canControl && !paused}
                 canEditSources={can(actor, "switcher.manage") && !paused && !isSupport(actor)}
-                obsConnected={Boolean(status?.obs_connected)}
+                obsConnected={obsConnected}
               />
             ),
             audio: (
@@ -481,7 +488,7 @@ function LivePage() {
                 path={path}
                 scene={status?.current_scene?.uuid ?? status?.current_scene?.name ?? null}
                 canControl={canControl && !paused}
-                obsConnected={Boolean(status?.obs_connected)}
+                obsConnected={obsConnected}
               />
             ),
             activity: (
