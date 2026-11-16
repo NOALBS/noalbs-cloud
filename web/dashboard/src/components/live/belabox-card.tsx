@@ -154,7 +154,7 @@ export function BelaboxCard({
     <section aria-label="BELABOX" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">
+          <span data-pane-title className="text-sm font-semibold">
             <Trans>BELABOX</Trans>
           </span>
           <span
@@ -367,7 +367,7 @@ function MaxBitrate({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
+    <div className="flex flex-col gap-1.5 border-t border-divider py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs tracking-wider text-muted-foreground uppercase">
           <Trans>Max bitrate</Trans>

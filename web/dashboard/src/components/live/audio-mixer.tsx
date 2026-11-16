@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsAudioQuery, queryKeys } from "@/api/queries";
 import type { AudioUpdate, ChannelLevel, ObsAudio, ObsAudioInput } from "@/api/types";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -322,20 +323,22 @@ export function AudioMixer({
         {obsConnected &&
           (editing ? (
             <span className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
                 {hiddenHere > 0 ? t`Show all` : t`Hide all`}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
                 <Trans>Done</Trans>
-              </button>
+              </Button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -353,14 +356,15 @@ export function AudioMixer({
                 />
               </span>
               {inputs.length > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   type="button"
                   onClick={() => setEditing(true)}
                   className={cn(HEADER_BUTTON, "ml-1 text-primary")}
                 >
                   <SlidersHorizontal className="size-3.5" />
                   <Trans>Customize</Trans>
-                </button>
+                </Button>
               )}
             </span>
           ))}
@@ -393,12 +397,13 @@ export function AudioMixer({
       )}
 
       {editing && inputs.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {inputs.map((input) => {
             const key = sceneKey(input);
             const shown = !hiddenSet.has(key);
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={input.name}
                 type="button"
                 aria-pressed={shown}
@@ -427,24 +432,25 @@ export function AudioMixer({
                 >
                   {shown ? t`SHOWN` : t`HIDDEN`}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
       )}
 
       {!editing && inputs.length > 0 && listed.length === 0 && (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
           <Trans>All audio inputs are hidden. Tap to pick some.</Trans>
-        </button>
+        </Button>
       )}
 
       {!editing && listed.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {listed.map((input) => (
             <AudioStrip
               key={input.name}
@@ -490,8 +496,9 @@ function AudioStrip({
 }) {
   const Icon = input.muted ? VolumeX : Volume2;
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5">
-      <button
+    <div className="flex items-center gap-3 px-3 py-3">
+      <Button
+        variant="ghost"
         type="button"
         aria-pressed={input.muted}
         aria-label={`${input.muted ? t`Unmute` : t`Mute`} ${input.name}`}
@@ -506,7 +513,7 @@ function AudioStrip({
         )}
       >
         <Icon className="size-4.5" aria-hidden="true" />
-      </button>
+      </Button>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-semibold">{input.name}</span>

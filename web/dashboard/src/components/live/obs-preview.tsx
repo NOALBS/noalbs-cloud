@@ -50,7 +50,7 @@ const sleep = (ms: number, signal: AbortSignal) =>
  * Fetches stills of the scene on air, one after another at `fps` (never more
  * than one request at a time), while `active` and the tab is visible.
  */
-function useObsFrames(
+export function useObsFrames(
   workspaceId: string,
   switcherId: string,
   active: boolean,
@@ -176,7 +176,7 @@ export function ObsPreview({
       </div>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
+      <div className="flex flex-col overflow-hidden">
         {on ? (
           <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
             {frame && obsConnected && !hidden && (

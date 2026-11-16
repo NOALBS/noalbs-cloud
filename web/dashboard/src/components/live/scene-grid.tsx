@@ -1,8 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { EyeOff, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
+import { EyeOff, LayoutGrid, List, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { type CSSProperties, type FormEvent, type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys } from "@/api/queries";
@@ -34,19 +34,27 @@ import { sceneKey, useHiddenScenes } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
 
 const roleTags = (): [keyof Scenes, string][] => [
-  ["live", t`LIVE SCENE`],
-  ["low", t`LOW SCENE`],
-  ["offline", t`BRB SCENE`],
-  ["starting", "STARTING"],
-  ["ending", "ENDING"],
-  ["privacy", "PRIVACY"],
-  ["refresh", "REFRESH"],
+  ["live", t`LIVE`],
+  ["low", t`LOW`],
+  ["offline", t`BRB`],
+  ["starting", t`Starting`],
+  ["ending", t`Ending`],
+  ["privacy", t`Privacy`],
+  ["refresh", t`Refresh`],
 ];
 
 const TILE =
   "flex min-h-19 flex-col items-start justify-between gap-1.5 rounded-xl p-3 text-left transition-colors";
 const HEADER_BUTTON =
   "flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium hover:bg-surface-2";
+
+export function readSceneView(switcherId: string): "grid" | "list" {
+  try {
+    return localStorage.getItem(`noalbs-scene-view:${switcherId}`) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
+}
 
 /**
  * OBS's scenes as big tap targets; the one on air is highlighted. "Customize"
@@ -60,6 +68,10 @@ export function SceneGrid({
   canControl,
   canManage,
   obsConnected,
+  previewUuid,
+  onPreviewSelect,
+  onProgramSelect,
+  operatorTools,
 }: {
   path: { workspace_id: string; switcher_id: string };
   scenes: Scenes;
@@ -68,10 +80,29 @@ export function SceneGrid({
   /** May add and remove scenes in OBS (members who manage switchers, not while paused). */
   canManage: boolean;
   obsConnected: boolean;
+  previewUuid?: string;
+  onPreviewSelect?: (scene: { uuid: string; name: string }) => void;
+  onProgramSelect?: (scene: { uuid: string; name: string }) => void;
+  operatorTools?: ReactNode;
 }) {
   const queryClient = useQueryClient();
   const [hidden, setHidden] = useHiddenScenes(path.switcher_id);
   const [editing, setEditing] = useState(false);
+  const [viewState, setViewState] = useState(() => ({
+    switcherId: path.switcher_id,
+    view: readSceneView(path.switcher_id),
+  }));
+  const view =
+    viewState.switcherId === path.switcher_id ? viewState.view : readSceneView(path.switcher_id);
+  const toggleView = () => {
+    const next = view === "grid" ? "list" : "grid";
+    setViewState({ switcherId: path.switcher_id, view: next });
+    try {
+      localStorage.setItem(`noalbs-scene-view:${path.switcher_id}`, next);
+    } catch {
+      // The selection still works when browser storage is unavailable.
+    }
+  };
   // Adding and removing scenes in OBS: a mode of its own, so a tap meant to
   // switch scenes can't remove one.
   const [managing, setManaging] = useState(false);
@@ -117,7 +148,7 @@ export function SceneGrid({
   });
 
   const roleOf = (uuid: string | null | undefined) =>
-    roleTags().find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? "SCENE";
+    roleTags().find(([key]) => uuid && scenes[key] === uuid)?.[1] ?? t`No role`;
 
   const hiddenSet = new Set(hidden);
   const all = list.data?.scenes ?? [];
@@ -139,54 +170,77 @@ export function SceneGrid({
         </h2>
         {list.data &&
           (managing ? (
-            <button
+            <Button
+              variant="ghost"
               type="button"
               onClick={() => setManaging(false)}
               className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
             >
               <Trans>Done</Trans>
-            </button>
+            </Button>
           ) : editing ? (
             <span className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setHidden(anyHidden ? [] : all.map((scene) => sceneKey(scene)))}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
                 {anyHidden ? t`Show all` : t`Hide all`}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
                 <Trans>Done</Trans>
-              </button>
+              </Button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              {hiddenCount > 0
-                ? t`${hiddenCount} hidden`
-                : canControl
-                  ? t`Tap to switch`
-                  : t`Synced from OBS`}
-              <button
+              {operatorTools}
+              <span className="scene-instruction">
+                {hiddenCount > 0
+                  ? t`${hiddenCount} hidden`
+                  : canControl
+                    ? onPreviewSelect
+                      ? t`1–9 preview · Shift+1–9 cuts`
+                      : t`Tap to switch`
+                    : t`Synced from OBS`}
+              </span>
+              <Button
+                variant="ghost"
                 type="button"
+                aria-label={view === "grid" ? t`Show scenes as list` : t`Show scenes as grid`}
+                onClick={toggleView}
+                className={HEADER_BUTTON}
+              >
+                {view === "grid" ? (
+                  <LayoutGrid className="size-3.5" />
+                ) : (
+                  <List className="size-3.5" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                type="button"
+                aria-label={t`Customize scenes`}
                 onClick={() => setEditing(true)}
                 className={cn(HEADER_BUTTON, "text-primary")}
               >
                 <SlidersHorizontal className="size-3.5" />
-                <Trans>Customize</Trans>
-              </button>
+              </Button>
               {canManage && (
-                <button
+                <Button
+                  variant="ghost"
                   type="button"
+                  aria-label={t`Edit scenes`}
                   onClick={() => setManaging(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
                   <Pencil className="size-3.5" />
-                  <Trans>Edit</Trans>
-                </button>
+                </Button>
               )}
             </span>
           ))}
@@ -297,6 +351,19 @@ export function SceneGrid({
         </p>
       )}
       {obsConnected && list.isPending && <Skeleton className="h-40 rounded-2xl" />}
+      {obsConnected && list.isError && (
+        <p className="py-3 text-sm text-muted-foreground">
+          <Trans>Couldn’t load scenes.</Trans>{" "}
+          <Button
+            variant="ghost"
+            type="button"
+            className="text-primary hover:underline"
+            onClick={() => void list.refetch()}
+          >
+            <Trans>Retry</Trans>
+          </Button>
+        </p>
+      )}
 
       {list.data && editing && (
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -304,7 +371,8 @@ export function SceneGrid({
             const key = sceneKey(scene);
             const shown = !hiddenSet.has(key);
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={key}
                 type="button"
                 aria-pressed={shown}
@@ -329,61 +397,183 @@ export function SceneGrid({
                     </>
                   )}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
       )}
 
-      {list.data && !editing && !managing && visible.length > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {visible.map((scene) => {
+      {list.data &&
+        !editing &&
+        !managing &&
+        visible.length > 0 &&
+        onPreviewSelect &&
+        (view === "grid" ? (
+          <div
+            data-scene-view={view}
+            className="scene-bus"
+            style={
+              {
+                "--scene-count": visible.length,
+                "--bus-rows": Math.ceil(visible.length / 3),
+              } as CSSProperties
+            }
+          >
+            {(["PVW", "PGM"] as const).map((bus) => (
+              <div className="bus-bank" key={bus}>
+                <span
+                  className={bus === "PVW" ? "bus-label preview-tally" : "bus-label program-tally"}
+                >
+                  {bus}
+                </span>
+                {visible.map((scene, index) => {
+                  const active = scene.uuid === (bus === "PVW" ? previewUuid : currentUuid);
+                  return (
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      key={sceneKey(scene)}
+                      disabled={
+                        !canControl ||
+                        !scene.uuid ||
+                        !obsConnected ||
+                        (bus === "PGM" && isCurrent(scene))
+                      }
+                      aria-label={`${bus === "PVW" ? "Cue" : "Cut to"} ${scene.name}`}
+                      aria-pressed={active}
+                      className={`bus-cell ${active ? (bus === "PVW" ? "lit-preview" : "lit-program") : ""}`}
+                      onClick={() =>
+                        scene.uuid &&
+                        (bus === "PVW"
+                          ? onPreviewSelect({ uuid: scene.uuid, name: scene.name })
+                          : onProgramSelect?.({ uuid: scene.uuid, name: scene.name }))
+                      }
+                    >
+                      <span className="bus-role">
+                        {index < 9 && (
+                          <kbd>
+                            {bus === "PGM" ? "⇧" : ""}
+                            {index + 1}
+                          </kbd>
+                        )}{" "}
+                        {roleOf(scene.uuid)}
+                      </span>
+                      <strong>{scene.name}</strong>
+                    </Button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div data-scene-view={view} className="scene-bus-list">
+            {visible.map((scene, index) => (
+              <div key={sceneKey(scene)}>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  disabled={!canControl || !scene.uuid || !obsConnected}
+                  className={scene.uuid === previewUuid ? "lit-preview" : ""}
+                  aria-label={`Cue ${scene.name}`}
+                  onClick={() =>
+                    scene.uuid && onPreviewSelect({ uuid: scene.uuid, name: scene.name })
+                  }
+                >
+                  <span className="preview-tally">PVW</span> <kbd>{index < 9 ? index + 1 : ""}</kbd>{" "}
+                  <strong>{scene.name}</strong>
+                  <small>{roleOf(scene.uuid)}</small>
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  disabled={!canControl || !scene.uuid || !obsConnected || isCurrent(scene)}
+                  className={isCurrent(scene) ? "lit-program" : ""}
+                  aria-label={`Cut to ${scene.name}`}
+                  onClick={() =>
+                    scene.uuid && onProgramSelect?.({ uuid: scene.uuid, name: scene.name })
+                  }
+                >
+                  <span className="program-tally">PGM</span>
+                  <kbd>{index < 9 ? `⇧${index + 1}` : ""}</kbd>
+                </Button>
+              </div>
+            ))}
+          </div>
+        ))}
+      {list.data && !editing && !managing && visible.length > 0 && !onPreviewSelect && (
+        <div
+          data-scene-view={view}
+          style={{ "--scene-count": visible.length } as CSSProperties}
+          className={cn(
+            "scene-cells grid overflow-hidden bg-divider",
+            view === "grid" ? "grid-cols-3" : "grid-cols-1",
+          )}
+        >
+          {visible.map((scene, index) => {
             const current = isCurrent(scene);
             const pending = switchScene.isPending && switchScene.variables === scene.uuid;
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={sceneKey(scene)}
                 type="button"
                 // Only the scene being switched to waits: on a slow connection the
                 // other tiles stay usable, and the switches go out in tap order.
-                disabled={!canControl || !scene.uuid || current || pending}
+                disabled={!canControl || !scene.uuid || (!onPreviewSelect && current) || pending}
                 aria-pressed={current}
-                onClick={() => scene.uuid && switchScene.mutate(scene.uuid)}
+                onClick={() =>
+                  scene.uuid &&
+                  (onProgramSelect
+                    ? onProgramSelect({ uuid: scene.uuid, name: scene.name })
+                    : switchScene.mutate(scene.uuid))
+                }
                 className={cn(
-                  TILE,
-                  "disabled:cursor-default",
-                  current
-                    ? "border-2 border-primary bg-primary-soft"
-                    : "border bg-card enabled:hover:bg-surface-2",
+                  "scene-cell relative flex min-w-0 flex-col items-start justify-between gap-3 bg-card px-4 py-3 text-left transition-colors disabled:cursor-default enabled:hover:bg-surface-2",
+                  current && "scene-on-air",
                   pending && "animate-pulse",
+                  scene.uuid === previewUuid &&
+                    "outline outline-dashed -outline-offset-2 outline-primary",
                 )}
               >
-                <span className="text-sm font-semibold">{scene.name}</span>
-                <span
-                  className={cn(
-                    "flex items-center gap-1.5 text-[11px] font-semibold tracking-wider",
-                    current ? "text-offline" : "text-muted-foreground",
+                <span className="scene-copy flex min-w-0 flex-col">
+                  <span className="scene-name text-sm font-semibold">
+                    {index < 9 && <kbd className="scene-key">{index + 1}</kbd>}
+                    {scene.name}
+                  </span>
+                  {view === "list" && (
+                    <span className="scene-role text-muted-foreground">{roleOf(scene.uuid)}</span>
                   )}
-                >
-                  {current && (
-                    <span className="size-1.5 rounded-full bg-offline" aria-hidden="true" />
-                  )}
-                  {current ? t`ON AIR` : roleOf(scene.uuid)}
                 </span>
-              </button>
+                <span className="scene-secondary text-xs text-muted-foreground">
+                  {current && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-offline/10 px-2 py-0.5 text-[10px] leading-4 font-medium text-offline">
+                      <span className="size-1.5 rounded-full bg-offline" aria-hidden="true" />
+                      <Trans>On air</Trans>
+                    </span>
+                  )}
+                  {!current && scene.uuid === previewUuid && (
+                    <span className="inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-[10px] leading-4 font-medium text-primary">
+                      <Trans>PREVIEW</Trans>
+                    </span>
+                  )}
+                  {view === "grid" && !current && scene.uuid !== previewUuid && roleOf(scene.uuid)}
+                </span>
+                {current && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-offline" />}
+              </Button>
             );
           })}
         </div>
       )}
 
       {list.data && !editing && !managing && visible.length === 0 && (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
           <Trans>All scenes are hidden. Tap to pick some.</Trans>
-        </button>
+        </Button>
       )}
     </section>
   );

@@ -74,7 +74,7 @@ import { cn } from "@/lib/utils";
 
 /** Like the scene tiles, so both grids read the same. */
 const TILE =
-  "flex min-h-19 flex-col items-start justify-between gap-1.5 rounded-xl p-3 text-left transition-colors";
+  "flex min-h-10 min-w-0 items-center justify-between gap-2 border-b border-divider py-2 text-left transition-colors";
 
 const HEADER_BUTTON =
   "flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium hover:bg-surface-2";
@@ -98,6 +98,9 @@ export function SourceList({
   canControl,
   canEditSources,
   obsConnected,
+  columns = false,
+  programName,
+  previewName,
 }: {
   path: { workspace_id: string; switcher_id: string };
   /** The scene on air (UUID, else name), so a switch loads the new scene's sources. */
@@ -106,6 +109,9 @@ export function SourceList({
   /** May add and edit sources (members who manage switchers, not while paused). */
   canEditSources: boolean;
   obsConnected: boolean;
+  columns?: boolean;
+  programName?: string | null;
+  previewName?: string | null;
 }) {
   const [hidden, setHidden] = useHiddenSources(path.switcher_id);
   const [editing, setEditing] = useState(false);
@@ -254,52 +260,57 @@ export function SourceList({
         {list.data &&
           (onScene.length > 0 || canEditSources) &&
           (arranging ? (
-            <button
+            <Button
+              variant="ghost"
               type="button"
               onClick={() => setArranging(false)}
               className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
             >
               <Trans>Done</Trans>
-            </button>
+            </Button>
           ) : editing ? (
             <span className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
                 {hiddenHere > 0 ? t`Show all` : t`Hide all`}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
                 <Trans>Done</Trans>
-              </button>
+              </Button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {hiddenHere > 0 && t`${hiddenHere} hidden`}
               {onScene.length > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   type="button"
                   onClick={() => setEditing(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
                   <SlidersHorizontal className="size-3.5" />
                   <Trans>Customize</Trans>
-                </button>
+                </Button>
               )}
               {canArrange && (
-                <button
+                <Button
+                  variant="ghost"
                   type="button"
                   onClick={() => setArranging(true)}
                   className={cn(HEADER_BUTTON, "text-primary")}
                 >
                   <Pencil className="size-3.5" />
                   <Trans>Edit</Trans>
-                </button>
+                </Button>
               )}
             </span>
           ))}
@@ -404,13 +415,14 @@ export function SourceList({
         !arranging &&
         sections.length > 0 &&
         listedSections.length === 0 && (
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => setEditing(true)}
             className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
           >
             <Trans>All sources are hidden. Tap to pick some.</Trans>
-          </button>
+          </Button>
         )}
 
       {(editing || arranging ? sections : listedSections).map((section) => (
@@ -446,7 +458,7 @@ export function SourceList({
                 items={section.items.map(({ source }) => sourceKey(source))}
                 strategy={verticalListSortingStrategy}
               >
-                <ul className="flex flex-col divide-y divide-divider rounded-xl border">
+                <ul className="flex flex-col divide-y divide-divider">
                   {section.items.map(({ source }) => {
                     const editable = canEditSources && editableKind(source) !== null;
                     const canRemove = canEditSources && removable(source);
@@ -528,7 +540,7 @@ export function SourceList({
               </SortableContext>
             </DndContext>
           ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <div className={cn("grid gap-x-4", columns ? "grid-cols-2" : "grid-cols-1")}>
               {section.items.map(({ source, shown }) => {
                 const key = sourceKey(source);
                 const Icon = SOURCE_ICONS[sourceKind(source)];
@@ -542,7 +554,8 @@ export function SourceList({
                 if (editing) {
                   const listed = !hiddenSet.has(sceneKey(source));
                   return (
-                    <button
+                    <Button
+                      variant="ghost"
                       key={key}
                       type="button"
                       aria-pressed={listed}
@@ -550,8 +563,8 @@ export function SourceList({
                       className={cn(
                         TILE,
                         listed
-                          ? "border-2 border-primary bg-primary-soft"
-                          : "border border-dashed border-border-strong bg-transparent text-muted-foreground opacity-70",
+                          ? "bg-primary-soft"
+                          : "bg-transparent text-muted-foreground opacity-70",
                       )}
                     >
                       {name}
@@ -567,13 +580,14 @@ export function SourceList({
                           </>
                         )}
                       </span>
-                    </button>
+                    </Button>
                   );
                 }
 
                 const pending = toggle.isPending && sourceKey(toggle.variables.source) === key;
                 return (
-                  <button
+                  <Button
+                    variant="ghost"
                     key={key}
                     type="button"
                     aria-pressed={source.enabled}
@@ -582,18 +596,40 @@ export function SourceList({
                     className={cn(
                       TILE,
                       "disabled:cursor-default",
-                      source.enabled
-                        ? "border-2 border-primary bg-primary-soft"
-                        : "border border-dashed border-border-strong bg-transparent text-muted-foreground",
+                      !source.enabled && "text-muted-foreground",
+                      "enabled:hover:bg-surface-2",
                       source.enabled && !shown && "opacity-60",
                       pending && "animate-pulse",
                     )}
                   >
-                    {name}
+                    <span
+                      className={
+                        previewName
+                          ? "flex min-w-0 flex-1 items-center gap-2 text-left"
+                          : "contents"
+                      }
+                    >
+                      {source.enabled && shown && list.data?.scene === previewName && (
+                        <span
+                          className="size-1.5 shrink-0 rounded-full bg-live"
+                          role="img"
+                          aria-label="In cued Preview"
+                          title="In cued Preview"
+                        />
+                      )}
+                      {source.enabled && shown && list.data?.scene === programName && (
+                        <span
+                          className="source-program-dot"
+                          title="In Program"
+                          role="img"
+                          aria-label="In Program"
+                        />
+                      )}
+                      {name}
+                    </span>
                     <span
                       className={cn(
-                        "flex items-center gap-1.5 text-[11px] font-semibold tracking-wider",
-                        source.enabled && "text-primary-soft-foreground",
+                        "flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground",
                       )}
                     >
                       {source.enabled ? (
@@ -601,9 +637,11 @@ export function SourceList({
                       ) : (
                         <EyeOff className="size-3" aria-hidden="true" />
                       )}
-                      {source.enabled ? (shown ? t`SHOWN` : t`SHOWN · PARENT HIDDEN`) : t`HIDDEN`}
+                      <span className="sr-only">
+                        {source.enabled ? (shown ? t`Shown` : t`Shown · parent hidden`) : t`Hidden`}
+                      </span>
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -648,7 +686,8 @@ function SortableSourceRow({
       )}
     >
       {canMove && (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
@@ -657,7 +696,7 @@ function SortableSourceRow({
           className="flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-subtle-foreground hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="size-4" />
-        </button>
+        </Button>
       )}
       <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span
