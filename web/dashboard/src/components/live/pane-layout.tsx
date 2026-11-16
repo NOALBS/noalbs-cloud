@@ -1,15 +1,7 @@
-import {
-  isValidElement,
-  memo,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { ArrowDown, ArrowUp, LayoutDashboard, X } from "lucide-react";
+import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Layout, LayoutItem } from "react-grid-layout";
+import type { Layout } from "react-grid-layout";
 import GridLayout from "react-grid-layout/legacy";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,33 +11,118 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { type FamilyVariants, type LiveVariant, paneFamily } from "./live-variants";
 import "react-grid-layout/css/styles.css";
-import "./pane-layout.css";
+import "./live.css";
 
 export const paneDefinitions = [
-  { id: "status", title: "Status", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "bitrate-chart", title: "Bitrate chart", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "controls", title: "Actions", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "servers", title: "Stream servers", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "belabox", title: "BELABOX", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "moblin", title: "Moblin", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "preview", title: "OBS preview", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "scenes", title: "Scenes", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "sources", title: "Sources", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "audio", title: "Audio", minW: 1, minH: 3, w: 1, h: 4 },
-  { id: "activity", title: "Activity", minW: 1, minH: 2, w: 1, h: 4 },
-  { id: "program-preview", title: "Program / Preview", minW: 1, minH: 3, w: 2, h: 4 },
-  { id: "auto-switch", title: "Auto switch", minW: 1, minH: 3, w: 1, h: 4 },
+  { id: "monitors", title: "Preview / Program", min: 620, operator: true },
+  { id: "preview", title: "Preview", min: 300 },
+  { id: "on-air", title: "On air", min: 220 },
+  { id: "controls", title: "Actions", min: 300 },
+  { id: "bitrate", title: "Bitrate", min: 300 },
+  { id: "scenes", title: "Scenes", min: 320 },
+  { id: "sources", title: "Sources", min: 280 },
+  { id: "audio", title: "Audio", min: 300 },
+  { id: "servers", title: "Stream servers", min: 320 },
+  { id: "devices", title: "Devices", min: 340 },
+  { id: "belabox", title: "BELABOX", min: 340 },
+  { id: "moblin", title: "Moblin", min: 340 },
+  { id: "obs", title: "OBS", min: 260 },
+  { id: "activity", title: "Activity", min: 300 },
 ] as const;
 export type PaneId = (typeof paneDefinitions)[number]["id"];
-type Saved = {
-  visible: PaneId[];
-  layouts: Record<string, Layout>;
-  visibleByCols?: Record<string, PaneId[]>;
+export type Mode = "streamer" | "operator";
+type Spot = [id: PaneId, x: number, y: number, w: number, h: number];
+type Saved = { phone?: PaneId[]; grids: Record<string, Layout> };
+
+const ids: string[] = paneDefinitions.map((pane) => pane.id);
+const ROW = 4;
+const GAP = 16;
+const MIN_H = 6;
+
+/** Grid columns for a content width: wider screens get more columns, not wider panes. */
+/** Below this content width the panes stack in one column, as on a phone. */
+const STACK = 700;
+export const columnsFor = (width: number) => (width >= 2100 ? 36 : width >= 1500 ? 24 : 12);
+
+const presets: Record<Mode, Record<number, Spot[]>> = {
+  operator: {
+    12: [
+      ["monitors", 0, 0, 12, 20],
+      ["scenes", 0, 20, 12, 9],
+      ["bitrate", 0, 29, 6, 13],
+      ["servers", 6, 29, 6, 13],
+      ["sources", 0, 42, 6, 18],
+      ["audio", 6, 42, 6, 18],
+      ["devices", 0, 60, 6, 24],
+      ["obs", 6, 60, 6, 24],
+      ["activity", 0, 84, 12, 16],
+    ],
+    24: [
+      ["monitors", 0, 0, 18, 23],
+      ["scenes", 0, 23, 18, 9],
+      ["sources", 0, 32, 5, 22],
+      ["audio", 5, 32, 6, 22],
+      ["devices", 11, 32, 7, 22],
+      ["bitrate", 18, 0, 6, 13],
+      ["servers", 18, 13, 6, 12],
+      ["obs", 18, 25, 6, 22],
+      ["activity", 18, 47, 6, 16],
+    ],
+    36: [
+      ["monitors", 0, 0, 20, 26],
+      ["scenes", 0, 26, 20, 9],
+      ["sources", 0, 35, 6, 22],
+      ["audio", 6, 35, 7, 22],
+      ["obs", 13, 35, 7, 22],
+      ["belabox", 20, 0, 8, 26],
+      ["moblin", 20, 26, 8, 31],
+      ["bitrate", 28, 0, 8, 13],
+      ["servers", 28, 13, 8, 12],
+      ["activity", 28, 25, 8, 32],
+    ],
+  },
+  streamer: {
+    12: [
+      ["preview", 0, 0, 6, 15],
+      ["on-air", 6, 0, 6, 15],
+      ["bitrate", 0, 15, 6, 13],
+      ["servers", 6, 15, 6, 13],
+      ["scenes", 0, 28, 12, 9],
+      ["sources", 0, 37, 6, 18],
+      ["audio", 6, 37, 6, 18],
+      ["belabox", 0, 55, 6, 26],
+      ["moblin", 6, 55, 6, 26],
+      ["activity", 0, 81, 12, 16],
+    ],
+    24: [
+      ["preview", 0, 0, 7, 15],
+      ["on-air", 7, 0, 4, 15],
+      ["bitrate", 11, 0, 7, 15],
+      ["scenes", 0, 15, 18, 9],
+      ["sources", 0, 24, 5, 26],
+      ["audio", 5, 24, 6, 26],
+      ["moblin", 11, 24, 7, 26],
+      ["servers", 18, 0, 6, 12],
+      ["belabox", 18, 12, 6, 22],
+      ["activity", 18, 34, 6, 16],
+    ],
+    36: [
+      ["preview", 0, 0, 10, 17],
+      ["on-air", 10, 0, 6, 17],
+      ["bitrate", 16, 0, 12, 17],
+      ["scenes", 0, 17, 28, 9],
+      ["sources", 0, 26, 7, 26],
+      ["audio", 7, 26, 7, 26],
+      ["belabox", 14, 26, 7, 26],
+      ["moblin", 21, 26, 7, 26],
+      ["servers", 28, 0, 8, 12],
+      ["activity", 28, 12, 8, 40],
+    ],
+  },
 };
-const streamer: PaneId[] = [
-  "status",
+const phonePreset: PaneId[] = [
+  "bitrate",
   "controls",
   "scenes",
   "servers",
@@ -55,124 +132,44 @@ const streamer: PaneId[] = [
   "audio",
   "activity",
 ];
-export const operator: PaneId[] = [
-  "program-preview",
-  "bitrate-chart",
-  "servers",
-  "belabox",
-  "moblin",
-  "scenes",
-  "activity",
-  "sources",
-  "audio",
-];
-const allIds: string[] = paneDefinitions.map((p) => p.id);
-export const storageKey = (id: string, phone: boolean, mode = true, variant: LiveVariant = "c") =>
-  `noalbs-live-layout:v${mode ? 12 : 11}:${id}:${phone ? "phone" : "desktop"}:${mode ? "operator:research" : `streamer:${variant}`}`;
-export const rowHeight = (availableHeight: number) => (availableHeight - 11 * 12) / 12;
 
-export function operatorFor(cols: number): PaneId[] {
-  return cols === 3
-    ? [...operator.filter((id) => !["audio", "belabox", "moblin"].includes(id)), "controls"]
-    : operator;
+export const storageKey = (switcherId: string, mode: Mode) =>
+  `noalbs-live-layout:v21:${switcherId}:${mode}`;
+
+export function preset(mode: Mode, cols: number): Layout {
+  return (presets[mode][cols] ?? []).map(([i, x, y, w, h]) => ({
+    i,
+    x,
+    y,
+    w,
+    h,
+    minH: MIN_H,
+  }));
 }
 
-export function defaults(ids: PaneId[], cols: number): Layout {
-  const positions: Partial<Record<PaneId, [number, number, number, number]>> =
-    cols >= 5
-      ? {
-          status: [0, 0, 4, 2],
-          controls: [0, 2, 4, 3],
-          sources: [0, 8, 4, 4],
-          servers: [16, 0, 4, 3],
-          scenes: [0, 5, 16, 3],
-          audio: [4, 8, 4, 4],
-          belabox: [8, 8, 4, 4],
-          moblin: [12, 8, 4, 4],
-          activity: [16, 6, 4, 6],
-          "bitrate-chart": [16, 3, 4, 3],
-          preview: [8, 5, 8, 7],
-          "program-preview": [0, 0, 16, 5],
-        }
-      : cols >= 4
-        ? {
-            status: [0, 0, 4, 3],
-            controls: [0, 3, 4, 4],
-            servers: [12, 0, 4, 3],
-            "bitrate-chart": [12, 3, 4, 3],
-            scenes: [0, 5, 12, 3],
-            sources: [0, 8, 4, 4],
-            preview: [8, 0, 4, 5],
-            audio: [4, 8, 4, 4],
-            activity: [12, 6, 4, 6],
-            belabox: [8, 8, 4, 2],
-            moblin: [8, 10, 4, 2],
-            "program-preview": [0, 0, 12, 5],
-          }
-        : cols >= 3
-          ? {
-              status: [0, 0, 4, 4],
-              scenes: [0, 4, 8, 3],
-              "bitrate-chart": [8, 3, 4, 3],
-              controls: [4, 7, 4, 5],
-              sources: [0, 7, 4, 5],
-              servers: [8, 0, 4, 3],
-              activity: [8, 6, 4, 6],
-              preview: [8, 3, 4, 5],
-              "program-preview": [0, 0, 8, 4],
-            }
-          : {
-              status: [0, 0, 4, 2],
-              controls: [0, 2, 4, 2],
-              servers: [0, 4, 4, 2],
-              belabox: [0, 6, 4, 4],
-              activity: [0, 10, 4, 2],
-              "bitrate-chart": [4, 0, 4, 2],
-              moblin: [4, 2, 4, 2],
-              preview: [4, 4, 4, 2],
-              scenes: [4, 6, 4, 2],
-              sources: [4, 8, 4, 2],
-              audio: [4, 10, 4, 2],
-              "program-preview": [0, 6, 4, 4],
-            };
-  return ids.map((id, index) => {
-    const p = paneDefinitions.find((p) => p.id === id) ?? paneDefinitions[0];
-    const [x, y, w, h] = positions[id] ?? [0, 12 + index * 4, 4, p.h];
-    return { i: id, x: x / 4, y, w: w / 4, h, minW: p.minW, minH: Math.min(p.minH, h) };
-  });
-}
-
-export function read(key: string, phone: boolean, mode = true, variant: LiveVariant = "c"): Saved {
+export function read(key: string): Saved {
   try {
     const value = JSON.parse(localStorage.getItem(key) ?? "null");
+    const known = (list: unknown) =>
+      Array.isArray(list) &&
+      list.every((id) => ids.includes(id)) &&
+      new Set(list).size === list.length;
     if (
       value &&
-      Array.isArray(value.visible) &&
-      value.visible.every((id: string) => allIds.includes(id)) &&
-      new Set(value.visible).size === value.visible.length &&
-      (value.visibleByCols === undefined ||
-        (value.visibleByCols &&
-          typeof value.visibleByCols === "object" &&
-          Object.values(value.visibleByCols).every(
-            (panes) =>
-              Array.isArray(panes) &&
-              panes.every((id: string) => allIds.includes(id)) &&
-              new Set(panes).size === panes.length,
-          ))) &&
-      value.layouts &&
-      typeof value.layouts === "object" &&
-      Object.values(value.layouts).every(
+      (value.phone === undefined || known(value.phone)) &&
+      value.grids &&
+      typeof value.grids === "object" &&
+      Object.values(value.grids).every(
         (layout) =>
           Array.isArray(layout) &&
+          known(layout.map((item) => item?.i)) &&
           layout.every(
-            (p: LayoutItem) =>
-              p &&
-              allIds.includes(p.i) &&
-              [p.x, p.y, p.w, p.h].every(Number.isFinite) &&
-              p.x >= 0 &&
-              p.y >= 0 &&
-              p.w > 0 &&
-              p.h > 0,
+            (item) =>
+              [item.x, item.y, item.w, item.h].every(Number.isFinite) &&
+              item.x >= 0 &&
+              item.y >= 0 &&
+              item.w > 0 &&
+              item.h > 0,
           ),
       )
     )
@@ -180,497 +177,300 @@ export function read(key: string, phone: boolean, mode = true, variant: LiveVari
   } catch {
     /* Invalid or unavailable storage uses the preset. */
   }
-  return modeSaved(phone, mode, variant);
+  return { grids: {} };
 }
 
-export const operatorColumns = (cols: number) => (cols >= 4 ? 5 : cols);
+const title = (id: PaneId) => paneDefinitions.find((pane) => pane.id === id)?.title ?? id;
 
-export function researchOperatorSaved(): Saved {
-  const layouts: Record<string, Layout> = {};
-  const visibleByCols: Record<string, PaneId[]> = {};
-  for (const cols of [2, 3, 4, 5]) {
-    const main = operatorColumns(cols) - 1;
-    const compact = cols < 4;
-    const definitions: [PaneId, number, number, number, number][] = [
-      ["program-preview", 0, 0, main, compact ? 6 : 5],
-      ["scenes", 0, compact ? 6 : 5, main, compact ? 3 : 2],
-      ["sources", 0, compact ? 9 : 7, compact ? main : 1, compact ? 3 : 5],
-      ["servers", main, 0, 1, 3],
-      ["auto-switch", main, 3, 1, compact ? 5 : 4],
-      ["activity", main, compact ? 8 : 7, 1, compact ? 4 : 5],
-      ...(!compact
-        ? ([
-            ["audio", 1, 7, 1, 5],
-            ["belabox", 2, 7, 1, 5],
-            ["moblin", 3, 7, 1, 5],
-          ] as [PaneId, number, number, number, number][])
-        : []),
-    ];
-    layouts[cols] = definitions.map(([i, x, y, w, h]) => ({
-      i,
-      x,
-      y,
-      w,
-      h,
-      minW: 1,
-      minH: Math.min(3, h),
-    }));
-    visibleByCols[cols] = definitions.map(([id]) => id);
-  }
-  return { visible: visibleByCols[4] ?? [], visibleByCols, layouts };
-}
-
-export function modeSaved(phone: boolean, mode: boolean, variant: LiveVariant): Saved {
-  if (phone) return { visible: streamer, layouts: {} };
-  if (mode) return researchOperatorSaved();
-  const layouts: Record<string, Layout> = {};
-  const visibleByCols: Record<string, PaneId[]> = {};
-  for (const cols of [2, 3, 4, 5]) {
-    const last = cols - 1;
-    const definitions: [PaneId, number, number, number, number][] =
-      variant === "c"
-        ? [
-            ["preview", 0, 0, last, 5],
-            ["scenes", 0, 5, last, 3],
-            ["controls", 0, 8, 1, 4],
-            ["sources", Math.min(1, last), 8, Math.max(1, last - 1), 4],
-            ["servers", last, 0, 1, 4],
-            ["activity", last, 4, 1, 8],
-          ]
-        : cols >= 4
-          ? [
-              ["status", 0, 0, 1, 4],
-              ["preview", 0, 4, 1, 5],
-              ["servers", 0, 9, 1, 3],
-              ["controls", 1, 0, 1, 6],
-              ["sources", 1, 6, 1, 6],
-              ["scenes", 2, 0, cols - 2, 6],
-              ["activity", 2, 6, 1, 6],
-              ["bitrate-chart", 3, 6, cols - 3, 6],
-            ]
-          : [
-              ["status", 0, 0, 1, 4],
-              ["servers", 0, 4, 1, 4],
-              ["preview", 0, 8, 1, 4],
-              ["controls", 1, 0, 1, 6],
-              ["sources", 1, 6, 1, 6],
-              ...(cols === 3
-                ? ([
-                    ["scenes", 2, 0, 1, 6],
-                    ["activity", 2, 6, 1, 6],
-                  ] as [PaneId, number, number, number, number][])
-                : []),
-            ];
-    layouts[cols] = definitions.map(([i, x, y, w, h]) => ({
-      i,
-      x,
-      y,
-      w,
-      h,
-      minW: 1,
-      minH: Math.min(3, h),
-    }));
-    visibleByCols[cols] = definitions.map(([id]) => id);
-  }
-  return { visible: visibleByCols[4] ?? [], visibleByCols, layouts };
-}
-
-export function PaneLayout({
-  switcherId,
-  panes,
-  header,
-  operatorMode = false,
-  variant = "a",
-  designs,
-}: {
-  switcherId: string;
-  panes: Record<PaneId, ReactNode>;
-  header: HTMLElement | null;
-  operatorMode?: boolean;
-  variant?: LiveVariant;
-  designs?: FamilyVariants;
-}) {
-  const phone = !useMediaQuery("(min-width: 768px)");
-  return (
-    <LayoutEditor
-      key={`${switcherId}-${phone}-${operatorMode}-${variant}`}
-      switcherId={switcherId}
-      phone={phone}
-      panes={panes}
-      header={header}
-      operatorMode={operatorMode}
-      variant={variant}
-      designs={designs}
-    />
-  );
-}
-
-export function samePaneBody(previous: ReactNode, next: ReactNode): boolean {
-  if (Object.is(previous, next)) return true;
-  if (
-    !isValidElement(previous) ||
-    !isValidElement(next) ||
-    previous.type !== next.type ||
-    previous.key !== next.key
-  )
-    return false;
-  const before = previous.props as Record<string, unknown>;
-  const after = next.props as Record<string, unknown>;
-  return (
-    Object.keys(before).length === Object.keys(after).length &&
-    Object.keys(before).every((key) => {
-      if (Object.is(before[key], after[key])) return true;
-      const a = before[key];
-      const b = after[key];
-      return (
-        a != null &&
-        b != null &&
-        typeof a === "object" &&
-        typeof b === "object" &&
-        Object.getPrototypeOf(a) === Object.prototype &&
-        Object.getPrototypeOf(b) === Object.prototype &&
-        Object.keys(a).length === Object.keys(b).length &&
-        Object.entries(a).every(([name, value]) =>
-          Object.is(value, (b as Record<string, unknown>)[name]),
-        )
-      );
-    })
-  );
-}
-
+/** Holds a pane's content still while a pane is dragged or resized, so live data doesn't re-render it mid-gesture. */
 const PaneBody = memo(
-  function PaneBody({ children }: { children: ReactNode; frozen: boolean }) {
+  function PaneBody({ children }: { children: ReactNode; frozen: { current: boolean } }) {
     return children;
   },
-  (previous, next) => next.frozen || samePaneBody(previous.children, next.children),
+  (_, next) => next.frozen.current,
 );
 
-function PaneFrame({
-  id,
-  editing,
-  tools,
-  children,
-}: {
-  id: PaneId;
-  editing: boolean;
-  tools: ReactNode;
-  children: ReactNode;
-}) {
-  const content = useRef<HTMLDivElement>(null);
-  const [heading, setHeading] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    const title = content.current?.querySelector<HTMLElement>("h2, [data-pane-title]");
-    if (!title) return;
-    title.dataset.paneHeading = "true";
-    const row = title.hasAttribute("data-pane-title")
-      ? title.parentElement?.parentElement
-      : title.parentElement?.tagName === "DIV"
-        ? title.parentElement
-        : title;
-    if (!row) return;
-    row.classList.add("pane-native-header");
-    setHeading(row);
-  }, []);
-  const actions = editing && (
-    <span className="pane-tools ml-auto inline-flex shrink-0 items-center gap-1 font-normal">
-      {tools}
-    </span>
-  );
-  return (
-    <section
-      className={`pane-frame relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card ${editing ? "border-primary" : ""}`}
-    >
-      {!heading && (
-        <header className="pane-header flex h-11 shrink-0 items-center gap-2 px-3">
-          <h2 data-pane-heading className="truncate text-sm font-semibold">
-            {paneDefinitions.find((p) => p.id === id)?.title}
-          </h2>
-          {actions}
-        </header>
-      )}
-      <div
-        ref={content}
-        className={`pane-content min-h-0 flex-1 overflow-auto px-3 pb-2 ${heading ? "pane-with-header" : ""}`}
-      >
-        {children}
-      </div>
-      {heading && createPortal(actions, heading)}
-    </section>
-  );
-}
-
-function LayoutEditor({
+/**
+ * The Live page's panes. On desktop a grid the user can rearrange, resize and
+ * add to; on phones one column they can reorder. The page scrolls: a layout can
+ * be taller than the window. Saved in the browser per switcher and mode.
+ * A pane whose content is `null` isn't offered (e.g. BELABOX when not set up).
+ */
+export function PaneLayout({
   switcherId,
-  phone,
+  mode,
   panes,
-  header,
-  operatorMode,
-  variant,
-  designs,
+  toolbar,
 }: {
   switcherId: string;
-  phone: boolean;
+  mode: Mode;
   panes: Record<PaneId, ReactNode>;
-  header: HTMLElement | null;
-  operatorMode: boolean;
-  variant: LiveVariant;
-  designs?: FamilyVariants;
+  /** Where the Edit layout button goes (the page header). */
+  toolbar: HTMLElement | null;
 }) {
-  const key = storageKey(switcherId, phone, operatorMode, variant);
-  const [saved, setSaved] = useState<Saved>(() => read(key, phone, operatorMode, variant));
+  const small = !useMediaQuery("(min-width: 768px)");
+  const key = storageKey(switcherId, mode);
+  const [saved, setSaved] = useState<{ key: string; value: Saved }>(() => ({
+    key,
+    value: read(key),
+  }));
+  if (saved.key !== key) setSaved({ key, value: read(key) });
   const [editing, setEditing] = useState(false);
-  const [interacting, setInteracting] = useState(false);
-  const snapshot = useRef(panes);
-  if (!interacting) snapshot.current = panes;
-  const paneNodes = snapshot.current;
+  // A ref, not state: starting a drag must not re-render the page.
+  const interacting = useRef(false);
+  const setInteracting = (value: boolean) => {
+    interacting.current = value;
+    if (container.current) container.current.dataset.interacting = String(value);
+  };
   const container = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 600 });
-  const medium = useMediaQuery("(min-width: 1200px)");
-  const large = useMediaQuery("(min-width: 1800px)");
-  const wide = useMediaQuery("(min-width: 2400px)");
-  const cols = wide ? 5 : large ? 4 : medium ? 3 : 2;
-  const visible = useMemo(
-    () =>
-      (saved.visibleByCols?.[cols] ?? saved.visible).filter(
-        (id) => operatorMode || !["program-preview", "auto-switch"].includes(id),
-      ),
-    [saved, cols, operatorMode],
-  );
-  const layout = useMemo(
-    () => saved.layouts[cols] ?? defaults(visible, cols),
-    [saved.layouts, visible, cols],
-  );
+  const [width, setWidth] = useState(0);
   useEffect(() => {
     const element = container.current;
     if (!element) return;
-    const measure = () => {
-      const rect = element.getBoundingClientRect();
-      setSize((current) => {
-        const next = {
-          width: rect.width,
-          height: Math.max(240, window.innerHeight - rect.top - 8),
-        };
-        return next.width === current.width && next.height === current.height ? current : next;
-      });
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(element.parentElement ?? element);
-    window.addEventListener("resize", measure);
-    measure();
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
+    const observer = new ResizeObserver(() => setWidth(element.clientWidth));
+    observer.observe(element);
+    setWidth(element.clientWidth);
+    return () => observer.disconnect();
   }, []);
+  const cols = columnsFor(width);
+  const phone = small || (width > 0 && width < STACK);
+  // A pane is never shorter than its content: the page scrolls instead.
+  const [needs, setNeeds] = useState<Record<string, number>>({});
+  const fitKey = `${key}:${cols}:${width}`;
+  const fitted = useRef(fitKey);
+  if (fitted.current !== fitKey) {
+    fitted.current = fitKey;
+    if (Object.keys(needs).length) setNeeds({});
+  }
   useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(saved));
-    } catch {
-      /* Layout remains usable in memory. */
-    }
-  }, [key, saved]);
-  const update = (next: Layout) => {
-    setInteracting(false);
-    setSaved((s) => ({ ...s, layouts: { ...s.layouts, [cols]: next } }));
-  };
-  const withVisible = useCallback(
-    (s: Saved, next: PaneId[]): Saved =>
-      phone
-        ? { ...s, visible: next }
-        : { ...s, visibleByCols: { ...s.visibleByCols, [cols]: next } },
-    [phone, cols],
-  );
-  const hide = useCallback(
-    (id: PaneId) =>
-      setSaved((s) => ({
-        ...withVisible(
-          s,
-          visible.filter((p) => p !== id),
-        ),
-        layouts: {
-          ...s.layouts,
-          [cols]: (s.layouts[cols] ?? defaults(visible, cols)).filter((p) => p.i !== id),
-        },
-      })),
-    [withVisible, visible, cols],
-  );
-  const add = (id: PaneId) =>
-    setSaved((s) => {
-      const items = s.layouts[cols] ?? defaults(visible, cols);
-      const candidate = defaults([id], cols)[0] as LayoutItem;
-      const overlaps = items.some(
-        (item) =>
-          item.x < candidate.x + candidate.w &&
-          item.x + item.w > candidate.x &&
-          item.y < candidate.y + candidate.h &&
-          item.y + item.h > candidate.y,
-      );
-      return {
-        ...withVisible(s, [...visible, id]),
-        layouts: {
-          ...s.layouts,
-          [cols]: [
-            ...items,
-            {
-              ...candidate,
-              y: overlaps ? Math.max(0, ...items.map((p) => p.y + p.h)) : candidate.y,
-            },
-          ],
-        },
-      };
+    if (phone) return;
+    const measure = () => {
+      if (!container.current || interacting.current) return;
+      const grown: Record<string, number> = {};
+      for (const pane of container.current?.querySelectorAll<HTMLElement>("[data-pane]") ?? []) {
+        const content = pane.firstElementChild;
+        const over = content ? content.scrollHeight - content.clientHeight : 0;
+        if (over > 1)
+          grown[pane.dataset.pane ?? ""] = Math.ceil(
+            (pane.offsetHeight + over + GAP) / (ROW + GAP),
+          );
+      }
+      if (Object.keys(grown).length) setNeeds((current) => ({ ...current, ...grown }));
+    };
+    measure();
+    const timer = setInterval(measure, 500);
+    return () => clearInterval(timer);
+  }, [phone]);
+  const change = (next: (value: Saved) => Saved) =>
+    setSaved((current) => {
+      const value = next(current.value);
+      try {
+        localStorage.setItem(current.key, JSON.stringify(value));
+      } catch {
+        /* The layout stays usable in memory. */
+      }
+      return { key: current.key, value };
     });
-  const move = useCallback(
-    (index: number, direction: number) =>
-      setSaved((s) => {
-        const visible = [...s.visible];
-        const current = visible[index];
-        const next = visible[index + direction];
-        if (!current || !next) return s;
-        visible[index] = next;
-        visible[index + direction] = current;
-        return { ...s, visible };
-      }),
-    [],
+
+  const offered = (id: PaneId) =>
+    panes[id] != null &&
+    (mode === "operator" || !paneDefinitions.find((pane) => pane.id === id && "operator" in pane));
+  const offeredKey = paneDefinitions.map((pane) => (offered(pane.id) ? pane.id : "")).join();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `offeredKey` stands in for `offered`
+  const layout = useMemo(
+    () =>
+      (saved.value.grids[cols] ?? preset(mode, cols)).filter((item) => offered(item.i as PaneId)),
+    [saved.value.grids, cols, mode, offeredKey],
   );
-  const toolbar = (
-    <div className="flex flex-wrap items-center gap-2">
+  const fittedLayout = useMemo(
+    () =>
+      layout.map((item) => {
+        // The fewest columns that keep the pane's content from being squeezed.
+        const column = (width - GAP * (cols - 1)) / cols;
+        const px = paneDefinitions.find((pane) => pane.id === item.i)?.min ?? 0;
+        const minW = Math.min(cols, Math.max(1, Math.ceil((px + GAP) / (column + GAP))));
+        const minH = Math.max(MIN_H, needs[item.i] ?? 0);
+        // The minimum limits resizing; it never widens a pane already placed, which would push others around.
+        return { ...item, h: Math.max(item.h, minH), minW: Math.min(minW, item.w), minH };
+      }),
+    [layout, needs, width, cols],
+  );
+  const order = (
+    phone ? (saved.value.phone ?? phonePreset) : layout.map((item) => item.i as PaneId)
+  ).filter(offered);
+  const hidden = paneDefinitions
+    .map((pane) => pane.id)
+    .filter((id) => offered(id) && !order.includes(id));
+
+  const setGrid = (next: Layout) =>
+    change((value) => ({ ...value, grids: { ...value.grids, [cols]: next } }));
+  const hide = (id: PaneId) =>
+    phone
+      ? change((value) => ({ ...value, phone: order.filter((pane) => pane !== id) }))
+      : setGrid(layout.filter((item) => item.i !== id));
+  const add = (id: PaneId) => {
+    if (phone) return change((value) => ({ ...value, phone: [...order, id] }));
+    const spot = [...Object.values(presets[mode]), ...Object.values(presets.operator)]
+      .flat()
+      .find(([pane]) => pane === id);
+    const w = Math.min(spot?.[3] ?? 6, cols);
+    setGrid([
+      ...layout,
+      {
+        i: id,
+        x: 0,
+        y: Math.max(0, ...layout.map((item) => item.y + item.h)),
+        w,
+        h: spot?.[4] ?? 16,
+        minH: MIN_H,
+      },
+    ]);
+  };
+  const move = (index: number, by: number) => {
+    const next = [...order];
+    const [pane] = next.splice(index, 1);
+    if (pane) next.splice(index + by, 0, pane);
+    change((value) => ({ ...value, phone: next }));
+  };
+  const reset = () =>
+    change((value) =>
+      phone
+        ? { ...value, phone: undefined }
+        : {
+            ...value,
+            grids: Object.fromEntries(
+              Object.entries(value.grids).filter(([c]) => c !== String(cols)),
+            ),
+          },
+    );
+
+  const tools = (
+    <>
       {editing && (
         <>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">Add pane</Button>
+              <Button variant="outline" size="sm" disabled={hidden.length === 0}>
+                Add pane
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="start" sideOffset={8}>
-              {paneDefinitions
-                .filter(
-                  (p) =>
-                    !visible.includes(p.id) &&
-                    (operatorMode || !["program-preview", "auto-switch"].includes(p.id)),
-                )
-                .map((p) => (
-                  <DropdownMenuItem key={p.id} onSelect={() => add(p.id)}>
-                    {p.title}
-                  </DropdownMenuItem>
-                ))}
-              {visible.length === paneDefinitions.length && (
-                <DropdownMenuItem disabled>All panes visible</DropdownMenuItem>
-              )}
+            <DropdownMenuContent align="end">
+              {hidden.map((id) => (
+                <DropdownMenuItem key={id} onSelect={() => add(id)}>
+                  {title(id)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">Reset layout</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="start" sideOffset={8}>
-              {(operatorMode ? (["Operator", "Streamer"] as const) : (["Streamer"] as const)).map(
-                (preset) => (
-                  <DropdownMenuItem
-                    key={preset}
-                    onSelect={() => setSaved(modeSaved(phone, preset === "Operator", variant))}
-                  >
-                    {preset}
-                  </DropdownMenuItem>
-                ),
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" size="sm" onClick={reset}>
+            Reset
+          </Button>
         </>
       )}
-      <Button variant="outline" onClick={() => setEditing(!editing)}>
-        {editing ? "Done" : "Customize"}
+      <Button
+        variant={editing ? "default" : "outline"}
+        size="sm"
+        onClick={() => setEditing(!editing)}
+      >
+        {!editing && <LayoutDashboard />}
+        {editing ? "Done" : "Edit layout"}
       </Button>
+    </>
+  );
+
+  const frame = (id: PaneId, index: number) => (
+    <div key={id}>
+      <div data-pane={id} className="live-pane">
+        <div className="live-pane-fit">
+          <PaneBody frozen={interacting}>{panes[id]}</PaneBody>
+        </div>
+        {editing && (
+          <div className="live-pane-edit">
+            <span className="live-pane-edit-bar">
+              <span className="px-1.5 text-xs font-semibold">{title(id)}</span>
+              {phone && (
+                <>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Move ${title(id)} up`}
+                    disabled={index === 0}
+                    onClick={() => move(index, -1)}
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Move ${title(id)} down`}
+                    disabled={index === order.length - 1}
+                    onClick={() => move(index, 1)}
+                  >
+                    <ArrowDown />
+                  </Button>
+                </>
+              )}
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Hide ${title(id)}`}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={() => hide(id)}
+              >
+                <X />
+              </Button>
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
-  const content = useCallback(
-    (id: PaneId, index: number) => (
-      <PaneFrame
-        id={id}
-        editing={editing}
-        tools={
-          <>
-            {phone ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`Move ${id} up`}
-                  disabled={index === 0}
-                  onClick={() => move(index, -1)}
-                >
-                  ↑
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`Move ${id} down`}
-                  disabled={index === visible.length - 1}
-                  onClick={() => move(index, 1)}
-                >
-                  ↓
-                </Button>
-              </>
-            ) : (
-              <span className="pane-drag-handle cursor-grab touch-none px-1" title={`Drag ${id}`}>
-                ⠿
-              </span>
-            )}
-            <Button size="sm" variant="ghost" aria-label={`Hide ${id}`} onClick={() => hide(id)}>
-              Hide
-            </Button>
-          </>
-        }
-      >
-        <PaneBody frozen={interacting}>{paneNodes[id]}</PaneBody>
-      </PaneFrame>
-    ),
-    [editing, phone, move, hide, visible.length, interacting, paneNodes],
-  );
-  const gridChildren = useMemo(
-    () =>
-      visible.map((id, i) => (
-        <div key={id} data-pane={id} data-design={designs?.[paneFamily(id) ?? "scenes"] ?? variant}>
-          {content(id, i)}
-        </div>
-      )),
-    [visible, content, designs, variant],
-  );
+
   return (
-    <div
-      ref={container}
-      data-testid="live-pane-layout"
-      data-interacting={interacting}
-      data-editing={editing}
-      className={phone ? "" : "overflow-auto"}
-      style={phone ? undefined : { height: size.height, flexShrink: 0 }}
-    >
-      {header ? createPortal(toolbar, header) : toolbar}
-      {phone ? (
-        <div className="flex flex-col gap-3">{gridChildren}</div>
+    <div ref={container} data-testid="live-pane-layout" data-editing={editing}>
+      {toolbar ? (
+        createPortal(tools, toolbar)
       ) : (
-        size.width > 0 && (
+        <div className="mb-3 flex justify-end gap-2">{tools}</div>
+      )}
+      {phone ? (
+        <div className="flex flex-col gap-3">{order.map(frame)}</div>
+      ) : (
+        width > 0 && (
           <GridLayout
-            width={size.width}
-            cols={operatorMode ? operatorColumns(cols) : cols}
-            rowHeight={rowHeight(size.height)}
-            margin={[12, 12]}
+            width={width}
+            cols={cols}
+            rowHeight={ROW}
+            margin={[GAP, GAP]}
             containerPadding={[0, 0]}
-            layout={layout}
+            layout={fittedLayout}
             compactType="vertical"
             isDraggable={editing}
             isResizable={editing}
-            draggableHandle=".pane-drag-handle"
+            draggableCancel="button"
             onDragStart={() => setInteracting(true)}
             onResizeStart={() => setInteracting(true)}
-            onDragStop={update}
-            onResizeStop={update}
+            onDragStop={(next) => {
+              setInteracting(false);
+              setGrid(next);
+            }}
+            resizeHandles={["se", "sw", "e", "w", "s"]}
+            onResizeStop={(next, before) => {
+              setInteracting(false);
+              // A pane made wider may need less height: measure it again.
+              const resized = next.find((item) => item.i === before?.i);
+              if (resized && resized.w !== before?.w)
+                setNeeds(({ [resized.i]: _, ...rest }) => rest);
+              setGrid(next);
+            }}
           >
-            {gridChildren}
+            {order.map(frame)}
           </GridLayout>
         )
       )}
-      {visible.length === 0 && (
+      {order.length === 0 && (
         <p className="py-10 text-center text-muted-foreground">
-          No panes visible. Customize to add a pane or reset your layout.
+          No panes shown. Use Edit layout to add one.
         </p>
       )}
     </div>

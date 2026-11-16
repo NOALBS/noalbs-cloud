@@ -1,0 +1,208 @@
+/* The Live page's panes: rounded cards on the dashboard's own surfaces. */
+.live-pane {
+  position: relative;
+  height: 100%;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-card);
+  padding: 18px 20px 20px;
+}
+.live-pane-fit {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+@media (max-width: 767px) {
+  .live-pane {
+    padding: 16px;
+  }
+  .live-pane {
+    overflow: visible;
+  }
+}
+
+/* Edit layout: a pane is one handle; its content can't be clicked. */
+.live-pane-edit {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-background) 45%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  padding: 10px;
+}
+.live-pane-edit-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-popover);
+  padding: 2px 2px 2px 6px;
+}
+@media (min-width: 768px) {
+  .live-pane-edit {
+    cursor: grab;
+  }
+}
+/* The pane being moved follows the pointer exactly; the others glide out of its way. */
+[data-testid="live-pane-layout"] .react-grid-item {
+  transition: transform 140ms ease-out;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item:is(.react-draggable-dragging, .resizing, .react-grid-placeholder) {
+  transition: none;
+}
+[data-testid="live-pane-layout"] .react-grid-item.react-draggable-dragging {
+  z-index: 10;
+  cursor: grabbing;
+}
+[data-testid="live-pane-layout"] .react-draggable-dragging > .live-pane {
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+}
+[data-testid="live-pane-layout"] .react-grid-placeholder {
+  border: 1.5px dashed var(--color-primary);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  opacity: 1;
+}
+/* Resize from either side, the bottom or a bottom corner: wide strips along the edges, not a 20px corner. */
+[data-testid="live-pane-layout"] .react-grid-item > .react-resizable-handle {
+  inset: auto;
+  z-index: 6;
+  margin: 0;
+  background: none;
+  padding: 0;
+  transform: none;
+}
+[data-testid="live-pane-layout"] .react-grid-item > .react-resizable-handle::after {
+  display: none;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-e,
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-w {
+  top: 16px;
+  bottom: 24px;
+  width: 14px;
+  height: auto;
+  cursor: ew-resize;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-e {
+  right: -7px;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-w {
+  left: -7px;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-s {
+  right: 24px;
+  bottom: -7px;
+  left: 24px;
+  width: auto;
+  height: 14px;
+  cursor: ns-resize;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-se,
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-sw {
+  bottom: -7px;
+  width: 31px;
+  height: 31px;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-se {
+  right: -7px;
+  cursor: nwse-resize;
+}
+[data-testid="live-pane-layout"]
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-sw {
+  left: -7px;
+  cursor: nesw-resize;
+}
+/* A grip in each bottom corner shows where a pane resizes. */
+[data-testid="live-pane-layout"][data-editing="true"] .live-pane::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 6;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+  border-bottom-right-radius: 4px;
+  pointer-events: none;
+}
+
+/* Immersive: the page without the app's sidebar. Not browser fullscreen. */
+@media (min-width: 768px) {
+  .live-root[data-immersive="true"] {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    overflow: auto;
+    background: var(--color-background);
+  }
+  body.live-immersive {
+    overflow: hidden;
+  }
+}
+
+/* Hold to confirm: the fill runs left to right for the hold. */
+.hold-button {
+  position: relative;
+  overflow: hidden;
+}
+.hold-button .hold-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: currentColor;
+  opacity: 0.18;
+}
+.hold-button[data-holding="true"] .hold-fill {
+  transform: scaleX(1);
+  transition: transform 1s linear;
+}
+.hold-button .hold-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cards that carry their own frame elsewhere sit bare inside a pane. */
+.live-pane section:is([aria-label="BELABOX"], [aria-label="Moblin"]) {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+}
+.live-pane section > div:first-child > h2,
+.live-pane [data-pane-title] {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}

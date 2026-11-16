@@ -264,7 +264,7 @@ export function ConnectDialog({
   );
 }
 
-function ConnectDialogPrograms({ path }: { path: Path }) {
+export function ConnectDialogPrograms({ path }: { path: Path }) {
   const programs = useConnectPrograms(path);
   const control = useConnectProgramControl(path);
 

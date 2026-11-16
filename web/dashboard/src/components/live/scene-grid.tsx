@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, LayoutGrid, List, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
-import { type CSSProperties, type FormEvent, type ReactNode, useId, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys } from "@/api/queries";
@@ -159,13 +159,20 @@ export function SceneGrid({
   const hiddenCount = all.length - visible.length;
   const anyHidden = all.some((scene) => hiddenSet.has(sceneKey(scene)));
 
+  const [search, setSearch] = useState("");
+  const shown = visible.filter((scene) =>
+    scene.name.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+  /** Number hints show where the hotkeys work: operator mode. */
+  const keys = Boolean(onPreviewSelect || onProgramSelect);
+
   const toggle = (key: string) =>
     setHidden(hiddenSet.has(key) ? hidden.filter((item) => item !== key) : [...hidden, key]);
 
   return (
-    <section aria-label={t`Scenes`} className="flex flex-col gap-2.5">
+    <section aria-label={t`Scenes`} className="@container flex flex-col gap-3.5">
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <h2 className="font-semibold">
+        <h2 className="text-[15px] font-semibold tracking-tight">
           <Trans>Scenes</Trans>
         </h2>
         {list.data &&
@@ -200,15 +207,25 @@ export function SceneGrid({
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {operatorTools}
-              <span className="scene-instruction">
+              <span className="mr-1 hidden @[34rem]:inline">
                 {hiddenCount > 0
                   ? t`${hiddenCount} hidden`
                   : canControl
                     ? onPreviewSelect
-                      ? t`1–9 preview · Shift+1–9 cuts`
+                      ? t`Click to cue · Shift+click cuts`
                       : t`Tap to switch`
                     : t`Synced from OBS`}
               </span>
+              {all.length > 8 && (
+                <input
+                  type="search"
+                  aria-label={t`Search scenes`}
+                  placeholder={t`Search`}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="h-7 w-28 rounded-lg border bg-muted px-2.5 text-xs text-foreground placeholder:text-subtle-foreground"
+                />
+              )}
               <Button
                 variant="ghost"
                 type="button"
@@ -403,165 +420,86 @@ export function SceneGrid({
         </div>
       )}
 
-      {list.data &&
-        !editing &&
-        !managing &&
-        visible.length > 0 &&
-        onPreviewSelect &&
-        (view === "grid" ? (
-          <div
-            data-scene-view={view}
-            className="scene-bus"
-            style={
-              {
-                "--scene-count": visible.length,
-                "--bus-rows": Math.ceil(visible.length / 3),
-              } as CSSProperties
-            }
-          >
-            {(["PVW", "PGM"] as const).map((bus) => (
-              <div className="bus-bank" key={bus}>
-                <span
-                  className={bus === "PVW" ? "bus-label preview-tally" : "bus-label program-tally"}
-                >
-                  {bus}
-                </span>
-                {visible.map((scene, index) => {
-                  const active = scene.uuid === (bus === "PVW" ? previewUuid : currentUuid);
-                  return (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      key={sceneKey(scene)}
-                      disabled={
-                        !canControl ||
-                        !scene.uuid ||
-                        !obsConnected ||
-                        (bus === "PGM" && isCurrent(scene))
-                      }
-                      aria-label={`${bus === "PVW" ? "Cue" : "Cut to"} ${scene.name}`}
-                      aria-pressed={active}
-                      className={`bus-cell ${active ? (bus === "PVW" ? "lit-preview" : "lit-program") : ""}`}
-                      onClick={() =>
-                        scene.uuid &&
-                        (bus === "PVW"
-                          ? onPreviewSelect({ uuid: scene.uuid, name: scene.name })
-                          : onProgramSelect?.({ uuid: scene.uuid, name: scene.name }))
-                      }
-                    >
-                      <span className="bus-role">
-                        {index < 9 && (
-                          <kbd>
-                            {bus === "PGM" ? "⇧" : ""}
-                            {index + 1}
-                          </kbd>
-                        )}{" "}
-                        {roleOf(scene.uuid)}
-                      </span>
-                      <strong>{scene.name}</strong>
-                    </Button>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div data-scene-view={view} className="scene-bus-list">
-            {visible.map((scene, index) => (
-              <div key={sceneKey(scene)}>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  disabled={!canControl || !scene.uuid || !obsConnected}
-                  className={scene.uuid === previewUuid ? "lit-preview" : ""}
-                  aria-label={`Cue ${scene.name}`}
-                  onClick={() =>
-                    scene.uuid && onPreviewSelect({ uuid: scene.uuid, name: scene.name })
-                  }
-                >
-                  <span className="preview-tally">PVW</span> <kbd>{index < 9 ? index + 1 : ""}</kbd>{" "}
-                  <strong>{scene.name}</strong>
-                  <small>{roleOf(scene.uuid)}</small>
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  disabled={!canControl || !scene.uuid || !obsConnected || isCurrent(scene)}
-                  className={isCurrent(scene) ? "lit-program" : ""}
-                  aria-label={`Cut to ${scene.name}`}
-                  onClick={() =>
-                    scene.uuid && onProgramSelect?.({ uuid: scene.uuid, name: scene.name })
-                  }
-                >
-                  <span className="program-tally">PGM</span>
-                  <kbd>{index < 9 ? `⇧${index + 1}` : ""}</kbd>
-                </Button>
-              </div>
-            ))}
-          </div>
-        ))}
-      {list.data && !editing && !managing && visible.length > 0 && !onPreviewSelect && (
+      {list.data && !editing && !managing && visible.length > 0 && (
         <div
           data-scene-view={view}
-          style={{ "--scene-count": visible.length } as CSSProperties}
           className={cn(
-            "scene-cells grid overflow-hidden bg-divider",
-            view === "grid" ? "grid-cols-3" : "grid-cols-1",
+            "grid gap-2.5",
+            view === "grid" ? "grid-cols-[repeat(auto-fill,minmax(150px,1fr))]" : "grid-cols-1",
           )}
         >
-          {visible.map((scene, index) => {
+          {shown.map((scene) => {
+            const index = visible.indexOf(scene);
             const current = isCurrent(scene);
+            const cued = Boolean(onPreviewSelect) && scene.uuid === previewUuid && !current;
             const pending = switchScene.isPending && switchScene.variables === scene.uuid;
+            const pick = { uuid: scene.uuid ?? "", name: scene.name };
             return (
-              <Button
-                variant="ghost"
+              <button
                 key={sceneKey(scene)}
                 type="button"
                 // Only the scene being switched to waits: on a slow connection the
                 // other tiles stay usable, and the switches go out in tap order.
-                disabled={!canControl || !scene.uuid || (!onPreviewSelect && current) || pending}
-                aria-pressed={current}
-                onClick={() =>
-                  scene.uuid &&
-                  (onProgramSelect
-                    ? onProgramSelect({ uuid: scene.uuid, name: scene.name })
-                    : switchScene.mutate(scene.uuid))
+                disabled={
+                  !canControl ||
+                  !scene.uuid ||
+                  !obsConnected ||
+                  (!onPreviewSelect && current) ||
+                  pending
+                }
+                aria-pressed={onPreviewSelect ? cued : current}
+                aria-label={onPreviewSelect ? t`Cue ${scene.name}` : undefined}
+                onClick={(event) =>
+                  onPreviewSelect && !event.shiftKey
+                    ? onPreviewSelect(pick)
+                    : onProgramSelect
+                      ? onProgramSelect(pick)
+                      : scene.uuid && switchScene.mutate(scene.uuid)
                 }
                 className={cn(
-                  "scene-cell relative flex min-w-0 flex-col items-start justify-between gap-3 bg-card px-4 py-3 text-left transition-colors disabled:cursor-default enabled:hover:bg-surface-2",
-                  current && "scene-on-air",
+                  "relative flex min-w-0 rounded-xl border bg-muted text-left transition-colors enabled:hover:border-border-strong enabled:hover:bg-surface-2",
+                  view === "grid"
+                    ? "min-h-[76px] flex-col justify-between gap-2 px-3.5 py-3"
+                    : "min-h-11 items-center gap-3 px-3.5 py-2",
+                  current && "border-offline/60 bg-offline/10",
+                  cued && "border-live/60 bg-live/10",
                   pending && "animate-pulse",
-                  scene.uuid === previewUuid &&
-                    "outline outline-dashed -outline-offset-2 outline-primary",
                 )}
               >
-                <span className="scene-copy flex min-w-0 flex-col">
-                  <span className="scene-name text-sm font-semibold">
-                    {index < 9 && <kbd className="scene-key">{index + 1}</kbd>}
-                    {scene.name}
+                <span
+                  className={cn(
+                    "flex items-center gap-2 text-[11px] text-subtle-foreground",
+                    view === "grid" ? "w-full justify-between" : "order-last ml-auto",
+                  )}
+                >
+                  <span className="truncate">
+                    {current ? (
+                      <span className="font-semibold text-offline">
+                        <Trans>On air</Trans>
+                      </span>
+                    ) : cued ? (
+                      <span className="font-semibold text-live">
+                        <Trans>Preview</Trans>
+                      </span>
+                    ) : (
+                      roleOf(scene.uuid)
+                    )}
                   </span>
-                  {view === "list" && (
-                    <span className="scene-role text-muted-foreground">{roleOf(scene.uuid)}</span>
+                  {keys && index < 9 && (
+                    <kbd className="rounded-[5px] bg-surface-2 px-1.5 py-px font-mono text-[10px] text-subtle-foreground">
+                      {index + 1}
+                    </kbd>
                   )}
                 </span>
-                <span className="scene-secondary text-xs text-muted-foreground">
-                  {current && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-offline/10 px-2 py-0.5 text-[10px] leading-4 font-medium text-offline">
-                      <span className="size-1.5 rounded-full bg-offline" aria-hidden="true" />
-                      <Trans>On air</Trans>
-                    </span>
-                  )}
-                  {!current && scene.uuid === previewUuid && (
-                    <span className="inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-[10px] leading-4 font-medium text-primary">
-                      <Trans>PREVIEW</Trans>
-                    </span>
-                  )}
-                  {view === "grid" && !current && scene.uuid !== previewUuid && roleOf(scene.uuid)}
-                </span>
-                {current && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-offline" />}
-              </Button>
+                <span className="min-w-0 truncate text-sm font-semibold">{scene.name}</span>
+              </button>
             );
           })}
+          {shown.length === 0 && (
+            <p className="py-3 text-sm text-muted-foreground">
+              <Trans>No scene matches “{search}”.</Trans>
+            </p>
+          )}
         </div>
       )}
 

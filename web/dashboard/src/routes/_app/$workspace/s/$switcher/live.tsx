@@ -14,21 +14,17 @@ import type { SwitcherStatus } from "@/api/types";
 import { ConnectDialog } from "@/components/connect-controls";
 import { ActivityFeed } from "@/components/live/activity-feed";
 import { AudioMixer } from "@/components/live/audio-mixer";
-import { AutoSwitchPane } from "@/components/live/auto-switch-pane";
 import { BelaboxCard } from "@/components/live/belabox-card";
-import { BitrateChart } from "@/components/live/bitrate-chart";
-import { lookFor } from "@/components/live/feed-state";
-import { useLiveVariants, VariantPicker } from "@/components/live/live-variants";
+import { BitratePane } from "@/components/live/bitrate-pane";
+import { LiveHeaderControls, LiveTimer } from "@/components/live/live-header";
 import { MoblinCard } from "@/components/live/moblin-card";
+import { Monitors } from "@/components/live/monitors";
+import { ObsPane } from "@/components/live/obs-pane";
 import { ObsPreview } from "@/components/live/obs-preview";
-import { ObsStatsPopover } from "@/components/live/obs-stats-popover";
-import { OperatorHeader } from "@/components/live/operator-strip";
+import { OnAirPane } from "@/components/live/on-air-pane";
+import { Pane } from "@/components/live/pane";
 import { PaneLayout } from "@/components/live/pane-layout";
-import { ProgramPreview } from "@/components/live/program-preview";
-import { useOperator } from "@/components/live/use-operator";
-import "@/components/live/operator.css";
 import {
-  AutoSwitchToggle,
   FixButton,
   MarkerButton,
   type ObsControls,
@@ -39,6 +35,7 @@ import {
 import { SceneGrid } from "@/components/live/scene-grid";
 import { ServerCard } from "@/components/live/server-card";
 import { SourceList } from "@/components/live/source-list";
+import { useOperator } from "@/components/live/use-operator";
 import { SwitcherPage } from "@/components/switcher-page";
 import { Button } from "@/components/ui/button";
 import { useConnectObsCommand } from "@/hooks/use-connect-obs-command";
@@ -50,10 +47,9 @@ import {
   connectObsActionAvailability,
   pcObsLabel,
 } from "@/lib/connect";
-import { formatKbps, formatUptime } from "@/lib/live-format";
 import { can, isOwner, isSupport, seesPreviewOffAir } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { isStale, latest, type Point } from "@/live/reducer";
+import { isStale, latest } from "@/live/reducer";
 import { useSwitcherLive } from "@/live/use-switcher-live";
 
 export const Route = createFileRoute("/_app/$workspace/s/$switcher/live")({
@@ -91,32 +87,26 @@ function LivePage() {
   const feedDown = live.connection === "reconnecting";
   const [layoutHeader, setLayoutHeader] = useState<HTMLDivElement | null>(null);
   const operator = useOperator(path, status, disabled, live.events);
-  const variants = useLiveVariants();
   const { studio, preview: previewScene } = operator;
   const onAir = status?.current_scene;
+  const [devicesTab, setDevicesTab] = useState<"belabox" | "moblin">("belabox");
 
   return (
-    <div
-      ref={operator.root}
-      className="live-operator-root"
-      data-immersive={operator.immersive}
-      data-operator={operator.enabled}
-      data-variant={variants.variant}
-    >
+    <div ref={operator.root} className="live-root" data-immersive={operator.immersive}>
       <SwitcherPage
-        className="live-operator-page max-w-none"
-        title={t`Live`}
-        description={`${switcher.name} · ${activeServer ? activeServer.name : t`No stream server`} → OBS`}
+        className="max-w-none"
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="text-[17px] font-semibold tracking-tight">
+              {switcher.name}
+              <span className="mx-1.5 font-normal text-subtle-foreground">/</span>
+              <Trans>Live</Trans>
+            </span>
+            <LiveTimer status={status} now={now} />
+          </span>
+        }
         actions={
-          <div className="flex flex-wrap items-center gap-2.5">
-            <OperatorHeader
-              operator={operator}
-              status={status}
-              controls={controls}
-              disabled={disabled}
-              now={now}
-            />
-            <div ref={setLayoutHeader} />
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {status?.pc ? (
               <ConnectDialog
                 path={path}
@@ -145,28 +135,17 @@ function LivePage() {
             ) : (
               <Health ok={Boolean(status?.browser_source)} label={t`Browser source`} />
             )}
-            <ObsStatsPopover
-              path={path}
-              connected={Boolean(status?.obs_connected)}
-              connectDevice={status?.pc?.device_name ?? undefined}
-            >
-              <Health ok={Boolean(status?.obs_connected)} label="OBS" interactive />
-            </ObsStatsPopover>
             {live.connection === "reconnecting" && <Health ok={false} label={t`Live feed`} />}
+            <LiveHeaderControls
+              operator={operator}
+              status={status}
+              controls={controls}
+              disabled={disabled}
+            />
+            <div ref={setLayoutHeader} className="contents" />
           </div>
         }
       >
-        {operator.immersive && (
-          <Button
-            className="immersive-exit self-end"
-            variant="outline"
-            size="sm"
-            onClick={operator.toggleImmersive}
-          >
-            Exit immersive · Esc / F
-          </Button>
-        )}
-        {!operator.enabled && <VariantPicker model={variants} />}
         {paused && workspace.suspension && (
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-4">
             <PauseCircle className="size-5 text-destructive-foreground" />
@@ -310,135 +289,125 @@ function LivePage() {
 
         <PaneLayout
           switcherId={switcher.id}
-          operatorMode={operator.enabled}
-          variant={operator.enabled ? "c" : variants.variant}
-          designs={
-            operator.enabled
-              ? { scenes: "b", actions: "c", servers: "c", activity: "b", monitors: "c" }
-              : variants.designs
-          }
-          header={layoutHeader}
+          mode={operator.enabled ? "operator" : "streamer"}
+          toolbar={layoutHeader}
           panes={{
-            "auto-switch": (
-              <AutoSwitchPane
+            monitors: (
+              <Monitors
+                operator={operator}
+                path={path}
+                connected={Boolean(status?.obs_connected)}
+                streaming={Boolean(status?.streaming)}
+                offAirAllowed={seesPreviewOffAir(actor, switcher.preview_off_air)}
+              />
+            ),
+            "on-air": (
+              <OnAirPane
+                status={status}
+                controls={controls}
+                disabled={disabled}
+                by={operator.by ?? undefined}
+                paused={paused}
+              />
+            ),
+            controls: (
+              <MobileActions path={path} controls={controls} status={status} disabled={disabled} />
+            ),
+            bitrate: (
+              <BitratePane
                 controls={controls}
                 status={status}
                 enabled={switcher.behaviour.bitrate_switcher_enabled}
                 onlyWhileStreaming={switcher.behaviour.only_switch_when_streaming}
-                canControl={canControl && !disabled}
+                canControl={canControl && !paused}
                 triggers={switcher.triggers}
-                watching={activeServer?.name}
+                server={activeServer?.name}
+                sample={feedDown ? undefined : sample}
                 points={activeServer ? (live.history[activeServer.id] ?? []) : []}
                 now={now}
               />
             ),
-            status: (
-              <StatusCard
-                status={status && onAir ? { ...status, current_scene: onAir } : status}
-                now={now}
-                sample={sample}
-                serverName={activeServer?.name}
-                serverInUse={Boolean(activeServer && activeServer.id === status?.active_server_id)}
-                paused={paused}
-                feedDown={feedDown}
-              />
-            ),
-            controls: (
-              <MobileActions
+            obs: (
+              <ObsPane
                 path={path}
-                controls={controls}
-                status={status}
-                disabled={disabled}
-                canControl={canControl}
-                autoSwitchSetting={switcher.behaviour.bitrate_switcher_enabled}
-                onlyWhileStreaming={switcher.behaviour.only_switch_when_streaming}
+                connected={Boolean(status?.obs_connected)}
+                connect={
+                  status?.pc ? { deviceName: connectDeviceName, obs: status.pc.obs } : undefined
+                }
+                streaming={Boolean(status?.streaming)}
+                canControlObs={canControlConnectObs}
+                canControlPrograms={canManageConnectPrograms(switcher.connect_programs, actor)}
               />
-            ),
-            "bitrate-chart": (
-              <section
-                aria-label={t`Bitrate`}
-                className={cn("flex flex-col gap-3", feedDown && "opacity-50")}
-              >
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div className="flex items-end gap-8">
-                    <Stat label={t`Bitrate`}>
-                      <span className="text-5xl">{sample ? formatKbps(sample.bitrate) : "—"}</span>
-                      <span className="text-base font-normal text-muted-foreground">
-                        {" "}
-                        <Trans>kbps</Trans>
-                      </span>
-                    </Stat>
-                    <Stat label="RTT">
-                      <span className="text-2xl">
-                        {sample?.rtt != null ? Math.round(sample.rtt) : "—"}
-                      </span>
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {" "}
-                        <Trans>ms</Trans>
-                      </span>
-                    </Stat>
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    {switcher.triggers.low != null && (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3.5 border-t border-dashed border-low" />
-                        <Trans>Low {formatKbps(switcher.triggers.low)}</Trans>
-                      </span>
-                    )}
-                    {switcher.triggers.offline != null && (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3.5 border-t border-dashed border-offline" />
-                        <Trans>BRB {formatKbps(switcher.triggers.offline)}</Trans>
-                      </span>
-                    )}
-                    <span>
-                      <Trans>Last 2 min</Trans>
-                    </span>
-                  </div>
-                </div>
-                <BitrateChart
-                  points={activeServer ? (live.history[activeServer.id] ?? []) : []}
-                  now={now}
-                  low={switcher.triggers.low}
-                  offline={switcher.triggers.offline}
-                  tone={lookFor(status).text}
-                />
-              </section>
             ),
             servers: (
-              <section aria-label={t`Stream servers`} className="flex flex-col">
-                <div className="flex items-baseline justify-between">
-                  <h2 className="font-semibold">
-                    <Trans>Stream servers</Trans>
-                  </h2>
-                  <Link
-                    to="/$workspace/s/$switcher/servers"
-                    params={params}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    <Trans>Manage</Trans>
-                  </Link>
-                </div>
+              <Pane
+                title={<Trans>Stream servers</Trans>}
+                label={t`Stream servers`}
+                tools={
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/$workspace/s/$switcher/servers" params={params}>
+                      <Trans>Manage</Trans>
+                    </Link>
+                  </Button>
+                }
+              >
                 {servers.data?.length === 0 && (
-                  <p className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     <Trans>No stream servers yet.</Trans>
                   </p>
                 )}
-                {(operator.enabled
-                  ? [...(servers.data ?? [])].sort((a, b) => a.priority - b.priority)
-                  : servers.data
-                )?.map((server, index) => (
-                  <ServerCard
-                    key={server.id}
-                    server={server}
-                    points={live.history[server.id] ?? []}
-                    now={now}
-                    inUse={server.id === status?.active_server_id}
-                    rank={operator.enabled ? index + 1 : undefined}
-                  />
-                ))}
-              </section>
+                {[...(servers.data ?? [])]
+                  .sort((a, b) => a.priority - b.priority)
+                  .map((server) => (
+                    <ServerCard
+                      key={server.id}
+                      server={server}
+                      points={live.history[server.id] ?? []}
+                      now={now}
+                      inUse={server.id === status?.active_server_id}
+                    />
+                  ))}
+              </Pane>
             ),
+            devices:
+              switcher.belabox.has_remote_key || switcher.moblin.has_password ? (
+                <DevicesPane
+                  tab={
+                    !switcher.moblin.has_password
+                      ? "belabox"
+                      : !switcher.belabox.has_remote_key
+                        ? "moblin"
+                        : devicesTab
+                  }
+                  onTab={
+                    switcher.belabox.has_remote_key && switcher.moblin.has_password
+                      ? setDevicesTab
+                      : undefined
+                  }
+                  belabox={
+                    <BelaboxCard
+                      status={live.belabox}
+                      history={live.belaboxHistory}
+                      now={now}
+                      path={path}
+                      canControl={canControl && !paused}
+                      canConfigure={canControl && !paused && !isSupport(actor)}
+                      canManage={can(actor, "switcher.manage") && !paused}
+                      labels={switcher.belabox.interface_labels}
+                      settingsLink={params}
+                    />
+                  }
+                  moblin={
+                    <MoblinCard
+                      status={live.moblin}
+                      history={live.moblinHistory}
+                      now={now}
+                      path={path}
+                      canControl={canControl && !paused}
+                    />
+                  }
+                />
+              ) : null,
             belabox: switcher.belabox.has_remote_key ? (
               <BelaboxCard
                 status={live.belabox}
@@ -451,9 +420,7 @@ function LivePage() {
                 labels={switcher.belabox.interface_labels}
                 settingsLink={params}
               />
-            ) : (
-              <p className="p-4 text-muted-foreground">BELABOX is not configured.</p>
-            ),
+            ) : null,
             moblin: switcher.moblin.has_password ? (
               <MoblinCard
                 status={live.moblin}
@@ -462,9 +429,7 @@ function LivePage() {
                 path={path}
                 canControl={canControl && !paused}
               />
-            ) : (
-              <p className="p-4 text-muted-foreground">Moblin is not configured.</p>
-            ),
+            ) : null,
             preview: (
               <ObsPreview
                 path={path}
@@ -484,15 +449,9 @@ function LivePage() {
                 onProgramSelect={operator.cutScene}
                 operatorTools={
                   operator.enabled ? (
-                    <span className="operator-scene-tools">
+                    <span className="mr-2 flex items-center gap-2">
                       <FixButton controls={controls} disabled={disabled} variant="compact" />
                       <MarkerButton
-                        controls={controls}
-                        status={status}
-                        disabled={disabled}
-                        variant="compact"
-                      />
-                      <RecordButton
                         controls={controls}
                         status={status}
                         disabled={disabled}
@@ -532,15 +491,6 @@ function LivePage() {
                 live={live.events}
               />
             ),
-            "program-preview": (
-              <ProgramPreview
-                operator={operator}
-                path={path}
-                connected={Boolean(status?.obs_connected)}
-                streaming={Boolean(status?.streaming)}
-                offAirAllowed={seesPreviewOffAir(actor, switcher.preview_off_air)}
-              />
-            ),
           }}
         />
       </SwitcherPage>
@@ -548,23 +498,54 @@ function LivePage() {
   );
 }
 
-/** Stream, record, auto switch, fix and marker as a grid, on phones. */
+/** A tabbed pane holding BELABOX and Moblin, for layouts short on room. */
+function DevicesPane({
+  tab,
+  onTab,
+  belabox,
+  moblin,
+}: {
+  tab: "belabox" | "moblin";
+  onTab: ((tab: "belabox" | "moblin") => void) | undefined;
+  belabox: ReactNode;
+  moblin: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3.5">
+      {onTab && (
+        <div className="flex gap-1 self-start rounded-[9px] border bg-muted p-[3px]">
+          {(["belabox", "moblin"] as const).map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={tab === name}
+              onClick={() => onTab(name)}
+              className={cn(
+                "h-6 rounded-md px-2.5 text-xs font-medium text-muted-foreground",
+                tab === name && "bg-card text-foreground",
+              )}
+            >
+              {name === "belabox" ? "BELABOX" : "Moblin"}
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === "belabox" ? belabox : moblin}
+    </div>
+  );
+}
+
+/** Stream, record, fix and marker as a grid, on phones (the desktop header holds the first two). */
 function MobileActions({
   path,
   controls,
   status,
   disabled,
-  canControl,
-  autoSwitchSetting,
-  onlyWhileStreaming,
 }: {
   path: { workspace_id: string; switcher_id: string };
   controls: ObsControls;
   status: SwitcherStatus | null | undefined;
   disabled: boolean;
-  canControl: boolean;
-  autoSwitchSetting: boolean;
-  onlyWhileStreaming: boolean;
 }) {
   const streams = useInfiniteQuery({
     ...streamsQuery(path.workspace_id, path.switcher_id),
@@ -591,144 +572,6 @@ function MobileActions({
         variant="tile"
         markerCount={status?.streaming ? markers.data?.length : 0}
       />
-      <AutoSwitchToggle
-        controls={controls}
-        status={status}
-        autoSwitchSetting={autoSwitchSetting}
-        onlyWhileStreaming={onlyWhileStreaming}
-        canControl={canControl}
-        className="col-span-2 mt-1 rounded-none border-0 border-t bg-transparent px-0"
-      />
-    </section>
-  );
-}
-
-function Stat({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs tracking-wider text-muted-foreground uppercase">{label}</span>
-      <span className="font-mono leading-none font-semibold tabular">{children}</span>
-    </div>
-  );
-}
-
-function StatusCard({
-  status,
-  now,
-  sample,
-  serverName,
-  serverInUse,
-  paused,
-  feedDown,
-  className,
-}: {
-  status: SwitcherStatus | null | undefined;
-  now: number;
-  sample: Point | undefined;
-  serverName: string | undefined;
-  serverInUse: boolean;
-  paused: boolean;
-  /** The dashboard's own connection dropped: show the last state, greyed out. */
-  feedDown: boolean;
-  className?: string;
-}) {
-  const look = feedDown ? lookFor(undefined) : lookFor(status);
-
-  return (
-    <section aria-label={t`Stream status`} className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-center justify-between gap-3">
-        <span
-          className={cn(
-            "flex items-center gap-2 text-xs font-semibold tracking-wider uppercase",
-            status?.streaming ? "text-offline" : "text-muted-foreground",
-          )}
-          role="status"
-        >
-          <span
-            className={cn(
-              "size-1.5 rounded-full",
-              status?.streaming ? "bg-offline" : "bg-muted-foreground",
-            )}
-          />
-          {feedDown
-            ? t`Reconnecting…`
-            : status === undefined
-              ? t`Connecting…`
-              : paused
-                ? t`Paused`
-                : look.label}
-        </span>
-        <span className="font-mono text-xs text-muted-foreground tabular">
-          {status?.streaming && status.stream_started_at
-            ? formatUptime(status.stream_started_at, now)
-            : "--:--:--"}
-        </span>
-      </div>
-
-      {status?.obs_connected && status.streaming && status.state !== "offline" ? (
-        <div className={cn(feedDown && "opacity-50")}>
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono tabular">
-            <span className="text-5xl leading-none font-bold">
-              {sample ? formatKbps(sample.bitrate) : "—"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              <Trans>kbps</Trans>
-            </span>
-            <span className="ml-2 text-lg font-semibold">
-              {sample?.rtt != null ? Math.round(sample.rtt) : "—"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              <Trans>ms RTT</Trans>
-            </span>
-          </div>
-          {serverName && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {serverName}
-              {serverInUse && (
-                <>
-                  {" "}
-                  · <Trans>in use</Trans>
-                </>
-              )}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div>
-          <h3 className="text-2xl font-bold">
-            {status === undefined
-              ? t`Connecting…`
-              : !status?.obs_connected
-                ? t`OBS is offline`
-                : !status.streaming
-                  ? t`No feed yet`
-                  : t`No feed`}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {status?.obs_connected
-              ? t`The bitrate shows here once a server receives video.`
-              : t`NOALBS needs OBS open with the browser source active.`}
-          </p>
-        </div>
-      )}
-      <div className="space-y-1 border-t border-divider pt-2">
-        <p className="text-xs tracking-wide text-muted-foreground uppercase">
-          {status?.streaming ? t`On air` : t`In OBS`}
-        </p>
-        <p className="text-sm font-semibold">{status?.current_scene?.name ?? "—"}</p>
-        {paused ? (
-          <p className="text-xs text-muted-foreground">
-            <Trans>Not switching while paused</Trans>
-          </p>
-        ) : (
-          status &&
-          !status.auto_switch && (
-            <p className="text-xs text-muted-foreground">
-              <Trans>Auto switch is off</Trans>
-            </p>
-          )
-        )}
-      </div>
     </section>
   );
 }
