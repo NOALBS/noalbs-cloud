@@ -151,14 +151,15 @@ export function useOperator(
     const keydown = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
       const dialog = Boolean(document.querySelector('[role="dialog"], [role="alertdialog"]'));
-      if (event.key === "Escape" && immersive && !dialog) {
+      const editing = Boolean(root.current?.querySelector('[data-editing="true"]'));
+      if (event.key === "Escape" && immersive && !dialog && !editing) {
         exitImmersive();
         return;
       }
       if (!enabled && !(immersive && event.key.toLowerCase() === "f")) return;
       const action = operatorHotkey(event, {
         desktop,
-        editing: Boolean(root.current?.querySelector('[data-editing="true"]')),
+        editing,
         blocked:
           dialog ||
           Boolean(

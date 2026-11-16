@@ -62,7 +62,10 @@ export function Monitors({
     "relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black text-center text-sm text-white/60";
   return (
     <section aria-label="Preview and Program" className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 gap-5">
+      <div
+        className="live-monitor-screens flex min-h-0 gap-5"
+        style={{ aspectRatio: studio ? "32 / 9" : "16 / 9" }}
+      >
         {studio && (
           <div className={cn(screen, !connected && "opacity-50")}>
             <Label

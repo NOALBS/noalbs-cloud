@@ -1,11 +1,27 @@
-/* The Live page's panes: rounded cards on the dashboard's own surfaces. */
+.live-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.live-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+  min-height: var(--row-min-height, 0px);
+}
+.live-slot {
+  display: flex;
+  flex: 0 0 var(--slot-width);
+  min-width: 0;
+}
 .live-pane {
   position: relative;
-  height: 100%;
   display: flex;
+  width: 100%;
   min-width: 0;
   flex-direction: column;
-  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 14px;
   background: var(--color-card);
@@ -13,146 +29,220 @@
 }
 .live-pane-fit {
   display: flex;
-  min-height: 0;
+  min-width: 0;
   flex: 1;
   flex-direction: column;
+}
+.live-pane-fit > section {
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .live-pane[data-pane="preview"] .live-preview-frame {
+    max-height: 180px;
+  }
+}
+.live-monitor-screens {
+  width: 100%;
+  min-height: 160px;
+  max-height: 240px;
+  flex: none;
+}
+.live-pane-edit-bar,
+.live-phone-edit {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: -8px -10px 12px;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  padding: 4px;
+}
+.live-pane-drag {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  cursor: grab;
+  touch-action: none;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.live-pane-drag svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.live-pane[data-dragging="true"] {
+  opacity: 0.5;
+}
+.live-phone-edit {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-popover);
+}
+.live-phone-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-background) 45%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+}
+.live-phone-edit > span {
+  padding: 0 6px;
+  font-size: 12px;
+}
+.live-empty-slot {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 160px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 14px;
+  color: var(--color-muted-foreground);
+  font-size: 13px;
+}
+.live-remove-slot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.live-row-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+}
+.live-add-row {
+  position: relative;
+  display: flex;
+  height: 34px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-block: 1px dashed var(--color-border);
+}
+.live-add-row button {
+  color: var(--color-muted-foreground);
+}
+.live-slot-divider {
+  position: relative;
+  z-index: 5;
+  width: 16px;
+  flex: 0 0 16px;
+  align-self: stretch;
+  margin: 0 -16px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.live-slot-divider::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+  content: "";
+}
+.live-row-divider {
+  display: block;
+  width: 100%;
+  height: 20px;
+  margin-bottom: -12px;
+  cursor: row-resize;
+  touch-action: none;
+}
+.live-row-divider::after {
+  display: block;
+  width: 48px;
+  height: 3px;
+  margin: auto;
+  border-radius: 3px;
+  background: var(--color-border-strong);
+  content: "";
+}
+.live-slot-divider:is(:hover, :focus-visible)::after,
+.live-row-divider:is(:hover, :focus-visible)::after {
+  background: var(--color-primary);
+}
+.live-pane-drop,
+.live-edge-drop,
+.live-row-drop {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed transparent;
+  border-radius: 14px;
+  pointer-events: none;
+}
+.live-pane-drop {
+  inset: 0;
+}
+.live-edge-drop {
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  width: 22%;
+}
+.live-edge-left {
+  left: 0;
+}
+.live-edge-right {
+  right: 0;
+}
+.live-row-drop {
+  inset: -8px 0;
+}
+.live-pane-drop > span,
+.live-edge-drop > span,
+.live-row-drop > span {
+  display: none;
+  border-radius: 6px;
+  background: var(--color-popover);
+  padding: 6px;
+  color: var(--color-foreground);
+  font-size: 12px;
+}
+[data-drop-active="true"] {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+[data-drop-active="true"] > span {
+  display: block;
+}
+.live-drag-ghost {
+  display: flex;
+  width: 240px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: 14px;
+  background: var(--color-card);
+  padding: 20px;
+  box-shadow: 0 12px 28px #0004;
+  font-size: 14px;
+}
+.live-drag-ghost svg {
+  width: 18px;
 }
 @media (max-width: 767px) {
   .live-pane {
     padding: 16px;
   }
-  .live-pane {
-    overflow: visible;
-  }
-}
-
-/* Edit layout: a pane is one handle; its content can't be clicked. */
-.live-pane-edit {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--color-background) 45%, transparent);
-  box-shadow: inset 0 0 0 1.5px var(--color-primary);
-  padding: 10px;
-}
-.live-pane-edit-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
-  background: var(--color-popover);
-  padding: 2px 2px 2px 6px;
-}
-@media (min-width: 768px) {
-  .live-pane-edit {
-    cursor: grab;
-  }
-}
-/* The pane being moved follows the pointer exactly; the others glide out of its way. */
-[data-testid="live-pane-layout"] .react-grid-item {
-  transition: transform 140ms ease-out;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item:is(.react-draggable-dragging, .resizing, .react-grid-placeholder) {
-  transition: none;
-}
-[data-testid="live-pane-layout"] .react-grid-item.react-draggable-dragging {
-  z-index: 10;
-  cursor: grabbing;
-}
-[data-testid="live-pane-layout"] .react-draggable-dragging > .live-pane {
-  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
-}
-[data-testid="live-pane-layout"] .react-grid-placeholder {
-  border: 1.5px dashed var(--color-primary);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  opacity: 1;
-}
-/* Resize from either side, the bottom or a bottom corner: wide strips along the edges, not a 20px corner. */
-[data-testid="live-pane-layout"] .react-grid-item > .react-resizable-handle {
-  inset: auto;
-  z-index: 6;
-  margin: 0;
-  background: none;
-  padding: 0;
-  transform: none;
-}
-[data-testid="live-pane-layout"] .react-grid-item > .react-resizable-handle::after {
-  display: none;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-e,
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-w {
-  top: 16px;
-  bottom: 24px;
-  width: 14px;
-  height: auto;
-  cursor: ew-resize;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-e {
-  right: -7px;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-w {
-  left: -7px;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-s {
-  right: 24px;
-  bottom: -7px;
-  left: 24px;
-  width: auto;
-  height: 14px;
-  cursor: ns-resize;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-se,
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-sw {
-  bottom: -7px;
-  width: 31px;
-  height: 31px;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-se {
-  right: -7px;
-  cursor: nwse-resize;
-}
-[data-testid="live-pane-layout"]
-  .react-grid-item
-  > .react-resizable-handle.react-resizable-handle-sw {
-  left: -7px;
-  cursor: nesw-resize;
-}
-/* A grip in each bottom corner shows where a pane resizes. */
-[data-testid="live-pane-layout"][data-editing="true"] .live-pane::after {
-  content: "";
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  z-index: 6;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
-  border-bottom-right-radius: 4px;
-  pointer-events: none;
 }
 
 .live-root {
@@ -198,8 +288,6 @@
     justify-content: space-between;
   }
 }
-
-/* Immersive: the page without the app's sidebar. Not browser fullscreen. */
 .live-root[data-immersive="true"] {
   position: fixed;
   inset: 0;
@@ -213,8 +301,6 @@
 body.live-immersive {
   overflow: hidden;
 }
-
-/* Hold to confirm: the fill runs left to right for the hold. */
 .hold-button {
   position: relative;
   overflow: hidden;
@@ -237,8 +323,6 @@ body.live-immersive {
   align-items: center;
   gap: 8px;
 }
-
-/* Cards that carry their own frame elsewhere sit bare inside a pane. */
 .live-pane section:is([aria-label="BELABOX"], [aria-label="Moblin"]) {
   border: 0;
   border-radius: 0;

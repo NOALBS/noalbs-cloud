@@ -79,7 +79,7 @@ export function BitratePane({
           <span className="ml-1.5 text-[13px] text-muted-foreground">ms RTT</span>
         </div>
       </div>
-      <div className="-mx-5 mt-3 flex min-h-16 flex-1 [--live-chart-height:100%]">
+      <div className="-mx-4 mt-3 flex min-h-16 flex-1 [--live-chart-height:100%] md:-mx-5 md:[--live-chart-height:100px]">
         <BitrateChart
           points={points}
           now={now}

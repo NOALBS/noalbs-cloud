@@ -183,7 +183,7 @@ export function ObsPreview({
         {on ? (
           <div
             className={cn(
-              "relative flex aspect-video items-center justify-center overflow-hidden bg-black",
+              "live-preview-frame relative flex aspect-video items-center justify-center overflow-hidden bg-black",
               !obsConnected && "opacity-50",
             )}
           >
