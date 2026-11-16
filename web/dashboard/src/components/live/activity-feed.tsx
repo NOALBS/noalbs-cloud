@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { describeEvent } from "@/lib/live-format";
 import { currentLocale } from "@/lib/locale";
+import { PaneTitleRow } from "./pane-title-row";
 
 /**
  * Recent activity: the saved backlog plus events arriving live, in a box that
@@ -28,14 +29,14 @@ export function ActivityFeed({
 
   return (
     <section aria-label={t`Activity`} className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="font-semibold">
           <Trans>Activity</Trans>
         </h2>
         <span className="text-xs text-muted-foreground">
           <Trans>This stream</Trans>
         </span>
-      </div>
+      </PaneTitleRow>
       <div className="flex max-h-96 flex-col overflow-y-auto overscroll-contain">
         {backlog.isPending && <Skeleton className="m-4 h-24" />}
         {backlog.isError && (

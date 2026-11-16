@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenScenes } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 const roleTags = (): [keyof Scenes, string][] => [
   ["live", t`LIVE`],
@@ -176,7 +177,7 @@ export function SceneGrid({
 
   return (
     <section aria-label={t`Scenes`} className="@container flex flex-col gap-3.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="text-[15px] font-semibold tracking-tight">
           <Trans>Scenes</Trans>
         </h2>
@@ -271,7 +272,7 @@ export function SceneGrid({
               )}
             </span>
           ))}
-      </div>
+      </PaneTitleRow>
 
       <NewSceneDialog
         path={path}

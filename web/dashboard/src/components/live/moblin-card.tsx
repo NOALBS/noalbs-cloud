@@ -74,6 +74,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Point } from "@/live/reducer";
 import { BitrateChart } from "./bitrate-chart";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -248,8 +249,8 @@ export function MoblinCard({
 
   return (
     <section aria-label="Moblin" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="flex min-w-0 flex-wrap items-center gap-2">
+      <PaneTitleRow className="flex-wrap justify-between">
+        <span data-pane-title-group className="flex min-w-0 flex-wrap items-center gap-2">
           <span data-pane-title className="text-sm font-semibold">
             <Trans>Moblin</Trans>
           </span>
@@ -275,7 +276,7 @@ export function MoblinCard({
             {controllable && <StreamToggle controls={controls} streaming={connected.streaming} />}
           </div>
         )}
-      </div>
+      </PaneTitleRow>
 
       {view.kind === "disconnected" && (
         <p className="text-sm text-muted-foreground">
@@ -545,7 +546,7 @@ function BondingRow({
 }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-20 shrink-0 truncate text-sm font-semibold" title={connection.name}>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold" title={connection.name}>
         {connection.name}
       </span>
       <BitrateChart
@@ -556,7 +557,7 @@ function BondingRow({
         thresholds={false}
         tone="text-live"
         height={28}
-        className="min-w-0 flex-1"
+        className="w-14 shrink-0"
       />
       <span className="w-14 shrink-0 text-right font-mono text-sm tabular">
         {formatKbps(connection.kbps)}

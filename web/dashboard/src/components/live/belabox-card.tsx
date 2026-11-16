@@ -44,6 +44,7 @@ import { formatKbps } from "@/lib/live-format";
 import { cn } from "@/lib/utils";
 import type { Point } from "@/live/reducer";
 import { BitrateChart } from "./bitrate-chart";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -152,8 +153,8 @@ export function BelaboxCard({
 
   return (
     <section aria-label="BELABOX" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="flex min-w-0 flex-wrap items-center gap-2">
+      <PaneTitleRow className="flex-wrap justify-between">
+        <span data-pane-title-group className="flex min-w-0 flex-wrap items-center gap-2">
           <span data-pane-title className="text-sm font-semibold">
             <Trans>BELABOX</Trans>
           </span>
@@ -173,7 +174,7 @@ export function BelaboxCard({
             {canControl && <StreamToggle controls={controls} streaming={online.streaming} />}
           </div>
         )}
-      </div>
+      </PaneTitleRow>
 
       {view.kind === "idle" && (
         <p className="text-sm text-muted-foreground">
@@ -462,7 +463,7 @@ function InterfaceRow({
     <li className={cn("flex flex-col gap-0.5 py-2", !netif.enabled && "opacity-60")}>
       <div className="flex items-center gap-3">
         <span
-          className={cn("w-20 shrink-0 truncate text-sm font-semibold", !label && "font-mono")}
+          className={cn("min-w-0 flex-1 truncate text-sm font-semibold", !label && "font-mono")}
           title={title}
         >
           {canRename && netif.key ? (
@@ -484,7 +485,7 @@ function InterfaceRow({
           thresholds={false}
           tone={netif.enabled ? "text-live" : "text-muted-foreground"}
           height={28}
-          className="min-w-0 flex-1"
+          className="w-14 shrink-0"
         />
         <span className="w-14 shrink-0 text-right font-mono text-sm tabular">
           {formatKbps(netif.kbps)}

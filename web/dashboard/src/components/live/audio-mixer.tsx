@@ -30,6 +30,7 @@ import {
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenAudio } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -318,7 +319,7 @@ export function AudioMixer({
 
   return (
     <section aria-label={t`Audio`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="font-semibold">
           <Trans>Audio</Trans>
         </h2>
@@ -370,7 +371,7 @@ export function AudioMixer({
               )}
             </span>
           ))}
-      </div>
+      </PaneTitleRow>
 
       {editing && (
         <p className="text-xs text-muted-foreground">

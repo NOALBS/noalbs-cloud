@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 /** A pane's content: an open title row (no rule under it) over a body that scrolls on its own. */
 export function Pane({
@@ -21,12 +22,12 @@ export function Pane({
 }) {
   return (
     <section aria-label={label} className="flex min-h-0 flex-1 flex-col">
-      <header className="mb-3.5 flex min-h-8 items-center gap-2">
+      <PaneTitleRow className="mb-3.5">
         <h2 className="shrink-0 text-[15px] font-semibold tracking-tight">{title}</h2>
         {hint && <span className="min-w-0 truncate text-xs text-subtle-foreground">{hint}</span>}
         <span className="flex-1" />
         {tools}
-      </header>
+      </PaneTitleRow>
       <div className={cn("live-pane-body min-h-0 flex-1", className)}>{children}</div>
     </section>
   );

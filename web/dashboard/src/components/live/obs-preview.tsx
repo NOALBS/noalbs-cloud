@@ -29,6 +29,7 @@ import {
   watchingLine,
 } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -169,14 +170,14 @@ export function ObsPreview({
   // the controls under it on the right.
   return (
     <section aria-label={t`OBS preview`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center">
+      <PaneTitleRow>
         <h2 className="font-semibold">
           <Trans>Preview</Trans>
         </h2>
         {!obsConnected && (
           <span className="ml-2 text-xs text-low">OBS disconnected · last known state</span>
         )}
-      </div>
+      </PaneTitleRow>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
       <div className="flex flex-col overflow-hidden">

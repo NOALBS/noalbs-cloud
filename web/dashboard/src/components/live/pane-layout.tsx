@@ -46,6 +46,7 @@ import {
   wrapRows,
 } from "./pane-layout-model";
 import { RowDivider, SlotDivider } from "./pane-layout-resize";
+import { PaneEditingContext } from "./pane-title-row";
 import "./live.css";
 
 export type { PaneId } from "./pane-layout-model";
@@ -151,40 +152,18 @@ function PaneSlot({
   const drag = useDraggable({ id, data: address, disabled: !editing });
   return (
     <div ref={drag.setNodeRef} data-pane={id} className="live-pane" data-dragging={drag.isDragging}>
-      {editing && (
-        <div className="live-pane-edit-bar">
-          <button
-            type="button"
-            className="live-pane-drag"
-            aria-label={`Drag ${title(id)}`}
-            {...drag.listeners}
-            {...drag.attributes}
-          >
-            <GripVertical />
-            {title(id)}
-          </button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Add beside ${title(id)}`}
-            disabled={full}
-            onClick={() => edit({ type: "beside", ...address })}
-          >
-            <Plus />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Hide ${title(id)}`}
-            onClick={() => edit({ type: "hide", ...address })}
-          >
-            <X />
-          </Button>
-        </div>
-      )}
-      <div className="live-pane-fit" inert={editing || undefined}>
-        {children}
-      </div>
+      <PaneEditingContext.Provider
+        value={{
+          editing,
+          title: title(id),
+          drag,
+          full,
+          beside: () => edit({ type: "beside", ...address }),
+          hide: () => edit({ type: "hide", ...address }),
+        }}
+      >
+        <div className="live-pane-fit">{children}</div>
+      </PaneEditingContext.Provider>
       {editing && dragging && (
         <>
           <DropZone

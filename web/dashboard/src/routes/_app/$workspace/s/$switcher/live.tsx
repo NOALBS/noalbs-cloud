@@ -25,6 +25,7 @@ import { ObsPreview } from "@/components/live/obs-preview";
 import { OnAirPane } from "@/components/live/on-air-pane";
 import { Pane } from "@/components/live/pane";
 import { PaneLayout } from "@/components/live/pane-layout";
+import { PaneTitleRow } from "@/components/live/pane-title-row";
 import {
   FixButton,
   MarkerButton,
@@ -575,17 +576,24 @@ function MobileActions({
     refetchInterval: 15_000,
   });
   return (
-    <section aria-label={t`Actions`} className="grid grid-cols-2 gap-2">
-      <StreamButton controls={controls} status={status} disabled={disabled} variant="tile" />
-      <RecordButton controls={controls} status={status} disabled={disabled} variant="tile" />
-      <FixButton controls={controls} disabled={disabled} variant="tile" />
-      <MarkerButton
-        controls={controls}
-        status={status}
-        disabled={disabled}
-        variant="tile"
-        markerCount={status?.streaming ? markers.data?.length : 0}
-      />
+    <section aria-label={t`Actions`} className="flex flex-col gap-2">
+      <PaneTitleRow layoutOnly>
+        <h2 className="font-semibold">
+          <Trans>Actions</Trans>
+        </h2>
+      </PaneTitleRow>
+      <div className="grid grid-cols-2 gap-2">
+        <StreamButton controls={controls} status={status} disabled={disabled} variant="tile" />
+        <RecordButton controls={controls} status={status} disabled={disabled} variant="tile" />
+        <FixButton controls={controls} disabled={disabled} variant="tile" />
+        <MarkerButton
+          controls={controls}
+          status={status}
+          disabled={disabled}
+          variant="tile"
+          markerCount={status?.streaming ? markers.data?.length : 0}
+        />
+      </div>
     </section>
   );
 }

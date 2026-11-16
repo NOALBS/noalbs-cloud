@@ -3,6 +3,7 @@ import { previewOn, usePreviewSettings } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
 import { useObsFrames } from "./obs-preview";
 import { transitions } from "./operator-state";
+import { PaneTitleRow } from "./pane-title-row";
 import type { useOperator } from "./use-operator";
 
 function Kbd({ children, dark }: { children: string; dark?: boolean }) {
@@ -62,6 +63,9 @@ export function Monitors({
     "relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black text-center text-sm text-white/60";
   return (
     <section aria-label="Preview and Program" className="flex min-h-0 flex-1 flex-col">
+      <PaneTitleRow layoutOnly className="mb-3.5">
+        <h2 className="text-[15px] font-semibold tracking-tight">Preview / Program</h2>
+      </PaneTitleRow>
       <div
         className="live-monitor-screens flex min-h-0 gap-5"
         style={{ aspectRatio: studio ? "32 / 9" : "16 / 9" }}

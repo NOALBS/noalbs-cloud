@@ -71,6 +71,7 @@ import {
   withRemoved,
 } from "@/lib/obs-sources";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 /** Like the scene tiles, so both grids read the same. */
 const TILE =
@@ -253,7 +254,7 @@ export function SourceList({
 
   return (
     <section aria-label={t`Sources`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="font-semibold">
           <Trans>Sources</Trans>
         </h2>
@@ -314,7 +315,7 @@ export function SourceList({
               )}
             </span>
           ))}
-      </div>
+      </PaneTitleRow>
 
       <SourceEditorDialog path={path} target={editor} onClose={() => setEditor(null)} />
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
