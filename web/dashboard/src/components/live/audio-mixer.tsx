@@ -499,7 +499,7 @@ function AudioStrip({
 }) {
   const Icon = input.muted ? VolumeX : Volume2;
   return (
-    <div className="flex items-center gap-3 px-3 py-3">
+    <div className="flex items-center gap-3 py-3">
       <Button
         variant="ghost"
         type="button"
@@ -592,7 +592,7 @@ function ChannelMeter({
 /** -60 … 0 dB under the meters, lined up with them. */
 function Scale() {
   return (
-    <div className="flex gap-3 px-3 pt-1 pb-2" aria-hidden="true">
+    <div className="flex gap-3 pt-1 pb-2" aria-hidden="true">
       <span className="w-9 shrink-0" />
       <div className="relative h-3.5 flex-1 font-mono text-[10px] text-muted-foreground">
         {SCALE_TICKS.map((db) => (
