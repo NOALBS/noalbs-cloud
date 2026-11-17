@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { formatUptime } from "@/lib/live-format";
 import { cn } from "@/lib/utils";
 import { streamState } from "./live-status";
-import { type ObsControls, RecordButton, StreamButton } from "./quick-actions";
 import type { useOperator } from "./use-operator";
 
 export function LiveHeaderAnchor({ top }: { top: number }) {
@@ -69,6 +68,7 @@ export function LiveTimer({
   );
 }
 
+/** The recording timer beside the on-air timer; absent while not recording. */
 export function RecordingStatus({
   status,
   now,
@@ -76,56 +76,39 @@ export function RecordingStatus({
   status: SwitcherStatus | null | undefined;
   now: number;
 }) {
-  const unknown = streamState(status, now) === "unknown";
+  if (streamState(status, now) === "unknown" || !status?.recording) return null;
+  const paused = status.recording_paused;
   return (
     <span
       className={cn(
-        "font-mono text-xs tabular",
-        unknown ? "text-low" : status?.recording ? "text-offline" : "text-muted-foreground",
+        "inline-flex h-8 items-center gap-2 rounded-full border px-3 font-mono text-[13px] font-semibold tabular",
+        paused ? "border-low/40 text-low" : "border-offline/40 text-offline",
       )}
     >
-      REC{" "}
-      {unknown
-        ? "unknown"
-        : !status?.recording
-          ? "off"
-          : status.recording_paused
-            ? "paused"
-            : status.recording_started_at
-              ? formatUptime(status.recording_started_at, now)
-              : "recording"}
+      <span className={cn("size-1.5 rounded-full", paused ? "bg-low" : "bg-offline")} />
+      {paused
+        ? "REC paused"
+        : status.recording_started_at
+          ? `REC ${formatUptime(status.recording_started_at, now)}`
+          : "REC"}
     </span>
   );
 }
 
 /** Header controls, with read-only recording status on phones. */
-export function LiveHeaderControls({
-  operator,
-  status,
-  controls,
-  disabled,
-  now,
-}: {
-  operator: ReturnType<typeof useOperator>;
-  status: SwitcherStatus | null | undefined;
-  controls: ObsControls;
-  disabled: boolean;
-  now: number;
-}) {
-  if (!operator.desktop)
-    return (
-      <>
-        <RecordingStatus status={status} now={now} />
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={operator.immersive ? "Exit immersive" : "Immersive"}
-          onClick={operator.toggleImmersive}
-        >
-          {operator.immersive ? <Minimize2 /> : <Maximize2 />}
-        </Button>
-      </>
-    );
+export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof useOperator> }) {
+  const immersive = (
+    <Button
+      variant="outline"
+      size="icon-sm"
+      aria-label={operator.immersive ? "Exit immersive" : "Immersive"}
+      title={operator.immersive ? "Show the sidebar (F)" : "Immersive: hide the sidebar (F)"}
+      onClick={operator.toggleImmersive}
+    >
+      {operator.immersive ? <Minimize2 /> : <Maximize2 />}
+    </Button>
+  );
+  if (!operator.desktop) return <span className="ml-auto flex">{immersive}</span>;
   return (
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: a two-button mode switch */}
@@ -143,7 +126,7 @@ export function LiveHeaderControls({
               aria-pressed={on}
               onClick={() => operator.setMode(name === "Operator")}
               className={cn(
-                "h-7 rounded-[7px] px-3 text-[13px] font-medium text-muted-foreground",
+                "h-6.5 rounded-[7px] px-3 text-[13px] font-medium text-muted-foreground",
                 on && "bg-surface-2 text-foreground",
               )}
             >
@@ -163,17 +146,7 @@ export function LiveHeaderControls({
           <Keyboard />
         </Button>
       )}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={operator.toggleImmersive}
-        title="Hide the sidebar (F)"
-      >
-        {operator.immersive ? <Minimize2 /> : <Maximize2 />}
-        {operator.immersive ? "Exit immersive" : "Immersive"}
-      </Button>
-      <RecordButton controls={controls} status={status} disabled={disabled} variant="compact" />
-      <StreamButton controls={controls} status={status} disabled={disabled} variant="compact" />
+      {immersive}
       <Dialog open={operator.help} onOpenChange={operator.setHelp}>
         <DialogContent>
           <DialogTitle>Operator shortcuts</DialogTitle>
@@ -198,7 +171,7 @@ export function LiveHeaderControls({
             ))}
           </dl>
           <p className="text-sm text-muted-foreground">
-            No key starts or stops streaming or recording. Stopping takes a one-second hold.
+            No key starts or stops streaming or recording. Stopping asks to confirm.
           </p>
         </DialogContent>
       </Dialog>

@@ -307,9 +307,6 @@
   .live-page > header > div {
     width: 100%;
   }
-  .live-page > header > div:last-child > div {
-    justify-content: space-between;
-  }
 }
 .live-root[data-immersive="true"] {
   position: fixed;
@@ -324,27 +321,21 @@
 body.live-immersive {
   overflow: hidden;
 }
-.hold-button {
-  position: relative;
-  overflow: hidden;
+.live-page > header > div:last-child {
+  flex: 1 1 auto;
 }
-.hold-button .hold-fill {
-  position: absolute;
-  inset: 0;
-  transform: scaleX(0);
-  transform-origin: left;
-  background: currentColor;
-  opacity: 0.18;
-}
-.hold-button[data-holding="true"] .hold-fill {
-  transform: scaleX(1);
-  transition: transform 1s linear;
-}
-.hold-button .hold-label {
-  position: relative;
-  display: inline-flex;
+.live-header-bar {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+.live-header-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 .live-pane section:is([aria-label="BELABOX"], [aria-label="Moblin"]) {
   border: 0;

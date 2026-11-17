@@ -27,7 +27,6 @@ import { errorMessage } from "@/lib/errors";
 import { formatOffset } from "@/lib/history";
 import { formatUptime } from "@/lib/live-format";
 import { cn } from "@/lib/utils";
-import { HoldButton } from "./hold-button";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -169,22 +168,44 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
   }
 
   return (
-    <HoldButton
-      disabled={disabled || stream.isPending}
-      onComplete={() => stream.mutate(false)}
-      className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
-    >
-      <Square className="size-4" />
-      <span>
-        <Trans>Stop stream</Trans>
-        {variant === "tile" && (
-          <span className="block text-[11px] font-normal opacity-70">
-            <Trans>hold 1 second</Trans>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          type="button"
+          disabled={disabled || stream.isPending}
+          className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
+        >
+          <Square className="size-4" />
+          <span>
+            <Trans>Stop stream</Trans>
+            {variant === "tile" && (
+              <span className="block text-[11px] font-normal opacity-70">
+                <Trans>asks to confirm</Trans>
+              </span>
+            )}
           </span>
-        )}
-      </span>
-      <small className="hold-hint">hold</small>
-    </HoldButton>
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <Trans>Stop the stream?</Trans>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>Your viewers will see the stream end.</Trans>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>
+            <Trans>Keep streaming</Trans>
+          </AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={() => stream.mutate(false)}>
+            <Trans>Stop stream</Trans>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -223,11 +244,7 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
             </span>
           </>
         ) : recording ? (
-          paused ? (
-            t`REC paused`
-          ) : (
-            `REC ${status?.recording_started_at ? formatUptime(status.recording_started_at, now) : ""}`
-          )
+          t`Stop recording`
         ) : (
           t`Record`
         )}
@@ -247,17 +264,39 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
         {content}
       </Button>
     );
+  // A stray tap would end the file mid-stream, so it asks first.
   return (
-    <HoldButton
-      aria-label="Stop recording"
-      aria-pressed
-      disabled={disabled || record.isPending}
-      onComplete={() => record.mutate(false)}
-      className={className}
-    >
-      {content}
-      <small className="hold-hint">hold</small>
-    </HoldButton>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          type="button"
+          aria-label={t`Stop recording`}
+          disabled={disabled || record.isPending}
+          className={className}
+        >
+          {content}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <Trans>Stop recording?</Trans>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>OBS saves the recording so far. Recording again starts a new file.</Trans>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>
+            <Trans>Keep recording</Trans>
+          </AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={() => record.mutate(false)}>
+            <Trans>Stop recording</Trans>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

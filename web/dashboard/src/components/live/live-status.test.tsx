@@ -27,10 +27,10 @@ const controls = {
 } as unknown as ObsControls;
 
 describe("Live status truth", () => {
-  it("keeps phone recording status truthful for live, idle and disconnected OBS", () => {
+  it("shows the recording chip only while OBS is known to be recording", () => {
     const markup = (value: SwitcherStatus | null) =>
       renderToStaticMarkup(<RecordingStatus status={value} now={now} />);
-    expect(markup(status)).toContain("off");
+    expect(markup(status)).toBe("");
     expect(
       markup({
         ...status,
@@ -39,8 +39,8 @@ describe("Live status truth", () => {
       }),
     ).toContain("1:00");
     expect(markup({ ...status, recording: true, recording_paused: true })).toContain("paused");
-    expect(markup(null)).toContain("unknown");
-    expect(markup({ ...status, obs_connected: false })).toContain("unknown");
+    expect(markup(null)).toBe("");
+    expect(markup({ ...status, recording: true, obs_connected: false })).toBe("");
   });
   it("distinguishes live, stopped, and unavailable OBS state", () => {
     expect(streamState(status, now)).toBe("live");

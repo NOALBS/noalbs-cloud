@@ -16,7 +16,12 @@ import { ActivityFeed } from "@/components/live/activity-feed";
 import { AudioMixer } from "@/components/live/audio-mixer";
 import { BelaboxCard } from "@/components/live/belabox-card";
 import { BitratePane } from "@/components/live/bitrate-pane";
-import { LiveHeaderAnchor, LiveHeaderControls, LiveTimer } from "@/components/live/live-header";
+import {
+  LiveHeaderAnchor,
+  LiveHeaderControls,
+  LiveTimer,
+  RecordingStatus,
+} from "@/components/live/live-header";
 import { streamState } from "@/components/live/live-status";
 import { MoblinCard } from "@/components/live/moblin-card";
 import { Monitors } from "@/components/live/monitors";
@@ -109,10 +114,11 @@ function LivePage() {
               <Trans>Live</Trans>
             </span>
             <LiveTimer status={status} now={now} />
+            <RecordingStatus status={status} now={now} />
           </span>
         }
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="live-header-bar">
             {status?.pc ? (
               <ConnectDialog
                 path={path}
@@ -146,14 +152,24 @@ function LivePage() {
               />
             )}
             {live.connection === "reconnecting" && <Health ok={false} label={t`Live feed`} />}
-            <LiveHeaderControls
-              operator={operator}
-              status={status}
-              controls={controls}
-              disabled={disabled}
-              now={now}
-            />
+            <LiveHeaderControls operator={operator} />
             <div ref={setLayoutHeader} className="contents" />
+            {operator.desktop && (
+              <div className="live-header-transport">
+                <RecordButton
+                  controls={controls}
+                  status={status}
+                  disabled={disabled}
+                  variant="compact"
+                />
+                <StreamButton
+                  controls={controls}
+                  status={status}
+                  disabled={disabled}
+                  variant="compact"
+                />
+              </div>
+            )}
           </div>
         }
       >
