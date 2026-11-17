@@ -70,6 +70,10 @@ pub enum Error {
     NoSceneIds,
     #[error("that source isn't in the scene anymore")]
     SourceNotFound,
+    #[error("only browser sources can be reloaded")]
+    NotBrowserSource,
+    #[error("that's NOALBS Cloud's own browser source")]
+    LinkSource,
     #[error("only media, VLC, browser and text sources can be edited here")]
     NotEditable,
     #[error("OBS doesn't have that kind of source")]
@@ -472,6 +476,79 @@ impl Control {
             }
         }
         Ok((outcome.scene, outcome.fixed))
+    }
+
+    /// Reloads one browser source, refusing NOALBS Cloud's own OBS link.
+    pub async fn reload_browser_source(
+        &self,
+        switcher_id: Uuid,
+        name: &str,
+        link_page: &str,
+        by: &str,
+    ) -> Result<()> {
+        let obs = self.controllable_obs(switcher_id).await?;
+        let settings = obs
+            .send_request::<obs_actions::types::GetInputSettings>(
+                obs_actions::types::RequestKind::GetInputSettings { input_name: name },
+            )
+            .await
+            .map_err(source_error)?;
+        if settings.input_kind != obs_actions::browser::BROWSER_KIND {
+            return Err(Error::NotBrowserSource);
+        }
+        if settings.input_settings["url"]
+            .as_str()
+            .is_some_and(|url| obs_actions::browser::is_link_page(url, link_page))
+        {
+            return Err(Error::LinkSource);
+        }
+        obs.reload_browser_source(name)
+            .await
+            .map_err(source_error)?;
+
+        let detail = EventDetail::BrowserSourcesReloaded {
+            sources: vec![name.to_owned()],
+            by: Some(by.to_owned()),
+        };
+        if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await {
+            tracing::warn!(%error, %switcher_id, "Couldn't log a browser source reload");
+        }
+        Ok(())
+    }
+
+    /// Reloads browser sources on the scene on air without claiming the action:
+    /// repeated browser reloads are harmless.
+    pub async fn reload_browser_sources(
+        &self,
+        switcher_id: Uuid,
+        link_page: &str,
+        by: &str,
+    ) -> Result<(String, Vec<String>)> {
+        let obs = self.controllable_obs(switcher_id).await?;
+        let outcome = obs.reload_browser_sources(link_page).await?;
+        let mut failed = outcome.failed.into_iter();
+        let first_failure = failed.next();
+        for (source, error) in failed {
+            tracing::warn!(%error, %switcher_id, source, "Couldn't reload a browser source");
+        }
+        if outcome.reloaded.is_empty() {
+            if let Some((_, error)) = first_failure {
+                return Err(error.into());
+            }
+        } else if let Some((source, error)) = first_failure {
+            tracing::warn!(%error, %switcher_id, source, "Couldn't reload a browser source");
+        }
+        if !outcome.reloaded.is_empty() {
+            let detail = EventDetail::BrowserSourcesReloaded {
+                sources: outcome.reloaded.clone(),
+                by: Some(by.to_owned()),
+            };
+            if let Err(error) = live::record_event(&self.db, &self.nats, switcher_id, detail).await
+            {
+                tracing::warn!(%error, %switcher_id, "Couldn't log browser source reloads");
+            }
+        }
+        Ok((outcome.scene, outcome.reloaded))
     }
 
     /// Marks this moment on the switcher's running stream and logs it in the

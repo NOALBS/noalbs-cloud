@@ -5521,6 +5521,10 @@ msgstr "未連接機器人"
 msgid "No browser source or Connect client is connected."
 msgstr "沒有已連線的瀏覽器來源或 Connect 用戶端。"
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "在 {scene} 中沒有可重新載入的瀏覽器來源"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "無上限"
@@ -7351,6 +7355,26 @@ msgstr "中繼伺服器"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "其場景開始播出時重新載入"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "重新載入頁面"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "重新載入頁面"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "重新載入播出場景中的瀏覽器來源"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "已重新載入：{0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

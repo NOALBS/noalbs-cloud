@@ -5521,6 +5521,10 @@ msgstr "ボットが接続されていません"
 msgid "No browser source or Connect client is connected."
 msgstr "ブラウザソースもConnectクライアントも接続されていません。"
 
+#: src/components/live/source-list.tsx
+msgid "No browser sources to reload on {scene}"
+msgstr "{scene} に再読み込みするブラウザーソースはありません"
+
 #: src/lib/org-audit.ts
 msgid "no cap"
 msgstr "上限なし"
@@ -7351,6 +7355,26 @@ msgstr "リレーサーバー"
 #: src/components/live/source-editor.tsx
 msgid "Reload it when its scene goes on air"
 msgstr "シーンが放送に入ったら再読み込み"
+
+#: src/components/live/source-list.tsx
+msgid "Reload page"
+msgstr "ページを再読み込み"
+
+#: src/components/live/source-list.tsx
+msgid "Reload pages"
+msgstr "ページを再読み込み"
+
+#: src/components/live/source-list.tsx
+msgid "Reload the browser sources on the scene on air"
+msgstr "放送中のシーンのブラウザーソースを再読み込み"
+
+#. placeholder {0}: event.data.sources.join(", ")
+#. placeholder {0}: source.name
+#. placeholder {0}: sources.join(", ")
+#: src/components/live/source-list.tsx
+#: src/lib/live-format.ts
+msgid "Reloaded {0}"
+msgstr "再読み込みしました: {0}"
 
 #: src/components/admin/products.tsx
 #: src/components/chat/chat-links.tsx

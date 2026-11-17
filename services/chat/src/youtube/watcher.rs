@@ -202,7 +202,7 @@ impl Watcher {
             .collect();
         for id in gone {
             if let Some(watched) = self.channels.remove(&id) {
-                close(state, &id, &watched.chat).await;
+                close(state, &id, &watched.chat, &watched.channel.login).await;
             }
         }
         for channel in wanted {
@@ -249,8 +249,12 @@ impl Watcher {
         for (id, watched) in &mut self.channels {
             if !live.contains(id) {
                 if !matches!(watched.chat, Chat::Idle) {
-                    tracing::debug!(channel = id, "No switcher streams: not following");
-                    close(state, id, &watched.chat).await;
+                    tracing::debug!(
+                        channel = id,
+                        channel_login = watched.channel.login,
+                        "No switcher streams: not following"
+                    );
+                    close(state, id, &watched.chat, &watched.channel.login).await;
                     watched.chat = Chat::Idle;
                 }
                 continue;
@@ -286,14 +290,19 @@ impl Watcher {
                 let attempts = attempts + 1;
                 let retry_in = match result {
                     Ok(Some(live_chat_id)) => {
-                        tracing::info!(channel = channel_id, "Following a YouTube live chat");
-                        put_chat(state, &channel_id, &live_chat_id).await;
+                        tracing::info!(
+                            channel = channel_id,
+                            channel_login = watched.channel.login,
+                            "Following a YouTube live chat"
+                        );
+                        put_chat(state, &channel_id, &live_chat_id, &watched.channel.login).await;
                         watched.chat = Chat::Open {
                             _task: Task(tokio::spawn(follow(
                                 state.clone(),
                                 self.youtube.clone(),
                                 watched.channel.id,
                                 channel_id.clone(),
+                                watched.channel.login.clone(),
                                 live_chat_id.clone(),
                                 self.events.clone(),
                             ))),
@@ -305,7 +314,12 @@ impl Watcher {
                     Ok(None) => interval,
                     Err(error) => {
                         let quota = is_quota(&error);
-                        tracing::warn!(%error, channel = channel_id, "Couldn't look for a YouTube live chat");
+                        tracing::warn!(
+                            %error,
+                            channel = channel_id,
+                            channel_login = watched.channel.login,
+                            "Couldn't look for a YouTube live chat"
+                        );
                         record_error(state, quota, error.to_string()).await;
                         if quota { QUOTA_BACKOFF } else { interval }
                     }
@@ -327,8 +341,12 @@ impl Watcher {
                 {
                     return;
                 }
-                tracing::info!(channel = channel_id, "A YouTube live chat ended");
-                close(state, &channel_id, &watched.chat).await;
+                tracing::info!(
+                    channel = channel_id,
+                    channel_login = watched.channel.login,
+                    "A YouTube live chat ended"
+                );
+                close(state, &channel_id, &watched.chat, &watched.channel.login).await;
                 watched.chat = Chat::Waiting {
                     attempts: EARLY_CHECKS,
                     next: Instant::now() + retry_in,
@@ -347,7 +365,7 @@ impl Watcher {
                 Chat::Open { live_chat_id, .. } => {
                     streaming += 1;
                     open += 1;
-                    put_chat(state, id, live_chat_id).await;
+                    put_chat(state, id, live_chat_id, &watched.channel.login).await;
                 }
                 Chat::Waiting { .. } | Chat::Finding { .. } => streaming += 1,
             }
@@ -370,19 +388,19 @@ impl Watcher {
     }
 }
 
-async fn put_chat(state: &State, channel_id: &str, live_chat_id: &str) {
+async fn put_chat(state: &State, channel_id: &str, live_chat_id: &str, login: &str) {
     if let Err(error) = state
         .buckets
         .youtube
         .put(chat_key(state, channel_id), live_chat_id.to_owned().into())
         .await
     {
-        tracing::warn!(%error, channel = channel_id, "Couldn't keep a YouTube live chat");
+        tracing::warn!(%error, channel = channel_id, channel_login = login, "Couldn't keep a YouTube live chat");
     }
 }
 
 /// Forgets an open chat (its task stops when the state is replaced).
-async fn close(state: &State, channel_id: &str, chat: &Chat) {
+async fn close(state: &State, channel_id: &str, chat: &Chat, login: &str) {
     if matches!(chat, Chat::Open { .. })
         && let Err(error) = state
             .buckets
@@ -390,7 +408,7 @@ async fn close(state: &State, channel_id: &str, chat: &Chat) {
             .delete(chat_key(state, channel_id))
             .await
     {
-        tracing::debug!(%error, channel = channel_id, "Couldn't forget a YouTube live chat");
+        tracing::debug!(%error, channel = channel_id, channel_login = login, "Couldn't forget a YouTube live chat");
     }
 }
 
@@ -428,6 +446,7 @@ async fn follow(
     youtube: Arc<YouTube>,
     channel: Uuid,
     channel_id: String,
+    channel_login: String,
     live_chat_id: String,
     events: mpsc::Sender<Event>,
 ) {
@@ -446,7 +465,7 @@ async fn follow(
         let token = match token {
             Ok(token) => token,
             Err(error) => {
-                tracing::warn!(%error, channel = channel_id, "No token to read a YouTube chat with");
+                tracing::warn!(%error, channel = channel_id, channel_login = channel_login, "No token to read a YouTube chat with");
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(MAX_BACKOFF);
                 continue;
@@ -469,7 +488,15 @@ async fn follow(
                             {
                                 page_token = Some(next);
                             }
-                            if handle_response(&state, &channel_id, &response, skip_before).await {
+                            if handle_response(
+                                &state,
+                                &channel_id,
+                                &channel_login,
+                                &response,
+                                skip_before,
+                            )
+                            .await
+                            {
                                 break Closed::Ended;
                             }
                         }
@@ -499,6 +526,7 @@ async fn follow(
             tonic::Code::PermissionDenied => {
                 tracing::warn!(
                     channel = channel_id,
+                    channel_login = channel_login,
                     message = status.message(),
                     "YouTube refused to show a chat"
                 );
@@ -513,6 +541,7 @@ async fn follow(
             tonic::Code::ResourceExhausted => {
                 tracing::warn!(
                     channel = channel_id,
+                    channel_login = channel_login,
                     message = status.message(),
                     "YouTube's quota or rate limit"
                 );
@@ -520,7 +549,7 @@ async fn follow(
                 break QUOTA_BACKOFF;
             }
             _ => {
-                tracing::debug!(channel = channel_id, %status, "The YouTube chat stream broke off");
+                tracing::debug!(channel = channel_id, channel_login = channel_login, %status, "The YouTube chat stream broke off");
             }
         }
         tokio::time::sleep(backoff).await;
@@ -548,6 +577,7 @@ enum Closed {
 async fn handle_response(
     state: &State,
     channel_id: &str,
+    channel_login: &str,
     response: &proto::LiveChatMessageListResponse,
     skip_before: Option<DateTime<Utc>>,
 ) -> bool {
@@ -560,7 +590,8 @@ async fn handle_response(
         {
             ended = true;
         }
-        let Some(mut message) = inbound_message(channel_id, item, skip_before) else {
+        let Some(mut message) = inbound_message(channel_id, channel_login, item, skip_before)
+        else {
             continue;
         };
         // A new stream starts with the chat's recent messages again: the handler
@@ -575,6 +606,7 @@ async fn handle_response(
 /// `skip_before` (the backlog of a new connection) are left out.
 fn inbound_message(
     channel_id: &str,
+    channel_login: &str,
     item: &proto::LiveChatMessage,
     skip_before: Option<DateTime<Utc>>,
 ) -> Option<InboundMessage> {
@@ -607,6 +639,7 @@ fn inbound_message(
         delivery_id: None,
         platform: ChatPlatform::YouTube,
         channel_id: channel_id.to_owned(),
+        channel_login: channel_login.to_owned(),
         bot_id: None,
         message_id: item.id.clone()?,
         chatter: Chatter {
@@ -652,6 +685,7 @@ mod tests {
     fn text_messages_become_inbound_messages() {
         let message = inbound_message(
             "UCstreamer",
+            "streamer",
             &item(
                 proto::TEXT_MESSAGE_EVENT,
                 "2026-09-29T12:00:00.5+00:00",
@@ -661,6 +695,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(message.channel_id, "UCstreamer");
+        assert_eq!(message.channel_login, "streamer");
         assert_eq!(message.message_id, "msg-1");
         assert_eq!(message.text, "!bitrate");
         assert_eq!(message.bot_id, None);
@@ -674,7 +709,10 @@ mod tests {
     #[test]
     fn other_events_are_left_out() {
         let ended = item(proto::CHAT_ENDED_EVENT, "2026-09-29T12:00:00Z", "");
-        assert_eq!(inbound_message("UCstreamer", &ended, None), None);
+        assert_eq!(
+            inbound_message("UCstreamer", "streamer", &ended, None),
+            None
+        );
     }
 
     #[test]
@@ -685,12 +723,15 @@ mod tests {
             "2026-09-29T11:59:59Z",
             "!switch live",
         );
-        assert_eq!(inbound_message("UCstreamer", &old, skip_before), None);
+        assert_eq!(
+            inbound_message("UCstreamer", "streamer", &old, skip_before),
+            None
+        );
         let new = item(
             proto::TEXT_MESSAGE_EVENT,
             "2026-09-29T12:00:01Z",
             "!switch live",
         );
-        assert!(inbound_message("UCstreamer", &new, skip_before).is_some());
+        assert!(inbound_message("UCstreamer", "streamer", &new, skip_before).is_some());
     }
 }

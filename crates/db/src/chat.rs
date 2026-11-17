@@ -438,6 +438,8 @@ pub struct WantedSubscription {
     pub platform: ChatPlatform,
     pub platform_channel_id: String,
     pub platform_bot_id: String,
+    /// The channel's login, for logs.
+    pub login: String,
 }
 
 /// What every link needs, for the chat service's reconciler: each active
@@ -448,6 +450,7 @@ pub struct WantedSubscription {
 pub async fn wanted_subscriptions(pool: &PgPool) -> Result<Vec<WantedSubscription>> {
     let wanted = sqlx::query_as::<_, WantedSubscription>(concat!(
         "SELECT DISTINCT chat_channels.platform, chat_channels.platform_channel_id,
+                chat_channels.login,
                 CASE WHEN chat_channels.platform = 'KICK' THEN '' ELSE bot.platform_user_id END
                     AS platform_bot_id
         FROM switcher_chat_channels links
@@ -473,6 +476,8 @@ pub struct ChatLink {
     pub switcher_id: Uuid,
     pub switcher_name: String,
     pub workspace_id: Uuid,
+    /// The channel's login, for logs.
+    pub channel_login: String,
     /// The switcher's command prefix, so a message that starts with none of its
     /// links' prefixes is dropped without loading anything else.
     pub command_prefix: String,
@@ -491,7 +496,8 @@ pub async fn links_for_channel(
 ) -> Result<Vec<ChatLink>> {
     let links = sqlx::query_as::<_, ChatLink>(concat!(
         "SELECT switchers.id AS switcher_id, switchers.name AS switcher_name,
-                switchers.workspace_id, switchers.command_prefix, bot.id AS bot_id,
+                switchers.workspace_id, switchers.command_prefix,
+                chat_channels.login AS channel_login, bot.id AS bot_id,
                 bot.platform_user_id AS bot_platform_user_id, bot.login AS bot_login
         FROM switcher_chat_channels links
         JOIN chat_channels ON chat_channels.id = links.chat_channel_id
@@ -578,14 +584,22 @@ pub struct ChatSubscription {
     pub platform_channel_id: String,
     pub platform_bot_id: String,
     pub platform_subscription_id: String,
+    /// The channel's login, for logs; `None` when the channel is already gone.
+    pub login: Option<String>,
 }
 
 #[tracing::instrument(skip(pool))]
 pub async fn subscriptions(pool: &PgPool) -> Result<Vec<ChatSubscription>> {
     let subscriptions = sqlx::query_as::<_, ChatSubscription>(
-        "SELECT id, platform, event_type, platform_channel_id, platform_bot_id,
-                platform_subscription_id
-         FROM chat_subscriptions ORDER BY created_at",
+        "SELECT chat_subscriptions.id, chat_subscriptions.platform,
+                chat_subscriptions.event_type, chat_subscriptions.platform_channel_id,
+                chat_subscriptions.platform_bot_id,
+                chat_subscriptions.platform_subscription_id, chat_channels.login
+         FROM chat_subscriptions
+         LEFT JOIN chat_channels
+           ON chat_channels.platform = chat_subscriptions.platform
+          AND chat_channels.platform_channel_id = chat_subscriptions.platform_channel_id
+         ORDER BY chat_subscriptions.created_at",
     )
     .fetch_all(pool)
     .await?;
@@ -793,12 +807,20 @@ pub async fn channel_by_platform_id(
     Ok(channel)
 }
 
+/// A channel whose outgoing raids the chat service watches.
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct RaidChannel {
+    pub platform_channel_id: String,
+    /// The channel's login, for logs.
+    pub login: String,
+}
+
 /// Active channels of `platform` where a linked switcher stops the stream after
 /// raiding out (`auto_stop_on_raid`), so the chat service hears about their raids.
 #[tracing::instrument(skip(pool))]
-pub async fn raid_channels(pool: &PgPool, platform: ChatPlatform) -> Result<Vec<String>> {
-    let channels = sqlx::query_scalar::<_, String>(
-        "SELECT DISTINCT chat_channels.platform_channel_id
+pub async fn raid_channels(pool: &PgPool, platform: ChatPlatform) -> Result<Vec<RaidChannel>> {
+    let channels = sqlx::query_as::<_, RaidChannel>(
+        "SELECT DISTINCT chat_channels.platform_channel_id, chat_channels.login
          FROM switcher_chat_channels links
          JOIN chat_channels ON chat_channels.id = links.chat_channel_id
          JOIN switchers ON switchers.id = links.switcher_id
@@ -820,6 +842,8 @@ pub async fn raid_channels(pool: &PgPool, platform: ChatPlatform) -> Result<Vec<
 pub struct YouTubeChannel {
     pub id: Uuid,
     pub platform_channel_id: String,
+    /// The channel's handle without the `@`, for logs.
+    pub login: String,
     pub switcher_ids: Vec<Uuid>,
 }
 
@@ -829,6 +853,7 @@ pub struct YouTubeChannel {
 pub async fn youtube_channels(pool: &PgPool) -> Result<Vec<YouTubeChannel>> {
     let channels = sqlx::query_as::<_, YouTubeChannel>(concat!(
         "SELECT chat_channels.id, chat_channels.platform_channel_id,
+                chat_channels.login,
                 array_agg(DISTINCT switchers.id ORDER BY switchers.id) AS switcher_ids
         FROM switcher_chat_channels links
         JOIN chat_channels ON chat_channels.id = links.chat_channel_id
@@ -851,6 +876,8 @@ pub async fn youtube_channels(pool: &PgPool) -> Result<Vec<YouTubeChannel>> {
 pub struct SwitcherChannel {
     pub platform: ChatPlatform,
     pub platform_channel_id: String,
+    /// The channel's login, for logs.
+    pub login: String,
     pub bot_id: Option<Uuid>,
     pub bot_platform_user_id: Option<String>,
     /// The channel controls other switchers too (so posts name the switcher).
@@ -869,6 +896,7 @@ pub async fn channels_of_switcher(
 ) -> Result<Vec<SwitcherChannel>> {
     let channels = sqlx::query_as::<_, SwitcherChannel>(concat!(
         "SELECT chat_channels.platform, chat_channels.platform_channel_id,
+                chat_channels.login,
                 bot.id AS bot_id, bot.platform_user_id AS bot_platform_user_id,
                 links.auto_switch_notification,
                 EXISTS (SELECT 1 FROM switcher_chat_channels others

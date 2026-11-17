@@ -132,6 +132,7 @@ async fn announce(state: &State, switcher_id: Uuid, msg: &Msg, audience: Audienc
             state,
             channel.platform,
             &channel.platform_channel_id,
+            &channel.login,
             &bot,
             &text,
             None,
@@ -141,7 +142,9 @@ async fn announce(state: &State, switcher_id: Uuid, msg: &Msg, audience: Audienc
             tracing::warn!(
                 %error,
                 %switcher_id,
+                switcher_name = %switcher.name,
                 platform = channel.platform.label(),
+                channel = %channel.login,
                 "Couldn't post a notification"
             );
         }

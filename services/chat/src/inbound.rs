@@ -12,6 +12,9 @@ pub struct InboundMessage {
     pub platform: ChatPlatform,
     /// The channel (broadcaster) it was sent in.
     pub channel_id: String,
+    /// The channel's login, for logs. Empty from instances that predate it.
+    #[serde(default)]
+    pub channel_login: String,
     /// Twitch: the bot whose subscription delivered it. Only that bot's links
     /// answer, so a channel read by two bots doesn't answer twice.
     pub bot_id: Option<String>,
@@ -33,6 +36,15 @@ impl InboundMessage {
         self.delivery_id
             .as_deref()
             .map(|delivery| crate::kv::key(&[self.platform.as_str(), delivery]))
+    }
+
+    /// The channel as a log can show it: its login, else its platform ID.
+    pub fn channel_label(&self) -> &str {
+        if self.channel_login.is_empty() {
+            &self.channel_id
+        } else {
+            &self.channel_login
+        }
     }
 }
 
