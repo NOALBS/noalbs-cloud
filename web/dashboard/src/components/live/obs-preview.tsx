@@ -177,14 +177,23 @@ export function ObsPreview({
         {!obsConnected && (
           <span className="ml-2 text-xs text-low">OBS disconnected · last known state</span>
         )}
+        {watching && (
+          <span
+            className="ml-auto flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+            title={watching}
+          >
+            <Eye className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{watching}</span>
+          </span>
+        )}
       </PaneTitleRow>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
-      <div className="flex flex-col overflow-hidden">
+      <div className="flex flex-col">
         {on ? (
           <div
             className={cn(
-              "live-preview-frame relative flex aspect-video items-center justify-center overflow-hidden rounded-xl border bg-black",
+              "live-preview-frame relative -mx-4 flex aspect-video items-center justify-center overflow-hidden border-y bg-black md:-mx-5",
               !obsConnected && "opacity-50",
             )}
           >
@@ -220,13 +229,6 @@ export function ObsPreview({
         ) : (
           <p className="px-4 py-6 text-sm text-muted-foreground">
             <Trans>The preview is off. Turn it on to see what OBS is showing.</Trans>
-          </p>
-        )}
-
-        {watching && (
-          <p className="flex items-center gap-1.5 border-t border-divider px-4 py-2 text-xs text-muted-foreground">
-            <Eye className="size-3.5 shrink-0" aria-hidden />
-            {watching}
           </p>
         )}
 
