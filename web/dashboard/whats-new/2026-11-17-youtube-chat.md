@@ -17,6 +17,9 @@ permissions you set up for Twitch and Kick work in your YouTube chat.
 - **Who answers:** the shared NOALBS bot replies in your chat. To reply from a YouTube channel of your own instead,
   tap **Use your own bot** under **Bot**.
 - **Ignoring chatters:** `!noalbs ignore @handle` works with YouTube handles.
+- **Daily limit:** YouTube limits how much NOALBS can use its chat each day. Until we get a higher limit, YouTube
+  commands may stop on busy days. They start working again when the limit resets at midnight Pacific time (09:00 in
+  Central Europe).
 
 You can take NOALBS's access away at any time by removing the channel on the **Chat & commands** page or at
 [Google's third-party connections](https://myaccount.google.com/connections).
