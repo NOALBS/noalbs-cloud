@@ -280,7 +280,18 @@
   margin: -24px -32px 0;
   padding: 12px 32px;
   gap: 8px;
+  border-bottom: 1px solid transparent;
   background: var(--color-background);
+}
+.live-root[data-stuck="true"] .live-page > header {
+  border-bottom-color: var(--color-border);
+}
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .live-page > header {
+    background: color-mix(in srgb, var(--color-background) 82%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+  }
 }
 @media (min-width: 768px) {
   .live-root[data-stuck="true"] .live-page > header h1 > span > span:first-child {
