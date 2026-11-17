@@ -169,12 +169,13 @@ export function SceneGrid({
   const anyHidden = all.some((scene) => hiddenSet.has(sceneKey(scene)));
 
   const [search, setSearch] = useState("");
-  const shown = visible.filter((scene) =>
-    scene.name.toLowerCase().includes(search.trim().toLowerCase()),
+  const large = all.length > 8;
+  // The search field only shows for a long list; a filter left from one is dropped.
+  const shown = visible.filter(
+    (scene) => !large || scene.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
   /** Number hints show where the hotkeys work: operator mode. */
   const keys = hotkeys;
-  const large = all.length > 8;
   const selections = large
     ? all.filter((scene) => isCurrent(scene) || (onPreviewSelect && scene.uuid === previewUuid))
     : [];

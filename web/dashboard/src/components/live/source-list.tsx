@@ -121,7 +121,7 @@ export function SourceList({
 }) {
   const [hidden, setHidden] = useHiddenSources(path.switcher_id);
   const [editing, setEditing] = useState(false);
-  const [search, setSearch] = useState("");
+  const [typed, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const toggleCollapsed = (key: string) =>
     setCollapsed((previous) => {
@@ -282,6 +282,9 @@ export function SourceList({
     section.items.some(({ source }) => sourceKind(source) === "browser"),
   );
   const hiddenSet = new Set(hidden);
+  const large = (list.data?.sources.length ?? 0) > 8;
+  // The search field only shows for a long list; a filter left from one is dropped.
+  const search = large ? typed : "";
   const listedSections = keptSections(sections, hiddenSet);
   const matches = visibleSourceKeys(list.data?.sources ?? [], search, collapsed);
   const filteredSections = keptSections(sourceTreeSections(list.data?.sources ?? []), hiddenSet)
@@ -290,7 +293,6 @@ export function SourceList({
       items: section.items.filter(({ source }) => matches.has(sourceKey(source))),
     }))
     .filter((section) => section.items.length > 0);
-  const large = (list.data?.sources.length ?? 0) > 8;
   const nested = sections.some((section) => section.parent !== null);
   const onScene = [
     ...new Set(sections.flatMap((section) => section.items.map(({ source }) => sceneKey(source)))),
@@ -551,7 +553,7 @@ export function SourceList({
           type="search"
           aria-label={t`Search sources`}
           placeholder={t`Search sources`}
-          value={search}
+          value={typed}
           onChange={(event) => setSearch(event.target.value)}
           className="h-9"
         />
