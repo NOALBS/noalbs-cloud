@@ -60,6 +60,36 @@ describe("operator shortcuts", () => {
     for (const input of ["r", "s", "0", "Escape", "m"])
       expect(operatorHotkey(key(input), context)).toBeNull();
   });
+  it.each([
+    '<button aria-label="Preview settings"><span>Settings</span></button>',
+    '<button role="switch"><span>Preview</span></button>',
+    '<button role="combobox"><span>Rate</span></button>',
+    '<select><option>Rate</option></select>',
+    '<a href="/settings"><span>Settings</span></a>',
+    '<div role="button" tabindex="0"><span>Action</span></div>',
+    '<div role="checkbox"><span>Enabled</span></div>',
+    '<div role="slider" tabindex="0"><span>Volume</span></div>',
+    '<summary><span>Details</span></summary>',
+  ])("preserves native activation of focused controls: %s", (html) => {
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    const target = host.querySelector("span") ?? host.firstElementChild;
+    for (const input of [" ", "Enter"])
+      for (const repeat of [false, true])
+        expect(operatorHotkey(key(input, { target, repeat }), context)).toBeNull();
+  });
+  it("still Takes/Cuts after focusing a scene tile or its child", () => {
+    const tile = document.createElement("button");
+    tile.dataset.sceneTile = "";
+    const child = document.createElement("span");
+    tile.append(child);
+    for (const target of [tile, child]) {
+      expect(operatorHotkey(key(" ", { target }), context)).toEqual({ action: "take" });
+      expect(operatorHotkey(key("Enter", { target }), context)).toEqual({ action: "cut" });
+    }
+    const background = document.createElement("section");
+    expect(operatorHotkey(key("Enter", { target: background }), context)).toEqual({ action: "cut" });
+  });
 });
 
 describe("local studio preference and swaps", () => {

@@ -47,7 +47,7 @@ export function operatorHotkey(
   event: Pick<
     KeyboardEvent,
     "key" | "code" | "shiftKey" | "altKey" | "metaKey" | "ctrlKey" | "repeat" | "isComposing"
-  >,
+  > & { target?: EventTarget | null },
   context: { desktop: boolean; editing: boolean; blocked: boolean; hold: boolean },
 ):
   | { action: "scene"; index: number; direct: boolean }
@@ -72,6 +72,15 @@ export function operatorHotkey(
     (/^[1-9]$/.test(event.key) ? event.key : null);
   if (digit) return { action: "scene", index: Number(digit) - 1, direct: event.shiftKey };
   if (context.hold || event.shiftKey) return null;
+  if (event.key === " " || event.key === "Enter") {
+    const control =
+      event.target instanceof Element
+        ? event.target.closest(
+            'button, a[href], input, textarea, select, summary, [role="button"], [role="switch"], [role="combobox"], [role="link"], [role="checkbox"], [role="radio"], [role="slider"], [role="spinbutton"], [role="menuitem"], [role="tab"], [role="option"], [role="treeitem"], [role="listbox"], [tabindex]',
+          )
+        : null;
+    if (control && !control.matches("[data-scene-tile]")) return null;
+  }
   if (event.key === " ") return { action: "take" };
   if (event.key === "Enter") return { action: "cut" };
   return null;
