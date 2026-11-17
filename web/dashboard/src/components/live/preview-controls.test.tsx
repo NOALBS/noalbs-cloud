@@ -121,9 +121,12 @@ describe("shared preview controls", () => {
         </>,
       ),
     );
+    const first = updates[0];
+    const second = updates[1];
+    if (!first || !second) throw new Error("Missing preview settings readers");
     act(() => {
-      updates[0]({ enabled: false, fps: 5 });
-      updates[1]({ width: 960, quality: 80 });
+      first({ enabled: false, fps: 5 });
+      second({ width: 960, quality: 80 });
     });
     const expected = { enabled: false, fps: 5, width: 960, quality: 80 };
     for (const output of host.querySelectorAll("output"))
@@ -132,7 +135,7 @@ describe("shared preview controls", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("unavailable");
     });
-    act(() => updates[1]({ enabled: true }));
+    act(() => second({ enabled: true }));
     for (const output of host.querySelectorAll("output"))
       expect(JSON.parse(output.textContent ?? "{}")).toEqual({ ...expected, enabled: true });
   });
