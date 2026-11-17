@@ -155,7 +155,8 @@ export function useOperator(
     mutation.mutate({ target, previous: program, swap, how });
   };
   /** Puts a scene on air directly: a cut in Studio mode, else as OBS has picked. */
-  const cutScene = (target: Scene) => switchTo(target, false, state.studio ? "cut" : "plain");
+  const cutScene = (target: Scene) =>
+    switchTo(target, false, enabled && state.studio ? "cut" : "plain");
   /** Puts the cued scene on air with the picked transition. */
   const take = () => {
     if (enabled && state.studio && preview) switchTo(preview, true, "transition");
