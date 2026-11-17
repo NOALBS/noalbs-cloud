@@ -151,4 +151,30 @@ describe("shared preview controls", () => {
     act(() => window.dispatchEvent(new StorageEvent("storage", { key: null })));
     expect(host.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
   });
+
+  it("places controls in a custom toolbar and opens settings below it", () => {
+    act(() =>
+      root.render(
+        <I18nProvider i18n={i18n}>
+          <PreviewControls
+            settings={{ enabled: true, fps: 1, width: 640, quality: 60 }}
+            update={() => {}}
+            on
+            renderToolbar={(controls) => (
+              <div data-toolbar>
+                <button type="button">Take</button>
+                {controls}
+              </div>
+            )}
+          />
+        </I18nProvider>,
+      ),
+    );
+    const toolbar = host.querySelector("[data-toolbar]");
+    expect(toolbar?.querySelector('[aria-label="Preview settings"]')).not.toBeNull();
+    expect(toolbar?.querySelector('[role="switch"]')).not.toBeNull();
+    click("Preview settings");
+    expect(toolbar?.nextElementSibling?.querySelector('[aria-label="Rate"]')).not.toBeNull();
+    expect(toolbar?.querySelector('[aria-label="Rate"]')).toBeNull();
+  });
 });

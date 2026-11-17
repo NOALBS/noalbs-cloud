@@ -64,12 +64,12 @@ describe("operator shortcuts", () => {
     '<button aria-label="Preview settings"><span>Settings</span></button>',
     '<button role="switch"><span>Preview</span></button>',
     '<button role="combobox"><span>Rate</span></button>',
-    '<select><option>Rate</option></select>',
+    "<select><option>Rate</option></select>",
     '<a href="/settings"><span>Settings</span></a>',
     '<div role="button" tabindex="0"><span>Action</span></div>',
     '<div role="checkbox"><span>Enabled</span></div>',
     '<div role="slider" tabindex="0"><span>Volume</span></div>',
-    '<summary><span>Details</span></summary>',
+    "<summary><span>Details</span></summary>",
   ])("preserves native activation of focused controls: %s", (html) => {
     const host = document.createElement("div");
     host.innerHTML = html;
@@ -88,7 +88,9 @@ describe("operator shortcuts", () => {
       expect(operatorHotkey(key("Enter", { target }), context)).toEqual({ action: "cut" });
     }
     const background = document.createElement("section");
-    expect(operatorHotkey(key("Enter", { target: background }), context)).toEqual({ action: "cut" });
+    expect(operatorHotkey(key("Enter", { target: background }), context)).toEqual({
+      action: "cut",
+    });
   });
 });
 

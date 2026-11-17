@@ -252,37 +252,46 @@ export function PreviewControls({
   update,
   on,
   children,
+  renderToolbar,
 }: {
   settings: PreviewSettings;
   update: (patch: Partial<PreviewSettings>) => void;
   on: boolean;
   children?: ReactNode;
+  renderToolbar?: (controls: ReactNode) => ReactNode;
 }) {
   const [showSettings, setShowSettings] = useState(false);
+  const controls = (
+    <span className="flex shrink-0 items-center gap-2">
+      {on && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t`Preview settings`}
+          aria-expanded={showSettings}
+          onClick={() => setShowSettings((shown) => !shown)}
+          className={cn(showSettings && "bg-surface-2")}
+        >
+          <Settings2 />
+        </Button>
+      )}
+      <Switch
+        checked={on}
+        onCheckedChange={(enabled) => update({ enabled })}
+        aria-label={t`Show the OBS preview`}
+      />
+    </span>
+  );
   return (
     <>
-      <div className="flex min-h-9 items-center justify-between gap-2 py-2">
-        <p className="text-xs text-muted-foreground">{children}</p>
-        <span className="flex items-center gap-2">
-          {on && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t`Preview settings`}
-              aria-expanded={showSettings}
-              onClick={() => setShowSettings((shown) => !shown)}
-              className={cn(showSettings && "bg-surface-2")}
-            >
-              <Settings2 />
-            </Button>
-          )}
-          <Switch
-            checked={on}
-            onCheckedChange={(enabled) => update({ enabled })}
-            aria-label={t`Show the OBS preview`}
-          />
-        </span>
-      </div>
+      {renderToolbar ? (
+        renderToolbar(controls)
+      ) : (
+        <div className="flex min-h-9 items-center justify-between gap-2 py-2">
+          <p className="text-xs text-muted-foreground">{children}</p>
+          {controls}
+        </div>
+      )}
 
       {on && showSettings && (
         <div className="mt-2 grid grid-cols-3 gap-2 border-t border-divider p-3">
