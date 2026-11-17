@@ -261,6 +261,7 @@ export function SourceList({
     }))
     .filter((section) => section.items.length > 0);
   const large = (list.data?.sources.length ?? 0) > 8;
+  const nested = sections.some((section) => section.parent !== null);
   const onScene = [
     ...new Set(sections.flatMap((section) => section.items.map(({ source }) => sceneKey(source)))),
   ];
@@ -458,7 +459,13 @@ export function SourceList({
           className="h-9"
         />
       )}
-      <div className={cn("flex flex-col gap-2.5", large && "live-collection-scroll")}>
+      <div
+        className={cn(
+          "flex flex-col",
+          (editing || arranging) && "gap-2.5",
+          large && "live-collection-scroll",
+        )}
+      >
         {!editing && !arranging && search.trim() && filteredSections.length === 0 && (
           <p className="py-3 text-sm text-muted-foreground">
             <Trans>No source matches “{search}”.</Trans>
@@ -467,9 +474,9 @@ export function SourceList({
         {(editing || arranging ? sections : filteredSections).map((section) => (
           <div
             key={section.items[0] ? sourceKey(section.items[0].source) : section.parent}
-            className="flex flex-col gap-2"
+            className={cn("flex flex-col", (editing || arranging) && "gap-2")}
           >
-            {section.parent !== null && (
+            {(editing || arranging) && section.parent !== null && (
               <h3 className="mt-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 {section.parentIsGroup ? (
                   <Folder className="size-3.5" aria-hidden="true" />
@@ -583,7 +590,9 @@ export function SourceList({
                 </SortableContext>
               </DndContext>
             ) : (
-              <div className={cn("grid gap-x-4", columns ? "grid-cols-2" : "grid-cols-1")}>
+              <div
+                className={cn("grid gap-x-4", columns && !nested ? "grid-cols-2" : "grid-cols-1")}
+              >
                 {section.items.map(({ source, shown }) => {
                   const key = sourceKey(source);
                   const Icon = SOURCE_ICONS[sourceKind(source)];
@@ -632,13 +641,18 @@ export function SourceList({
                   const pending = toggle.isPending && sourceKey(toggle.variables.source) === key;
                   const container = source.is_group || source.is_scene;
                   return (
-                    <div key={key} className="flex min-w-0 items-center">
-                      {container && (
+                    <div
+                      key={key}
+                      data-source-depth={source.depth}
+                      style={{ paddingInlineStart: `${source.depth * 16}px` }}
+                      className="flex min-h-11 min-w-0 items-center border-b border-divider transition-colors hover:bg-surface-2 md:min-h-10"
+                    >
+                      {container ? (
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="size-11 shrink-0 md:size-8"
+                          className="size-11 shrink-0 rounded-none border-0 bg-transparent shadow-none hover:bg-transparent md:size-8"
                           aria-label={t`Expand or collapse ${source.name}`}
                           aria-expanded={search.trim() ? true : !collapsed.has(key)}
                           onClick={() => {
@@ -652,20 +666,19 @@ export function SourceList({
                             <ChevronDown />
                           )}
                         </Button>
+                      ) : (
+                        <span className="size-11 shrink-0 md:size-8" aria-hidden="true" />
                       )}
                       <Button
                         variant="ghost"
-                        key={key}
                         type="button"
                         aria-pressed={source.enabled}
                         disabled={!canControl || pending}
                         onClick={() => toggle.mutate({ source, enabled: !source.enabled })}
                         className={cn(
-                          TILE,
-                          "flex-1 min-h-11 md:min-h-10",
+                          "min-h-11 min-w-0 flex-1 justify-between gap-2 rounded-none border-0 bg-transparent px-1.5 py-2 text-left shadow-none hover:bg-transparent md:min-h-10",
                           "disabled:cursor-default",
                           !source.enabled && "text-muted-foreground",
-                          "enabled:hover:bg-surface-2",
                           source.enabled && !shown && "opacity-60",
                           pending && "animate-pulse",
                         )}
