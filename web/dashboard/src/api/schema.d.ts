@@ -3350,6 +3350,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The scene transitions in the switcher's OBS. */
+        get: operations["obs_transitions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/switchers/{switcher_id}/preview": {
         parameters: {
             query?: never;
@@ -6467,6 +6484,21 @@ export interface components {
              */
             this_stream: boolean;
         };
+        ObsTransitionDto: {
+            /** @description Its duration can't be set (Cut, a stinger). */
+            fixed: boolean;
+            name: string;
+        };
+        ObsTransitionsDto: {
+            /** @description The one OBS switches with now. */
+            current?: string | null;
+            /**
+             * Format: int32
+             * @description Its duration in milliseconds; none when it is fixed.
+             */
+            duration_ms?: number | null;
+            transitions: components["schemas"]["ObsTransitionDto"][];
+        };
         Organization: {
             /** Format: uuid */
             id: string;
@@ -7452,8 +7484,24 @@ export interface components {
         /** @enum {string} */
         SwitchReason: "auto" | "dashboard" | "obs";
         SwitchScene: {
+            /**
+             * @description Switch at once with OBS's Cut, whatever transition it has picked, and
+             *     leave that pick as it was. Wins over `transition`.
+             */
+            cut?: boolean;
+            /**
+             * Format: int32
+             * @description How long `transition` takes, in milliseconds (50 to 20000). Ignored
+             *     without `transition`, and by a fixed one such as Cut.
+             */
+            duration_ms?: number | null;
             /** Format: uuid */
             scene_uuid: string;
+            /**
+             * @description The OBS transition to switch with, by name (see `obs/transitions`).
+             *     OBS keeps it for later switches. Left out: whichever OBS has picked.
+             */
+            transition?: string | null;
         };
         Switcher: {
             chat_channels: components["schemas"]["LinkedChannel"][];
@@ -15431,6 +15479,11 @@ export interface operations {
                 width?: number | null;
                 /** @description JPEG quality, 1 (smallest) to 100 (best); default 60. */
                 quality?: number | null;
+                /**
+                 * @description A scene to show instead of the one on air (an operator's cued scene).
+                 *     Only for those `preview_off_air` names, streaming or not: it isn't on air.
+                 */
+                scene?: string | null;
             };
             header?: never;
             path: {
@@ -15994,6 +16047,46 @@ export interface operations {
                 content?: never;
             };
             /** @description `obs_error`, e.g. already streaming */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description `obs_offline` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    obs_transitions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                switcher_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObsTransitionsDto"];
+                };
+            };
+            /** @description `obs_error` */
             502: {
                 headers: {
                     [name: string]: unknown;

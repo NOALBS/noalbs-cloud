@@ -156,6 +156,11 @@ msgstr "{0, plural, other {已删除 # 个客户}}"
 msgid "{0, plural, one {# client} other {# clients}}"
 msgstr "{0, plural, other {# 个客户}}"
 
+#. placeholder {0}: row.slots.length
+#: src/components/live/pane-layout.tsx
+msgid "{0, plural, one {# column} other {# columns}}"
+msgstr "{0, plural, other {# 列}}"
+
 #. placeholder {0}: client.customers
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{0, plural, one {# customer} other {# customers}}"
@@ -467,6 +472,11 @@ msgstr "{0} 个事件订阅（记录为 {1}）。"
 #: src/components/scene-rules-section.tsx
 msgid "{0} for this combination"
 msgstr "此组合的 {0}"
+
+#. placeholder {0}: transition.name
+#: src/components/live/monitors.tsx
+msgid "{0} has a fixed duration"
+msgstr "{0} 的时长固定"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -863,6 +873,14 @@ msgstr "{managedBy} 的团队可以使用。管理员和操作员不能。"
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "{managedBy} 的团队在未开播时也能看到。管理员和操作员仅在直播时可见。"
 
+#: src/components/live/quick-actions.tsx
+msgid "{markerCount} this stream"
+msgstr "本次直播 {markerCount} 个"
+
+#: src/components/live/pane-layout.tsx
+msgid "{n, plural, one {# column} other {# columns}}"
+msgstr "{n, plural, other {# 列}}"
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} 已停售：{label}"
@@ -1069,6 +1087,10 @@ msgstr "每 {0} 秒 1 帧"
 msgid "1 to {NAME_MAX_BYTES} characters"
 msgstr "1 至 {NAME_MAX_BYTES} 个字符"
 
+#: src/components/live/scene-grid.tsx
+msgid "1–9: first nine scenes · /: search"
+msgstr "1–9：前九个场景 · /：搜索"
+
 #: src/lib/support.ts
 msgid "24 hours"
 msgstr "24 小时"
@@ -1238,6 +1260,15 @@ msgstr "未找到账号"
 msgid "Account settings"
 msgstr "账号设置"
 
+#: src/components/live/pane-layout-model.ts
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Actions"
+msgstr "操作"
+
+#: src/components/live/scene-grid.tsx
+msgid "Active"
+msgstr "活动"
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1246,6 +1277,10 @@ msgstr "活跃于 {0}"
 #: src/routes/_app/admin/users/index.tsx
 msgid "Active any time"
 msgstr "不限活跃时间"
+
+#: src/components/live/live-header.tsx
+msgid "Active in operator mode on desktop, outside fields, dialogs and Edit layout."
+msgstr "在桌面端的操作员模式下生效，输入框、对话框和编辑布局中除外。"
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active now"
@@ -1264,6 +1299,7 @@ msgid "Active today"
 msgstr "今日活跃"
 
 #: src/components/live/activity-feed.tsx
+#: src/components/live/pane-layout-model.ts
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -1315,6 +1351,11 @@ msgstr "添加切换器"
 msgid "Add a workspace"
 msgstr "添加工作区"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Add beside {0}"
+msgstr "在 {0} 旁添加"
+
 #: src/components/scene-rules-section.tsx
 msgid "Add combination"
 msgstr "添加组合"
@@ -1327,9 +1368,17 @@ msgstr "添加标记"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "添加一个切换器以连接你的 OBS。配置只需几分钟。"
 
+#: src/components/live/pane-layout.tsx
+msgid "Add pane"
+msgstr "添加面板"
+
 #: src/components/connect-settings.tsx
 msgid "Add program"
 msgstr "添加程序"
+
+#: src/components/live/pane-layout.tsx
+msgid "Add row"
+msgstr "添加行"
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
@@ -1714,6 +1763,10 @@ msgstr "请该工作区的所有者或管理员在“设置 → 常规 → NOALB
 msgid "Asked the browser source to reconnect"
 msgstr "已请求浏览器来源重新连接"
 
+#: src/components/live/quick-actions.tsx
+msgid "asks to confirm"
+msgstr "会要求确认"
+
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
@@ -1739,6 +1792,7 @@ msgstr "至少 3 个字符：字母、数字和连字符。"
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Audio"
 msgstr "音频"
 
@@ -1772,10 +1826,27 @@ msgstr "审计日志"
 msgid "Auto"
 msgstr "自动"
 
+#: src/components/live/operator-state.ts
+msgid "auto switch"
+msgstr "自动切换"
+
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/quick-actions.tsx
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Auto switch"
 msgstr "自动切换"
+
+#: src/components/live/bitrate-pane.tsx
+msgid "Auto switch · waiting for the stream"
+msgstr "自动切换 · 等待直播"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is off"
+msgstr "自动切换已关闭"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is on"
+msgstr "自动切换已开启"
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -1996,13 +2067,10 @@ msgstr "计费已关闭"
 msgid "Billing period"
 msgstr "计费周期"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Bitrate"
 msgstr "码率"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate · {serverName}"
-msgstr "码率 · {serverName}"
 
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -2067,19 +2135,20 @@ msgstr "左下"
 msgid "Bottom right"
 msgstr "右下"
 
+#: src/components/live/scene-grid.tsx
+msgid "BRB"
+msgstr "BRB"
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
+#. placeholder {0}: formatKbps(triggers.offline)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "BRB / offline"
 msgstr "BRB / 离线"
-
-#: src/components/live/scene-grid.tsx
-msgid "BRB SCENE"
-msgstr "BRB 场景"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2159,6 +2228,7 @@ msgstr "无法移除：{blockedBy}"
 #: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/moblin-settings.tsx
@@ -2258,6 +2328,7 @@ msgstr "更改了附加项"
 msgid "Changed chat settings"
 msgstr "更改了聊天设置"
 
+#: src/components/live/operator-state.ts
 #: src/lib/live-format.ts
 msgid "Changed in OBS"
 msgstr "在 OBS 中更改"
@@ -2447,6 +2518,10 @@ msgstr "由切换器根据你的码率和延迟选择。"
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Clear"
 msgstr "清除"
+
+#: src/components/live/scene-grid.tsx
+msgid "Click to cue · Shift+click cuts"
+msgstr "点击预备 · Shift+点击直接切换"
 
 #: src/lib/api-messages.ts
 msgid "Client not found"
@@ -2664,6 +2739,7 @@ msgstr "连接你的推流服务器"
 msgid "connected"
 msgstr "已连接"
 
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -2725,12 +2801,6 @@ msgstr "连接已取消。"
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "正在连接…"
-
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "CONNECTING…"
-msgstr "连接中……"
 
 #: src/lib/api-messages.ts
 msgid "Connection not found"
@@ -2836,6 +2906,14 @@ msgstr "无法连接账号。请重试。"
 #: src/lib/chat.ts
 msgid "Couldn’t connect. Please try again."
 msgstr "无法连接。请重试。"
+
+#: src/components/live/activity-feed.tsx
+msgid "Couldn’t load activity."
+msgstr "无法加载活动。"
+
+#: src/components/live/scene-grid.tsx
+msgid "Couldn’t load scenes."
+msgstr "无法加载场景。"
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3025,6 +3103,19 @@ msgstr "裁剪右侧"
 msgid "Crop top"
 msgstr "裁剪顶部"
 
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+msgid "Cue {0}"
+msgstr "预备 {0}"
+
+#: src/components/live/live-header.tsx
+msgid "Cue a scene (switch with Studio mode off)"
+msgstr "预备场景（演播室模式关闭时直接切换）"
+
+#: src/components/live/monitors.tsx
+msgid "Cue a scene below"
+msgstr "在下方预备一个场景"
+
 #: src/components/admin/products.tsx
 msgid "Currency"
 msgstr "货币"
@@ -3086,10 +3177,17 @@ msgid "Customers’ own bots"
 msgstr "终端客户的自有机器人"
 
 #: src/components/live/audio-mixer.tsx
-#: src/components/live/scene-grid.tsx
-#: src/components/live/source-list.tsx
 msgid "Customize"
 msgstr "自定义"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Cut"
+msgstr "硬切"
+
+#: src/components/live/live-header.tsx
+msgid "Cut directly"
+msgstr "直接硬切"
 
 #: src/components/app-shell.tsx
 msgid "Dark"
@@ -3245,6 +3343,10 @@ msgstr "开发登录"
 msgid "Device removed"
 msgstr "设备已移除"
 
+#: src/components/live/pane-layout-model.ts
+msgid "Devices"
+msgstr "设备"
+
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "禁用"
@@ -3312,6 +3414,7 @@ msgid "Dismiss"
 msgstr "关闭"
 
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
@@ -3352,9 +3455,26 @@ msgstr "下载直播历史"
 msgid "Drag"
 msgstr "拖动"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Drag {0}"
+msgstr "拖动 {0}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
 msgstr "在图表上拖动以放大"
+
+#: src/components/live/source-list.tsx
+msgid "Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t changed by it."
+msgstr "拖动可在 OBS 中重新排序。“列出”只决定此浏览器在这里显示什么，不会更改 OBS。"
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to resize · double-click or Enter to equalize"
+msgstr "拖动调整大小 · 双击或按 Enter 均分"
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to set minimum height · double-click for auto"
+msgstr "拖动设置最小高度 · 双击恢复自动"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
@@ -3386,7 +3506,6 @@ msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different o
 msgstr "每个服务器都可以覆盖 LIVE、LOW 和 BRB 场景，例如为备用上行链路使用不同的叠加层。"
 
 #: src/components/connect-settings.tsx
-#: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
@@ -3409,6 +3528,10 @@ msgstr "编辑 {label}"
 msgid "Edit {name}"
 msgstr "编辑 {name}"
 
+#: src/components/live/pane-layout.tsx
+msgid "Edit layout"
+msgstr "编辑布局"
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "编辑公告"
@@ -3416,6 +3539,10 @@ msgstr "编辑公告"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "编辑程序"
+
+#: src/components/live/scene-grid.tsx
+msgid "Edit scenes"
+msgstr "编辑场景"
 
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
@@ -3453,6 +3580,10 @@ msgstr "未经你许可的紧急访问"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Emergency access…"
 msgstr "紧急访问……"
+
+#: src/components/live/pane-layout.tsx
+msgid "Empty slot"
+msgstr "空位"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
@@ -3494,6 +3625,30 @@ msgstr "通过 <0>dev_login = true</0> 启用。切勿用于生产环境。"
 #: src/components/belabox/stream-panel.tsx
 msgid "Encoder"
 msgstr "编码器"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder connecting…"
+msgstr "编码器连接中…"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder key refused"
+msgstr "编码器密钥被拒绝"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder not connected"
+msgstr "编码器未连接"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder offline"
+msgstr "编码器离线"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder ready"
+msgstr "编码器就绪"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder streaming"
+msgstr "编码器推流中"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
@@ -3537,6 +3692,7 @@ msgstr "结束于 {0}"
 msgid "Ended a notice"
 msgstr "结束了公告"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Ending"
@@ -3559,6 +3715,10 @@ msgstr "结束时间（留空 = 直到手动结束）"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "ends {0}"
 msgstr "{0} 结束"
+
+#: src/components/live/live-header.tsx
+msgid "Enter"
+msgstr "Enter"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
@@ -3603,6 +3763,10 @@ msgstr "请输入你的流 ID"
 #: src/routes/_app/admin/audit.tsx
 msgid "Entries"
 msgstr "条目"
+
+#: src/components/live/live-header.tsx
+msgid "Esc"
+msgstr "Esc"
 
 #: src/routes/_app/admin/status.tsx
 msgid "EventSub cost"
@@ -3678,6 +3842,15 @@ msgstr "完全贴合框，必要时会变形。"
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
 msgstr "已有来源"
+
+#: src/components/live/live-header.tsx
+msgid "Exit immersive"
+msgstr "退出沉浸模式"
+
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
+msgid "Expand or collapse {0}"
+msgstr "展开或折叠 {0}"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3878,6 +4051,7 @@ msgid "Hid {0}"
 msgstr "隐藏了 {0}"
 
 #: src/components/admin/products.tsx
+#: src/components/live/source-list.tsx
 #: src/lib/billing.ts
 msgid "Hidden"
 msgstr "已隐藏"
@@ -3903,6 +4077,13 @@ msgstr "已隐藏，因为原始统计数据可能包含流名称或地址。无
 #: src/components/history/raw-explorer.tsx
 msgid "Hide"
 msgstr "隐藏"
+
+#. placeholder {0}: layout.title
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+#: src/components/live/pane-title-row.tsx
+msgid "Hide {0}"
+msgstr "隐藏 {0}"
 
 #: src/components/copy-field.tsx
 #: src/components/secret-url-input.tsx
@@ -4025,6 +4206,14 @@ msgstr "已忽略的聊天用户"
 msgid "Ignoring {0}"
 msgstr "正在忽略 {0}"
 
+#: src/components/live/live-header.tsx
+msgid "Immersive"
+msgstr "沉浸"
+
+#: src/components/live/live-header.tsx
+msgid "Immersive: hide the sidebar (F)"
+msgstr "沉浸：隐藏侧边栏 (F)"
+
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Import"
 msgstr "导入"
@@ -4065,6 +4254,10 @@ msgstr "30 天后"
 msgid "In 7 days"
 msgstr "7 天后"
 
+#: src/components/live/source-list.tsx
+msgid "In cued Preview"
+msgstr "在预备的预览中"
+
 #: src/components/admin/organization-limits-form.tsx
 msgid "In every client."
 msgstr "所有客户中。"
@@ -4077,9 +4270,17 @@ msgstr "在 Moblin 中打开 <0>Settings → Remote control</0>，将 <1>Passwor
 msgid "in OBS"
 msgstr "在 OBS 中"
 
+#: src/components/live/on-air-pane.tsx
+msgid "In OBS"
+msgstr "在 OBS 中"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "在 OBS 中打开 <0>Tools → WebSocket Server Settings</0>，开启 WebSocket 服务器，并在此处输入其端口和密码（<1>Show Connect Info</1> 会显示这两项）。"
+
+#: src/components/live/source-list.tsx
+msgid "In Program"
+msgstr "在节目中"
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4087,7 +4288,7 @@ msgid "in use"
 msgstr "使用中"
 
 #: src/components/live/server-card.tsx
-msgid "IN USE"
+msgid "In use"
 msgstr "使用中"
 
 #: src/routes/_app/admin/users/index.tsx
@@ -4101,6 +4302,14 @@ msgstr "信息"
 #: src/components/live/source-editor.tsx
 msgid "Input format"
 msgstr "输入格式"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert after"
+msgstr "插入到后面"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert before"
+msgstr "插入到前面"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -4241,10 +4450,6 @@ msgid "It's in use now. Reload and try again."
 msgstr "它正在使用中。请重新加载后重试。"
 
 #: src/components/live/scene-grid.tsx
-msgid "It’s on air: switch to another scene first."
-msgstr "它正在播出：请先切换到其他场景。"
-
-#: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
 msgstr "它会立即连同其中的内容从 OBS 中移除：其他场景未使用的来源会被 OBS 连同设置一起删除。"
 
@@ -4255,6 +4460,10 @@ msgstr "它会立即从直播中的 OBS 的这个场景里移除。场景本身�
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
 msgstr "它会立即从直播中的 OBS 里移除。如果没有其他场景使用它，OBS 会连同设置一起删除它。"
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s the current scene: switch to another scene first."
+msgstr "这是当前场景：请先切换到其他场景。"
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
@@ -4287,6 +4496,10 @@ msgstr "其余事项由其管理员管理。请在此创建第一个邀请并将
 #: src/components/live/source-position.tsx
 msgid "Its own size."
 msgstr "保持原始大小。"
+
+#: src/components/live/monitors.tsx
+msgid "Its picture is private until it’s on air"
+msgstr "上线前其画面不公开"
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4357,9 +4570,9 @@ msgid "Joining…"
 msgstr "加入中……"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
 
@@ -4408,9 +4621,13 @@ msgstr "保留 {0} 至周期结束，之后转为 Free。"
 msgid "Kept for every client."
 msgstr "所有客户都保留。"
 
-#: src/components/live/belabox-card.tsx
-msgid "KEY REFUSED"
-msgstr "密钥被拒绝"
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts (?)"
+msgstr "键盘快捷键 (?)"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Kick"
@@ -4443,7 +4660,7 @@ msgstr "类型："
 msgid "Language"
 msgstr "语言"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "Last 2 min"
 msgstr "最近 2 分钟"
 
@@ -4458,6 +4675,14 @@ msgstr "上次活跃"
 #: src/routes/_app/admin/status.tsx
 msgid "Last error {0}{1}: {2}"
 msgstr "上次错误 {0}{1}：{2}"
+
+#: src/components/live/scene-grid.tsx
+msgid "Last known"
+msgstr "上次已知"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Last known scene"
+msgstr "上次已知的场景"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
@@ -4618,9 +4843,17 @@ msgstr "关联价格"
 msgid "Links copied"
 msgstr "链接已复制"
 
+#: src/components/live/source-list.tsx
+msgid "LISTED"
+msgstr "已列出"
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "列为暂不可用：无人可以再购买，已拥有的用户继续保留。"
+
+#: src/components/live/source-list.tsx
+msgid "Listed here. Tap to hide it from this list."
+msgstr "已在此列出。点按可从此列表隐藏。"
 
 #: src/components/admin/products.tsx
 msgid "Listed, but nobody can buy it yet."
@@ -4637,6 +4870,10 @@ msgstr "已列出，但还无人可以购买。"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Live"
 msgstr "直播"
+
+#: src/components/live/scene-grid.tsx
+msgid "LIVE"
+msgstr "LIVE"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
@@ -4657,10 +4894,6 @@ msgstr "正在直播"
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "LIVE NOW"
 msgstr "正在直播"
-
-#: src/components/live/scene-grid.tsx
-msgid "LIVE SCENE"
-msgstr "LIVE 场景"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
@@ -4696,6 +4929,10 @@ msgstr "正在加载日志列表…"
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "正在加载程序…"
+
+#: src/components/live/monitors.tsx
+msgid "Loading transitions…"
+msgstr "正在加载转场…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4779,9 +5016,14 @@ msgstr "循环播放列表"
 msgid "Low"
 msgstr "低"
 
+#: src/components/live/scene-grid.tsx
+msgid "LOW"
+msgstr "LOW"
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
+#. placeholder {0}: formatKbps(triggers.low)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
@@ -4792,10 +5034,6 @@ msgstr "低码率"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "低码率"
-
-#: src/components/live/scene-grid.tsx
-msgid "LOW SCENE"
-msgstr "LOW 场景"
 
 #. placeholder {0}: addon.name
 #: src/components/billing/addon-card.tsx
@@ -4904,6 +5142,10 @@ msgstr "与边缘的距离（占画面高度的 %）"
 #: src/components/support-access.tsx
 msgid "Mark as seen"
 msgstr "标记为已查看"
+
+#: src/components/live/quick-actions.tsx
+msgid "Mark this moment"
+msgstr "标记此刻"
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment on the stream"
@@ -5049,6 +5291,10 @@ msgstr "Moblin 码率 {0} kbps"
 msgid "Moblin connected"
 msgstr "Moblin 已连接"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin connecting…"
+msgstr "Moblin 连接中…"
+
 #: src/lib/live-format.ts
 msgid "Moblin connection priorities off"
 msgstr "Moblin 连接优先级已关闭"
@@ -5098,6 +5344,10 @@ msgstr "Moblin 灯光已开启"
 msgid "Moblin muted"
 msgstr "Moblin 已静音"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin not connected"
+msgstr "Moblin 未连接"
+
 #: src/components/moblin-settings.tsx
 msgid "Moblin password"
 msgstr "Moblin 密码"
@@ -5106,9 +5356,17 @@ msgstr "Moblin 密码"
 msgid "Moblin password refused"
 msgstr "Moblin 密码被拒绝"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin paused"
+msgstr "Moblin 已暂停"
+
 #: src/lib/live-format.ts
 msgid "Moblin problem"
 msgstr "Moblin 出现问题"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin ready"
+msgstr "Moblin 就绪"
 
 #: src/lib/live-format.ts
 msgid "Moblin recording"
@@ -5142,6 +5400,10 @@ msgstr "Moblin 已停止"
 #: src/components/live/moblin-card.tsx
 msgid "Moblin stops sending, so the stream server loses the feed."
 msgstr "Moblin 将停止发送，因此推流服务器会失去信号。"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin streaming"
+msgstr "Moblin 推流中"
 
 #: src/lib/live-format.ts
 msgid "Moblin unmuted"
@@ -5233,9 +5495,23 @@ msgstr "更多设置"
 msgid "Move {0}"
 msgstr "移动 {0}"
 
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} down"
+msgstr "下移 {0}"
+
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} up"
+msgstr "上移 {0}"
+
 #: src/components/scene-rules-section.tsx
 msgid "Move {label}"
 msgstr "移动 {label}"
+
+#: src/components/live/pane-layout.tsx
+msgid "Move to a new row"
+msgstr "移到新行"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
@@ -5266,9 +5542,10 @@ msgstr "将于 {0} 转为 Free；{1} 保留至届时。"
 msgid "MRR"
 msgstr "MRR"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "ms"
-msgstr "ms"
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/server-card.tsx
+msgid "ms RTT"
+msgstr "ms RTT"
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5322,10 +5599,6 @@ msgstr "副本名称"
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
 msgstr "用不超过 20 个字符为单个单位命名，例如：名额。"
-
-#: src/components/live/belabox-card.tsx
-msgid "Name this interface"
-msgstr "为此接口命名"
 
 #: src/components/live/belabox-card.tsx
 msgid "Name, e.g. Phone A"
@@ -5585,6 +5858,10 @@ msgstr "无信号"
 msgid "No feed"
 msgstr "无信号"
 
+#: src/components/live/bitrate-pane.tsx
+msgid "No feed <0>· bitrate unavailable</0>"
+msgstr "无信号 <0>· 码率不可用</0>"
+
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
 msgid "No feed for {0} min on BRB, so the stream was stopped"
@@ -5605,6 +5882,10 @@ msgstr "无实例"
 #: src/routes/_app/admin/status.tsx
 msgid "No instance has followed YouTube chats yet."
 msgstr "还没有实例关注过 YouTube 聊天。"
+
+#: src/components/live/live-header.tsx
+msgid "No key starts or stops streaming or recording. Stopping asks to confirm."
+msgstr "没有任何按键会开始或停止直播或录制。停止时会要求确认。"
 
 #: src/components/connect-settings.tsx
 msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
@@ -5678,10 +5959,18 @@ msgstr "无价格：这是免费套餐。"
 msgid "No programs have been added yet."
 msgstr "尚未添加任何程序。"
 
+#: src/components/live/scene-grid.tsx
+msgid "No role"
+msgstr "无角色"
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "No scene"
 msgstr "无场景"
+
+#: src/components/live/scene-grid.tsx
+msgid "No scene matches “{search}”."
+msgstr "没有场景匹配“{search}”。"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5706,13 +5995,17 @@ msgstr "无信号"
 msgid "No SIM card"
 msgstr "无 SIM 卡"
 
+#: src/components/live/source-list.tsx
+msgid "No source matches “{search}”."
+msgstr "没有来源匹配“{search}”。"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
 msgstr "此服务器没有统计数据。"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "No stream server"
-msgstr "无推流服务器"
+msgstr "没有推流服务器"
 
 #: src/components/history/raw-explorer.tsx
 msgid "No stream server reported stats during this stream."
@@ -5967,14 +6260,13 @@ msgid "not connected"
 msgstr "未连接"
 
 #: src/components/belabox/modem-panel.tsx
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "未连接"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
-#: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "未连接"
 
@@ -6026,6 +6318,10 @@ msgstr "未找到该内容"
 msgid "Not ignored"
 msgstr "未忽略"
 
+#: src/components/live/source-list.tsx
+msgid "Not listed here. Tap to list it."
+msgstr "未在此列出。点按可列出。"
+
 #: src/components/admin/products.tsx
 msgid "Not listed. Workspaces that already have it still see it and can lower it."
 msgstr "未列出。已拥有它的工作区仍能看到并可以减少数量。"
@@ -6070,6 +6366,10 @@ msgstr "未在直播"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Not suspended."
 msgstr "未封停。"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Not switching while paused"
+msgstr "暂停期间不切换"
 
 #: src/components/live/quick-actions.tsx
 msgid "Not yet"
@@ -6165,6 +6465,7 @@ msgstr "现在"
 
 #: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "OBS"
 msgstr "OBS"
 
@@ -6219,6 +6520,9 @@ msgstr "OBS 没有发来画面：框会在没有画面的情况下绘制。"
 msgid "OBS didn’t send a picture. Trying again…"
 msgstr "OBS 未发送画面。正在重试……"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
 #: src/components/switcher-status.tsx
 #: src/lib/live-format.ts
 msgid "OBS disconnected"
@@ -6227,6 +6531,22 @@ msgstr "OBS 已断开连接"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS 已断开连接"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · last known scenes"
+msgstr "OBS 已断开 · 上次已知的场景"
+
+#: src/components/live/obs-preview.tsx
+msgid "OBS disconnected · last known state"
+msgstr "OBS 已断开 · 上次已知的状态"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · no current scene data"
+msgstr "OBS 已断开 · 没有当前场景数据"
+
+#: src/components/live/monitors.tsx
+msgid "OBS disconnected · stream state unknown"
+msgstr "OBS 已断开 · 直播状态未知"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6363,6 +6683,7 @@ msgstr "直播历史保留时长"
 msgid "Of the screen"
 msgstr "占画面"
 
+#: src/components/live/quick-actions.tsx
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "关"
@@ -6374,6 +6695,10 @@ msgstr "关"
 msgid "Off"
 msgstr "关"
 
+#: src/components/live/live-header.tsx
+msgid "Off air"
+msgstr "未直播"
+
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
 msgstr "未开播时隐藏预览：框会在没有预览的情况下绘制。"
@@ -6381,6 +6706,10 @@ msgstr "未开播时隐藏预览：框会在没有预览的情况下绘制。"
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
 msgstr "未开播时隐藏预览。直播开始后会重新显示。"
+
+#: src/components/live/monitors.tsx
+msgid "Off air: the picture is private"
+msgstr "未直播：画面不公开"
 
 #: src/components/live/moblin-card.tsx
 msgid "Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one. Only SRTLA streams use these."
@@ -6398,7 +6727,6 @@ msgstr "对外提供"
 msgid "Offline"
 msgstr "离线"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
 msgid "OFFLINE"
 msgstr "离线"
@@ -6440,14 +6768,24 @@ msgstr "场景 {0}"
 msgid "On {0}"
 msgstr "场景：{0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-header.tsx
+#: src/components/live/on-air-pane.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "播出中"
 
-#: src/components/live/scene-grid.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/quick-actions.tsx
 msgid "ON AIR"
 msgstr "播出中"
+
+#. placeholder {0}: formatUptime(status.stream_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "ON AIR {0}"
+msgstr "ON AIR {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On command"
@@ -6623,6 +6961,10 @@ msgstr "未使用的邀请"
 msgid "Open network: no password"
 msgstr "开放网络：无密码"
 
+#: src/components/live/obs-pane.tsx
+msgid "Open OBS with the NOALBS browser source active to see its stats."
+msgstr "打开 OBS 并启用 NOALBS 浏览器源以查看其统计数据。"
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
 msgstr "打开设置"
@@ -6676,6 +7018,7 @@ msgstr "正在打开 Checkout……"
 msgid "Opening the workspace needs its permission. Everything you do there is shown to its owners and admins."
 msgstr "打开工作区需要其许可。你在其中的所有操作都会向其所有者和管理员显示。"
 
+#: src/components/live/live-header.tsx
 #: src/lib/permissions.ts
 msgid "Operator"
 msgstr "操作员"
@@ -6688,6 +7031,10 @@ msgstr "运营商"
 #: src/lib/belabox.ts
 msgid "Operator {saved}"
 msgstr "运营商 {saved}"
+
+#: src/components/live/live-header.tsx
+msgid "Operator shortcuts"
+msgstr "操作员快捷键"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Optional"
@@ -6803,6 +7150,10 @@ msgstr "所有者"
 msgid "Owners, admins and operators can use it."
 msgstr "所有者、管理员和操作员都可以使用。"
 
+#: src/components/live/live-header.tsx
+msgid "Page mode"
+msgstr "页面模式"
+
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "页面 URL"
@@ -6839,13 +7190,13 @@ msgstr "过往发票保留当时的电子邮箱和银行卡尾号。"
 msgid "Pause, and resume when shown"
 msgstr "暂停，显示时继续"
 
+#: src/components/live/quick-actions.tsx
+msgid "paused"
+msgstr "已暂停"
+
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
-msgstr "已暂停"
-
-#: src/components/live/moblin-card.tsx
-msgid "PAUSED"
 msgstr "已暂停"
 
 #: src/components/switcher-status.tsx
@@ -6973,6 +7324,10 @@ msgstr "管线"
 msgid "Pixels cut off each side of the source, before it’s sized."
 msgstr "调整大小前，从来源每一边裁掉的像素。"
 
+#: src/components/live/pane-layout.tsx
+msgid "Place here"
+msgstr "放在这里"
+
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
 #: src/routes/_app/$workspace/overview.tsx
@@ -7073,8 +7428,31 @@ msgid "Presets"
 msgstr "预设"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 msgid "Preview"
 msgstr "预览"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW"
+msgstr "预览"
+
+#: src/components/live/scene-grid.tsx
+msgid "Preview · last known"
+msgstr "预览 · 上次已知"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW · LAST KNOWN"
+msgstr "预览 · 上次已知"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/pane-layout-model.ts
+msgid "Preview / Program"
+msgstr "预览 / 节目"
+
+#: src/components/live/monitors.tsx
+msgid "Preview and Program"
+msgstr "预览和节目"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview settings"
@@ -7110,10 +7488,16 @@ msgstr "价格 ID"
 msgid "Primary"
 msgstr "主导航"
 
+#. placeholder {0}: rank ?? server.priority
+#: src/components/live/server-card.tsx
+msgid "Priority {0}"
+msgstr "优先级 {0}"
+
 #: src/components/live/moblin-card.tsx
 msgid "Priority: higher is used more when stable"
 msgstr "优先级：数值越高，稳定时使用越多"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/login.tsx
@@ -7128,6 +7512,14 @@ msgstr "问题"
 #: src/routes/_app/admin/products.tsx
 msgid "Products"
 msgstr "产品"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · ACTIVE"
+msgstr "节目 · 活动"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · LAST KNOWN"
+msgstr "节目 · 上次已知"
 
 #: src/lib/live-format.ts
 msgid "Program added"
@@ -7180,10 +7572,6 @@ msgstr "发布者（流 ID）"
 msgid "Quality"
 msgstr "画质"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Quick actions"
-msgstr "快捷操作"
-
 #. placeholder {0}: connection.name
 #: src/components/live/moblin-card.tsx
 msgid "Raise {0}'s priority"
@@ -7209,22 +7597,26 @@ msgstr "可访问"
 msgid "Read more"
 msgstr "阅读全文"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "READY"
-msgstr "就绪"
-
 #: src/components/admin/reason-dialog.tsx
 #: src/components/support/break-glass-dialog.tsx
 msgid "Reason"
 msgstr "原因"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
 
+#. placeholder {0}: formatUptime(status.recording_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "REC {0}"
+msgstr "REC {0}"
+
+#: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "REC paused"
 msgstr "REC 已暂停"
@@ -7255,6 +7647,10 @@ msgstr "重新连接"
 msgid "Reconnect delay (s)"
 msgstr "重连等待时间（秒）"
 
+#: src/components/live/quick-actions.tsx
+msgid "reconnect sources"
+msgstr "重新连接来源"
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "重新连接浏览器来源？"
@@ -7280,10 +7676,6 @@ msgstr "重新连接中"
 msgid "Reconnecting {0}"
 msgstr "正在重新连接 {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "RECONNECTING…"
-msgstr "重新连接中……"
-
 #: src/components/live/moblin-card.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Record"
@@ -7296,6 +7688,10 @@ msgstr "直播时录制"
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Recorded in the staff audit log."
 msgstr "已记录在工作人员审计日志中。"
+
+#: src/components/live/quick-actions.tsx
+msgid "recording"
+msgstr "录制"
 
 #: src/components/live/moblin-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7334,6 +7730,7 @@ msgstr "在 {summary} 上保持录制。"
 msgid "Recording stopped"
 msgstr "录制已停止"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7429,6 +7826,10 @@ msgstr "移除 {name}？"
 msgid "Remove alias {alias}"
 msgstr "移除别名 {alias}"
 
+#: src/components/live/pane-layout.tsx
+msgid "Remove empty slot"
+msgstr "移除空位"
+
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
@@ -7445,6 +7846,11 @@ msgstr "移除密码"
 #: src/components/connect-settings.tsx
 msgid "Remove program?"
 msgstr "移除程序？"
+
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Remove row {0}"
+msgstr "移除第 {0} 行"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7549,6 +7955,10 @@ msgstr "重命名"
 msgid "Rename {0}"
 msgstr "重命名 {0}"
 
+#: src/components/live/belabox-card.tsx
+msgid "Rename interface {title}"
+msgstr "重命名接口 {title}"
+
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Renamed"
@@ -7619,6 +8029,25 @@ msgstr "请求失败（{0}）"
 msgid "Requested an OBS log through Connect"
 msgstr "通过 Connect 请求了 OBS 日志"
 
+#: src/components/live/pane-layout.tsx
+msgid "Reset"
+msgstr "重置"
+
+#: src/components/live/pane-layout.tsx
+msgid "Reset to default"
+msgstr "恢复默认"
+
+#. placeholder {0}: left.index + 1
+#. placeholder {1}: right.index + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize columns {0} and {1}"
+msgstr "调整第 {0} 列和第 {1} 列的宽度"
+
+#. placeholder {0}: source + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize row {0} height"
+msgstr "调整第 {0} 行的高度"
+
 #: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7663,6 +8092,11 @@ msgstr "恢复订阅后才能更改。"
 #: src/lib/support.ts
 msgid "Resumed the subscription"
 msgstr "恢复了订阅"
+
+#: src/components/live/activity-feed.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Retry"
+msgstr "重试"
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -7751,6 +8185,11 @@ msgstr "角色"
 msgid "Round-trip time"
 msgstr "往返时间 (RTT)"
 
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Row {0}"
+msgstr "第 {0} 行"
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP 输入 - {stream}"
@@ -7806,6 +8245,7 @@ msgstr "操作直播：切换场景、开始和停止、查看统计数据。"
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 #: src/components/moblin-settings.tsx
@@ -7950,6 +8390,10 @@ msgstr "场景不在 OBS 中"
 msgid "Scene overrides"
 msgstr "场景覆盖"
 
+#: src/components/live/scene-grid.tsx
+msgid "Scene selections"
+msgstr "所选场景"
+
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "场景切换"
@@ -7962,6 +8406,7 @@ msgstr "场景切换会发布到此处"
 msgid "Scene switches aren’t posted here"
 msgstr "场景切换不会发布到此处"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
@@ -7973,10 +8418,6 @@ msgstr "场景"
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
 msgstr "这里无法复制场景和分组。"
-
-#: src/components/live/scene-grid.tsx
-msgid "Scenes appear once OBS is connected."
-msgstr "连接 OBS 后会显示场景。"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
@@ -8015,6 +8456,19 @@ msgstr "按名称、URL 或 ID 搜索"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Search by workspace or switcher"
 msgstr "按工作区或切换器搜索"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes"
+msgstr "搜索场景"
+
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes · /"
+msgstr "搜索场景 · /"
+
+#: src/components/live/source-list.tsx
+msgid "Search sources"
+msgstr "搜索来源"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8267,6 +8721,10 @@ msgstr "共享的 NOALBS 机器人"
 msgid "Shifts the audio against the video, {AUDIO_DELAY_MIN} to {AUDIO_DELAY_MAX}."
 msgstr "调整音频相对于视频的偏移，范围为 {AUDIO_DELAY_MIN} 至 {AUDIO_DELAY_MAX}。"
 
+#: src/components/live/live-header.tsx
+msgid "Shortcuts"
+msgstr "快捷键"
+
 #: src/components/history/raw-explorer.tsx
 #: src/routes/_app/admin/audit.tsx
 #: src/routes/_app/admin/status.tsx
@@ -8312,6 +8770,14 @@ msgstr "播放结束后不显示任何内容"
 msgid "Show older"
 msgstr "显示更早的记录"
 
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as grid"
+msgstr "以网格显示场景"
+
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as list"
+msgstr "以列表显示场景"
+
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
 msgstr "显示敏感值"
@@ -8323,6 +8789,10 @@ msgstr "因突袭停止直播时显示 BRB 场景。"
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "显示 OBS 预览"
+
+#: src/components/live/live-header.tsx
+msgid "Show the sidebar (F)"
+msgstr "显示侧边栏 (F)"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the Starting scene when the stream starts."
@@ -8341,6 +8811,10 @@ msgstr "显示或隐藏了来源"
 msgid "Showing"
 msgstr "显示中"
 
+#: src/components/live/source-list.tsx
+msgid "Shown"
+msgstr "已显示"
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8348,8 +8822,8 @@ msgid "SHOWN"
 msgstr "已显示"
 
 #: src/components/live/source-list.tsx
-msgid "SHOWN · PARENT HIDDEN"
-msgstr "已显示 · 父级已隐藏"
+msgid "Shown · parent hidden"
+msgstr "已显示 · 上级已隐藏"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
@@ -8507,9 +8981,11 @@ msgid "Sort"
 msgstr "排序"
 
 #: src/components/live/source-editor.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Source"
 msgstr "来源"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/source-list.tsx
 msgid "Sources"
 msgstr "来源"
@@ -8517,6 +8993,10 @@ msgstr "来源"
 #: src/components/live/source-list.tsx
 msgid "Sources appear once OBS is connected."
 msgstr "连接 OBS 后会显示来源。"
+
+#: src/components/live/live-header.tsx
+msgid "Space"
+msgstr "空格"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
@@ -8651,6 +9131,7 @@ msgstr "开始或停止了录制"
 msgid "Started or stopped the stream"
 msgstr "开始或停止了直播"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Starting"
@@ -8716,6 +9197,7 @@ msgstr "隐身已开启"
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/quick-actions.tsx
 msgid "Stop"
 msgstr "停止"
 
@@ -8866,6 +9348,7 @@ msgstr "推流服务器"
 msgid "Stream server not found"
 msgstr "未找到推流服务器"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
@@ -8884,9 +9367,9 @@ msgstr "每个切换器的推流服务器数"
 msgid "Stream started"
 msgstr "直播已开始"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Stream status"
-msgstr "直播状态"
+#: src/components/live/on-air-pane.tsx
+msgid "Stream state unknown · waiting for OBS"
+msgstr "直播状态未知 · 等待 OBS"
 
 #: src/lib/live-format.ts
 msgid "Stream stopped"
@@ -8900,10 +9383,9 @@ msgstr "视频流 URL"
 msgid "Stream URL"
 msgstr "视频流 URL"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "STREAMING"
-msgstr "直播中"
+#: src/components/live/live-header.tsx
+msgid "Streamer"
+msgstr "主播"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8944,6 +9426,10 @@ msgstr "Stripe 测试模式"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Stuck on a step? The <0>quick start guide</0> walks through it, and <1>how NOALBS connects</1> explains where your video goes."
 msgstr "卡在某一步了？<0>快速入门指南</0>会带你完成，<1>NOALBS 的连接方式</1>说明了你的视频流向何处。"
+
+#: src/components/live/monitors.tsx
+msgid "Studio mode"
+msgstr "演播室模式"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Subscribers"
@@ -9026,6 +9512,10 @@ msgstr "封停"
 msgid "Suspension lifted"
 msgstr "封停已解除"
 
+#: src/components/live/pane-layout.tsx
+msgid "Swap panes"
+msgstr "交换面板"
+
 #: src/components/chat/chat-links.tsx
 msgid "Switch alerts are off for this switcher. <0>Turn on</0>"
 msgstr "此切换器的切换提醒已关闭。<0>开启</0>"
@@ -9107,6 +9597,11 @@ msgstr "切换为按年计费？"
 #: src/components/app-shell.tsx
 msgid "Switch workspace"
 msgstr "切换工作区"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
+msgid "Switched by {by}"
+msgstr "由 {by} 切换"
 
 #: src/lib/support.ts
 msgid "Switched scene"
@@ -9196,13 +9691,18 @@ msgstr "已从 OBS 同步"
 msgid "Synced from OBS {0}"
 msgstr "已于 {0} 从 OBS 同步"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Take"
+msgstr "切换"
+
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
 msgstr "点按输入源以在此处显示或隐藏。仅此浏览器会记住，不会更改 OBS。"
 
 #: src/components/live/scene-grid.tsx
-msgid "Tap scenes to show or hide them here. Only this browser remembers it; the scene on air always shows."
-msgstr "点按场景以在此处显示或隐藏。仅此浏览器会记住；正在播出的场景始终显示。"
+msgid "Tap scenes below to show or hide them here. Only this browser remembers it; the scene on air always shows."
+msgstr "点按下方的场景可在此显示或隐藏。只有此浏览器会记住；正在直播的场景始终显示。"
 
 #: src/components/live/source-list.tsx
 msgid "Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9453,6 +9953,10 @@ msgstr "浏览器来源与 OBS 断开了连接"
 msgid "The browser source reached OBS"
 msgstr "浏览器来源已连接到 OBS"
 
+#: src/components/live/monitors.tsx
+msgid "The cued scene"
+msgstr "预备的场景"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
 msgstr "当前链接将失效，因此你需要将新链接粘贴到 OBS 中。"
@@ -9460,6 +9964,10 @@ msgstr "当前链接将失效，因此你需要将新链接粘贴到 OBS 中。"
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS. Do this if the link leaked."
 msgstr "当前链接将失效，因此你需要将新链接粘贴到 OBS 中。如果链接已泄露，请执行此操作。"
+
+#: src/components/live/operator-state.ts
+msgid "the dashboard"
+msgstr "控制台"
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -9619,6 +10127,10 @@ msgstr "预览已关闭。开启后可查看 OBS 正在显示的内容。"
 #: src/lib/api-messages.ts
 msgid "The preview is only shown while the stream is live."
 msgstr "预览仅在直播时显示。"
+
+#: src/components/live/monitors.tsx
+msgid "The preview is turned off"
+msgstr "预览已关闭"
 
 #: src/lib/obs-preview.ts
 msgid "The preview shows only while the stream is live."
@@ -9966,6 +10478,7 @@ msgstr "此场景没有来源。"
 msgid "This server didn’t report any stats during this stream."
 msgstr "此服务器在这场直播期间未报告任何统计数据。"
 
+#: src/components/live/activity-feed.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "This stream"
 msgstr "这场直播"
@@ -10076,6 +10589,14 @@ msgstr "转移了所有权"
 msgid "Transferring…"
 msgstr "转移中……"
 
+#: src/components/live/monitors.tsx
+msgid "Transition"
+msgstr "转场"
+
+#: src/components/live/monitors.tsx
+msgid "Transition duration"
+msgstr "转场时长"
+
 #: src/lib/support.ts
 msgid "Tried to change support access"
 msgstr "尝试更改支持访问"
@@ -10169,6 +10690,10 @@ msgstr "改为输入文本"
 msgid "Unchanged"
 msgstr "未更改"
 
+#: src/components/live/pane-layout.tsx
+msgid "Undo"
+msgstr "撤销"
+
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
 msgstr "撤销更改"
@@ -10223,6 +10748,10 @@ msgstr "解除了聊天频道与 {target} 的关联"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Unlinking a channel removes it from every switcher, in every workspace: the bot leaves it. Its owner can link it again."
 msgstr "解除频道关联会将其从所有工作区的所有切换器中移除：机器人会离开该频道。其所有者可以重新关联。"
+
+#: src/components/live/source-list.tsx
+msgid "UNLISTED"
+msgstr "未列出"
 
 #: src/components/live/audio-mixer.tsx
 msgid "Unmute"
@@ -10447,6 +10976,10 @@ msgstr "正在等待 OBS"
 msgid "Waiting for the browser source…"
 msgstr "正在等待浏览器来源……"
 
+#: src/components/live/monitors.tsx
+msgid "Waiting for the first picture…"
+msgstr "正在等待第一帧画面…"
+
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
 msgstr "等待中：OBS 开始直播后切换"
@@ -10500,6 +11033,7 @@ msgstr "发生了什么？（可选）"
 msgid "What its clients use of the switchers it was given."
 msgstr "其客户对所分配切换器的使用情况。"
 
+#: src/components/live/monitors.tsx
 #: src/components/live/obs-preview.tsx
 msgid "What OBS is showing"
 msgstr "OBS 正在显示的内容"
@@ -10849,6 +11383,7 @@ msgid "You do not have permission to do this in this workspace"
 msgstr "你没有权限在此工作区中执行此操作"
 
 #: src/components/connect-controls.tsx
+#: src/components/live/obs-pane.tsx
 msgid "You don’t have access to control this computer."
 msgstr "你无权控制这台电脑。"
 

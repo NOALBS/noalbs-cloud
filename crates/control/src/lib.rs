@@ -392,6 +392,55 @@ impl Control {
         self.switch(switcher_id, uuid, by, true).await
     }
 
+    /// [`pick_scene`](Self::pick_scene) with a transition: OBS is told to use
+    /// `transition` (and `duration_ms`, which a fixed one like Cut refuses, so
+    /// a failure there is only logged) and then switches. OBS keeps that
+    /// transition for later switches, automatic ones included, as when it is
+    /// picked in OBS itself.
+    pub async fn take_scene(
+        &self,
+        switcher_id: Uuid,
+        uuid: Uuid,
+        transition: &str,
+        duration_ms: Option<u32>,
+        by: &str,
+    ) -> Result<()> {
+        let obs = self.controllable_obs(switcher_id).await?;
+        obs.set_scene_transition(transition).await?;
+        if let Some(duration_ms) = duration_ms
+            && let Err(error) = obs.set_scene_transition_duration(duration_ms).await
+        {
+            tracing::debug!(%error, "OBS kept the transition's own duration");
+        }
+        self.switch(switcher_id, uuid, by, true).await
+    }
+
+    /// [`pick_scene`](Self::pick_scene) without a transition: switches with
+    /// OBS's Cut, then puts back the transition OBS had picked, so later
+    /// switches look as before. Without a Cut in OBS it is a plain switch.
+    pub async fn cut_scene(&self, switcher_id: Uuid, uuid: Uuid, by: &str) -> Result<()> {
+        let obs = self.controllable_obs(switcher_id).await?;
+        let list = obs.scene_transitions().await?;
+        let cut = list
+            .transitions
+            .iter()
+            .find(|transition| transition.transition_kind == "cut_transition")
+            .map(|transition| transition.transition_name.as_str());
+        let before = list.current_scene_transition_name.as_deref();
+        let (Some(cut), Some(before)) = (cut, before) else {
+            return self.switch(switcher_id, uuid, by, true).await;
+        };
+        if cut == before {
+            return self.switch(switcher_id, uuid, by, true).await;
+        }
+        obs.set_scene_transition(cut).await?;
+        let switched = self.switch(switcher_id, uuid, by, true).await;
+        if let Err(error) = obs.set_scene_transition(before).await {
+            tracing::warn!(%error, "Failed to put OBS's transition back after a cut");
+        }
+        switched
+    }
+
     async fn switch(&self, switcher_id: Uuid, uuid: Uuid, by: &str, picked: bool) -> Result<()> {
         let obs = self.controllable_obs(switcher_id).await?;
         self.announce_intent(

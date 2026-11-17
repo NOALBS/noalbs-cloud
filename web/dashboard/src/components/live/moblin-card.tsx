@@ -74,6 +74,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Point } from "@/live/reducer";
 import { BitrateChart } from "./bitrate-chart";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -236,26 +237,26 @@ export function MoblinCard({
 
   const chip = connected
     ? connected.streaming
-      ? { label: t`STREAMING`, tone: "text-live", fill: "bg-live" }
+      ? { label: t`Moblin streaming`, tone: "text-live", fill: "bg-live" }
       : {
-          label: view.kind === "paused" ? t`PAUSED` : t`READY`,
+          label: view.kind === "paused" ? t`Moblin paused` : t`Moblin ready`,
           tone: "text-muted-foreground",
           fill: "bg-idle",
         }
     : view.kind === "loading"
-      ? { label: t`CONNECTING…`, tone: "text-muted-foreground", fill: "bg-idle" }
-      : { label: t`NOT CONNECTED`, tone: "text-muted-foreground", fill: "bg-idle" };
+      ? { label: t`Moblin connecting…`, tone: "text-muted-foreground", fill: "bg-idle" }
+      : { label: t`Moblin not connected`, tone: "text-muted-foreground", fill: "bg-idle" };
 
   return (
     <section aria-label="Moblin" className="flex flex-col gap-3 rounded-2xl border bg-card p-3.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold">
+      <PaneTitleRow className="flex-wrap justify-between">
+        <span data-pane-title-group className="flex min-w-0 flex-wrap items-center gap-2">
+          <span data-pane-title className="text-sm font-semibold">
             <Trans>Moblin</Trans>
           </span>
           <span
             className={cn(
-              "flex items-center gap-1.5 text-[11px] font-bold tracking-wider",
+              "flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold",
               chip.tone,
             )}
           >
@@ -275,7 +276,7 @@ export function MoblinCard({
             {controllable && <StreamToggle controls={controls} streaming={connected.streaming} />}
           </div>
         )}
-      </div>
+      </PaneTitleRow>
 
       {view.kind === "disconnected" && (
         <p className="text-sm text-muted-foreground">
@@ -495,7 +496,9 @@ function Bonding({
               key={row.name}
               className="grid grid-cols-[minmax(0,1fr)_4rem_3rem] items-center gap-2"
             >
-              <span className="break-words font-semibold">{row.name}</span>
+              <span className="truncate font-semibold" title={row.name}>
+                {row.name}
+              </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <span
@@ -514,11 +517,16 @@ function Bonding({
           ))}
         </ul>
       ) : (
-        // Not in the shape we know: show Moblin's lines whole.
         <>
-          {status.bonding && <p className="font-mono break-words">{status.bonding}</p>}
+          {status.bonding && (
+            <p className="truncate font-mono" title={status.bonding}>
+              {status.bonding}
+            </p>
+          )}
           {status.bonding_rtts && (
-            <p className="font-mono break-words text-muted-foreground">{status.bonding_rtts}</p>
+            <p className="truncate font-mono text-muted-foreground" title={status.bonding_rtts}>
+              {status.bonding_rtts}
+            </p>
           )}
         </>
       )}
@@ -538,7 +546,9 @@ function BondingRow({
 }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-20 shrink-0 text-sm font-semibold break-words">{connection.name}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold" title={connection.name}>
+        {connection.name}
+      </span>
       <BitrateChart
         points={points}
         now={now}
@@ -547,7 +557,7 @@ function BondingRow({
         thresholds={false}
         tone="text-live"
         height={28}
-        className="min-w-0 flex-1"
+        className="w-14 shrink-0"
       />
       <span className="w-14 shrink-0 text-right font-mono text-sm tabular">
         {formatKbps(connection.kbps)}
@@ -572,13 +582,13 @@ function Moblink({ line }: { line: MoblinStatusText }) {
         <Trans>Moblink</Trans>
       </span>
       {relays ? (
-        <ul className="flex flex-wrap gap-1.5">
+        <ul className="flex flex-col divide-y divide-divider">
           {relays.map((relay) => (
             <li
               key={relay.name}
               className={cn(
-                "flex items-center gap-1.5 rounded-md border border-divider px-2 py-0.5",
-                (relay.lowBattery || relay.hot) && "border-offline/50 text-destructive-foreground",
+                "flex items-center gap-1.5 py-1.5",
+                (relay.lowBattery || relay.hot) && "text-destructive-foreground",
               )}
             >
               <span className="font-semibold">{relay.name}</span>
@@ -619,7 +629,7 @@ function Zoom({
   const busy = controls.zoom.isPending || controls.zoomPreset.isPending;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-divider px-3 py-2">
+    <div className="flex flex-col gap-1.5 border-t border-divider py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs tracking-wider text-muted-foreground uppercase">
           <Trans>Zoom</Trans>

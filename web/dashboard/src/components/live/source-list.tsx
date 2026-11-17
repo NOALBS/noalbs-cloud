@@ -17,6 +17,8 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ChevronDown,
+  ChevronRight,
   Copy,
   Ellipsis,
   Eye,
@@ -28,7 +30,6 @@ import {
   Pencil,
   Plus,
   RotateCw,
-  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -56,6 +57,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenSources } from "@/lib/hidden-scenes";
@@ -67,15 +69,18 @@ import {
   sourceKey,
   sourceKind,
   sourceSections,
+  sourceTreeSections,
+  visibleSourceKeys,
   withEnabled,
   withMovedTo,
   withRemoved,
 } from "@/lib/obs-sources";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 /** Like the scene tiles, so both grids read the same. */
 const TILE =
-  "flex min-h-19 flex-col items-start justify-between gap-1.5 rounded-xl p-3 text-left transition-colors";
+  "flex min-h-10 min-w-0 items-center justify-between gap-2 border-b border-divider py-2 text-left transition-colors";
 
 const HEADER_BUTTON =
   "flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium hover:bg-surface-2";
@@ -99,6 +104,9 @@ export function SourceList({
   canControl,
   canEditSources,
   obsConnected,
+  columns = false,
+  programName,
+  previewName,
 }: {
   path: { workspace_id: string; switcher_id: string };
   /** The scene on air (UUID, else name), so a switch loads the new scene's sources. */
@@ -107,10 +115,21 @@ export function SourceList({
   /** May add and edit sources (members who manage switchers, not while paused). */
   canEditSources: boolean;
   obsConnected: boolean;
+  columns?: boolean;
+  programName?: string | null;
+  previewName?: string | null;
 }) {
   const [hidden, setHidden] = useHiddenSources(path.switcher_id);
   const [editing, setEditing] = useState(false);
-  const [arranging, setArranging] = useState(false);
+  const [typed, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const toggleCollapsed = (key: string) =>
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [editor, setEditor] = useState<EditorTarget | null>(null);
   const queryClient = useQueryClient();
   const query = obsSourcesQuery(path.workspace_id, path.switcher_id, scene);
@@ -209,6 +228,10 @@ export function SourceList({
     },
   });
   const canArrange = canControl || canEditSources;
+  // One Edit state: those who may change OBS get the sortable list with each
+  // row's menu, everyone else the tiles that only pick what this browser lists.
+  const arranging = editing && canArrange;
+  const customizing = editing && !canArrange;
 
   // Like the servers page: a short drag starts it, and the keyboard works too.
   const sensors = useSensors(
@@ -259,7 +282,18 @@ export function SourceList({
     section.items.some(({ source }) => sourceKind(source) === "browser"),
   );
   const hiddenSet = new Set(hidden);
+  const large = (list.data?.sources.length ?? 0) > 8;
+  // The search field only shows for a long list; a filter left from one is dropped.
+  const search = large ? typed : "";
   const listedSections = keptSections(sections, hiddenSet);
+  const matches = visibleSourceKeys(list.data?.sources ?? [], search, collapsed);
+  const filteredSections = keptSections(sourceTreeSections(list.data?.sources ?? []), hiddenSet)
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(({ source }) => matches.has(sourceKey(source))),
+    }))
+    .filter((section) => section.items.length > 0);
+  const nested = sections.some((section) => section.parent !== null);
   const onScene = [
     ...new Set(sections.flatMap((section) => section.items.map(({ source }) => sceneKey(source)))),
   ];
@@ -273,38 +307,100 @@ export function SourceList({
       hide ? [...new Set([...hidden, ...onScene])] : hidden.filter((key) => !onScene.includes(key)),
     );
 
+  const rowMenu = (source: ObsSource) => {
+    const editable = canEditSources && editableKind(source) !== null;
+    const canRemove = canEditSources && removable(source);
+    const canDuplicate = canEditSources && duplicable(source);
+    return (
+      (editable || canControl || canDuplicate || canRemove) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              aria-label={t`More for ${source.name}`}
+            >
+              <Ellipsis />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {editable && (
+              <DropdownMenuItem onSelect={() => setEditor({ mode: "edit", name: source.name })}>
+                <Pencil />
+                <Trans>Edit…</Trans>
+              </DropdownMenuItem>
+            )}
+            {canControl && (
+              <DropdownMenuItem onSelect={() => setEditor({ mode: "position", source })}>
+                <Move />
+                <Trans>Position…</Trans>
+              </DropdownMenuItem>
+            )}
+            {canControl && sourceKind(source) === "browser" && (
+              <DropdownMenuItem onSelect={() => reloadSource.mutate(source)}>
+                <RotateCw />
+                <Trans>Reload page</Trans>
+              </DropdownMenuItem>
+            )}
+            {canDuplicate && (
+              <DropdownMenuItem
+                onSelect={() =>
+                  setEditor({
+                    mode: "duplicate",
+                    source,
+                    // OBS can't add to a group: then the scene on air.
+                    scene: source.parent_is_group
+                      ? (list.data?.scene ?? source.parent)
+                      : source.parent,
+                    taken: (list.data?.sources ?? []).map((item) => item.name),
+                  })
+                }
+              >
+                <Copy />
+                <Trans>Duplicate…</Trans>
+              </DropdownMenuItem>
+            )}
+            {(editable || canControl || canDuplicate) && canRemove && <DropdownMenuSeparator />}
+            {canRemove && (
+              <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(source)}>
+                <Trash2 />
+                <Trans>Remove from {source.parent}…</Trans>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    );
+  };
+
   return (
     <section aria-label={t`Sources`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="font-semibold">
           <Trans>Sources</Trans>
         </h2>
         {list.data &&
           (onScene.length > 0 || canEditSources) &&
-          (arranging ? (
-            <button
-              type="button"
-              onClick={() => setArranging(false)}
-              className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
-            >
-              <Trans>Done</Trans>
-            </button>
-          ) : editing ? (
+          (editing ? (
             <span className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
                 {hiddenHere > 0 ? t`Show all` : t`Hide all`}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
                 <Trans>Done</Trans>
-              </button>
+              </Button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -326,29 +422,18 @@ export function SourceList({
                   <Trans>Reload pages</Trans>
                 </button>
               )}
-              {onScene.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className={cn(HEADER_BUTTON, "text-primary")}
-                >
-                  <SlidersHorizontal className="size-3.5" />
-                  <Trans>Customize</Trans>
-                </button>
-              )}
-              {canArrange && (
-                <button
-                  type="button"
-                  onClick={() => setArranging(true)}
-                  className={cn(HEADER_BUTTON, "text-primary")}
-                >
-                  <Pencil className="size-3.5" />
-                  <Trans>Edit</Trans>
-                </button>
-              )}
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setEditing(true)}
+                className={cn(HEADER_BUTTON, "text-primary")}
+              >
+                <Pencil className="size-3.5" />
+                <Trans>Edit</Trans>
+              </Button>
             </span>
           ))}
-      </div>
+      </PaneTitleRow>
 
       <SourceEditorDialog path={path} target={editor} onClose={() => setEditor(null)} />
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
@@ -417,11 +502,19 @@ export function SourceList({
         </div>
       )}
 
-      {editing && (
+      {customizing && (
         <p className="text-xs text-muted-foreground">
           <Trans>
             Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t
             changed.
+          </Trans>
+        </p>
+      )}
+      {arranging && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t
+            changed by it.
           </Trans>
         </p>
       )}
@@ -444,223 +537,223 @@ export function SourceList({
         </p>
       )}
 
-      {list.data &&
-        !editing &&
-        !arranging &&
-        sections.length > 0 &&
-        listedSections.length === 0 && (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
-          >
-            <Trans>All sources are hidden. Tap to pick some.</Trans>
-          </button>
-        )}
-
-      {(editing || arranging ? sections : listedSections).map((section) => (
-        <div
-          key={section.parent === null ? "root" : `${section.parentIsGroup}:${section.parent}`}
-          className="flex flex-col gap-2"
+      {list.data && !editing && sections.length > 0 && listedSections.length === 0 && (
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={() => setEditing(true)}
+          className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
-          {section.parent !== null && (
-            <h3 className="mt-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              {section.parentIsGroup ? (
-                <Folder className="size-3.5" aria-hidden="true" />
-              ) : (
-                <Layers className="size-3.5" aria-hidden="true" />
-              )}
-              <span className="truncate">
-                <Trans>In {section.parent}</Trans>
-              </span>
-              {!section.parentShown && (
-                <span className="font-normal normal-case">
-                  <Trans>· hidden</Trans>
+          <Trans>All sources are hidden. Tap to pick some.</Trans>
+        </Button>
+      )}
+
+      {large && !editing && (
+        <Input
+          type="search"
+          aria-label={t`Search sources`}
+          placeholder={t`Search sources`}
+          value={typed}
+          onChange={(event) => setSearch(event.target.value)}
+          className="h-9"
+        />
+      )}
+      <div className={cn("flex flex-col", editing && "gap-2.5", large && "live-collection-scroll")}>
+        {!editing && search.trim() && filteredSections.length === 0 && (
+          <p className="py-3 text-sm text-muted-foreground">
+            <Trans>No source matches “{search}”.</Trans>
+          </p>
+        )}
+        {(editing ? sections : filteredSections).map((section) => (
+          <div
+            key={section.items[0] ? sourceKey(section.items[0].source) : section.parent}
+            className={cn("flex flex-col", editing && "gap-2")}
+          >
+            {editing && section.parent !== null && (
+              <h3 className="mt-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                {section.parentIsGroup ? (
+                  <Folder className="size-3.5" aria-hidden="true" />
+                ) : (
+                  <Layers className="size-3.5" aria-hidden="true" />
+                )}
+                <span className="min-w-0 truncate" title={section.parent}>
+                  <Trans>In {section.parent}</Trans>
                 </span>
-              )}
-            </h3>
-          )}
-          {arranging ? (
-            // Each scene or group sorts on its own: OBS moves items only within theirs.
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => dropped(section.items, event)}
-            >
-              <SortableContext
-                items={section.items.map(({ source }) => sourceKey(source))}
-                strategy={verticalListSortingStrategy}
-              >
-                <ul className="flex flex-col divide-y divide-divider rounded-xl border">
-                  {section.items.map(({ source }) => {
-                    const editable = canEditSources && editableKind(source) !== null;
-                    const canRemove = canEditSources && removable(source);
-                    const canDuplicate = canEditSources && duplicable(source);
-                    return (
-                      <SortableSourceRow
-                        key={sourceKey(source)}
-                        source={source}
-                        canMove={canControl}
-                        menu={
-                          (editable || canControl || canDuplicate || canRemove) && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className="size-8"
-                                  aria-label={t`More for ${source.name}`}
-                                >
-                                  <Ellipsis />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {editable && (
-                                  <DropdownMenuItem
-                                    onSelect={() => setEditor({ mode: "edit", name: source.name })}
-                                  >
-                                    <Pencil />
-                                    <Trans>Edit…</Trans>
-                                  </DropdownMenuItem>
-                                )}
-                                {canControl && (
-                                  <DropdownMenuItem
-                                    onSelect={() => setEditor({ mode: "position", source })}
-                                  >
-                                    <Move />
-                                    <Trans>Position…</Trans>
-                                  </DropdownMenuItem>
-                                )}
-                                {canControl && sourceKind(source) === "browser" && (
-                                  <DropdownMenuItem onSelect={() => reloadSource.mutate(source)}>
-                                    <RotateCw />
-                                    <Trans>Reload page</Trans>
-                                  </DropdownMenuItem>
-                                )}
-                                {canDuplicate && (
-                                  <DropdownMenuItem
-                                    onSelect={() =>
-                                      setEditor({
-                                        mode: "duplicate",
-                                        source,
-                                        // OBS can't add to a group: then the scene on air.
-                                        scene: source.parent_is_group
-                                          ? (list.data?.scene ?? source.parent)
-                                          : source.parent,
-                                        taken: (list.data?.sources ?? []).map((item) => item.name),
-                                      })
-                                    }
-                                  >
-                                    <Copy />
-                                    <Trans>Duplicate…</Trans>
-                                  </DropdownMenuItem>
-                                )}
-                                {(editable || canControl || canDuplicate) && canRemove && (
-                                  <DropdownMenuSeparator />
-                                )}
-                                {canRemove && (
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => setRemoving(source)}
-                                  >
-                                    <Trash2 />
-                                    <Trans>Remove from {source.parent}…</Trans>
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )
-                        }
-                      />
-                    );
-                  })}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {section.items.map(({ source, shown }) => {
-                const key = sourceKey(source);
-                const Icon = SOURCE_ICONS[sourceKind(source)];
-                const name = (
-                  <span className="flex w-full min-w-0 items-center gap-2">
-                    <Icon className="size-4 shrink-0" aria-hidden="true" />
-                    <span className="truncate text-sm font-semibold">{source.name}</span>
+                {!section.parentShown && (
+                  <span className="font-normal normal-case">
+                    <Trans>· hidden</Trans>
                   </span>
-                );
-
-                if (editing) {
-                  const listed = !hiddenSet.has(sceneKey(source));
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      aria-pressed={listed}
-                      onClick={() => toggleHidden(sceneKey(source))}
-                      className={cn(
-                        TILE,
-                        listed
-                          ? "border-2 border-primary bg-primary-soft"
-                          : "border border-dashed border-border-strong bg-transparent text-muted-foreground opacity-70",
-                      )}
-                    >
-                      {name}
-                      <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider">
-                        {listed ? (
-                          <span className="text-primary-soft-foreground">
-                            <Trans>SHOWN</Trans>
-                          </span>
-                        ) : (
-                          <>
-                            <EyeOff className="size-3" aria-hidden="true" />
-                            <Trans>HIDDEN</Trans>
-                          </>
-                        )}
+                )}
+              </h3>
+            )}
+            {arranging ? (
+              // Each scene or group sorts on its own: OBS moves items only within theirs.
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => dropped(section.items, event)}
+              >
+                <SortableContext
+                  items={section.items.map(({ source }) => sourceKey(source))}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul className="flex flex-col divide-y divide-divider">
+                    {section.items.map(({ source }) => {
+                      return (
+                        <SortableSourceRow
+                          key={sourceKey(source)}
+                          source={source}
+                          listed={!hiddenSet.has(sceneKey(source))}
+                          onToggleListed={() => toggleHidden(sceneKey(source))}
+                          canMove={canControl}
+                          menu={rowMenu(source)}
+                        />
+                      );
+                    })}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div
+                className={cn("grid gap-x-4", columns && !nested ? "grid-cols-2" : "grid-cols-1")}
+              >
+                {section.items.map(({ source, shown }) => {
+                  const key = sourceKey(source);
+                  const Icon = SOURCE_ICONS[sourceKind(source)];
+                  const name = (
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <Icon className="size-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate text-sm font-semibold" title={source.name}>
+                        {source.name}
                       </span>
-                    </button>
-                  );
-                }
-
-                const pending = toggle.isPending && sourceKey(toggle.variables.source) === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-pressed={source.enabled}
-                    disabled={!canControl || pending}
-                    onClick={() => toggle.mutate({ source, enabled: !source.enabled })}
-                    className={cn(
-                      TILE,
-                      "disabled:cursor-default",
-                      source.enabled
-                        ? "border-2 border-primary bg-primary-soft"
-                        : "border border-dashed border-border-strong bg-transparent text-muted-foreground",
-                      source.enabled && !shown && "opacity-60",
-                      pending && "animate-pulse",
-                    )}
-                  >
-                    {name}
-                    <span
-                      className={cn(
-                        "flex items-center gap-1.5 text-[11px] font-semibold tracking-wider",
-                        source.enabled && "text-primary-soft-foreground",
-                      )}
-                    >
-                      {source.enabled ? (
-                        <Eye className="size-3" aria-hidden="true" />
-                      ) : (
-                        <EyeOff className="size-3" aria-hidden="true" />
-                      )}
-                      {source.enabled ? (shown ? t`SHOWN` : t`SHOWN · PARENT HIDDEN`) : t`HIDDEN`}
                     </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ))}
+                  );
+
+                  if (customizing) {
+                    const listed = !hiddenSet.has(sceneKey(source));
+                    return (
+                      <Button
+                        variant="ghost"
+                        key={key}
+                        type="button"
+                        aria-pressed={listed}
+                        onClick={() => toggleHidden(sceneKey(source))}
+                        className={cn(
+                          TILE,
+                          listed
+                            ? "bg-primary-soft"
+                            : "bg-transparent text-muted-foreground opacity-70",
+                        )}
+                      >
+                        {name}
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider">
+                          {listed ? (
+                            <span className="text-primary-soft-foreground">
+                              <Trans>SHOWN</Trans>
+                            </span>
+                          ) : (
+                            <>
+                              <EyeOff className="size-3" aria-hidden="true" />
+                              <Trans>HIDDEN</Trans>
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    );
+                  }
+
+                  const pending = toggle.isPending && sourceKey(toggle.variables.source) === key;
+                  const container = source.is_group || source.is_scene;
+                  return (
+                    <div
+                      key={key}
+                      data-source-depth={source.depth}
+                      style={{ paddingInlineStart: `${source.depth * 16}px` }}
+                      className="flex min-h-11 min-w-0 items-center border-b border-divider transition-colors hover:bg-surface-2 md:min-h-10"
+                    >
+                      {container ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-11 shrink-0 rounded-none border-0 bg-transparent shadow-none hover:bg-transparent md:size-8"
+                          aria-label={t`Expand or collapse ${source.name}`}
+                          aria-expanded={search.trim() ? true : !collapsed.has(key)}
+                          onClick={() => {
+                            setSearch("");
+                            toggleCollapsed(key);
+                          }}
+                        >
+                          {!search.trim() && collapsed.has(key) ? (
+                            <ChevronRight />
+                          ) : (
+                            <ChevronDown />
+                          )}
+                        </Button>
+                      ) : (
+                        <span className="size-11 shrink-0 md:size-8" aria-hidden="true" />
+                      )}
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        aria-pressed={source.enabled}
+                        disabled={!canControl || pending}
+                        onClick={() => toggle.mutate({ source, enabled: !source.enabled })}
+                        className={cn(
+                          "min-h-11 min-w-0 flex-1 justify-between gap-2 rounded-none border-0 bg-transparent px-1.5 py-2 text-left shadow-none hover:bg-transparent md:min-h-10",
+                          "disabled:cursor-default",
+                          !source.enabled && "text-muted-foreground",
+                          source.enabled && !shown && "opacity-60",
+                          pending && "animate-pulse",
+                        )}
+                      >
+                        <span className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                          {source.enabled && shown && list.data?.scene === previewName && (
+                            <span
+                              className="size-1.5 shrink-0 rounded-full bg-live"
+                              role="img"
+                              aria-label={t`In cued Preview`}
+                              title={t`In cued Preview`}
+                            />
+                          )}
+                          {source.enabled && shown && list.data?.scene === programName && (
+                            <span
+                              className="source-program-dot"
+                              title={t`In Program`}
+                              role="img"
+                              aria-label={t`In Program`}
+                            />
+                          )}
+                          {name}
+                        </span>
+                        <span
+                          className={cn(
+                            "flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground",
+                          )}
+                        >
+                          {source.enabled ? (
+                            <Eye className="size-3" aria-hidden="true" />
+                          ) : (
+                            <EyeOff className="size-3" aria-hidden="true" />
+                          )}
+                          <span className="sr-only">
+                            {source.enabled
+                              ? shown
+                                ? t`Shown`
+                                : t`Shown · parent hidden`
+                              : t`Hidden`}
+                          </span>
+                        </span>
+                      </Button>
+                      {rowMenu(source)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -670,10 +763,14 @@ function SortableSourceRow({
   source,
   canMove,
   menu,
+  listed,
+  onToggleListed,
 }: {
   source: ObsSource;
   canMove: boolean;
   menu: ReactNode;
+  listed: boolean;
+  onToggleListed: () => void;
 }) {
   const {
     attributes,
@@ -699,7 +796,8 @@ function SortableSourceRow({
       )}
     >
       {canMove && (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
@@ -708,10 +806,11 @@ function SortableSourceRow({
           className="flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-subtle-foreground hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="size-4" />
-        </button>
+        </Button>
       )}
       <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span
+        title={source.name}
         className={cn(
           "min-w-0 flex-1 truncate text-sm font-semibold",
           !source.enabled && "text-muted-foreground",
@@ -719,6 +818,24 @@ function SortableSourceRow({
       >
         {source.name}
       </span>
+      <Button
+        variant="ghost"
+        type="button"
+        aria-pressed={listed}
+        onClick={onToggleListed}
+        title={
+          listed
+            ? t`Listed here. Tap to hide it from this list.`
+            : t`Not listed here. Tap to list it.`
+        }
+        className={cn(
+          "h-7 shrink-0 gap-1 rounded-md px-2 text-[11px] font-semibold tracking-wider",
+          listed ? "text-primary-soft-foreground" : "text-muted-foreground opacity-70",
+        )}
+      >
+        {!listed && <EyeOff className="size-3" aria-hidden="true" />}
+        {listed ? <Trans>LISTED</Trans> : <Trans>UNLISTED</Trans>}
+      </Button>
       {menu}
     </li>
   );

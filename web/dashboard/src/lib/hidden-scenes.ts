@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /** Where a list is kept: `noalbs-<list>:<switcher id>`. */
 type ListName = "hidden-scenes" | "hidden-sources" | "hidden-audio";
@@ -49,10 +49,23 @@ export function useHiddenAudio(switcherId: string) {
   return useHiddenList("hidden-audio", switcherId);
 }
 
+const CHANGED = "noalbs-hidden-list";
+
 function useHiddenList(list: ListName, switcherId: string) {
   const [state, setState] = useState(() => ({ switcherId, hidden: read(list, switcherId) }));
   // Re-read when the page moves to another switcher.
   const hidden = state.switcherId === switcherId ? state.hidden : read(list, switcherId);
+
+  // Several parts of a page read the same list; a change in one reaches the others.
+  useEffect(() => {
+    const changed = (event: Event) => {
+      const detail = (event as CustomEvent<{ key: string; hidden: string[] }>).detail;
+      if (detail.key === storageKey(list, switcherId))
+        setState({ switcherId, hidden: detail.hidden });
+    };
+    window.addEventListener(CHANGED, changed);
+    return () => window.removeEventListener(CHANGED, changed);
+  }, [list, switcherId]);
 
   const setHidden = useCallback(
     (next: string[]) => {
@@ -63,6 +76,9 @@ function useHiddenList(list: ListName, switcherId: string) {
       } catch {
         // Storage can be unavailable (private mode); the choice then lasts this visit.
       }
+      window.dispatchEvent(
+        new CustomEvent(CHANGED, { detail: { key: storageKey(list, switcherId), hidden: next } }),
+      );
     },
     [list, switcherId],
   );

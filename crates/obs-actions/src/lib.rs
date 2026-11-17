@@ -170,6 +170,32 @@ impl<CT: ClientTransport> ObsClient<CT> {
             .await
     }
 
+    pub async fn scene_transitions(&self) -> Result<types::GetSceneTransitionList> {
+        self.send_request(RequestKind::GetSceneTransitionList).await
+    }
+
+    /// The duration of the transition OBS has picked, in milliseconds; None
+    /// when it is fixed.
+    pub async fn scene_transition_duration(&self) -> Result<Option<u32>> {
+        let current: types::GetCurrentSceneTransition = self
+            .send_request(RequestKind::GetCurrentSceneTransition)
+            .await?;
+        Ok(current.transition_duration)
+    }
+
+    /// Picks the transition OBS uses from now on, for every switch.
+    pub async fn set_scene_transition(&self, transition_name: &str) -> Result<()> {
+        self.command(RequestKind::SetCurrentSceneTransition { transition_name })
+            .await
+    }
+
+    pub async fn set_scene_transition_duration(&self, transition_duration: u32) -> Result<()> {
+        self.command(RequestKind::SetCurrentSceneTransitionDuration {
+            transition_duration,
+        })
+        .await
+    }
+
     pub async fn scene_list(&self) -> Result<types::GetSceneList> {
         self.send_request(RequestKind::GetSceneList).await
     }

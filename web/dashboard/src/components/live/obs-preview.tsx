@@ -29,6 +29,7 @@ import {
   watchingLine,
 } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -50,13 +51,15 @@ const sleep = (ms: number, signal: AbortSignal) =>
  * Fetches stills of the scene on air, one after another at `fps` (never more
  * than one request at a time), while `active` and the tab is visible.
  */
-function useObsFrames(
+export function useObsFrames(
   workspaceId: string,
   switcherId: string,
   active: boolean,
   fps: number,
   width: number,
   quality: number,
+  /** A scene to show instead of the one on air. */
+  scene?: string,
 ) {
   const [frame, setFrame] = useState<Frame | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -84,7 +87,7 @@ function useObsFrames(
           const { data, response } = await api.GET(
             "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot",
             {
-              params: { path, query: { width, quality } },
+              params: { path, query: { width, quality, ...(scene && { scene }) } },
               parseAs: "blob",
               signal,
             },
@@ -119,7 +122,7 @@ function useObsFrames(
       controller.abort();
       if (shown) URL.revokeObjectURL(shown);
     };
-  }, [active, fps, width, quality, workspaceId, switcherId]);
+  }, [active, fps, width, quality, workspaceId, switcherId, scene]);
 
   return { frame, problem };
 }
@@ -169,16 +172,35 @@ export function ObsPreview({
   // the controls under it on the right.
   return (
     <section aria-label={t`OBS preview`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center">
-        <h2 className="font-semibold">
+      <PaneTitleRow>
+        <h2 className="text-[15px] font-semibold tracking-tight">
           <Trans>Preview</Trans>
         </h2>
-      </div>
+        {!obsConnected && (
+          <span className="ml-2 text-xs text-low">
+            <Trans>OBS disconnected · last known state</Trans>
+          </span>
+        )}
+        {watching && (
+          <span
+            className="ml-auto flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+            title={watching}
+          >
+            <Eye className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{watching}</span>
+          </span>
+        )}
+      </PaneTitleRow>
 
       {/* One box: the picture, a footer bar with the controls, and the settings. */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border bg-card">
+      <div className="flex flex-col">
         {on ? (
-          <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
+          <div
+            className={cn(
+              "live-preview-frame relative -mx-4 flex aspect-video items-center justify-center overflow-hidden border-y bg-black md:-mx-5",
+              !obsConnected && "opacity-50",
+            )}
+          >
             {frame && obsConnected && !hidden && (
               <img
                 src={frame.url}
@@ -214,14 +236,7 @@ export function ObsPreview({
           </p>
         )}
 
-        {watching && (
-          <p className="flex items-center gap-1.5 border-t border-divider px-4 py-2 text-xs text-muted-foreground">
-            <Eye className="size-3.5 shrink-0" aria-hidden />
-            {watching}
-          </p>
-        )}
-
-        <div className="flex min-h-11 items-center justify-between gap-2 border-t border-divider py-1.5 pr-2.5 pl-4">
+        <div className="flex min-h-9 items-center justify-between gap-2 pt-2">
           <p className="text-xs text-muted-foreground">
             {on &&
               frame &&

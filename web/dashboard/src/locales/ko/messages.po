@@ -156,6 +156,11 @@ msgstr "{0, plural, other {클라이언트 #곳을 삭제했어요}}"
 msgid "{0, plural, one {# client} other {# clients}}"
 msgstr "{0, plural, other {클라이언트 #곳}}"
 
+#. placeholder {0}: row.slots.length
+#: src/components/live/pane-layout.tsx
+msgid "{0, plural, one {# column} other {# columns}}"
+msgstr "{0, plural, other {#열}}"
+
 #. placeholder {0}: client.customers
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{0, plural, one {# customer} other {# customers}}"
@@ -467,6 +472,11 @@ msgstr "이벤트 구독 {0}개 (기록된 수 {1}개)."
 #: src/components/scene-rules-section.tsx
 msgid "{0} for this combination"
 msgstr "이 조합의 {0}"
+
+#. placeholder {0}: transition.name
+#: src/components/live/monitors.tsx
+msgid "{0} has a fixed duration"
+msgstr "{0}의 시간은 고정되어 있습니다"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -863,6 +873,14 @@ msgstr "{managedBy} 팀이 사용할 수 있어요. 관리자와 운영자는 �
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "{managedBy} 팀도 방송 중이 아닐 때 볼 수 있어요. 관리자와 운영자는 방송 중에만 볼 수 있어요."
 
+#: src/components/live/quick-actions.tsx
+msgid "{markerCount} this stream"
+msgstr "이번 방송에서 {markerCount}개"
+
+#: src/components/live/pane-layout.tsx
+msgid "{n, plural, one {# column} other {# columns}}"
+msgstr "{n, plural, other {#열}}"
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} 판매 중지: {label}"
@@ -1069,6 +1087,10 @@ msgstr "{0}초마다 1장"
 msgid "1 to {NAME_MAX_BYTES} characters"
 msgstr "1~{NAME_MAX_BYTES}자"
 
+#: src/components/live/scene-grid.tsx
+msgid "1–9: first nine scenes · /: search"
+msgstr "1–9: 처음 아홉 개 장면 · /: 검색"
+
 #: src/lib/support.ts
 msgid "24 hours"
 msgstr "24시간"
@@ -1238,6 +1260,15 @@ msgstr "계정을 찾을 수 없어요"
 msgid "Account settings"
 msgstr "계정 설정"
 
+#: src/components/live/pane-layout-model.ts
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Actions"
+msgstr "동작"
+
+#: src/components/live/scene-grid.tsx
+msgid "Active"
+msgstr "활성"
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1246,6 +1277,10 @@ msgstr "{0} 활동"
 #: src/routes/_app/admin/users/index.tsx
 msgid "Active any time"
 msgstr "활동 전체"
+
+#: src/components/live/live-header.tsx
+msgid "Active in operator mode on desktop, outside fields, dialogs and Edit layout."
+msgstr "데스크톱의 오퍼레이터 모드에서, 입력란·대화 상자·레이아웃 편집 밖에 있을 때 작동합니다."
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active now"
@@ -1264,6 +1299,7 @@ msgid "Active today"
 msgstr "오늘 활동"
 
 #: src/components/live/activity-feed.tsx
+#: src/components/live/pane-layout-model.ts
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -1315,6 +1351,11 @@ msgstr "스위처 추가"
 msgid "Add a workspace"
 msgstr "워크스페이스 추가"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Add beside {0}"
+msgstr "{0} 옆에 추가"
+
 #: src/components/scene-rules-section.tsx
 msgid "Add combination"
 msgstr "조합 추가"
@@ -1327,9 +1368,17 @@ msgstr "마커 추가"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "OBS를 연결하려면 하나 추가하세요. 초기 설정은 몇 분이면 끝나요."
 
+#: src/components/live/pane-layout.tsx
+msgid "Add pane"
+msgstr "패널 추가"
+
 #: src/components/connect-settings.tsx
 msgid "Add program"
 msgstr "프로그램 추가"
+
+#: src/components/live/pane-layout.tsx
+msgid "Add row"
+msgstr "행 추가"
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
@@ -1714,6 +1763,10 @@ msgstr "소유자나 관리자에게 설정 → 일반 → NOALBS 지원 액세�
 msgid "Asked the browser source to reconnect"
 msgstr "브라우저 소스에 다시 연결을 요청했어요"
 
+#: src/components/live/quick-actions.tsx
+msgid "asks to confirm"
+msgstr "확인을 요청함"
+
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
@@ -1739,6 +1792,7 @@ msgstr "문자, 숫자, 대시로 3자 이상 입력하세요."
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Audio"
 msgstr "오디오"
 
@@ -1772,10 +1826,27 @@ msgstr "감사 로그"
 msgid "Auto"
 msgstr "자동"
 
+#: src/components/live/operator-state.ts
+msgid "auto switch"
+msgstr "자동 전환"
+
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/quick-actions.tsx
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Auto switch"
 msgstr "자동 전환"
+
+#: src/components/live/bitrate-pane.tsx
+msgid "Auto switch · waiting for the stream"
+msgstr "자동 전환 · 방송 대기 중"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is off"
+msgstr "자동 전환이 꺼져 있습니다"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is on"
+msgstr "자동 전환이 켜져 있습니다"
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -1996,13 +2067,10 @@ msgstr "결제 꺼짐"
 msgid "Billing period"
 msgstr "결제 주기"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Bitrate"
 msgstr "비트레이트"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate · {serverName}"
-msgstr "비트레이트 · {serverName}"
 
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -2067,19 +2135,20 @@ msgstr "왼쪽 아래"
 msgid "Bottom right"
 msgstr "오른쪽 아래"
 
+#: src/components/live/scene-grid.tsx
+msgid "BRB"
+msgstr "BRB"
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
+#. placeholder {0}: formatKbps(triggers.offline)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "BRB / offline"
 msgstr "BRB / 오프라인"
-
-#: src/components/live/scene-grid.tsx
-msgid "BRB SCENE"
-msgstr "BRB 장면"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2159,6 +2228,7 @@ msgstr "제거할 수 없어요: {blockedBy}"
 #: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/moblin-settings.tsx
@@ -2258,6 +2328,7 @@ msgstr "애드온 변경"
 msgid "Changed chat settings"
 msgstr "채팅 설정 변경"
 
+#: src/components/live/operator-state.ts
 #: src/lib/live-format.ts
 msgid "Changed in OBS"
 msgstr "OBS에서 변경"
@@ -2447,6 +2518,10 @@ msgstr "스위처가 비트레이트와 지연 시간을 보고 선택해요."
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Clear"
 msgstr "지우기"
+
+#: src/components/live/scene-grid.tsx
+msgid "Click to cue · Shift+click cuts"
+msgstr "클릭하여 큐 · Shift+클릭은 컷"
 
 #: src/lib/api-messages.ts
 msgid "Client not found"
@@ -2664,6 +2739,7 @@ msgstr "스트림 서버 연결"
 msgid "connected"
 msgstr "연결됨"
 
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -2725,12 +2801,6 @@ msgstr "연결이 취소됐어요."
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "연결하는 중…"
-
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "CONNECTING…"
-msgstr "연결 중…"
 
 #: src/lib/api-messages.ts
 msgid "Connection not found"
@@ -2836,6 +2906,14 @@ msgstr "계정을 연결하지 못했어요. 다시 시도하세요."
 #: src/lib/chat.ts
 msgid "Couldn’t connect. Please try again."
 msgstr "연결하지 못했어요. 다시 시도하세요."
+
+#: src/components/live/activity-feed.tsx
+msgid "Couldn’t load activity."
+msgstr "활동을 불러오지 못했습니다."
+
+#: src/components/live/scene-grid.tsx
+msgid "Couldn’t load scenes."
+msgstr "장면을 불러오지 못했습니다."
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3025,6 +3103,19 @@ msgstr "오른쪽 자르기"
 msgid "Crop top"
 msgstr "위 자르기"
 
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+msgid "Cue {0}"
+msgstr "{0} 큐"
+
+#: src/components/live/live-header.tsx
+msgid "Cue a scene (switch with Studio mode off)"
+msgstr "장면 큐 (스튜디오 모드가 꺼져 있으면 바로 전환)"
+
+#: src/components/live/monitors.tsx
+msgid "Cue a scene below"
+msgstr "아래에서 장면을 큐하세요"
+
 #: src/components/admin/products.tsx
 msgid "Currency"
 msgstr "통화"
@@ -3086,10 +3177,17 @@ msgid "Customers’ own bots"
 msgstr "고객 자체 봇"
 
 #: src/components/live/audio-mixer.tsx
-#: src/components/live/scene-grid.tsx
-#: src/components/live/source-list.tsx
 msgid "Customize"
 msgstr "사용자 지정"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Cut"
+msgstr "컷"
+
+#: src/components/live/live-header.tsx
+msgid "Cut directly"
+msgstr "바로 컷"
 
 #: src/components/app-shell.tsx
 msgid "Dark"
@@ -3245,6 +3343,10 @@ msgstr "개발자 로그인"
 msgid "Device removed"
 msgstr "제거된 기기"
 
+#: src/components/live/pane-layout-model.ts
+msgid "Devices"
+msgstr "기기"
+
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "비활성화"
@@ -3312,6 +3414,7 @@ msgid "Dismiss"
 msgstr "닫기"
 
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
@@ -3352,9 +3455,26 @@ msgstr "방송 기록 다운로드"
 msgid "Drag"
 msgstr "끌기"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Drag {0}"
+msgstr "{0} 드래그"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
 msgstr "차트를 드래그하면 확대돼요"
+
+#: src/components/live/source-list.tsx
+msgid "Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t changed by it."
+msgstr "드래그하면 OBS에서 순서가 바뀝니다. “표시”는 이 브라우저가 여기에 보여 줄 항목만 고르며, OBS는 바뀌지 않습니다."
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to resize · double-click or Enter to equalize"
+msgstr "드래그하여 크기 조절 · 더블클릭 또는 Enter로 균등하게"
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to set minimum height · double-click for auto"
+msgstr "드래그하여 최소 높이 설정 · 더블클릭하면 자동"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
@@ -3386,7 +3506,6 @@ msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different o
 msgstr "서버마다 LIVE, LOW, BRB 장면을 재지정할 수 있어요. 예를 들어 백업 업링크에 다른 오버레이를 쓸 수 있어요."
 
 #: src/components/connect-settings.tsx
-#: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
@@ -3409,6 +3528,10 @@ msgstr "{label} 편집"
 msgid "Edit {name}"
 msgstr "{name} 편집"
 
+#: src/components/live/pane-layout.tsx
+msgid "Edit layout"
+msgstr "레이아웃 편집"
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "공지 편집"
@@ -3416,6 +3539,10 @@ msgstr "공지 편집"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "프로그램 편집"
+
+#: src/components/live/scene-grid.tsx
+msgid "Edit scenes"
+msgstr "장면 편집"
 
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
@@ -3453,6 +3580,10 @@ msgstr "허가 없는 긴급 액세스"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Emergency access…"
 msgstr "긴급 액세스…"
+
+#: src/components/live/pane-layout.tsx
+msgid "Empty slot"
+msgstr "빈 칸"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
@@ -3494,6 +3625,30 @@ msgstr "<0>dev_login = true</0>로 활성화돼요. 프로덕션에서는 절대
 #: src/components/belabox/stream-panel.tsx
 msgid "Encoder"
 msgstr "인코더"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder connecting…"
+msgstr "인코더 연결 중…"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder key refused"
+msgstr "인코더 키 거부됨"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder not connected"
+msgstr "인코더 연결 안 됨"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder offline"
+msgstr "인코더 오프라인"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder ready"
+msgstr "인코더 준비됨"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder streaming"
+msgstr "인코더 방송 중"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
@@ -3537,6 +3692,7 @@ msgstr "{0} 종료"
 msgid "Ended a notice"
 msgstr "공지 종료"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Ending"
@@ -3559,6 +3715,10 @@ msgstr "종료(비워 두면 직접 종료할 때까지)"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "ends {0}"
 msgstr "{0} 종료"
+
+#: src/components/live/live-header.tsx
+msgid "Enter"
+msgstr "Enter"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
@@ -3603,6 +3763,10 @@ msgstr "스트림 ID를 입력하세요"
 #: src/routes/_app/admin/audit.tsx
 msgid "Entries"
 msgstr "항목"
+
+#: src/components/live/live-header.tsx
+msgid "Esc"
+msgstr "Esc"
 
 #: src/routes/_app/admin/status.tsx
 msgid "EventSub cost"
@@ -3678,6 +3842,15 @@ msgstr "필요하면 모양이 바뀌더라도 상자에 딱 맞춰요."
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
 msgstr "기존 소스"
+
+#: src/components/live/live-header.tsx
+msgid "Exit immersive"
+msgstr "몰입 모드 종료"
+
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
+msgid "Expand or collapse {0}"
+msgstr "{0} 펼치기 또는 접기"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3878,6 +4051,7 @@ msgid "Hid {0}"
 msgstr "{0} 숨김"
 
 #: src/components/admin/products.tsx
+#: src/components/live/source-list.tsx
 #: src/lib/billing.ts
 msgid "Hidden"
 msgstr "숨김"
@@ -3903,6 +4077,13 @@ msgstr "원시 통계에 방송 이름이나 주소가 포함될 수 있어 숨�
 #: src/components/history/raw-explorer.tsx
 msgid "Hide"
 msgstr "숨기기"
+
+#. placeholder {0}: layout.title
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+#: src/components/live/pane-title-row.tsx
+msgid "Hide {0}"
+msgstr "{0} 숨기기"
 
 #: src/components/copy-field.tsx
 #: src/components/secret-url-input.tsx
@@ -4025,6 +4206,14 @@ msgstr "무시하는 채팅 참여자"
 msgid "Ignoring {0}"
 msgstr "{0} 무시 중"
 
+#: src/components/live/live-header.tsx
+msgid "Immersive"
+msgstr "몰입"
+
+#: src/components/live/live-header.tsx
+msgid "Immersive: hide the sidebar (F)"
+msgstr "몰입: 사이드바 숨기기 (F)"
+
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Import"
 msgstr "가져오기"
@@ -4065,6 +4254,10 @@ msgstr "30일 후"
 msgid "In 7 days"
 msgstr "7일 후"
 
+#: src/components/live/source-list.tsx
+msgid "In cued Preview"
+msgstr "큐한 미리보기에 있음"
+
 #: src/components/admin/organization-limits-form.tsx
 msgid "In every client."
 msgstr "모든 클라이언트에서."
@@ -4077,9 +4270,17 @@ msgstr "Moblin에서 <0>Settings → Remote control</0>을 열고 <1>Password</1
 msgid "in OBS"
 msgstr "OBS에서"
 
+#: src/components/live/on-air-pane.tsx
+msgid "In OBS"
+msgstr "OBS에 있음"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "OBS에서 <0>Tools → WebSocket Server Settings</0>를 열고 WebSocket 서버를 켠 뒤 포트와 비밀번호를 여기에 입력하세요(<1>Show Connect Info</1>에 둘 다 표시돼요)."
+
+#: src/components/live/source-list.tsx
+msgid "In Program"
+msgstr "프로그램에 있음"
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4087,7 +4288,7 @@ msgid "in use"
 msgstr "사용 중"
 
 #: src/components/live/server-card.tsx
-msgid "IN USE"
+msgid "In use"
 msgstr "사용 중"
 
 #: src/routes/_app/admin/users/index.tsx
@@ -4101,6 +4302,14 @@ msgstr "정보"
 #: src/components/live/source-editor.tsx
 msgid "Input format"
 msgstr "입력 형식"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert after"
+msgstr "뒤에 삽입"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert before"
+msgstr "앞에 삽입"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -4241,10 +4450,6 @@ msgid "It's in use now. Reload and try again."
 msgstr "지금 사용 중이에요. 새로고침 후 다시 시도하세요."
 
 #: src/components/live/scene-grid.tsx
-msgid "It’s on air: switch to another scene first."
-msgstr "송출 중이에요. 먼저 다른 장면으로 전환하세요."
-
-#: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
 msgstr "안에 있는 것과 함께 OBS에서 바로 제거돼요. 다른 장면에서 쓰지 않는 소스는 OBS가 설정과 함께 삭제해요."
 
@@ -4255,6 +4460,10 @@ msgstr "방송 중인 OBS의 이 장면에서 바로 제거돼요. 장면 자체
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
 msgstr "방송 중인 OBS에서 바로 제거돼요. 다른 장면에서 쓰지 않으면 OBS가 설정과 함께 삭제해요."
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s the current scene: switch to another scene first."
+msgstr "현재 장면입니다. 먼저 다른 장면으로 전환하세요."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
@@ -4287,6 +4496,10 @@ msgstr "나머지는 해당 조직의 관리자가 관리해요. 여기서 첫 �
 #: src/components/live/source-position.tsx
 msgid "Its own size."
 msgstr "원래 크기 그대로."
+
+#: src/components/live/monitors.tsx
+msgid "Its picture is private until it’s on air"
+msgstr "온에어가 될 때까지 화면은 비공개입니다"
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4357,9 +4570,9 @@ msgid "Joining…"
 msgstr "참여 중…"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
 
@@ -4408,9 +4621,13 @@ msgstr "기간이 끝날 때까지 {0}을(를) 유지한 뒤 Free로 이동해�
 msgid "Kept for every client."
 msgstr "모든 클라이언트에 유지돼요."
 
-#: src/components/live/belabox-card.tsx
-msgid "KEY REFUSED"
-msgstr "키 거부됨"
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts"
+msgstr "키보드 단축키"
+
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts (?)"
+msgstr "키보드 단축키 (?)"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Kick"
@@ -4443,7 +4660,7 @@ msgstr "종류:"
 msgid "Language"
 msgstr "언어"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "Last 2 min"
 msgstr "최근 2분"
 
@@ -4458,6 +4675,14 @@ msgstr "마지막 활동"
 #: src/routes/_app/admin/status.tsx
 msgid "Last error {0}{1}: {2}"
 msgstr "마지막 오류 {0}{1}: {2}"
+
+#: src/components/live/scene-grid.tsx
+msgid "Last known"
+msgstr "마지막 상태"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Last known scene"
+msgstr "마지막으로 확인된 장면"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
@@ -4618,9 +4843,17 @@ msgstr "가격 연결"
 msgid "Links copied"
 msgstr "링크를 복사했어요"
 
+#: src/components/live/source-list.tsx
+msgid "LISTED"
+msgstr "표시"
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "현재 이용 불가로 표시돼요. 더 구매할 수는 없고, 이미 보유한 사용자는 유지돼요."
+
+#: src/components/live/source-list.tsx
+msgid "Listed here. Tap to hide it from this list."
+msgstr "여기에 표시됨. 탭하면 이 목록에서 숨깁니다."
 
 #: src/components/admin/products.tsx
 msgid "Listed, but nobody can buy it yet."
@@ -4637,6 +4870,10 @@ msgstr "표시되지만 아직 구매할 수 없어요."
 #: src/routes/_app/workspaces/live.tsx
 msgid "Live"
 msgstr "라이브"
+
+#: src/components/live/scene-grid.tsx
+msgid "LIVE"
+msgstr "LIVE"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
@@ -4657,10 +4894,6 @@ msgstr "지금 방송 중"
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "LIVE NOW"
 msgstr "지금 방송 중"
-
-#: src/components/live/scene-grid.tsx
-msgid "LIVE SCENE"
-msgstr "LIVE 장면"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
@@ -4696,6 +4929,10 @@ msgstr "로그 목록을 불러오는 중…"
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "프로그램을 불러오는 중…"
+
+#: src/components/live/monitors.tsx
+msgid "Loading transitions…"
+msgstr "전환 효과 불러오는 중…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4779,9 +5016,14 @@ msgstr "재생 목록 반복"
 msgid "Low"
 msgstr "낮음"
 
+#: src/components/live/scene-grid.tsx
+msgid "LOW"
+msgstr "LOW"
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
+#. placeholder {0}: formatKbps(triggers.low)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
@@ -4792,10 +5034,6 @@ msgstr "낮은 비트레이트"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "낮은 비트레이트"
-
-#: src/components/live/scene-grid.tsx
-msgid "LOW SCENE"
-msgstr "LOW 장면"
 
 #. placeholder {0}: addon.name
 #: src/components/billing/addon-card.tsx
@@ -4904,6 +5142,10 @@ msgstr "가장자리 여백(화면 높이의 %)"
 #: src/components/support-access.tsx
 msgid "Mark as seen"
 msgstr "확인함으로 표시"
+
+#: src/components/live/quick-actions.tsx
+msgid "Mark this moment"
+msgstr "이 순간 표시"
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment on the stream"
@@ -5049,6 +5291,10 @@ msgstr "Moblin 비트레이트 {0} kbps"
 msgid "Moblin connected"
 msgstr "Moblin 연결됨"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin connecting…"
+msgstr "Moblin 연결 중…"
+
 #: src/lib/live-format.ts
 msgid "Moblin connection priorities off"
 msgstr "Moblin 연결 우선순위 꺼짐"
@@ -5098,6 +5344,10 @@ msgstr "Moblin 조명 켜짐"
 msgid "Moblin muted"
 msgstr "Moblin 음소거됨"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin not connected"
+msgstr "Moblin 연결 안 됨"
+
 #: src/components/moblin-settings.tsx
 msgid "Moblin password"
 msgstr "Moblin 비밀번호"
@@ -5106,9 +5356,17 @@ msgstr "Moblin 비밀번호"
 msgid "Moblin password refused"
 msgstr "Moblin 비밀번호 거부됨"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin paused"
+msgstr "Moblin 일시정지됨"
+
 #: src/lib/live-format.ts
 msgid "Moblin problem"
 msgstr "Moblin 문제"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin ready"
+msgstr "Moblin 준비됨"
 
 #: src/lib/live-format.ts
 msgid "Moblin recording"
@@ -5142,6 +5400,10 @@ msgstr "Moblin 중지됨"
 #: src/components/live/moblin-card.tsx
 msgid "Moblin stops sending, so the stream server loses the feed."
 msgstr "Moblin 전송이 멈춰 스트림 서버가 피드를 잃어요."
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin streaming"
+msgstr "Moblin 방송 중"
 
 #: src/lib/live-format.ts
 msgid "Moblin unmuted"
@@ -5233,9 +5495,23 @@ msgstr "추가 설정"
 msgid "Move {0}"
 msgstr "{0} 이동"
 
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} down"
+msgstr "{0} 아래로 이동"
+
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} up"
+msgstr "{0} 위로 이동"
+
 #: src/components/scene-rules-section.tsx
 msgid "Move {label}"
 msgstr "{label} 이동"
+
+#: src/components/live/pane-layout.tsx
+msgid "Move to a new row"
+msgstr "새 행으로 이동"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
@@ -5266,9 +5542,10 @@ msgstr "{0}에 Free로 이동해요. {1}은(는) 그때까지 유지돼요."
 msgid "MRR"
 msgstr "MRR"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "ms"
-msgstr "ms"
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/server-card.tsx
+msgid "ms RTT"
+msgstr "ms RTT"
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5322,10 +5599,6 @@ msgstr "복사본 이름"
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
 msgstr "단위 이름을 20자 이내로 입력하세요(예: 슬롯)."
-
-#: src/components/live/belabox-card.tsx
-msgid "Name this interface"
-msgstr "이 인터페이스 이름 지정"
 
 #: src/components/live/belabox-card.tsx
 msgid "Name, e.g. Phone A"
@@ -5585,6 +5858,10 @@ msgstr "피드 없음"
 msgid "No feed"
 msgstr "피드 없음"
 
+#: src/components/live/bitrate-pane.tsx
+msgid "No feed <0>· bitrate unavailable</0>"
+msgstr "피드 없음 <0>· 비트레이트를 알 수 없음</0>"
+
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
 msgid "No feed for {0} min on BRB, so the stream was stopped"
@@ -5605,6 +5882,10 @@ msgstr "인스턴스 없음"
 #: src/routes/_app/admin/status.tsx
 msgid "No instance has followed YouTube chats yet."
 msgstr "아직 YouTube 채팅을 팔로우한 인스턴스가 없어요."
+
+#: src/components/live/live-header.tsx
+msgid "No key starts or stops streaming or recording. Stopping asks to confirm."
+msgstr "어떤 키도 방송이나 녹화를 시작하거나 중지하지 않습니다. 중지할 때는 확인을 요청합니다."
 
 #: src/components/connect-settings.tsx
 msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
@@ -5678,10 +5959,18 @@ msgstr "가격 없음: 무료 플랜이에요."
 msgid "No programs have been added yet."
 msgstr "아직 추가된 프로그램이 없어요."
 
+#: src/components/live/scene-grid.tsx
+msgid "No role"
+msgstr "역할 없음"
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "No scene"
 msgstr "장면 없음"
+
+#: src/components/live/scene-grid.tsx
+msgid "No scene matches “{search}”."
+msgstr "“{search}”와 일치하는 장면이 없습니다."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5706,11 +5995,15 @@ msgstr "신호 없음"
 msgid "No SIM card"
 msgstr "SIM 카드 없음"
 
+#: src/components/live/source-list.tsx
+msgid "No source matches “{search}”."
+msgstr "“{search}”와 일치하는 소스가 없습니다."
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
 msgstr "이 서버의 통계가 없어요."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "No stream server"
 msgstr "스트림 서버 없음"
 
@@ -5967,14 +6260,13 @@ msgid "not connected"
 msgstr "연결 안 됨"
 
 #: src/components/belabox/modem-panel.tsx
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "연결 안 됨"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
-#: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "연결 안 됨"
 
@@ -6026,6 +6318,10 @@ msgstr "찾을 수 없어요"
 msgid "Not ignored"
 msgstr "무시 안 함"
 
+#: src/components/live/source-list.tsx
+msgid "Not listed here. Tap to list it."
+msgstr "여기에 표시되지 않음. 탭하면 표시합니다."
+
 #: src/components/admin/products.tsx
 msgid "Not listed. Workspaces that already have it still see it and can lower it."
 msgstr "목록에 표시되지 않아요. 이미 보유한 워크스페이스에는 계속 표시되고 수량을 줄일 수 있어요."
@@ -6070,6 +6366,10 @@ msgstr "방송 중 아님"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Not suspended."
 msgstr "정지되지 않았어요."
+
+#: src/components/live/on-air-pane.tsx
+msgid "Not switching while paused"
+msgstr "일시정지 중에는 전환하지 않음"
 
 #: src/components/live/quick-actions.tsx
 msgid "Not yet"
@@ -6165,6 +6465,7 @@ msgstr "지금"
 
 #: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "OBS"
 msgstr "OBS"
 
@@ -6219,6 +6520,9 @@ msgstr "OBS가 화면을 보내지 않았어요. 상자는 화면 없이 그려�
 msgid "OBS didn’t send a picture. Trying again…"
 msgstr "OBS에서 이미지를 보내지 않았어요. 다시 시도하는 중…"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
 #: src/components/switcher-status.tsx
 #: src/lib/live-format.ts
 msgid "OBS disconnected"
@@ -6227,6 +6531,22 @@ msgstr "OBS 연결 끊김"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS 연결 끊김"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · last known scenes"
+msgstr "OBS 연결 끊김 · 마지막으로 확인된 장면"
+
+#: src/components/live/obs-preview.tsx
+msgid "OBS disconnected · last known state"
+msgstr "OBS 연결 끊김 · 마지막 상태"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · no current scene data"
+msgstr "OBS 연결 끊김 · 현재 장면 데이터 없음"
+
+#: src/components/live/monitors.tsx
+msgid "OBS disconnected · stream state unknown"
+msgstr "OBS 연결 끊김 · 방송 상태 알 수 없음"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6363,6 +6683,7 @@ msgstr "방송 기록 보관"
 msgid "Of the screen"
 msgstr "화면 대비"
 
+#: src/components/live/quick-actions.tsx
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "꺼짐"
@@ -6374,6 +6695,10 @@ msgstr "꺼짐"
 msgid "Off"
 msgstr "꺼짐"
 
+#: src/components/live/live-header.tsx
+msgid "Off air"
+msgstr "오프에어"
+
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
 msgstr "방송 중이 아닐 때는 미리보기가 숨겨져요. 상자는 미리보기 없이 그려져요."
@@ -6381,6 +6706,10 @@ msgstr "방송 중이 아닐 때는 미리보기가 숨겨져요. 상자는 미�
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
 msgstr "방송 중이 아닐 때는 미리보기가 숨겨져요. 방송이 시작되면 다시 표시돼요."
+
+#: src/components/live/monitors.tsx
+msgid "Off air: the picture is private"
+msgstr "오프에어: 화면은 비공개입니다"
 
 #: src/components/live/moblin-card.tsx
 msgid "Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one. Only SRTLA streams use these."
@@ -6398,7 +6727,6 @@ msgstr "제공"
 msgid "Offline"
 msgstr "오프라인"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
 msgid "OFFLINE"
 msgstr "오프라인"
@@ -6440,14 +6768,24 @@ msgstr "{0} 장면에서"
 msgid "On {0}"
 msgstr "{0} 장면"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-header.tsx
+#: src/components/live/on-air-pane.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "송출 중"
 
-#: src/components/live/scene-grid.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/quick-actions.tsx
 msgid "ON AIR"
 msgstr "송출 중"
+
+#. placeholder {0}: formatUptime(status.stream_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "ON AIR {0}"
+msgstr "ON AIR {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On command"
@@ -6623,6 +6961,10 @@ msgstr "열린 초대"
 msgid "Open network: no password"
 msgstr "개방형 네트워크: 비밀번호 없음"
 
+#: src/components/live/obs-pane.tsx
+msgid "Open OBS with the NOALBS browser source active to see its stats."
+msgstr "통계를 보려면 NOALBS 브라우저 소스를 활성화한 채 OBS를 여세요."
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
 msgstr "설정 열기"
@@ -6676,6 +7018,7 @@ msgstr "Checkout 여는 중…"
 msgid "Opening the workspace needs its permission. Everything you do there is shown to its owners and admins."
 msgstr "워크스페이스를 열려면 해당 워크스페이스의 허가가 필요해요. 그 안에서 하는 모든 작업은 소유자와 관리자에게 표시돼요."
 
+#: src/components/live/live-header.tsx
 #: src/lib/permissions.ts
 msgid "Operator"
 msgstr "운영자"
@@ -6688,6 +7031,10 @@ msgstr "통신사"
 #: src/lib/belabox.ts
 msgid "Operator {saved}"
 msgstr "통신사 {saved}"
+
+#: src/components/live/live-header.tsx
+msgid "Operator shortcuts"
+msgstr "오퍼레이터 단축키"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Optional"
@@ -6803,6 +7150,10 @@ msgstr "소유자"
 msgid "Owners, admins and operators can use it."
 msgstr "소유자, 관리자, 운영자가 사용할 수 있어요."
 
+#: src/components/live/live-header.tsx
+msgid "Page mode"
+msgstr "페이지 모드"
+
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "페이지 URL"
@@ -6839,13 +7190,13 @@ msgstr "지난 청구서에는 당시의 이메일과 카드 끝자리가 그대
 msgid "Pause, and resume when shown"
 msgstr "일시 정지하고 보이면 다시 재생"
 
+#: src/components/live/quick-actions.tsx
+msgid "paused"
+msgstr "일시정지됨"
+
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
-msgstr "일시 중지됨"
-
-#: src/components/live/moblin-card.tsx
-msgid "PAUSED"
 msgstr "일시 중지됨"
 
 #: src/components/switcher-status.tsx
@@ -6973,6 +7324,10 @@ msgstr "파이프라인"
 msgid "Pixels cut off each side of the source, before it’s sized."
 msgstr "크기를 맞추기 전에 소스의 각 변에서 잘라낼 픽셀이에요."
 
+#: src/components/live/pane-layout.tsx
+msgid "Place here"
+msgstr "여기에 배치"
+
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
 #: src/routes/_app/$workspace/overview.tsx
@@ -7073,8 +7428,31 @@ msgid "Presets"
 msgstr "프리셋"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 msgid "Preview"
 msgstr "미리보기"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW"
+msgstr "미리보기"
+
+#: src/components/live/scene-grid.tsx
+msgid "Preview · last known"
+msgstr "미리보기 · 마지막 상태"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW · LAST KNOWN"
+msgstr "미리보기 · 마지막 상태"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/pane-layout-model.ts
+msgid "Preview / Program"
+msgstr "미리보기 / 프로그램"
+
+#: src/components/live/monitors.tsx
+msgid "Preview and Program"
+msgstr "미리보기와 프로그램"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview settings"
@@ -7110,10 +7488,16 @@ msgstr "가격 ID"
 msgid "Primary"
 msgstr "기본 메뉴"
 
+#. placeholder {0}: rank ?? server.priority
+#: src/components/live/server-card.tsx
+msgid "Priority {0}"
+msgstr "우선순위 {0}"
+
 #: src/components/live/moblin-card.tsx
 msgid "Priority: higher is used more when stable"
 msgstr "우선순위: 높을수록 안정적일 때 더 많이 사용돼요"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/login.tsx
@@ -7128,6 +7512,14 @@ msgstr "문제"
 #: src/routes/_app/admin/products.tsx
 msgid "Products"
 msgstr "상품"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · ACTIVE"
+msgstr "프로그램 · 활성"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · LAST KNOWN"
+msgstr "프로그램 · 마지막 상태"
 
 #: src/lib/live-format.ts
 msgid "Program added"
@@ -7180,10 +7572,6 @@ msgstr "퍼블리셔(스트림 ID)"
 msgid "Quality"
 msgstr "품질"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Quick actions"
-msgstr "빠른 작업"
-
 #. placeholder {0}: connection.name
 #: src/components/live/moblin-card.tsx
 msgid "Raise {0}'s priority"
@@ -7209,25 +7597,29 @@ msgstr "연결 가능"
 msgid "Read more"
 msgstr "자세히 보기"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "READY"
-msgstr "준비됨"
-
 #: src/components/admin/reason-dialog.tsx
 #: src/components/support/break-glass-dialog.tsx
 msgid "Reason"
 msgstr "사유"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
 
+#. placeholder {0}: formatUptime(status.recording_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "REC {0}"
+msgstr "REC {0}"
+
+#: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "REC paused"
-msgstr "REC 일시 중지"
+msgstr "REC 일시정지됨"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Receiving"
@@ -7255,6 +7647,10 @@ msgstr "다시 연결"
 msgid "Reconnect delay (s)"
 msgstr "재연결 대기 시간(초)"
 
+#: src/components/live/quick-actions.tsx
+msgid "reconnect sources"
+msgstr "소스 다시 연결"
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "브라우저 소스를 다시 연결할까요?"
@@ -7280,10 +7676,6 @@ msgstr "다시 연결 중"
 msgid "Reconnecting {0}"
 msgstr "{0} 다시 연결 중"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "RECONNECTING…"
-msgstr "다시 연결 중…"
-
 #: src/components/live/moblin-card.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Record"
@@ -7296,6 +7688,10 @@ msgstr "방송 중 녹화"
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Recorded in the staff audit log."
 msgstr "스태프 감사 로그에 기록돼요."
+
+#: src/components/live/quick-actions.tsx
+msgid "recording"
+msgstr "녹화"
 
 #: src/components/live/moblin-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7334,6 +7730,7 @@ msgstr "{summary}에서 녹화가 유지돼요."
 msgid "Recording stopped"
 msgstr "녹화 중지됨"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7429,6 +7826,10 @@ msgstr "{name}을(를) 제거할까요?"
 msgid "Remove alias {alias}"
 msgstr "별칭 {alias} 제거"
 
+#: src/components/live/pane-layout.tsx
+msgid "Remove empty slot"
+msgstr "빈 칸 제거"
+
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
@@ -7445,6 +7846,11 @@ msgstr "비밀번호 제거"
 #: src/components/connect-settings.tsx
 msgid "Remove program?"
 msgstr "프로그램을 제거할까요?"
+
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Remove row {0}"
+msgstr "{0}행 제거"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7549,6 +7955,10 @@ msgstr "이름 변경"
 msgid "Rename {0}"
 msgstr "{0} 이름 변경"
 
+#: src/components/live/belabox-card.tsx
+msgid "Rename interface {title}"
+msgstr "인터페이스 {title} 이름 바꾸기"
+
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Renamed"
@@ -7619,6 +8029,25 @@ msgstr "요청에 실패했어요 ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "Connect로 OBS 로그를 요청했어요"
 
+#: src/components/live/pane-layout.tsx
+msgid "Reset"
+msgstr "초기화"
+
+#: src/components/live/pane-layout.tsx
+msgid "Reset to default"
+msgstr "기본값으로 초기화"
+
+#. placeholder {0}: left.index + 1
+#. placeholder {1}: right.index + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize columns {0} and {1}"
+msgstr "{0}열과 {1}열 크기 조절"
+
+#. placeholder {0}: source + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize row {0} height"
+msgstr "{0}행 높이 조절"
+
 #: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7663,6 +8092,11 @@ msgstr "변경하려면 구독을 재개하세요."
 #: src/lib/support.ts
 msgid "Resumed the subscription"
 msgstr "구독 재개"
+
+#: src/components/live/activity-feed.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Retry"
+msgstr "다시 시도"
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -7751,6 +8185,11 @@ msgstr "역할"
 msgid "Round-trip time"
 msgstr "왕복 시간 (RTT)"
 
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Row {0}"
+msgstr "{0}행"
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP 입력 - {stream}"
@@ -7806,6 +8245,7 @@ msgstr "방송을 운영해요: 장면 전환, 시작과 중지, 통계 보기."
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 #: src/components/moblin-settings.tsx
@@ -7950,6 +8390,10 @@ msgstr "OBS에 없는 장면"
 msgid "Scene overrides"
 msgstr "장면 재지정"
 
+#: src/components/live/scene-grid.tsx
+msgid "Scene selections"
+msgstr "선택된 장면"
+
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "장면 전환"
@@ -7962,6 +8406,7 @@ msgstr "장면 전환이 여기에 게시돼요"
 msgid "Scene switches aren’t posted here"
 msgstr "장면 전환이 여기에 게시되지 않아요"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
@@ -7973,10 +8418,6 @@ msgstr "장면"
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
 msgstr "장면과 그룹은 여기서 복제할 수 없어요."
-
-#: src/components/live/scene-grid.tsx
-msgid "Scenes appear once OBS is connected."
-msgstr "OBS가 연결되면 장면이 표시돼요."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
@@ -8015,6 +8456,19 @@ msgstr "이름, URL, ID로 검색"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Search by workspace or switcher"
 msgstr "워크스페이스 또는 스위처로 검색"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes"
+msgstr "장면 검색"
+
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes · /"
+msgstr "장면 검색 · /"
+
+#: src/components/live/source-list.tsx
+msgid "Search sources"
+msgstr "소스 검색"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8267,6 +8721,10 @@ msgstr "공유 NOALBS 봇"
 msgid "Shifts the audio against the video, {AUDIO_DELAY_MIN} to {AUDIO_DELAY_MAX}."
 msgstr "오디오를 영상에 맞춰 앞뒤로 옮겨요. {AUDIO_DELAY_MIN}~{AUDIO_DELAY_MAX}."
 
+#: src/components/live/live-header.tsx
+msgid "Shortcuts"
+msgstr "단축키"
+
 #: src/components/history/raw-explorer.tsx
 #: src/routes/_app/admin/audit.tsx
 #: src/routes/_app/admin/status.tsx
@@ -8312,6 +8770,14 @@ msgstr "재생이 끝나면 아무것도 표시하지 않기"
 msgid "Show older"
 msgstr "이전 항목 표시"
 
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as grid"
+msgstr "장면을 격자로 보기"
+
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as list"
+msgstr "장면을 목록으로 보기"
+
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
 msgstr "민감한 값 표시"
@@ -8323,6 +8789,10 @@ msgstr "레이드로 방송이 중지될 때 BRB 장면을 표시해요."
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "OBS 미리보기 표시"
+
+#: src/components/live/live-header.tsx
+msgid "Show the sidebar (F)"
+msgstr "사이드바 표시 (F)"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the Starting scene when the stream starts."
@@ -8341,6 +8811,10 @@ msgstr "소스 표시 또는 숨김"
 msgid "Showing"
 msgstr "표시 중"
 
+#: src/components/live/source-list.tsx
+msgid "Shown"
+msgstr "표시됨"
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8348,7 +8822,7 @@ msgid "SHOWN"
 msgstr "표시됨"
 
 #: src/components/live/source-list.tsx
-msgid "SHOWN · PARENT HIDDEN"
+msgid "Shown · parent hidden"
 msgstr "표시됨 · 상위 항목 숨김"
 
 #: src/components/admin/notice-dialog.tsx
@@ -8507,9 +8981,11 @@ msgid "Sort"
 msgstr "정렬"
 
 #: src/components/live/source-editor.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Source"
 msgstr "소스"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/source-list.tsx
 msgid "Sources"
 msgstr "소스"
@@ -8517,6 +8993,10 @@ msgstr "소스"
 #: src/components/live/source-list.tsx
 msgid "Sources appear once OBS is connected."
 msgstr "OBS가 연결되면 소스가 표시돼요."
+
+#: src/components/live/live-header.tsx
+msgid "Space"
+msgstr "Space"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
@@ -8651,6 +9131,7 @@ msgstr "녹화 시작 또는 중지"
 msgid "Started or stopped the stream"
 msgstr "방송 시작 또는 중지"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Starting"
@@ -8716,6 +9197,7 @@ msgstr "스텔스 켜짐"
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/quick-actions.tsx
 msgid "Stop"
 msgstr "중지"
 
@@ -8866,6 +9348,7 @@ msgstr "스트림 서버"
 msgid "Stream server not found"
 msgstr "스트림 서버를 찾을 수 없어요"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
@@ -8884,9 +9367,9 @@ msgstr "스위처당 스트림 서버 수"
 msgid "Stream started"
 msgstr "방송 시작됨"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Stream status"
-msgstr "방송 상태"
+#: src/components/live/on-air-pane.tsx
+msgid "Stream state unknown · waiting for OBS"
+msgstr "방송 상태 알 수 없음 · OBS 대기 중"
 
 #: src/lib/live-format.ts
 msgid "Stream stopped"
@@ -8900,10 +9383,9 @@ msgstr "스트림 URL"
 msgid "Stream URL"
 msgstr "스트림 URL"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "STREAMING"
-msgstr "방송 중"
+#: src/components/live/live-header.tsx
+msgid "Streamer"
+msgstr "스트리머"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8944,6 +9426,10 @@ msgstr "Stripe 테스트 모드"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Stuck on a step? The <0>quick start guide</0> walks through it, and <1>how NOALBS connects</1> explains where your video goes."
 msgstr "막히셨나요? <0>빠른 시작 가이드</0>에서 단계별로 안내하고, <1>NOALBS 연결 방식</1>에서 영상이 어디로 가는지 설명해요."
+
+#: src/components/live/monitors.tsx
+msgid "Studio mode"
+msgstr "스튜디오 모드"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Subscribers"
@@ -9026,6 +9512,10 @@ msgstr "정지"
 msgid "Suspension lifted"
 msgstr "정지 해제됨"
 
+#: src/components/live/pane-layout.tsx
+msgid "Swap panes"
+msgstr "패널 맞바꾸기"
+
 #: src/components/chat/chat-links.tsx
 msgid "Switch alerts are off for this switcher. <0>Turn on</0>"
 msgstr "이 스위처의 전환 알림이 꺼져 있어요. <0>켜기</0>"
@@ -9107,6 +9597,11 @@ msgstr "연간 결제로 전환할까요?"
 #: src/components/app-shell.tsx
 msgid "Switch workspace"
 msgstr "워크스페이스 전환"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
+msgid "Switched by {by}"
+msgstr "{by} 님이 전환"
 
 #: src/lib/support.ts
 msgid "Switched scene"
@@ -9196,13 +9691,18 @@ msgstr "OBS에서 동기화됨"
 msgid "Synced from OBS {0}"
 msgstr "OBS에서 동기화됨 {0}"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Take"
+msgstr "테이크"
+
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
 msgstr "입력을 탭해 여기서 표시하거나 숨기세요. 이 브라우저에만 기억되고 OBS는 변경되지 않아요."
 
 #: src/components/live/scene-grid.tsx
-msgid "Tap scenes to show or hide them here. Only this browser remembers it; the scene on air always shows."
-msgstr "장면을 탭해 여기서 표시하거나 숨기세요. 이 브라우저에만 기억되고, 송출 중인 장면은 항상 표시돼요."
+msgid "Tap scenes below to show or hide them here. Only this browser remembers it; the scene on air always shows."
+msgstr "아래 장면을 탭하여 여기에 표시하거나 숨기세요. 이 브라우저만 기억하며, 온에어 중인 장면은 항상 표시됩니다."
 
 #: src/components/live/source-list.tsx
 msgid "Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9453,6 +9953,10 @@ msgstr "브라우저 소스가 OBS 연결을 잃었어요"
 msgid "The browser source reached OBS"
 msgstr "브라우저 소스가 OBS에 연결됐어요"
 
+#: src/components/live/monitors.tsx
+msgid "The cued scene"
+msgstr "큐한 장면"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
 msgstr "현재 링크가 작동을 멈추므로 새 링크를 OBS에 붙여 넣어야 해요."
@@ -9460,6 +9964,10 @@ msgstr "현재 링크가 작동을 멈추므로 새 링크를 OBS에 붙여 넣�
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS. Do this if the link leaked."
 msgstr "현재 링크가 작동을 멈추므로 새 링크를 OBS에 붙여 넣어야 해요. 링크가 유출됐다면 이렇게 하세요."
+
+#: src/components/live/operator-state.ts
+msgid "the dashboard"
+msgstr "대시보드"
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -9619,6 +10127,10 @@ msgstr "미리보기가 꺼져 있어요. OBS 화면을 보려면 켜세요."
 #: src/lib/api-messages.ts
 msgid "The preview is only shown while the stream is live."
 msgstr "미리보기는 방송 중에만 표시돼요."
+
+#: src/components/live/monitors.tsx
+msgid "The preview is turned off"
+msgstr "미리보기가 꺼져 있습니다"
 
 #: src/lib/obs-preview.ts
 msgid "The preview shows only while the stream is live."
@@ -9966,6 +10478,7 @@ msgstr "이 장면에는 소스가 없어요."
 msgid "This server didn’t report any stats during this stream."
 msgstr "이 방송 중에 이 서버가 보고한 통계가 없어요."
 
+#: src/components/live/activity-feed.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "This stream"
 msgstr "이 방송"
@@ -10076,6 +10589,14 @@ msgstr "소유권 이전"
 msgid "Transferring…"
 msgstr "이전 중…"
 
+#: src/components/live/monitors.tsx
+msgid "Transition"
+msgstr "전환 효과"
+
+#: src/components/live/monitors.tsx
+msgid "Transition duration"
+msgstr "전환 시간"
+
 #: src/lib/support.ts
 msgid "Tried to change support access"
 msgstr "지원 액세스 변경 시도"
@@ -10169,6 +10690,10 @@ msgstr "대신 텍스트 입력"
 msgid "Unchanged"
 msgstr "변경 없음"
 
+#: src/components/live/pane-layout.tsx
+msgid "Undo"
+msgstr "실행 취소"
+
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
 msgstr "변경 취소"
@@ -10223,6 +10748,10 @@ msgstr "{target}에서 채팅 채널 연결 해제"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Unlinking a channel removes it from every switcher, in every workspace: the bot leaves it. Its owner can link it again."
 msgstr "채널 연결을 해제하면 모든 워크스페이스의 모든 스위처에서 제거되고 봇이 채널에서 나가요. 채널 소유자는 다시 연결할 수 있어요."
+
+#: src/components/live/source-list.tsx
+msgid "UNLISTED"
+msgstr "숨김"
 
 #: src/components/live/audio-mixer.tsx
 msgid "Unmute"
@@ -10447,6 +10976,10 @@ msgstr "OBS 대기 중"
 msgid "Waiting for the browser source…"
 msgstr "브라우저 소스를 기다리는 중…"
 
+#: src/components/live/monitors.tsx
+msgid "Waiting for the first picture…"
+msgstr "첫 화면을 기다리는 중…"
+
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
 msgstr "대기 중: OBS가 방송을 시작하면 전환돼요"
@@ -10500,6 +11033,7 @@ msgstr "무슨 일이 있었나요? (선택)"
 msgid "What its clients use of the switchers it was given."
 msgstr "배정된 스위처 중 클라이언트가 사용하는 양이에요."
 
+#: src/components/live/monitors.tsx
 #: src/components/live/obs-preview.tsx
 msgid "What OBS is showing"
 msgstr "OBS에 표시 중인 화면"
@@ -10849,6 +11383,7 @@ msgid "You do not have permission to do this in this workspace"
 msgstr "이 워크스페이스에서 이 작업을 할 권한이 없어요"
 
 #: src/components/connect-controls.tsx
+#: src/components/live/obs-pane.tsx
 msgid "You don’t have access to control this computer."
 msgstr "이 컴퓨터를 제어할 권한이 없습니다."
 

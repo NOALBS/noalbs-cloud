@@ -45,7 +45,7 @@ export function BitrateChart({
       viewBox={`0 0 ${WIDTH} ${height}`}
       preserveAspectRatio="none"
       className={cn("w-full overflow-hidden", className)}
-      style={{ height }}
+      style={{ height: `var(--live-chart-height, ${height}px)` }}
       aria-hidden="true"
     >
       {thresholds && low != null && (

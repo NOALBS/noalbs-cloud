@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
@@ -111,13 +111,15 @@ interface ControlProps {
 }
 
 const VARIANT = {
-  tile: "min-h-16 rounded-2xl px-4 text-[15px]",
-  compact: "h-10 rounded-[10px] px-3.5 text-sm",
+  tile: "min-h-15 justify-start bg-surface-2 px-3 text-left",
+  compact: "h-8 px-3",
 };
-const BASE =
-  "flex items-center justify-center gap-2.5 border font-semibold transition-colors disabled:opacity-50";
+/** The action half of a status-and-stop button. */
+const STOP = "ml-1 flex items-center gap-1.5 border-l border-current/25 pl-2.5 font-medium";
+const BASE = buttonVariants({ variant: "outline" });
 
 export function StreamButton({ controls, status, disabled, variant }: ControlProps) {
+  const now = useNow();
   const { stream } = controls;
   const className = cn(BASE, VARIANT[variant]);
 
@@ -126,14 +128,22 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
     return (
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <button
+          <Button
+            variant="ghost"
             type="button"
             disabled={disabled || stream.isPending}
             className={cn(className, "border-primary bg-primary text-primary-foreground")}
           >
             <Play className="size-4" />
-            <Trans>Start stream</Trans>
-          </button>
+            <span>
+              <Trans>Start stream</Trans>
+              {variant === "tile" && (
+                <span className="block text-[11px] font-normal opacity-70">
+                  <Trans>asks to confirm</Trans>
+                </span>
+              )}
+            </span>
+          </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -163,14 +173,40 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
           type="button"
           disabled={disabled || stream.isPending}
+          aria-label={t`Stop stream`}
           className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
         >
-          <Square className="size-4" />
-          <Trans>Stop stream</Trans>
-        </button>
+          {variant === "compact" ? (
+            <>
+              <span className="size-1.5 rounded-full bg-offline" />
+              <span className="font-mono text-[13px] font-semibold tabular">
+                {status.stream_started_at
+                  ? t`ON AIR ${formatUptime(status.stream_started_at, now)}`
+                  : t`ON AIR`}
+              </span>
+              <span className={STOP}>
+                <Square className="size-3.5" />
+                <span className="live-wide">
+                  <Trans>Stop</Trans>
+                </span>
+              </span>
+            </>
+          ) : (
+            <>
+              <Square className="size-4" />
+              <span>
+                <Trans>Stop stream</Trans>
+                <span className="block text-[11px] font-normal opacity-70">
+                  <Trans>asks to confirm</Trans>
+                </span>
+              </span>
+            </>
+          )}
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -200,14 +236,8 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
   const recording = Boolean(status?.recording);
   const paused = Boolean(status?.recording_paused);
 
-  const button = (
-    <button
-      type="button"
-      disabled={disabled || record.isPending}
-      onClick={recording ? undefined : () => record.mutate(true)}
-      aria-pressed={recording}
-      className={cn(BASE, VARIANT[variant], "bg-card")}
-    >
+  const content = (
+    <>
       <Circle
         className={cn(
           "size-2.5",
@@ -218,21 +248,71 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
             : "fill-idle text-idle",
         )}
       />
-      <span className="font-mono tabular">
-        {recording
-          ? paused
-            ? t`REC paused`
-            : `REC ${status?.recording_started_at ? formatUptime(status.recording_started_at, now) : ""}`
-          : t`Record`}
+      <span>
+        {variant === "tile" ? (
+          <>
+            <span className="block">
+              <Trans>Record</Trans>
+            </span>
+            <span className="block text-[11px] font-normal text-muted-foreground">
+              {recording
+                ? paused
+                  ? t`paused`
+                  : status?.recording_started_at
+                    ? formatUptime(status.recording_started_at, now)
+                    : t`recording`
+                : t`off`}
+            </span>
+          </>
+        ) : recording ? (
+          <span className="font-mono text-[13px] font-semibold tabular">
+            {paused
+              ? t`REC paused`
+              : status?.recording_started_at
+                ? t`REC ${formatUptime(status.recording_started_at, now)}`
+                : t`REC`}
+          </span>
+        ) : (
+          t`Record`
+        )}
       </span>
-    </button>
+      {variant === "compact" && recording && (
+        <span className={STOP}>
+          <Square className="size-3.5" />
+          <span className="live-wide">
+            <Trans>Stop</Trans>
+          </span>
+        </span>
+      )}
+    </>
   );
-  if (!recording) return button;
-
+  const className = cn(BASE, VARIANT[variant], variant === "compact" && "bg-card");
+  if (!recording)
+    return (
+      <Button
+        variant="ghost"
+        type="button"
+        disabled={disabled || record.isPending}
+        onClick={() => record.mutate(true)}
+        className={className}
+      >
+        {content}
+      </Button>
+    );
   // A stray tap would end the file mid-stream, so it asks first.
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>{button}</AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          type="button"
+          aria-label={t`Stop recording`}
+          disabled={disabled || record.isPending}
+          className={className}
+        >
+          {content}
+        </Button>
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
@@ -260,16 +340,24 @@ export function FixButton({ controls, disabled, variant }: Omit<ControlProps, "s
   const { fix } = controls;
 
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       disabled={disabled || fix.isPending}
       onClick={() => fix.mutate()}
       title={t`Reconnect the stream sources playing on the scene on air`}
-      className={cn(BASE, VARIANT[variant], "bg-card")}
+      className={cn(BASE, VARIANT[variant], variant === "compact" && "bg-card")}
     >
       <Wrench className={cn("size-4", fix.isPending && "animate-pulse")} />
-      <Trans>Fix feed</Trans>
-    </button>
+      <span>
+        <Trans>Fix feed</Trans>
+        {variant === "tile" && (
+          <span className="block text-[11px] font-normal text-muted-foreground">
+            <Trans>reconnect sources</Trans>
+          </span>
+        )}
+      </span>
+    </Button>
   );
 }
 
@@ -280,7 +368,8 @@ export function MarkerButton({
   disabled,
   variant,
   className,
-}: ControlProps & { className?: string }) {
+  markerCount,
+}: ControlProps & { className?: string; markerCount?: number }) {
   const { marker } = controls;
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
@@ -289,15 +378,23 @@ export function MarkerButton({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
           type="button"
           disabled={disabled || !streaming}
           title={streaming ? t`Mark this moment on the stream` : t`Markers go on a running stream`}
-          className={cn(BASE, VARIANT[variant], "bg-card", className)}
+          className={cn(BASE, VARIANT[variant], variant === "compact" && "bg-card", className)}
         >
           <Bookmark className="size-4" />
-          <Trans>Marker</Trans>
-        </button>
+          <span>
+            <Trans>Marker</Trans>
+            {variant === "tile" && (
+              <span className="block text-[11px] font-normal text-muted-foreground">
+                {markerCount == null ? t`Mark this moment` : t`${markerCount} this stream`}
+              </span>
+            )}
+          </span>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))]">
         <form

@@ -156,6 +156,11 @@ msgstr "{0, plural, one {# kunde slettet} other {# kunder slettet}}"
 msgid "{0, plural, one {# client} other {# clients}}"
 msgstr "{0, plural, one {# kunde} other {# kunder}}"
 
+#. placeholder {0}: row.slots.length
+#: src/components/live/pane-layout.tsx
+msgid "{0, plural, one {# column} other {# columns}}"
+msgstr "{0, plural, one {# kolonne} other {# kolonner}}"
+
 #. placeholder {0}: client.customers
 #: src/routes/_app/admin/organizations/$organization.tsx
 msgid "{0, plural, one {# customer} other {# customers}}"
@@ -467,6 +472,11 @@ msgstr "{0} event-abonnementer (registreret {1})."
 #: src/components/scene-rules-section.tsx
 msgid "{0} for this combination"
 msgstr "{0} for denne kombination"
+
+#. placeholder {0}: transition.name
+#: src/components/live/monitors.tsx
+msgid "{0} has a fixed duration"
+msgstr "{0} har en fast varighed"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -863,6 +873,14 @@ msgstr "{managedBy}s team kan bruge den. Admins og operatører kan ikke."
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "{managedBy}s team ser den også uden for sending. Admins og operatører ser den kun, mens der sendes live."
 
+#: src/components/live/quick-actions.tsx
+msgid "{markerCount} this stream"
+msgstr "{markerCount} i denne stream"
+
+#: src/components/live/pane-layout.tsx
+msgid "{n, plural, one {# column} other {# columns}}"
+msgstr "{n, plural, one {# kolonne} other {# kolonner}}"
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} sælges ikke længere: {label}"
@@ -1069,6 +1087,10 @@ msgstr "1 pr. {0} s"
 msgid "1 to {NAME_MAX_BYTES} characters"
 msgstr "1 til {NAME_MAX_BYTES} tegn"
 
+#: src/components/live/scene-grid.tsx
+msgid "1–9: first nine scenes · /: search"
+msgstr "1–9: de første ni scener · /: søg"
+
 #: src/lib/support.ts
 msgid "24 hours"
 msgstr "24 timer"
@@ -1238,6 +1260,15 @@ msgstr "Kontoen blev ikke fundet"
 msgid "Account settings"
 msgstr "Kontoindstillinger"
 
+#: src/components/live/pane-layout-model.ts
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Actions"
+msgstr "Handlinger"
+
+#: src/components/live/scene-grid.tsx
+msgid "Active"
+msgstr "Aktiv"
+
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active {0}"
@@ -1246,6 +1277,10 @@ msgstr "Aktiv {0}"
 #: src/routes/_app/admin/users/index.tsx
 msgid "Active any time"
 msgstr "Uanset aktivitet"
+
+#: src/components/live/live-header.tsx
+msgid "Active in operator mode on desktop, outside fields, dialogs and Edit layout."
+msgstr "Aktive i operatørtilstand på computer, uden for felter, dialoger og Rediger layout."
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active now"
@@ -1264,6 +1299,7 @@ msgid "Active today"
 msgstr "Aktiv i dag"
 
 #: src/components/live/activity-feed.tsx
+#: src/components/live/pane-layout-model.ts
 #: src/components/orgs/org-shell.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 #: src/routes/_app/orgs/$organization/activity.tsx
@@ -1315,6 +1351,11 @@ msgstr "Tilføj en switcher"
 msgid "Add a workspace"
 msgstr "Tilføj et arbejdsområde"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Add beside {0}"
+msgstr "Tilføj ved siden af {0}"
+
 #: src/components/scene-rules-section.tsx
 msgid "Add combination"
 msgstr "Tilføj kombination"
@@ -1327,9 +1368,17 @@ msgstr "Tilføj markør"
 msgid "Add one to connect your OBS. Setup takes a couple of minutes."
 msgstr "Tilføj en for at forbinde din OBS. Opsætningen tager et par minutter."
 
+#: src/components/live/pane-layout.tsx
+msgid "Add pane"
+msgstr "Tilføj panel"
+
 #: src/components/connect-settings.tsx
 msgid "Add program"
 msgstr "Tilføj program"
+
+#: src/components/live/pane-layout.tsx
+msgid "Add row"
+msgstr "Tilføj række"
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
@@ -1714,6 +1763,10 @@ msgstr "Bed en af dets ejere eller admins om at tillade supportadgang under Inds
 msgid "Asked the browser source to reconnect"
 msgstr "Bad browserkilden om at genoprette forbindelsen"
 
+#: src/components/live/quick-actions.tsx
+msgid "asks to confirm"
+msgstr "kræver bekræftelse"
+
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
@@ -1739,6 +1792,7 @@ msgstr "Mindst 3 tegn: bogstaver, tal og bindestreger."
 
 #: src/components/belabox/stream-panel.tsx
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Audio"
 msgstr "Lyd"
 
@@ -1772,10 +1826,27 @@ msgstr "Revisionslog"
 msgid "Auto"
 msgstr "Auto"
 
+#: src/components/live/operator-state.ts
+msgid "auto switch"
+msgstr "automatisk skift"
+
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/quick-actions.tsx
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Auto switch"
 msgstr "Auto-skift"
+
+#: src/components/live/bitrate-pane.tsx
+msgid "Auto switch · waiting for the stream"
+msgstr "Automatisk skift · venter på streamen"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is off"
+msgstr "Automatisk skift er slået fra"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Auto switch is on"
+msgstr "Automatisk skift er slået til"
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -1996,13 +2067,10 @@ msgstr "Betaling fra"
 msgid "Billing period"
 msgstr "Betalingsperiode"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "Bitrate"
 msgstr "Bitrate"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate · {serverName}"
-msgstr "Bitrate · {serverName}"
 
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -2067,19 +2135,20 @@ msgstr "Nederst til venstre"
 msgid "Bottom right"
 msgstr "Nederst til højre"
 
+#: src/components/live/scene-grid.tsx
+msgid "BRB"
+msgstr "BRB"
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
+#. placeholder {0}: formatKbps(triggers.offline)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "BRB / offline"
 msgstr "BRB / offline"
-
-#: src/components/live/scene-grid.tsx
-msgid "BRB SCENE"
-msgstr "BRB-SCENE"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2159,6 +2228,7 @@ msgstr "Kan ikke fjerne: {blockedBy}"
 #: src/components/change-workspace-url.tsx
 #: src/components/connect-controls.tsx
 #: src/components/connect-settings.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/moblin-settings.tsx
@@ -2258,6 +2328,7 @@ msgstr "Ændrede en tilføjelse"
 msgid "Changed chat settings"
 msgstr "Ændrede chatindstillinger"
 
+#: src/components/live/operator-state.ts
 #: src/lib/live-format.ts
 msgid "Changed in OBS"
 msgstr "Ændret i OBS"
@@ -2447,6 +2518,10 @@ msgstr "Vælges af switcheren ud fra din bitrate og latenstid."
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Clear"
 msgstr "Ryd"
+
+#: src/components/live/scene-grid.tsx
+msgid "Click to cue · Shift+click cuts"
+msgstr "Klik for at gøre klar · Skift+klik klipper"
 
 #: src/lib/api-messages.ts
 msgid "Client not found"
@@ -2664,6 +2739,7 @@ msgstr "Forbind din stream-server"
 msgid "connected"
 msgstr "forbundet"
 
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
@@ -2725,12 +2801,6 @@ msgstr "Forbindelsen blev annulleret."
 #: src/routes/_app/connect.tsx
 msgid "Connecting…"
 msgstr "Forbinder…"
-
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "CONNECTING…"
-msgstr "FORBINDER…"
 
 #: src/lib/api-messages.ts
 msgid "Connection not found"
@@ -2836,6 +2906,14 @@ msgstr "Kunne ikke forbinde kontoen. Prøv igen."
 #: src/lib/chat.ts
 msgid "Couldn’t connect. Please try again."
 msgstr "Kunne ikke forbinde. Prøv igen."
+
+#: src/components/live/activity-feed.tsx
+msgid "Couldn’t load activity."
+msgstr "Aktiviteten kunne ikke indlæses."
+
+#: src/components/live/scene-grid.tsx
+msgid "Couldn’t load scenes."
+msgstr "Scenerne kunne ikke indlæses."
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3025,6 +3103,19 @@ msgstr "Beskær til højre"
 msgid "Crop top"
 msgstr "Beskær øverst"
 
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+msgid "Cue {0}"
+msgstr "Gør {0} klar"
+
+#: src/components/live/live-header.tsx
+msgid "Cue a scene (switch with Studio mode off)"
+msgstr "Gør en scene klar (skifter direkte, når studietilstand er slået fra)"
+
+#: src/components/live/monitors.tsx
+msgid "Cue a scene below"
+msgstr "Gør en scene klar nedenfor"
+
 #: src/components/admin/products.tsx
 msgid "Currency"
 msgstr "Valuta"
@@ -3086,10 +3177,17 @@ msgid "Customers’ own bots"
 msgstr "Slutkunders egne bots"
 
 #: src/components/live/audio-mixer.tsx
-#: src/components/live/scene-grid.tsx
-#: src/components/live/source-list.tsx
 msgid "Customize"
 msgstr "Tilpas"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Cut"
+msgstr "Klip"
+
+#: src/components/live/live-header.tsx
+msgid "Cut directly"
+msgstr "Klip direkte"
 
 #: src/components/app-shell.tsx
 msgid "Dark"
@@ -3245,6 +3343,10 @@ msgstr "Dev-login"
 msgid "Device removed"
 msgstr "Enhed fjernet"
 
+#: src/components/live/pane-layout-model.ts
+msgid "Devices"
+msgstr "Enheder"
+
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
 msgstr "Deaktiver"
@@ -3312,6 +3414,7 @@ msgid "Dismiss"
 msgstr "Luk"
 
 #: src/components/live/audio-mixer.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/components/orgs/bulk-dialogs.tsx
@@ -3352,9 +3455,26 @@ msgstr "Download stream-historik"
 msgid "Drag"
 msgstr "Træk"
 
+#. placeholder {0}: layout.title
+#: src/components/live/pane-title-row.tsx
+msgid "Drag {0}"
+msgstr "Træk {0}"
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
 msgstr "Træk hen over en graf for at zoome ind"
+
+#: src/components/live/source-list.tsx
+msgid "Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t changed by it."
+msgstr "Træk for at ændre rækkefølgen i OBS. “Vist på listen” vælger kun, hvad denne browser viser her; OBS ændres ikke."
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to resize · double-click or Enter to equalize"
+msgstr "Træk for at ændre størrelse · dobbeltklik eller Enter for at udligne"
+
+#: src/components/live/pane-layout-resize.tsx
+msgid "Drag to set minimum height · double-click for auto"
+msgstr "Træk for at angive minimumshøjde · dobbeltklik for automatisk"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
@@ -3386,7 +3506,6 @@ msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different o
 msgstr "Hver server kan tilsidesætte LIVE-, LOW- og BRB-scenerne, f.eks. et andet overlay til et backup-uplink."
 
 #: src/components/connect-settings.tsx
-#: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
@@ -3409,6 +3528,10 @@ msgstr "Rediger {label}"
 msgid "Edit {name}"
 msgstr "Rediger {name}"
 
+#: src/components/live/pane-layout.tsx
+msgid "Edit layout"
+msgstr "Rediger layout"
+
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
 msgstr "Rediger meddelelse"
@@ -3416,6 +3539,10 @@ msgstr "Rediger meddelelse"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "Rediger program"
+
+#: src/components/live/scene-grid.tsx
+msgid "Edit scenes"
+msgstr "Rediger scener"
 
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
@@ -3453,6 +3580,10 @@ msgstr "Nødadgang uden din tilladelse"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Emergency access…"
 msgstr "Nødadgang…"
+
+#: src/components/live/pane-layout.tsx
+msgid "Empty slot"
+msgstr "Tom plads"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
@@ -3494,6 +3625,30 @@ msgstr "Aktiveret med <0>dev_login = true</0>. Aldrig i produktion."
 #: src/components/belabox/stream-panel.tsx
 msgid "Encoder"
 msgstr "Encoder"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder connecting…"
+msgstr "Encoderen opretter forbindelse…"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder key refused"
+msgstr "Encoderens nøgle blev afvist"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder not connected"
+msgstr "Encoderen er ikke forbundet"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder offline"
+msgstr "Encoderen er offline"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder ready"
+msgstr "Encoderen er klar"
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder streaming"
+msgstr "Encoderen streamer"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
@@ -3537,6 +3692,7 @@ msgstr "Afsluttet {0}"
 msgid "Ended a notice"
 msgstr "Afsluttede en meddelelse"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Ending"
@@ -3559,6 +3715,10 @@ msgstr "Slutter (tom = indtil afsluttet)"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "ends {0}"
 msgstr "slutter {0}"
+
+#: src/components/live/live-header.tsx
+msgid "Enter"
+msgstr "Enter"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
@@ -3603,6 +3763,10 @@ msgstr "Indtast dit stream-ID"
 #: src/routes/_app/admin/audit.tsx
 msgid "Entries"
 msgstr "Poster"
+
+#: src/components/live/live-header.tsx
+msgid "Esc"
+msgstr "Esc"
 
 #: src/routes/_app/admin/status.tsx
 msgid "EventSub cost"
@@ -3678,6 +3842,15 @@ msgstr "Præcis rammen, forvrænget om nødvendigt."
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
 msgstr "Eksisterende kilde"
+
+#: src/components/live/live-header.tsx
+msgid "Exit immersive"
+msgstr "Forlad fordybet visning"
+
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
+msgid "Expand or collapse {0}"
+msgstr "Udvid eller skjul {0}"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3878,6 +4051,7 @@ msgid "Hid {0}"
 msgstr "Skjulte {0}"
 
 #: src/components/admin/products.tsx
+#: src/components/live/source-list.tsx
 #: src/lib/billing.ts
 msgid "Hidden"
 msgstr "Skjult"
@@ -3903,6 +4077,13 @@ msgstr "Skjult, da rå statistik kan indeholde stream-navne eller adresser. Kopi
 #: src/components/history/raw-explorer.tsx
 msgid "Hide"
 msgstr "Skjul"
+
+#. placeholder {0}: layout.title
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+#: src/components/live/pane-title-row.tsx
+msgid "Hide {0}"
+msgstr "Skjul {0}"
 
 #: src/components/copy-field.tsx
 #: src/components/secret-url-input.tsx
@@ -4025,6 +4206,14 @@ msgstr "Ignorerede chattere"
 msgid "Ignoring {0}"
 msgstr "Ignorerer {0}"
 
+#: src/components/live/live-header.tsx
+msgid "Immersive"
+msgstr "Fordybet"
+
+#: src/components/live/live-header.tsx
+msgid "Immersive: hide the sidebar (F)"
+msgstr "Fordybet: skjul sidepanelet (F)"
+
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Import"
 msgstr "Importer"
@@ -4065,6 +4254,10 @@ msgstr "Om 30 dage"
 msgid "In 7 days"
 msgstr "Om 7 dage"
 
+#: src/components/live/source-list.tsx
+msgid "In cued Preview"
+msgstr "I klargjort Forhåndsvisning"
+
 #: src/components/admin/organization-limits-form.tsx
 msgid "In every client."
 msgstr "Hos alle kunder."
@@ -4077,9 +4270,17 @@ msgstr "I Moblin skal du åbne <0>Settings → Remote control</0> og sætte <1>P
 msgid "in OBS"
 msgstr "i OBS"
 
+#: src/components/live/on-air-pane.tsx
+msgid "In OBS"
+msgstr "I OBS"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
 msgstr "I OBS skal du åbne <0>Tools → WebSocket Server Settings</0>, slå WebSocket-serveren til og indtaste dens port og adgangskode her (<1>Show Connect Info</1> viser begge)."
+
+#: src/components/live/source-list.tsx
+msgid "In Program"
+msgstr "I Program"
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4087,8 +4288,8 @@ msgid "in use"
 msgstr "i brug"
 
 #: src/components/live/server-card.tsx
-msgid "IN USE"
-msgstr "I BRUG"
+msgid "In use"
+msgstr "I brug"
 
 #: src/routes/_app/admin/users/index.tsx
 msgid "Inactive 30+ days"
@@ -4101,6 +4302,14 @@ msgstr "Info"
 #: src/components/live/source-editor.tsx
 msgid "Input format"
 msgstr "Inputformat"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert after"
+msgstr "Indsæt efter"
+
+#: src/components/live/pane-layout.tsx
+msgid "Insert before"
+msgstr "Indsæt før"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -4241,10 +4450,6 @@ msgid "It's in use now. Reload and try again."
 msgstr "Den er i brug nu. Genindlæs, og prøv igen."
 
 #: src/components/live/scene-grid.tsx
-msgid "It’s on air: switch to another scene first."
-msgstr "Den er i luften: skift først til en anden scene."
-
-#: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
 msgstr "Den fjernes fra OBS med det samme, med det der er på den: OBS sletter de kilder, ingen anden scene bruger, med deres indstillinger."
 
@@ -4255,6 +4460,10 @@ msgstr "Den fjernes fra denne scene i OBS med det samme, mens der streames. Selv
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
 msgstr "Den fjernes i OBS med det samme, mens der streames. Bruger ingen anden scene den, sletter OBS den med dens indstillinger."
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s the current scene: switch to another scene first."
+msgstr "Det er den aktuelle scene: skift til en anden scene først."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
@@ -4287,6 +4496,10 @@ msgstr "Dets egne admins klarer resten. Lav den første invitation her, og send 
 #: src/components/live/source-position.tsx
 msgid "Its own size."
 msgstr "Dens egen størrelse."
+
+#: src/components/live/monitors.tsx
+msgid "Its picture is private until it’s on air"
+msgstr "Billedet er privat, indtil scenen er i luften"
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4357,9 +4570,9 @@ msgid "Joining…"
 msgstr "Deltager…"
 
 #: src/components/live/belabox-card.tsx
+#: src/components/live/bitrate-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
 
@@ -4408,9 +4621,13 @@ msgstr "Beholder {0}, indtil perioden slutter, og skifter derefter til Free."
 msgid "Kept for every client."
 msgstr "Gemmes for alle kunder."
 
-#: src/components/live/belabox-card.tsx
-msgid "KEY REFUSED"
-msgstr "NØGLE AFVIST"
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts"
+msgstr "Tastaturgenveje"
+
+#: src/components/live/live-header.tsx
+msgid "Keyboard shortcuts (?)"
+msgstr "Tastaturgenveje (?)"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Kick"
@@ -4443,9 +4660,9 @@ msgstr "Typer:"
 msgid "Language"
 msgstr "Sprog"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "Last 2 min"
-msgstr "Seneste 2 min."
+msgstr "Seneste 2 min"
 
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
@@ -4458,6 +4675,14 @@ msgstr "Senest aktiv"
 #: src/routes/_app/admin/status.tsx
 msgid "Last error {0}{1}: {2}"
 msgstr "Seneste fejl {0}{1}: {2}"
+
+#: src/components/live/scene-grid.tsx
+msgid "Last known"
+msgstr "Senest kendte"
+
+#: src/components/live/on-air-pane.tsx
+msgid "Last known scene"
+msgstr "Senest kendte scene"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
@@ -4618,9 +4843,17 @@ msgstr "Tilknyt pris"
 msgid "Links copied"
 msgstr "Links kopieret"
 
+#: src/components/live/source-list.tsx
+msgid "LISTED"
+msgstr "PÅ LISTEN"
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "Vises som ikke tilgængelig lige nu: ingen kan købe mere, dem, der har den, beholder den."
+
+#: src/components/live/source-list.tsx
+msgid "Listed here. Tap to hide it from this list."
+msgstr "Vist på listen her. Tryk for at skjule den fra listen."
 
 #: src/components/admin/products.tsx
 msgid "Listed, but nobody can buy it yet."
@@ -4637,6 +4870,10 @@ msgstr "Vises, men ingen kan købe den endnu."
 #: src/routes/_app/workspaces/live.tsx
 msgid "Live"
 msgstr "Live"
+
+#: src/components/live/scene-grid.tsx
+msgid "LIVE"
+msgstr "LIVE"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
@@ -4657,10 +4894,6 @@ msgstr "Live nu"
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "LIVE NOW"
 msgstr "LIVE NU"
-
-#: src/components/live/scene-grid.tsx
-msgid "LIVE SCENE"
-msgstr "LIVE-SCENE"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
@@ -4696,6 +4929,10 @@ msgstr "Indlæser logs…"
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "Indlæser programmer…"
+
+#: src/components/live/monitors.tsx
+msgid "Loading transitions…"
+msgstr "Indlæser overgange…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4779,9 +5016,14 @@ msgstr "Gentag afspilningslisten"
 msgid "Low"
 msgstr "Lav"
 
+#: src/components/live/scene-grid.tsx
+msgid "LOW"
+msgstr "LAV"
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
+#. placeholder {0}: formatKbps(triggers.low)
+#: src/components/live/bitrate-pane.tsx
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
@@ -4792,10 +5034,6 @@ msgstr "Lav bitrate"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "LAV BITRATE"
-
-#: src/components/live/scene-grid.tsx
-msgid "LOW SCENE"
-msgstr "LOW-SCENE"
 
 #. placeholder {0}: addon.name
 #: src/components/billing/addon-card.tsx
@@ -4904,6 +5142,10 @@ msgstr "Margen fra kanterne (% af billedets højde)"
 #: src/components/support-access.tsx
 msgid "Mark as seen"
 msgstr "Marker som set"
+
+#: src/components/live/quick-actions.tsx
+msgid "Mark this moment"
+msgstr "Markér dette øjeblik"
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment on the stream"
@@ -5049,6 +5291,10 @@ msgstr "Moblin-bitrate {0} kbps"
 msgid "Moblin connected"
 msgstr "Moblin forbundet"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin connecting…"
+msgstr "Moblin opretter forbindelse…"
+
 #: src/lib/live-format.ts
 msgid "Moblin connection priorities off"
 msgstr "Moblin-forbindelsesprioriteter fra"
@@ -5098,6 +5344,10 @@ msgstr "Moblin-lys til"
 msgid "Moblin muted"
 msgstr "Moblin lydløs"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin not connected"
+msgstr "Moblin er ikke forbundet"
+
 #: src/components/moblin-settings.tsx
 msgid "Moblin password"
 msgstr "Moblin-adgangskode"
@@ -5106,9 +5356,17 @@ msgstr "Moblin-adgangskode"
 msgid "Moblin password refused"
 msgstr "Moblin-adgangskode afvist"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin paused"
+msgstr "Moblin er sat på pause"
+
 #: src/lib/live-format.ts
 msgid "Moblin problem"
 msgstr "Moblin-problem"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin ready"
+msgstr "Moblin er klar"
 
 #: src/lib/live-format.ts
 msgid "Moblin recording"
@@ -5142,6 +5400,10 @@ msgstr "Moblin stoppet"
 #: src/components/live/moblin-card.tsx
 msgid "Moblin stops sending, so the stream server loses the feed."
 msgstr "Moblin holder op med at sende, så stream-serveren mister signalet."
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin streaming"
+msgstr "Moblin streamer"
 
 #: src/lib/live-format.ts
 msgid "Moblin unmuted"
@@ -5233,9 +5495,23 @@ msgstr "Flere indstillinger"
 msgid "Move {0}"
 msgstr "Flyt {0}"
 
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} down"
+msgstr "Flyt {0} ned"
+
+#. placeholder {0}: title(id)
+#: src/components/live/pane-layout.tsx
+msgid "Move {0} up"
+msgstr "Flyt {0} op"
+
 #: src/components/scene-rules-section.tsx
 msgid "Move {label}"
 msgstr "Flyt {label}"
+
+#: src/components/live/pane-layout.tsx
+msgid "Move to a new row"
+msgstr "Flyt til en ny række"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
@@ -5266,9 +5542,10 @@ msgstr "Skifter til Free den {0}; {1} fortsætter indtil da."
 msgid "MRR"
 msgstr "MRR"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "ms"
-msgstr "ms"
+#: src/components/live/bitrate-pane.tsx
+#: src/components/live/server-card.tsx
+msgid "ms RTT"
+msgstr "ms RTT"
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5322,10 +5599,6 @@ msgstr "Kopiens navn"
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
 msgstr "Navngiv én enhed med op til 20 tegn, f.eks. plads."
-
-#: src/components/live/belabox-card.tsx
-msgid "Name this interface"
-msgstr "Navngiv dette interface"
 
 #: src/components/live/belabox-card.tsx
 msgid "Name, e.g. Phone A"
@@ -5585,6 +5858,10 @@ msgstr "intet signal"
 msgid "No feed"
 msgstr "Intet signal"
 
+#: src/components/live/bitrate-pane.tsx
+msgid "No feed <0>· bitrate unavailable</0>"
+msgstr "Intet signal <0>· bitrate ikke tilgængelig</0>"
+
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
 msgid "No feed for {0} min on BRB, so the stream was stopped"
@@ -5605,6 +5882,10 @@ msgstr "ingen instans"
 #: src/routes/_app/admin/status.tsx
 msgid "No instance has followed YouTube chats yet."
 msgstr "Ingen instans har fulgt YouTube-chats endnu."
+
+#: src/components/live/live-header.tsx
+msgid "No key starts or stops streaming or recording. Stopping asks to confirm."
+msgstr "Ingen tast starter eller stopper streaming eller optagelse. Stop kræver bekræftelse."
 
 #: src/components/connect-settings.tsx
 msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
@@ -5678,10 +5959,18 @@ msgstr "Ingen pris: det er gratisabonnementet."
 msgid "No programs have been added yet."
 msgstr "Der er ikke tilføjet nogen programmer endnu."
 
+#: src/components/live/scene-grid.tsx
+msgid "No role"
+msgstr "Ingen rolle"
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "No scene"
 msgstr "Ingen scene"
+
+#: src/components/live/scene-grid.tsx
+msgid "No scene matches “{search}”."
+msgstr "Ingen scene matcher “{search}”."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5706,13 +5995,17 @@ msgstr "Intet signal"
 msgid "No SIM card"
 msgstr "Intet SIM-kort"
 
+#: src/components/live/source-list.tsx
+msgid "No source matches “{search}”."
+msgstr "Ingen kilde matcher “{search}”."
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
 msgstr "Ingen statistik fra denne server."
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/bitrate-pane.tsx
 msgid "No stream server"
-msgstr "Ingen stream-server"
+msgstr "Ingen streamserver"
 
 #: src/components/history/raw-explorer.tsx
 msgid "No stream server reported stats during this stream."
@@ -5967,14 +6260,13 @@ msgid "not connected"
 msgstr "ikke forbundet"
 
 #: src/components/belabox/modem-panel.tsx
+#: src/components/live/obs-pane.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/routes/_app/$workspace/account.tsx
 msgid "Not connected"
 msgstr "Ikke forbundet"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
-#: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "IKKE FORBUNDET"
 
@@ -6026,6 +6318,10 @@ msgstr "Det blev ikke fundet"
 msgid "Not ignored"
 msgstr "Ikke ignoreret"
 
+#: src/components/live/source-list.tsx
+msgid "Not listed here. Tap to list it."
+msgstr "Ikke vist på listen her. Tryk for at vise den."
+
 #: src/components/admin/products.tsx
 msgid "Not listed. Workspaces that already have it still see it and can lower it."
 msgstr "Ikke opført. Arbejdsområder, der allerede har den, ser den stadig og kan sænke den."
@@ -6070,6 +6366,10 @@ msgstr "STREAMER IKKE"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Not suspended."
 msgstr "Ikke suspenderet."
+
+#: src/components/live/on-air-pane.tsx
+msgid "Not switching while paused"
+msgstr "Skifter ikke under pause"
 
 #: src/components/live/quick-actions.tsx
 msgid "Not yet"
@@ -6165,6 +6465,7 @@ msgstr "nu"
 
 #: src/components/connect-controls.tsx
 #: src/components/live/obs-stats-popover.tsx
+#: src/components/live/pane-layout-model.ts
 msgid "OBS"
 msgstr "OBS"
 
@@ -6219,6 +6520,9 @@ msgstr "OBS sendte intet billede: rammen tegnes uden det."
 msgid "OBS didn’t send a picture. Trying again…"
 msgstr "OBS sendte ikke noget billede. Prøver igen…"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
 #: src/components/switcher-status.tsx
 #: src/lib/live-format.ts
 msgid "OBS disconnected"
@@ -6227,6 +6531,22 @@ msgstr "OBS afbrudt"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS AFBRUDT"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · last known scenes"
+msgstr "OBS afbrudt · senest kendte scener"
+
+#: src/components/live/obs-preview.tsx
+msgid "OBS disconnected · last known state"
+msgstr "OBS afbrudt · senest kendte tilstand"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · no current scene data"
+msgstr "OBS afbrudt · ingen data om den aktuelle scene"
+
+#: src/components/live/monitors.tsx
+msgid "OBS disconnected · stream state unknown"
+msgstr "OBS afbrudt · streamens status ukendt"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6363,6 +6683,7 @@ msgstr "af stream-historik gemmes"
 msgid "Of the screen"
 msgstr "Af billedet"
 
+#: src/components/live/quick-actions.tsx
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "fra"
@@ -6374,6 +6695,10 @@ msgstr "fra"
 msgid "Off"
 msgstr "Fra"
 
+#: src/components/live/live-header.tsx
+msgid "Off air"
+msgstr "Ikke i luften"
+
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
 msgstr "Uden for sending er forhåndsvisningen skjult: rammen tegnes uden den."
@@ -6381,6 +6706,10 @@ msgstr "Uden for sending er forhåndsvisningen skjult: rammen tegnes uden den."
 #: src/components/live/obs-preview.tsx
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
 msgstr "Uden for sending er forhåndsvisningen skjult. Den vises igen, når streamen går live."
+
+#: src/components/live/monitors.tsx
+msgid "Off air: the picture is private"
+msgstr "Ikke i luften: billedet er privat"
 
 #: src/components/live/moblin-card.tsx
 msgid "Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one. Only SRTLA streams use these."
@@ -6398,7 +6727,6 @@ msgstr "Tilbydes"
 msgid "Offline"
 msgstr "Offline"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
 msgid "OFFLINE"
 msgstr "OFFLINE"
@@ -6440,14 +6768,24 @@ msgstr "på {0}"
 msgid "On {0}"
 msgstr "På {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/live-header.tsx
+#: src/components/live/on-air-pane.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "I luften"
 
-#: src/components/live/scene-grid.tsx
+#: src/components/live/monitors.tsx
+#: src/components/live/quick-actions.tsx
 msgid "ON AIR"
 msgstr "I LUFTEN"
+
+#. placeholder {0}: formatUptime(status.stream_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "ON AIR {0}"
+msgstr "I LUFTEN {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On command"
@@ -6623,6 +6961,10 @@ msgstr "Åbne invitationer"
 msgid "Open network: no password"
 msgstr "Åbent netværk: ingen adgangskode"
 
+#: src/components/live/obs-pane.tsx
+msgid "Open OBS with the NOALBS browser source active to see its stats."
+msgstr "Åbn OBS med NOALBS-browserkilden aktiv for at se statistikken."
+
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
 msgstr "Åbn indstillinger"
@@ -6676,6 +7018,7 @@ msgstr "Åbner Checkout…"
 msgid "Opening the workspace needs its permission. Everything you do there is shown to its owners and admins."
 msgstr "Det kræver dets tilladelse at åbne arbejdsområdet. Alt, hvad du gør der, vises for dets ejere og admins."
 
+#: src/components/live/live-header.tsx
 #: src/lib/permissions.ts
 msgid "Operator"
 msgstr "Operatør"
@@ -6688,6 +7031,10 @@ msgstr "Operatør"
 #: src/lib/belabox.ts
 msgid "Operator {saved}"
 msgstr "Operatør {saved}"
+
+#: src/components/live/live-header.tsx
+msgid "Operator shortcuts"
+msgstr "Operatørgenveje"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Optional"
@@ -6803,6 +7150,10 @@ msgstr "Ejer"
 msgid "Owners, admins and operators can use it."
 msgstr "Ejere, admins og operatører kan bruge den."
 
+#: src/components/live/live-header.tsx
+msgid "Page mode"
+msgstr "Sidetilstand"
+
 #: src/components/live/source-editor.tsx
 msgid "page URL"
 msgstr "sidens URL"
@@ -6839,14 +7190,14 @@ msgstr "Tidligere fakturaer beholder den e-mail og de kortcifre, der stod på de
 msgid "Pause, and resume when shown"
 msgstr "Sæt på pause, og fortsæt når den vises"
 
+#: src/components/live/quick-actions.tsx
+msgid "paused"
+msgstr "på pause"
+
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
 msgstr "Sat på pause"
-
-#: src/components/live/moblin-card.tsx
-msgid "PAUSED"
-msgstr "SAT PÅ PAUSE"
 
 #: src/components/switcher-status.tsx
 msgid "Paused · over the plan's switcher limit"
@@ -6973,6 +7324,10 @@ msgstr "Pipeline"
 msgid "Pixels cut off each side of the source, before it’s sized."
 msgstr "Pixels, der skæres af hver side af kilden, før den skaleres."
 
+#: src/components/live/pane-layout.tsx
+msgid "Place here"
+msgstr "Placér her"
+
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
 #: src/routes/_app/$workspace/overview.tsx
@@ -7073,8 +7428,31 @@ msgid "Presets"
 msgstr "Forudindstillinger"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/live/pane-layout-model.ts
+#: src/components/live/scene-grid.tsx
 msgid "Preview"
 msgstr "Forhåndsvisning"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW"
+msgstr "FORHÅNDSVISNING"
+
+#: src/components/live/scene-grid.tsx
+msgid "Preview · last known"
+msgstr "Forhåndsvisning · senest kendte"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW · LAST KNOWN"
+msgstr "FORHÅNDSVISNING · SENEST KENDTE"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/pane-layout-model.ts
+msgid "Preview / Program"
+msgstr "Forhåndsvisning / Program"
+
+#: src/components/live/monitors.tsx
+msgid "Preview and Program"
+msgstr "Forhåndsvisning og Program"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview settings"
@@ -7110,10 +7488,16 @@ msgstr "Pris-ID"
 msgid "Primary"
 msgstr "Hovedmenu"
 
+#. placeholder {0}: rank ?? server.priority
+#: src/components/live/server-card.tsx
+msgid "Priority {0}"
+msgstr "Prioritet {0}"
+
 #: src/components/live/moblin-card.tsx
 msgid "Priority: higher is used more when stable"
 msgstr "Prioritet: højere bruges mere, når den er stabil"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/login.tsx
@@ -7128,6 +7512,14 @@ msgstr "Problemer"
 #: src/routes/_app/admin/products.tsx
 msgid "Products"
 msgstr "Produkter"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · ACTIVE"
+msgstr "PROGRAM · AKTIV"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · LAST KNOWN"
+msgstr "PROGRAM · SENEST KENDTE"
 
 #: src/lib/live-format.ts
 msgid "Program added"
@@ -7180,10 +7572,6 @@ msgstr "Publisher (stream-ID)"
 msgid "Quality"
 msgstr "Kvalitet"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Quick actions"
-msgstr "Hurtige handlinger"
-
 #. placeholder {0}: connection.name
 #: src/components/live/moblin-card.tsx
 msgid "Raise {0}'s priority"
@@ -7209,25 +7597,29 @@ msgstr "Kan nås"
 msgid "Read more"
 msgstr "Læs mere"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "READY"
-msgstr "KLAR"
-
 #: src/components/admin/reason-dialog.tsx
 #: src/components/support/break-glass-dialog.tsx
 msgid "Reason"
 msgstr "Begrundelse"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
 
+#. placeholder {0}: formatUptime(status.recording_started_at, now)
+#: src/components/live/live-header.tsx
+#: src/components/live/quick-actions.tsx
+msgid "REC {0}"
+msgstr "REC {0}"
+
+#: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "REC paused"
-msgstr "REC sat på pause"
+msgstr "REC på pause"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Receiving"
@@ -7255,6 +7647,10 @@ msgstr "Forbind igen"
 msgid "Reconnect delay (s)"
 msgstr "Ventetid før genforbindelse (s)"
 
+#: src/components/live/quick-actions.tsx
+msgid "reconnect sources"
+msgstr "genopret forbindelse til kilder"
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "Forbind browserkilden igen?"
@@ -7280,10 +7676,6 @@ msgstr "Genopretter forbindelsen"
 msgid "Reconnecting {0}"
 msgstr "Genopretter forbindelsen til {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "RECONNECTING…"
-msgstr "GENOPRETTER FORBINDELSEN…"
-
 #: src/components/live/moblin-card.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Record"
@@ -7296,6 +7688,10 @@ msgstr "Optag under streaming"
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Recorded in the staff audit log."
 msgstr "Registreret i personalets revisionslog."
+
+#: src/components/live/quick-actions.tsx
+msgid "recording"
+msgstr "optagelse"
 
 #: src/components/live/moblin-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7334,6 +7730,7 @@ msgstr "Optagelsen forbliver slået til for {summary}."
 msgid "Recording stopped"
 msgstr "Optagelse stoppet"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7429,6 +7826,10 @@ msgstr "Fjern {name}?"
 msgid "Remove alias {alias}"
 msgstr "Fjern alias {alias}"
 
+#: src/components/live/pane-layout.tsx
+msgid "Remove empty slot"
+msgstr "Fjern tom plads"
+
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
 msgid "Remove from {0}…"
@@ -7445,6 +7846,11 @@ msgstr "Fjern adgangskode"
 #: src/components/connect-settings.tsx
 msgid "Remove program?"
 msgstr "Fjern program?"
+
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Remove row {0}"
+msgstr "Fjern række {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7549,6 +7955,10 @@ msgstr "Omdøb"
 msgid "Rename {0}"
 msgstr "Omdøb {0}"
 
+#: src/components/live/belabox-card.tsx
+msgid "Rename interface {title}"
+msgstr "Omdøb grænsefladen {title}"
+
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Renamed"
@@ -7619,6 +8029,25 @@ msgstr "Anmodningen mislykkedes ({0})"
 msgid "Requested an OBS log through Connect"
 msgstr "Bad om en OBS-log via Connect"
 
+#: src/components/live/pane-layout.tsx
+msgid "Reset"
+msgstr "Nulstil"
+
+#: src/components/live/pane-layout.tsx
+msgid "Reset to default"
+msgstr "Nulstil til standard"
+
+#. placeholder {0}: left.index + 1
+#. placeholder {1}: right.index + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize columns {0} and {1}"
+msgstr "Ændr størrelsen på kolonne {0} og {1}"
+
+#. placeholder {0}: source + 1
+#: src/components/live/pane-layout-resize.tsx
+msgid "Resize row {0} height"
+msgstr "Ændr højden på række {0}"
+
 #: src/components/connect-controls.tsx
 #: src/lib/connect.ts
 msgid "Restart OBS"
@@ -7663,6 +8092,11 @@ msgstr "Genoptag abonnementet for at ændre det."
 #: src/lib/support.ts
 msgid "Resumed the subscription"
 msgstr "Genoptog abonnementet"
+
+#: src/components/live/activity-feed.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Retry"
+msgstr "Prøv igen"
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -7751,6 +8185,11 @@ msgstr "Roller"
 msgid "Round-trip time"
 msgstr "Svartid (RTT)"
 
+#. placeholder {0}: visual.source + 1
+#: src/components/live/pane-layout.tsx
+msgid "Row {0}"
+msgstr "Række {0}"
+
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
 msgstr "RTMP-indgang - {stream}"
@@ -7806,6 +8245,7 @@ msgstr "Driver streamen: skifter scener, starter og stopper, ser statistik."
 #: src/components/belabox/settings-dialog.tsx
 #: src/components/connect-settings.tsx
 #: src/components/live/belabox-card.tsx
+#: src/components/live/pane-layout.tsx
 #: src/components/live/source-editor.tsx
 #: src/components/live/source-position.tsx
 #: src/components/moblin-settings.tsx
@@ -7950,6 +8390,10 @@ msgstr "Scene findes ikke i OBS"
 msgid "Scene overrides"
 msgstr "Scene-tilsidesættelser"
 
+#: src/components/live/scene-grid.tsx
+msgid "Scene selections"
+msgstr "Scenevalg"
+
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Sceneskift"
@@ -7962,6 +8406,7 @@ msgstr "Sceneskift bliver slået op her"
 msgid "Scene switches aren’t posted here"
 msgstr "Sceneskift bliver ikke slået op her"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/scene-grid.tsx
 #: src/components/scene-rules-section.tsx
 #: src/components/settings-hub.tsx
@@ -7973,10 +8418,6 @@ msgstr "Scener"
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
 msgstr "Scener og grupper kan ikke duplikeres her."
-
-#: src/components/live/scene-grid.tsx
-msgid "Scenes appear once OBS is connected."
-msgstr "Scener vises, når OBS er forbundet."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
@@ -8015,6 +8456,19 @@ msgstr "Søg efter navn, URL eller ID"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Search by workspace or switcher"
 msgstr "Søg efter arbejdsområde eller switcher"
+
+#: src/components/live/live-header.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes"
+msgstr "Søg i scener"
+
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes · /"
+msgstr "Søg i scener · /"
+
+#: src/components/live/source-list.tsx
+msgid "Search sources"
+msgstr "Søg i kilder"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8267,6 +8721,10 @@ msgstr "Delt NOALBS-bot"
 msgid "Shifts the audio against the video, {AUDIO_DELAY_MIN} to {AUDIO_DELAY_MAX}."
 msgstr "Forskyder lyden i forhold til videoen, {AUDIO_DELAY_MIN} til {AUDIO_DELAY_MAX}."
 
+#: src/components/live/live-header.tsx
+msgid "Shortcuts"
+msgstr "Genveje"
+
 #: src/components/history/raw-explorer.tsx
 #: src/routes/_app/admin/audit.tsx
 #: src/routes/_app/admin/status.tsx
@@ -8312,6 +8770,14 @@ msgstr "Vis intet, når afspilningen slutter"
 msgid "Show older"
 msgstr "Vis ældre"
 
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as grid"
+msgstr "Vis scener som gitter"
+
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as list"
+msgstr "Vis scener som liste"
+
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
 msgstr "Vis følsomme værdier"
@@ -8323,6 +8789,10 @@ msgstr "Vis BRB-scenen, når streamen stopper på grund af et raid."
 #: src/components/live/obs-preview.tsx
 msgid "Show the OBS preview"
 msgstr "Vis OBS-forhåndsvisningen"
+
+#: src/components/live/live-header.tsx
+msgid "Show the sidebar (F)"
+msgstr "Vis sidepanelet (F)"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the Starting scene when the stream starts."
@@ -8341,6 +8811,10 @@ msgstr "Viste eller skjulte en kilde"
 msgid "Showing"
 msgstr "Vises"
 
+#: src/components/live/source-list.tsx
+msgid "Shown"
+msgstr "Vist"
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8348,8 +8822,8 @@ msgid "SHOWN"
 msgstr "VISES"
 
 #: src/components/live/source-list.tsx
-msgid "SHOWN · PARENT HIDDEN"
-msgstr "VISES · OVERORDNET SKJULT"
+msgid "Shown · parent hidden"
+msgstr "Vist · overordnet skjult"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
@@ -8507,9 +8981,11 @@ msgid "Sort"
 msgstr "Sorter"
 
 #: src/components/live/source-editor.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Source"
 msgstr "Kilde"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/live/source-list.tsx
 msgid "Sources"
 msgstr "Kilder"
@@ -8517,6 +8993,10 @@ msgstr "Kilder"
 #: src/components/live/source-list.tsx
 msgid "Sources appear once OBS is connected."
 msgstr "Kilder vises, når OBS er forbundet."
+
+#: src/components/live/live-header.tsx
+msgid "Space"
+msgstr "Mellemrum"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
@@ -8651,6 +9131,7 @@ msgstr "Startede eller stoppede optagelse"
 msgid "Started or stopped the stream"
 msgstr "Startede eller stoppede streamen"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Starting"
@@ -8716,6 +9197,7 @@ msgstr "Stealth til"
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/quick-actions.tsx
 msgid "Stop"
 msgstr "Stop"
 
@@ -8866,6 +9348,7 @@ msgstr "Stream-server"
 msgid "Stream server not found"
 msgstr "Stream-serveren blev ikke fundet"
 
+#: src/components/live/pane-layout-model.ts
 #: src/components/settings-hub.tsx
 #: src/components/switcher-page.tsx
 #: src/lib/organizations.ts
@@ -8884,9 +9367,9 @@ msgstr "Stream-servere pr. switcher"
 msgid "Stream started"
 msgstr "Stream startet"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Stream status"
-msgstr "Stream-status"
+#: src/components/live/on-air-pane.tsx
+msgid "Stream state unknown · waiting for OBS"
+msgstr "Streamens status ukendt · venter på OBS"
 
 #: src/lib/live-format.ts
 msgid "Stream stopped"
@@ -8900,10 +9383,9 @@ msgstr "stream-URL"
 msgid "Stream URL"
 msgstr "Stream-URL"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "STREAMING"
-msgstr "STREAMER"
+#: src/components/live/live-header.tsx
+msgid "Streamer"
+msgstr "Streamer"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8944,6 +9426,10 @@ msgstr "Stripe testtilstand"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Stuck on a step? The <0>quick start guide</0> walks through it, and <1>how NOALBS connects</1> explains where your video goes."
 msgstr "Sidder du fast på et trin? <0>Kvikstartsguiden</0> gennemgår det, og <1>sådan forbinder NOALBS</1> forklarer, hvor din video går hen."
+
+#: src/components/live/monitors.tsx
+msgid "Studio mode"
+msgstr "Studietilstand"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Subscribers"
@@ -9026,6 +9512,10 @@ msgstr "Suspendering"
 msgid "Suspension lifted"
 msgstr "Suspendering ophævet"
 
+#: src/components/live/pane-layout.tsx
+msgid "Swap panes"
+msgstr "Byt om på paneler"
+
 #: src/components/chat/chat-links.tsx
 msgid "Switch alerts are off for this switcher. <0>Turn on</0>"
 msgstr "Skiftnotifikationer er slået fra for denne switcher. <0>Slå til</0>"
@@ -9107,6 +9597,11 @@ msgstr "Skifte til årlig betaling?"
 #: src/components/app-shell.tsx
 msgid "Switch workspace"
 msgstr "Skift arbejdsområde"
+
+#: src/components/live/monitors.tsx
+#: src/components/live/on-air-pane.tsx
+msgid "Switched by {by}"
+msgstr "Skiftet af {by}"
 
 #: src/lib/support.ts
 msgid "Switched scene"
@@ -9196,13 +9691,18 @@ msgstr "Synkroniseret fra OBS"
 msgid "Synced from OBS {0}"
 msgstr "Synkroniseret fra OBS {0}"
 
+#: src/components/live/live-header.tsx
+#: src/components/live/monitors.tsx
+msgid "Take"
+msgstr "Take"
+
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
 msgstr "Tryk på indgange for at vise eller skjule dem her. Kun denne browser husker det, og OBS ændres ikke."
 
 #: src/components/live/scene-grid.tsx
-msgid "Tap scenes to show or hide them here. Only this browser remembers it; the scene on air always shows."
-msgstr "Tryk på scener for at vise eller skjule dem her. Kun denne browser husker det; scenen i luften vises altid."
+msgid "Tap scenes below to show or hide them here. Only this browser remembers it; the scene on air always shows."
+msgstr "Tryk på scenerne nedenfor for at vise eller skjule dem her. Kun denne browser husker det; scenen i luften vises altid."
 
 #: src/components/live/source-list.tsx
 msgid "Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9453,6 +9953,10 @@ msgstr "Browserkilden mistede OBS"
 msgid "The browser source reached OBS"
 msgstr "Browserkilden nåede OBS"
 
+#: src/components/live/monitors.tsx
+msgid "The cued scene"
+msgstr "Den klargjorte scene"
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
 msgstr "Det nuværende link holder op med at virke, så du skal indsætte det nye i OBS."
@@ -9460,6 +9964,10 @@ msgstr "Det nuværende link holder op med at virke, så du skal indsætte det ny
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS. Do this if the link leaked."
 msgstr "Det nuværende link holder op med at virke, så du skal indsætte det nye i OBS. Gør dette, hvis linket er lækket."
+
+#: src/components/live/operator-state.ts
+msgid "the dashboard"
+msgstr "dashboardet"
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -9619,6 +10127,10 @@ msgstr "Forhåndsvisningen er slået fra. Slå den til for at se, hvad OBS viser
 #: src/lib/api-messages.ts
 msgid "The preview is only shown while the stream is live."
 msgstr "Forhåndsvisningen vises kun, mens streamen er live."
+
+#: src/components/live/monitors.tsx
+msgid "The preview is turned off"
+msgstr "Forhåndsvisningen er slået fra"
 
 #: src/lib/obs-preview.ts
 msgid "The preview shows only while the stream is live."
@@ -9966,6 +10478,7 @@ msgstr "Denne scene har ingen kilder."
 msgid "This server didn’t report any stats during this stream."
 msgstr "Denne server rapporterede ingen statistik under denne stream."
 
+#: src/components/live/activity-feed.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "This stream"
 msgstr "Denne stream"
@@ -10076,6 +10589,14 @@ msgstr "Overdrog ejerskabet"
 msgid "Transferring…"
 msgstr "Overdrager…"
 
+#: src/components/live/monitors.tsx
+msgid "Transition"
+msgstr "Overgang"
+
+#: src/components/live/monitors.tsx
+msgid "Transition duration"
+msgstr "Overgangens varighed"
+
 #: src/lib/support.ts
 msgid "Tried to change support access"
 msgstr "Forsøgte at ændre supportadgang"
@@ -10169,6 +10690,10 @@ msgstr "Skriv tekst i stedet"
 msgid "Unchanged"
 msgstr "Uændret"
 
+#: src/components/live/pane-layout.tsx
+msgid "Undo"
+msgstr "Fortryd"
+
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
 msgstr "Fortryd ændringer"
@@ -10223,6 +10748,10 @@ msgstr "Fjernede tilknytningen af en chatkanal fra {target}"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Unlinking a channel removes it from every switcher, in every workspace: the bot leaves it. Its owner can link it again."
 msgstr "Når en kanals tilknytning fjernes, forsvinder den fra alle switchere i alle arbejdsområder: botten forlader den. Dens ejer kan knytte den til igen."
+
+#: src/components/live/source-list.tsx
+msgid "UNLISTED"
+msgstr "IKKE PÅ LISTEN"
 
 #: src/components/live/audio-mixer.tsx
 msgid "Unmute"
@@ -10447,6 +10976,10 @@ msgstr "Venter på OBS"
 msgid "Waiting for the browser source…"
 msgstr "Venter på browserkilden…"
 
+#: src/components/live/monitors.tsx
+msgid "Waiting for the first picture…"
+msgstr "Venter på det første billede…"
+
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
 msgstr "Venter: skifter, når OBS streamer"
@@ -10500,6 +11033,7 @@ msgstr "Hvad skete der? (valgfrit)"
 msgid "What its clients use of the switchers it was given."
 msgstr "Hvad dens kunder bruger af de switchere, den fik."
 
+#: src/components/live/monitors.tsx
 #: src/components/live/obs-preview.tsx
 msgid "What OBS is showing"
 msgstr "Hvad OBS viser"
@@ -10849,6 +11383,7 @@ msgid "You do not have permission to do this in this workspace"
 msgstr "Du har ikke tilladelse til at gøre dette i dette arbejdsområde"
 
 #: src/components/connect-controls.tsx
+#: src/components/live/obs-pane.tsx
 msgid "You don’t have access to control this computer."
 msgstr "Du har ikke adgang til at styre denne computer."
 

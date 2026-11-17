@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsAudioQuery, queryKeys } from "@/api/queries";
 import type { AudioUpdate, ChannelLevel, ObsAudio, ObsAudioInput } from "@/api/types";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -29,6 +30,7 @@ import {
 import { errorMessage } from "@/lib/errors";
 import { sceneKey, useHiddenAudio } from "@/lib/hidden-scenes";
 import { cn } from "@/lib/utils";
+import { PaneTitleRow } from "./pane-title-row";
 
 type Path = { workspace_id: string; switcher_id: string };
 
@@ -228,7 +230,7 @@ function paint(el: HTMLDivElement, state: MeterState) {
 /**
  * OBS's Audio Mixer for the scene on air: a strip per input with its meters
  * (while levels are on, which has OBS send them), a fader and a mute button. Levels are
- * off until the viewer turns them on (per browser); they stop while the
+ * a per-browser choice; they stop while the
  * tab is hidden. "Customize" hides inputs from the card for this viewer (on every
  * scene), like the Sources card.
  */
@@ -237,14 +239,16 @@ export function AudioMixer({
   scene,
   canControl,
   obsConnected,
+  defaultMeters = false,
 }: {
   path: Path;
   /** The scene on air (UUID, else name), so a switch loads the new scene's inputs. */
   scene: string | null;
   canControl: boolean;
   obsConnected: boolean;
+  defaultMeters?: boolean;
 }) {
-  const [metersOn, setMetersOn] = useMetersSetting();
+  const [metersOn, setMetersOn] = useMetersSetting(defaultMeters);
   const [hidden, setHidden] = useHiddenAudio(path.switcher_id);
   const [editing, setEditing] = useState(false);
   const visible = useDocumentVisible();
@@ -315,27 +319,29 @@ export function AudioMixer({
 
   return (
     <section aria-label={t`Audio`} className="flex flex-col gap-2.5">
-      <div className="flex min-h-8 items-center justify-between gap-2">
+      <PaneTitleRow className="justify-between">
         <h2 className="font-semibold">
           <Trans>Audio</Trans>
         </h2>
         {obsConnected &&
           (editing ? (
             <span className="flex items-center gap-1">
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setAllHere(hiddenHere === 0)}
                 className={cn(HEADER_BUTTON, "text-muted-foreground hover:text-foreground")}
               >
                 {hiddenHere > 0 ? t`Show all` : t`Hide all`}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setEditing(false)}
                 className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
               >
                 <Trans>Done</Trans>
-              </button>
+              </Button>
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -353,18 +359,19 @@ export function AudioMixer({
                 />
               </span>
               {inputs.length > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   type="button"
                   onClick={() => setEditing(true)}
                   className={cn(HEADER_BUTTON, "ml-1 text-primary")}
                 >
                   <SlidersHorizontal className="size-3.5" />
                   <Trans>Customize</Trans>
-                </button>
+                </Button>
               )}
             </span>
           ))}
-      </div>
+      </PaneTitleRow>
 
       {editing && (
         <p className="text-xs text-muted-foreground">
@@ -393,12 +400,13 @@ export function AudioMixer({
       )}
 
       {editing && inputs.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {inputs.map((input) => {
             const key = sceneKey(input);
             const shown = !hiddenSet.has(key);
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={input.name}
                 type="button"
                 aria-pressed={shown}
@@ -427,24 +435,25 @@ export function AudioMixer({
                 >
                   {shown ? t`SHOWN` : t`HIDDEN`}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
       )}
 
       {!editing && inputs.length > 0 && listed.length === 0 && (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setEditing(true)}
           className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
         >
           <Trans>All audio inputs are hidden. Tap to pick some.</Trans>
-        </button>
+        </Button>
       )}
 
       {!editing && listed.length > 0 && (
-        <div className="flex flex-col divide-y divide-divider rounded-2xl border bg-card">
+        <div className="flex flex-col divide-y divide-divider">
           {listed.map((input) => (
             <AudioStrip
               key={input.name}
@@ -490,8 +499,9 @@ function AudioStrip({
 }) {
   const Icon = input.muted ? VolumeX : Volume2;
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5">
-      <button
+    <div className="flex items-center gap-3 py-3">
+      <Button
+        variant="ghost"
         type="button"
         aria-pressed={input.muted}
         aria-label={`${input.muted ? t`Unmute` : t`Mute`} ${input.name}`}
@@ -506,7 +516,7 @@ function AudioStrip({
         )}
       >
         <Icon className="size-4.5" aria-hidden="true" />
-      </button>
+      </Button>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-semibold">{input.name}</span>
@@ -582,7 +592,7 @@ function ChannelMeter({
 /** -60 … 0 dB under the meters, lined up with them. */
 function Scale() {
   return (
-    <div className="flex gap-3 px-3 pt-1 pb-2" aria-hidden="true">
+    <div className="flex gap-3 pt-1 pb-2" aria-hidden="true">
       <span className="w-9 shrink-0" />
       <div className="relative h-3.5 flex-1 font-mono text-[10px] text-muted-foreground">
         {SCALE_TICKS.map((db) => (

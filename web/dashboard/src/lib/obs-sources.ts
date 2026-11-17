@@ -6,6 +6,31 @@ export function sourceKey(source: ObsSource): string {
   return `${source.parent_is_group ? "group" : "scene"}:${source.parent}:${source.item_id}`;
 }
 
+/** Search reveals ancestor groups; collapsed branches reopen only for the search. */
+export function visibleSourceKeys(
+  sources: ObsSource[],
+  search: string,
+  collapsed: Set<string>,
+): Set<string> {
+  const query = search.trim().toLowerCase();
+  const keys = new Set<string>();
+  const ancestors: ObsSource[] = [];
+  for (const source of sources) {
+    ancestors.length = source.depth;
+    const parents = ancestors.filter(Boolean);
+    if (query) {
+      if ([source, ...parents].some((item) => item.name.toLowerCase().includes(query))) {
+        keys.add(sourceKey(source));
+        for (const parent of parents) keys.add(sourceKey(parent));
+      }
+    } else if (!parents.some((parent) => collapsed.has(sourceKey(parent)))) {
+      keys.add(sourceKey(source));
+    }
+    ancestors[source.depth] = source;
+  }
+  return keys;
+}
+
 /**
  * Whether each source (in the API's order: nested items right after their
  * scene or group) shows on stream: its own eye and every enclosing one's.
@@ -125,6 +150,32 @@ export function sourceSections(sources: ObsSource[]): SourceSection[] {
     section.items.push({ source, shown: shown[index] ?? false });
   });
   return [...sections.values()];
+}
+
+/** Contiguous sections preserve tree order, keeping search hits beside their ancestors. */
+export function sourceTreeSections(sources: ObsSource[]): SourceSection[] {
+  const bySource = new Map<string, SourceSection>(
+    sourceSections(sources).flatMap((section) =>
+      section.items.map((item): [string, SourceSection] => [
+        sourceKey(item.source),
+        { ...section, items: [item] },
+      ]),
+    ),
+  );
+  const result: SourceSection[] = [];
+  for (const source of sources) {
+    const section = bySource.get(sourceKey(source));
+    if (!section) continue;
+    const previous = result.at(-1);
+    if (
+      previous &&
+      previous.parent === section.parent &&
+      previous.parentIsGroup === section.parentIsGroup
+    )
+      previous.items.push(...section.items);
+    else result.push(section);
+  }
+  return result;
 }
 
 /** The sections without the sources removed from the list (`sceneKey`s); empty sections go too. */
