@@ -468,6 +468,11 @@ msgstr "Подписки на события: {0} (записано {1})."
 msgid "{0} for this combination"
 msgstr "{0} для этой комбинации"
 
+#. placeholder {0}: transition.name
+#: src/components/live/monitors.tsx
+msgid "{0} has a fixed duration"
+msgstr ""
+
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
 msgid "{0} hasn’t let NOALBS support in"
@@ -863,6 +868,10 @@ msgstr "Команда {managedBy} может этим пользоваться.
 msgid "{managedBy}’s team sees it off air too. Admins and operators see it only while live."
 msgstr "Команда {managedBy} тоже видит его вне эфира. Администраторы и операторы видят его только в эфире."
 
+#: src/components/live/quick-actions.tsx
+msgid "{markerCount} this stream"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
 msgstr "{name} больше не продаётся: {label}"
@@ -1069,6 +1078,10 @@ msgstr "1 кадр за {0} с"
 msgid "1 to {NAME_MAX_BYTES} characters"
 msgstr "От 1 до {NAME_MAX_BYTES} символов"
 
+#: src/components/live/scene-grid.tsx
+msgid "1–9: first nine scenes · /: search"
+msgstr ""
+
 #: src/lib/support.ts
 msgid "24 hours"
 msgstr "24 часа"
@@ -1237,6 +1250,14 @@ msgstr "Аккаунт не найден"
 #: src/components/app-shell.tsx
 msgid "Account settings"
 msgstr "Настройки аккаунта"
+
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
+msgid "Actions"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Active"
+msgstr ""
 
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
@@ -1714,6 +1735,10 @@ msgstr "Попроси одного из владельцев или админ�
 msgid "Asked the browser source to reconnect"
 msgstr "Источник «Браузер» попросили переподключиться"
 
+#: src/components/live/quick-actions.tsx
+msgid "asks to confirm"
+msgstr ""
+
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
 #: src/lib/live-format.ts
@@ -1996,14 +2021,6 @@ msgstr "Оплата выкл."
 msgid "Billing period"
 msgstr "Период оплаты"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate"
-msgstr "Битрейт"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Bitrate · {serverName}"
-msgstr "Битрейт · {serverName}"
-
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "bitrate {0} kbps"
@@ -2067,19 +2084,18 @@ msgstr "Снизу слева"
 msgid "Bottom right"
 msgstr "Снизу справа"
 
+#: src/components/live/scene-grid.tsx
+msgid "BRB"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "BRB {0}"
 msgstr "BRB {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "BRB / offline"
 msgstr "BRB / офлайн"
-
-#: src/components/live/scene-grid.tsx
-msgid "BRB SCENE"
-msgstr "СЦЕНА BRB"
 
 #: src/components/live/source-editor.tsx
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
@@ -2448,6 +2464,10 @@ msgstr "Выбирается свитчером по твоему битрейт
 msgid "Clear"
 msgstr "Очистить"
 
+#: src/components/live/scene-grid.tsx
+msgid "Click to cue · Shift+click cuts"
+msgstr ""
+
 #: src/lib/api-messages.ts
 msgid "Client not found"
 msgstr "Клиент не найден"
@@ -2726,12 +2746,6 @@ msgstr "Подключение отменено."
 msgid "Connecting…"
 msgstr "Подключение…"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "CONNECTING…"
-msgstr "ПОДКЛЮЧЕНИЕ…"
-
 #: src/lib/api-messages.ts
 msgid "Connection not found"
 msgstr "Соединение не найдено"
@@ -2836,6 +2850,14 @@ msgstr "Не удалось подключить аккаунт. Попробу�
 #: src/lib/chat.ts
 msgid "Couldn’t connect. Please try again."
 msgstr "Не удалось подключиться. Попробуй ещё раз."
+
+#: src/components/live/activity-feed.tsx
+msgid "Couldn’t load activity."
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Couldn’t load scenes."
+msgstr ""
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3025,6 +3047,15 @@ msgstr "Обрезать справа"
 msgid "Crop top"
 msgstr "Обрезать сверху"
 
+#. placeholder {0}: scene.name
+#: src/components/live/scene-grid.tsx
+msgid "Cue {0}"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "Cue a scene below"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Currency"
 msgstr "Валюта"
@@ -3086,10 +3117,12 @@ msgid "Customers’ own bots"
 msgstr "Собственные боты конечных клиентов"
 
 #: src/components/live/audio-mixer.tsx
-#: src/components/live/scene-grid.tsx
-#: src/components/live/source-list.tsx
 msgid "Customize"
 msgstr "Настроить"
+
+#: src/components/live/monitors.tsx
+msgid "Cut"
+msgstr ""
 
 #: src/components/app-shell.tsx
 msgid "Dark"
@@ -3356,6 +3389,10 @@ msgstr "Перетаскивание"
 msgid "Drag across a chart to zoom in"
 msgstr "Проведи по графику, чтобы приблизить"
 
+#: src/components/live/source-list.tsx
+msgid "Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t changed by it."
+msgstr ""
+
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
 msgstr "Пропущенные кадры"
@@ -3386,7 +3423,6 @@ msgid "Each server can override the LIVE, LOW and BRB scenes, e.g. a different o
 msgstr "Каждый сервер может заменить сцены LIVE, LOW и BRB, например на другой оверлей для резервного канала."
 
 #: src/components/connect-settings.tsx
-#: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
 #: src/routes/_app/admin/notices.tsx
 msgid "Edit"
@@ -3416,6 +3452,10 @@ msgstr "Изменить объявление"
 #: src/components/connect-settings.tsx
 msgid "Edit program"
 msgstr "Изменить программу"
+
+#: src/components/live/scene-grid.tsx
+msgid "Edit scenes"
+msgstr ""
 
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
@@ -3495,6 +3535,30 @@ msgstr "Включается через <0>dev_login = true</0>. Никогда 
 msgid "Encoder"
 msgstr "Энкодер"
 
+#: src/components/live/belabox-card.tsx
+msgid "Encoder connecting…"
+msgstr ""
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder key refused"
+msgstr ""
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder not connected"
+msgstr ""
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder offline"
+msgstr ""
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder ready"
+msgstr ""
+
+#: src/components/live/belabox-card.tsx
+msgid "Encoder streaming"
+msgstr ""
+
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
 msgstr "Задержка кодирования"
@@ -3537,6 +3601,7 @@ msgstr "Завершено {0}"
 msgid "Ended a notice"
 msgstr "Завершено объявление"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Ending"
@@ -3678,6 +3743,11 @@ msgstr "Ровно по рамке, даже если искажается."
 #: src/components/live/source-editor.tsx
 msgid "Existing source"
 msgstr "Существующий источник"
+
+#. placeholder {0}: source.name
+#: src/components/live/source-list.tsx
+msgid "Expand or collapse {0}"
+msgstr ""
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -3878,6 +3948,7 @@ msgid "Hid {0}"
 msgstr "Скрыто: {0}"
 
 #: src/components/admin/products.tsx
+#: src/components/live/source-list.tsx
 #: src/lib/billing.ts
 msgid "Hidden"
 msgstr "Скрыто"
@@ -4087,8 +4158,8 @@ msgid "in use"
 msgstr "используется"
 
 #: src/components/live/server-card.tsx
-msgid "IN USE"
-msgstr "ИСПОЛЬЗУЕТСЯ"
+msgid "In use"
+msgstr ""
 
 #: src/routes/_app/admin/users/index.tsx
 msgid "Inactive 30+ days"
@@ -4241,10 +4312,6 @@ msgid "It's in use now. Reload and try again."
 msgstr "Сейчас это используется. Обнови страницу и попробуй ещё раз."
 
 #: src/components/live/scene-grid.tsx
-msgid "It’s on air: switch to another scene first."
-msgstr "Она в эфире: сначала переключись на другую сцену."
-
-#: src/components/live/scene-grid.tsx
 msgid "It’s removed from OBS right away, with what’s on it: OBS deletes the sources no other scene uses, with their settings."
 msgstr "Она сразу удаляется из OBS вместе со всем, что на ней: OBS удаляет источники, которые не используются в других сценах, вместе с их настройками."
 
@@ -4255,6 +4322,10 @@ msgstr "Он сразу удаляется из этой сцены в OBS, пр
 #: src/components/live/source-list.tsx
 msgid "It’s removed in OBS right away, on stream. If no other scene uses it, OBS deletes it with its settings."
 msgstr "Он сразу удаляется в OBS, прямо в эфире. Если он не используется в других сценах, OBS удаляет его вместе с настройками."
+
+#: src/components/live/scene-grid.tsx
+msgid "It’s the current scene: switch to another scene first."
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
@@ -4287,6 +4358,10 @@ msgstr "Остальным управляют его собственные ад
 #: src/components/live/source-position.tsx
 msgid "Its own size."
 msgstr "Его собственный размер."
+
+#: src/components/live/monitors.tsx
+msgid "Its picture is private until it’s on air"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4359,7 +4434,6 @@ msgstr "Присоединение…"
 #: src/components/live/belabox-card.tsx
 #: src/components/live/obs-stats-popover.tsx
 #: src/components/live/server-card.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "kbps"
 msgstr "kbps"
 
@@ -4408,10 +4482,6 @@ msgstr "Сохраняет {0} до конца периода, затем пер
 msgid "Kept for every client."
 msgstr "Сохранено для всех клиентов."
 
-#: src/components/live/belabox-card.tsx
-msgid "KEY REFUSED"
-msgstr "КЛЮЧ ОТКЛОНЁН"
-
 #: src/routes/_app/admin/status.tsx
 msgid "Kick"
 msgstr "Kick"
@@ -4443,10 +4513,6 @@ msgstr "Типы:"
 msgid "Language"
 msgstr "Язык"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Last 2 min"
-msgstr "Последние 2 мин"
-
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
 msgid "Last active"
@@ -4458,6 +4524,10 @@ msgstr "Последняя активность"
 #: src/routes/_app/admin/status.tsx
 msgid "Last error {0}{1}: {2}"
 msgstr "Последняя ошибка {0}{1}: {2}"
+
+#: src/components/live/scene-grid.tsx
+msgid "Last known"
+msgstr ""
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
@@ -4618,9 +4688,17 @@ msgstr "Привязать цену"
 msgid "Links copied"
 msgstr "Ссылки скопированы"
 
+#: src/components/live/source-list.tsx
+msgid "LISTED"
+msgstr ""
+
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
 msgstr "В списке как «Сейчас недоступно»: купить больше никто не может, у кого есть, сохраняют."
+
+#: src/components/live/source-list.tsx
+msgid "Listed here. Tap to hide it from this list."
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Listed, but nobody can buy it yet."
@@ -4637,6 +4715,10 @@ msgstr "В списке, но купить пока никто не может."
 #: src/routes/_app/workspaces/live.tsx
 msgid "Live"
 msgstr "Эфир"
+
+#: src/components/live/scene-grid.tsx
+msgid "LIVE"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
@@ -4657,10 +4739,6 @@ msgstr "Сейчас в эфире"
 #: src/routes/_app/$workspace/s/$switcher/history/index.tsx
 msgid "LIVE NOW"
 msgstr "СЕЙЧАС В ЭФИРЕ"
-
-#: src/components/live/scene-grid.tsx
-msgid "LIVE SCENE"
-msgstr "СЦЕНА LIVE"
 
 #: src/lib/stream-server-kinds.ts
 msgid "Live stats push"
@@ -4696,6 +4774,10 @@ msgstr "Загрузка логов…"
 #: src/components/connect-settings.tsx
 msgid "Loading programs…"
 msgstr "Загрузка программ…"
+
+#: src/components/live/monitors.tsx
+msgid "Loading transitions…"
+msgstr ""
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -4779,9 +4861,12 @@ msgstr "Повторять плейлист"
 msgid "Low"
 msgstr "Низкий"
 
+#: src/components/live/scene-grid.tsx
+msgid "LOW"
+msgstr ""
+
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Low {0}"
 msgstr "LOW {0}"
 
@@ -4792,10 +4877,6 @@ msgstr "Низкий битрейт"
 #: src/components/live/feed-state.ts
 msgid "LOW BITRATE"
 msgstr "НИЗКИЙ БИТРЕЙТ"
-
-#: src/components/live/scene-grid.tsx
-msgid "LOW SCENE"
-msgstr "СЦЕНА LOW"
 
 #. placeholder {0}: addon.name
 #: src/components/billing/addon-card.tsx
@@ -4904,6 +4985,10 @@ msgstr "Отступ от краёв (% от высоты изображения
 #: src/components/support-access.tsx
 msgid "Mark as seen"
 msgstr "Отметить как просмотренное"
+
+#: src/components/live/quick-actions.tsx
+msgid "Mark this moment"
+msgstr ""
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment on the stream"
@@ -5049,6 +5134,10 @@ msgstr "Битрейт Moblin {0} kbps"
 msgid "Moblin connected"
 msgstr "Moblin подключён"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin connecting…"
+msgstr ""
+
 #: src/lib/live-format.ts
 msgid "Moblin connection priorities off"
 msgstr "Приоритеты соединений Moblin выкл."
@@ -5098,6 +5187,10 @@ msgstr "Подсветка Moblin вкл."
 msgid "Moblin muted"
 msgstr "Звук Moblin выключен"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin not connected"
+msgstr ""
+
 #: src/components/moblin-settings.tsx
 msgid "Moblin password"
 msgstr "Пароль Moblin"
@@ -5106,9 +5199,17 @@ msgstr "Пароль Moblin"
 msgid "Moblin password refused"
 msgstr "Пароль Moblin отклонён"
 
+#: src/components/live/moblin-card.tsx
+msgid "Moblin paused"
+msgstr ""
+
 #: src/lib/live-format.ts
 msgid "Moblin problem"
 msgstr "Проблема Moblin"
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin ready"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Moblin recording"
@@ -5142,6 +5243,10 @@ msgstr "Moblin остановлен"
 #: src/components/live/moblin-card.tsx
 msgid "Moblin stops sending, so the stream server loses the feed."
 msgstr "Moblin перестаёт отправлять данные, и стрим-сервер теряет сигнал."
+
+#: src/components/live/moblin-card.tsx
+msgid "Moblin streaming"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Moblin unmuted"
@@ -5266,9 +5371,9 @@ msgstr "Переход на Free {0}; {1} остаётся до этой дат�
 msgid "MRR"
 msgstr "MRR"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "ms"
-msgstr "ms"
+#: src/components/live/server-card.tsx
+msgid "ms RTT"
+msgstr ""
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5322,10 +5427,6 @@ msgstr "Название копии"
 #: src/lib/api-messages.ts
 msgid "Name one unit in up to 20 characters, e.g. slot."
 msgstr "Назови одну единицу, до 20 символов, например слот."
-
-#: src/components/live/belabox-card.tsx
-msgid "Name this interface"
-msgstr "Назови этот интерфейс"
 
 #: src/components/live/belabox-card.tsx
 msgid "Name, e.g. Phone A"
@@ -5678,10 +5779,18 @@ msgstr "Без цены: это бесплатный тариф."
 msgid "No programs have been added yet."
 msgstr "Программы пока не добавлены."
 
+#: src/components/live/scene-grid.tsx
+msgid "No role"
+msgstr ""
+
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
 msgid "No scene"
 msgstr "Нет сцены"
+
+#: src/components/live/scene-grid.tsx
+msgid "No scene matches “{search}”."
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5706,13 +5815,13 @@ msgstr "Нет сигнала"
 msgid "No SIM card"
 msgstr "Нет SIM-карты"
 
+#: src/components/live/source-list.tsx
+msgid "No source matches “{search}”."
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
 msgstr "Нет статистики с этого сервера."
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "No stream server"
-msgstr "Нет стрим-сервера"
 
 #: src/components/history/raw-explorer.tsx
 msgid "No stream server reported stats during this stream."
@@ -5972,9 +6081,7 @@ msgstr "не подключён"
 msgid "Not connected"
 msgstr "Не подключено"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
-#: src/components/live/moblin-card.tsx
 msgid "NOT CONNECTED"
 msgstr "НЕ ПОДКЛЮЧЕНО"
 
@@ -6025,6 +6132,10 @@ msgstr "Не найдено"
 #: src/lib/api-messages.ts
 msgid "Not ignored"
 msgstr "Не игнорируется"
+
+#: src/components/live/source-list.tsx
+msgid "Not listed here. Tap to list it."
+msgstr ""
 
 #: src/components/admin/products.tsx
 msgid "Not listed. Workspaces that already have it still see it and can lower it."
@@ -6219,6 +6330,7 @@ msgstr "OBS не прислал картинку: рамка рисуется б
 msgid "OBS didn’t send a picture. Trying again…"
 msgstr "OBS не прислал картинку. Пробуем снова…"
 
+#: src/components/live/monitors.tsx
 #: src/components/switcher-status.tsx
 #: src/lib/live-format.ts
 msgid "OBS disconnected"
@@ -6227,6 +6339,18 @@ msgstr "OBS отключён"
 #: src/components/live/feed-state.ts
 msgid "OBS DISCONNECTED"
 msgstr "OBS ОТКЛЮЧЁН"
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · last known scenes"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "OBS disconnected · no current scene data"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "OBS disconnected · stream state unknown"
+msgstr ""
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6363,6 +6487,7 @@ msgstr "истории стримов хранится"
 msgid "Of the screen"
 msgstr "От изображения"
 
+#: src/components/live/quick-actions.tsx
 #: src/components/trigger-field.tsx
 msgid "off"
 msgstr "выкл."
@@ -6382,6 +6507,10 @@ msgstr "Вне эфира превью скрыто: рамка рисуется
 msgid "Off air, the preview is hidden. It shows again when the stream goes live."
 msgstr "Вне эфира превью скрыто. Оно снова появится, когда стрим выйдет в эфир."
 
+#: src/components/live/monitors.tsx
+msgid "Off air: the picture is private"
+msgstr ""
+
 #: src/components/live/moblin-card.tsx
 msgid "Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one. Only SRTLA streams use these."
 msgstr "Выкл.: Moblin использует все соединения одинаково. Включи, чтобы отключать соединения или отдавать предпочтение одному. Это работает только в стримах SRTLA."
@@ -6398,7 +6527,6 @@ msgstr "Предлагается"
 msgid "Offline"
 msgstr "Офлайн"
 
-#: src/components/live/belabox-card.tsx
 #: src/components/live/feed-state.ts
 msgid "OFFLINE"
 msgstr "ОФЛАЙН"
@@ -6440,12 +6568,12 @@ msgstr "в сцене «{0}»"
 msgid "On {0}"
 msgstr "Сцена: {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
+#: src/components/live/scene-grid.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On air"
 msgstr "В эфире"
 
-#: src/components/live/scene-grid.tsx
+#: src/components/live/monitors.tsx
 msgid "ON AIR"
 msgstr "В ЭФИРЕ"
 
@@ -6839,14 +6967,14 @@ msgstr "В прошлых счетах остаются email и последн�
 msgid "Pause, and resume when shown"
 msgstr "Ставить на паузу и продолжать при показе"
 
+#: src/components/live/quick-actions.tsx
+msgid "paused"
+msgstr ""
+
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Paused"
 msgstr "На паузе"
-
-#: src/components/live/moblin-card.tsx
-msgid "PAUSED"
-msgstr "НА ПАУЗЕ"
 
 #: src/components/switcher-status.tsx
 msgid "Paused · over the plan's switcher limit"
@@ -7073,8 +7201,29 @@ msgid "Presets"
 msgstr "Заготовки"
 
 #: src/components/live/obs-preview.tsx
+#: src/components/live/scene-grid.tsx
 msgid "Preview"
 msgstr "Превью"
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Preview · last known"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "PREVIEW · LAST KNOWN"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "Preview / Program"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "Preview and Program"
+msgstr ""
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview settings"
@@ -7110,10 +7259,16 @@ msgstr "ID цены"
 msgid "Primary"
 msgstr "Основная навигация"
 
+#. placeholder {0}: rank ?? server.priority
+#: src/components/live/server-card.tsx
+msgid "Priority {0}"
+msgstr ""
+
 #: src/components/live/moblin-card.tsx
 msgid "Priority: higher is used more when stable"
 msgstr "Приоритет: чем выше, тем больше используется при стабильном соединении"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/login.tsx
@@ -7128,6 +7283,14 @@ msgstr "Проблемы"
 #: src/routes/_app/admin/products.tsx
 msgid "Products"
 msgstr "Продукты"
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · ACTIVE"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "PROGRAM · LAST KNOWN"
+msgstr ""
 
 #: src/lib/live-format.ts
 msgid "Program added"
@@ -7180,10 +7343,6 @@ msgstr "Publisher (ID стрима)"
 msgid "Quality"
 msgstr "Качество"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Quick actions"
-msgstr "Быстрые действия"
-
 #. placeholder {0}: connection.name
 #: src/components/live/moblin-card.tsx
 msgid "Raise {0}'s priority"
@@ -7209,11 +7368,6 @@ msgstr "Доступен"
 msgid "Read more"
 msgstr "Подробнее"
 
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "READY"
-msgstr "ГОТОВ"
-
 #: src/components/admin/reason-dialog.tsx
 #: src/components/support/break-glass-dialog.tsx
 msgid "Reason"
@@ -7224,10 +7378,6 @@ msgstr "Причина"
 #: src/routes/_app/workspaces/live.tsx
 msgid "REC"
 msgstr "REC"
-
-#: src/components/live/quick-actions.tsx
-msgid "REC paused"
-msgstr "REC на паузе"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Receiving"
@@ -7255,6 +7405,10 @@ msgstr "Переподключить"
 msgid "Reconnect delay (s)"
 msgstr "Задержка переподключения (с)"
 
+#: src/components/live/quick-actions.tsx
+msgid "reconnect sources"
+msgstr ""
+
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
 msgstr "Переподключить источник «Браузер»?"
@@ -7280,10 +7434,6 @@ msgstr "Переподключение"
 msgid "Reconnecting {0}"
 msgstr "Переподключение {0}"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "RECONNECTING…"
-msgstr "ПЕРЕПОДКЛЮЧЕНИЕ…"
-
 #: src/components/live/moblin-card.tsx
 #: src/components/live/quick-actions.tsx
 msgid "Record"
@@ -7296,6 +7446,10 @@ msgstr "Записывать во время стрима"
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Recorded in the staff audit log."
 msgstr "Записано в журнал аудита сотрудников."
+
+#: src/components/live/quick-actions.tsx
+msgid "recording"
+msgstr ""
 
 #: src/components/live/moblin-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7334,6 +7488,7 @@ msgstr "Запись остаётся включённой для {summary}."
 msgid "Recording stopped"
 msgstr "Запись остановлена"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7549,6 +7704,10 @@ msgstr "Переименовать"
 msgid "Rename {0}"
 msgstr "Переименовать {0}"
 
+#: src/components/live/belabox-card.tsx
+msgid "Rename interface {title}"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
 msgid "Renamed"
@@ -7663,6 +7822,11 @@ msgstr "Возобнови подписку, чтобы изменить это.
 #: src/lib/support.ts
 msgid "Resumed the subscription"
 msgstr "Подписка возобновлена"
+
+#: src/components/live/activity-feed.tsx
+#: src/components/live/scene-grid.tsx
+msgid "Retry"
+msgstr ""
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -7950,6 +8114,10 @@ msgstr "Сцены нет в OBS"
 msgid "Scene overrides"
 msgstr "Замены сцен"
 
+#: src/components/live/scene-grid.tsx
+msgid "Scene selections"
+msgstr ""
+
 #: src/lib/organizations.ts
 msgid "Scene switches"
 msgstr "Переключения сцен"
@@ -7973,10 +8141,6 @@ msgstr "Сцены"
 #: src/lib/api-messages.ts
 msgid "Scenes and groups can't be duplicated here."
 msgstr "Сцены и группы здесь дублировать нельзя."
-
-#: src/components/live/scene-grid.tsx
-msgid "Scenes appear once OBS is connected."
-msgstr "Сцены появятся, когда OBS подключится."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Scenes in OBS"
@@ -8015,6 +8179,18 @@ msgstr "Поиск по имени, URL или ID"
 #: src/routes/_app/workspaces/live.tsx
 msgid "Search by workspace or switcher"
 msgstr "Поиск по рабочему пространству или свитчеру"
+
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Search scenes · /"
+msgstr ""
+
+#: src/components/live/source-list.tsx
+msgid "Search sources"
+msgstr ""
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8312,6 +8488,14 @@ msgstr "Ничего не показывать по окончании восп�
 msgid "Show older"
 msgstr "Показать старые"
 
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as grid"
+msgstr ""
+
+#: src/components/live/scene-grid.tsx
+msgid "Show scenes as list"
+msgstr ""
+
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
 msgstr "Показать конфиденциальные значения"
@@ -8341,6 +8525,10 @@ msgstr "Источник показан или скрыт"
 msgid "Showing"
 msgstr "Показывается"
 
+#: src/components/live/source-list.tsx
+msgid "Shown"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
 #: src/components/live/source-list.tsx
@@ -8348,8 +8536,8 @@ msgid "SHOWN"
 msgstr "ПОКАЗАНО"
 
 #: src/components/live/source-list.tsx
-msgid "SHOWN · PARENT HIDDEN"
-msgstr "ПОКАЗАНО · РОДИТЕЛЬ СКРЫТ"
+msgid "Shown · parent hidden"
+msgstr ""
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
@@ -8507,6 +8695,7 @@ msgid "Sort"
 msgstr "Сортировка"
 
 #: src/components/live/source-editor.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Source"
 msgstr "Источник"
 
@@ -8651,6 +8840,7 @@ msgstr "Запись запущена или остановлена"
 msgid "Started or stopped the stream"
 msgstr "Стрим запущен или остановлен"
 
+#: src/components/live/scene-grid.tsx
 #: src/components/settings-hub.tsx
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "Starting"
@@ -8716,6 +8906,7 @@ msgstr "Стелс вкл."
 #: src/components/connect-controls.tsx
 #: src/components/live/belabox-card.tsx
 #: src/components/live/moblin-card.tsx
+#: src/components/live/quick-actions.tsx
 msgid "Stop"
 msgstr "Остановить"
 
@@ -8884,10 +9075,6 @@ msgstr "Стрим-серверов на свитчер"
 msgid "Stream started"
 msgstr "Стрим запущен"
 
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Stream status"
-msgstr "Статус стрима"
-
 #: src/lib/live-format.ts
 msgid "Stream stopped"
 msgstr "Стрим остановлен"
@@ -8899,11 +9086,6 @@ msgstr "URL потока"
 #: src/components/live/source-editor.tsx
 msgid "Stream URL"
 msgstr "URL потока"
-
-#: src/components/live/belabox-card.tsx
-#: src/components/live/moblin-card.tsx
-msgid "STREAMING"
-msgstr "В ЭФИРЕ"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -8944,6 +9126,10 @@ msgstr "Stripe: тестовый режим"
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Stuck on a step? The <0>quick start guide</0> walks through it, and <1>how NOALBS connects</1> explains where your video goes."
 msgstr "Застрял на шаге? <0>Руководство по быстрому старту</0> проведёт через него, а <1>как NOALBS подключается</1> объясняет, куда идёт твоё видео."
+
+#: src/components/live/monitors.tsx
+msgid "Studio mode"
+msgstr ""
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Subscribers"
@@ -9108,6 +9294,10 @@ msgstr "Перейти на ежегодную оплату?"
 msgid "Switch workspace"
 msgstr "Сменить рабочее пространство"
 
+#: src/components/live/monitors.tsx
+msgid "Switched by {by}"
+msgstr ""
+
 #: src/lib/support.ts
 msgid "Switched scene"
 msgstr "Сцена переключена"
@@ -9196,13 +9386,17 @@ msgstr "Синхронизировано из OBS"
 msgid "Synced from OBS {0}"
 msgstr "Синхронизировано из OBS {0}"
 
+#: src/components/live/monitors.tsx
+msgid "Take"
+msgstr ""
+
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
 msgstr "Нажимай на входы, чтобы показать или скрыть их здесь. Это запоминает только этот браузер, а OBS не меняется."
 
 #: src/components/live/scene-grid.tsx
-msgid "Tap scenes to show or hide them here. Only this browser remembers it; the scene on air always shows."
-msgstr "Нажимай на сцены, чтобы показать или скрыть их здесь. Это запоминает только этот браузер; сцена в эфире показывается всегда."
+msgid "Tap scenes below to show or hide them here. Only this browser remembers it; the scene on air always shows."
+msgstr ""
 
 #: src/components/live/source-list.tsx
 msgid "Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9453,6 +9647,10 @@ msgstr "Источник «Браузер» потерял OBS"
 msgid "The browser source reached OBS"
 msgstr "Источник «Браузер» подключился к OBS"
 
+#: src/components/live/monitors.tsx
+msgid "The cued scene"
+msgstr ""
+
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
 msgstr "Текущая ссылка перестанет работать, поэтому новую нужно будет вставить в OBS."
@@ -9619,6 +9817,10 @@ msgstr "Превью выключено. Включи его, чтобы вид�
 #: src/lib/api-messages.ts
 msgid "The preview is only shown while the stream is live."
 msgstr "Превью показывается только во время эфира."
+
+#: src/components/live/monitors.tsx
+msgid "The preview is turned off"
+msgstr ""
 
 #: src/lib/obs-preview.ts
 msgid "The preview shows only while the stream is live."
@@ -9966,6 +10168,7 @@ msgstr "В этой сцене нет источников."
 msgid "This server didn’t report any stats during this stream."
 msgstr "Этот сервер не передавал статистику во время этого стрима."
 
+#: src/components/live/activity-feed.tsx
 #: src/components/live/obs-stats-popover.tsx
 msgid "This stream"
 msgstr "Этот стрим"
@@ -10075,6 +10278,14 @@ msgstr "Владение передано"
 #: src/components/transfer-ownership.tsx
 msgid "Transferring…"
 msgstr "Передача…"
+
+#: src/components/live/monitors.tsx
+msgid "Transition"
+msgstr ""
+
+#: src/components/live/monitors.tsx
+msgid "Transition duration"
+msgstr ""
 
 #: src/lib/support.ts
 msgid "Tried to change support access"
@@ -10223,6 +10434,10 @@ msgstr "Отвязан канал чата от {target}"
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Unlinking a channel removes it from every switcher, in every workspace: the bot leaves it. Its owner can link it again."
 msgstr "Отвязка канала удаляет его со всех свитчеров во всех рабочих пространствах: бот покидает его. Владелец может привязать его снова."
+
+#: src/components/live/source-list.tsx
+msgid "UNLISTED"
+msgstr ""
 
 #: src/components/live/audio-mixer.tsx
 msgid "Unmute"
@@ -10447,6 +10662,10 @@ msgstr "Ждём OBS"
 msgid "Waiting for the browser source…"
 msgstr "Ждём источник «Браузер»…"
 
+#: src/components/live/monitors.tsx
+msgid "Waiting for the first picture…"
+msgstr ""
+
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
 msgstr "Ожидание: переключение начнётся, когда OBS начнёт стримить"
@@ -10500,6 +10719,7 @@ msgstr "Что случилось? (необязательно)"
 msgid "What its clients use of the switchers it was given."
 msgstr "Сколько выделенных ей свитчеров используют её клиенты."
 
+#: src/components/live/monitors.tsx
 #: src/components/live/obs-preview.tsx
 msgid "What OBS is showing"
 msgstr "Что показывает OBS"

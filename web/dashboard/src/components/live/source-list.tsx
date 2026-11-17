@@ -30,7 +30,6 @@ import {
   Pencil,
   Plus,
   RotateCw,
-  SlidersHorizontal,
   Trash2,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -122,7 +121,6 @@ export function SourceList({
 }) {
   const [hidden, setHidden] = useHiddenSources(path.switcher_id);
   const [editing, setEditing] = useState(false);
-  const [arranging, setArranging] = useState(false);
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const toggleCollapsed = (key: string) =>
@@ -230,6 +228,10 @@ export function SourceList({
     },
   });
   const canArrange = canControl || canEditSources;
+  // One Edit state: those who may change OBS get the sortable list with each
+  // row's menu, everyone else the tiles that only pick what this browser lists.
+  const arranging = editing && canArrange;
+  const customizing = editing && !canArrange;
 
   // Like the servers page: a short drag starts it, and the keyboard works too.
   const sensors = useSensors(
@@ -303,6 +305,74 @@ export function SourceList({
       hide ? [...new Set([...hidden, ...onScene])] : hidden.filter((key) => !onScene.includes(key)),
     );
 
+  const rowMenu = (source: ObsSource) => {
+    const editable = canEditSources && editableKind(source) !== null;
+    const canRemove = canEditSources && removable(source);
+    const canDuplicate = canEditSources && duplicable(source);
+    return (
+      (editable || canControl || canDuplicate || canRemove) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              aria-label={t`More for ${source.name}`}
+            >
+              <Ellipsis />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {editable && (
+              <DropdownMenuItem onSelect={() => setEditor({ mode: "edit", name: source.name })}>
+                <Pencil />
+                <Trans>Edit…</Trans>
+              </DropdownMenuItem>
+            )}
+            {canControl && (
+              <DropdownMenuItem onSelect={() => setEditor({ mode: "position", source })}>
+                <Move />
+                <Trans>Position…</Trans>
+              </DropdownMenuItem>
+            )}
+            {canControl && sourceKind(source) === "browser" && (
+              <DropdownMenuItem onSelect={() => reloadSource.mutate(source)}>
+                <RotateCw />
+                <Trans>Reload page</Trans>
+              </DropdownMenuItem>
+            )}
+            {canDuplicate && (
+              <DropdownMenuItem
+                onSelect={() =>
+                  setEditor({
+                    mode: "duplicate",
+                    source,
+                    // OBS can't add to a group: then the scene on air.
+                    scene: source.parent_is_group
+                      ? (list.data?.scene ?? source.parent)
+                      : source.parent,
+                    taken: (list.data?.sources ?? []).map((item) => item.name),
+                  })
+                }
+              >
+                <Copy />
+                <Trans>Duplicate…</Trans>
+              </DropdownMenuItem>
+            )}
+            {(editable || canControl || canDuplicate) && canRemove && <DropdownMenuSeparator />}
+            {canRemove && (
+              <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(source)}>
+                <Trash2 />
+                <Trans>Remove from {source.parent}…</Trans>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    );
+  };
+
   return (
     <section aria-label={t`Sources`} className="flex flex-col gap-2.5">
       <PaneTitleRow className="justify-between">
@@ -311,16 +381,7 @@ export function SourceList({
         </h2>
         {list.data &&
           (onScene.length > 0 || canEditSources) &&
-          (arranging ? (
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => setArranging(false)}
-              className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
-            >
-              <Trans>Done</Trans>
-            </Button>
-          ) : editing ? (
+          (editing ? (
             <span className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -359,28 +420,15 @@ export function SourceList({
                   <Trans>Reload pages</Trans>
                 </button>
               )}
-              {onScene.length > 0 && (
-                <Button
-                  variant="ghost"
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className={cn(HEADER_BUTTON, "text-primary")}
-                >
-                  <SlidersHorizontal className="size-3.5" />
-                  <Trans>Customize</Trans>
-                </Button>
-              )}
-              {canArrange && (
-                <Button
-                  variant="ghost"
-                  type="button"
-                  onClick={() => setArranging(true)}
-                  className={cn(HEADER_BUTTON, "text-primary")}
-                >
-                  <Pencil className="size-3.5" />
-                  <Trans>Edit</Trans>
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setEditing(true)}
+                className={cn(HEADER_BUTTON, "text-primary")}
+              >
+                <Pencil className="size-3.5" />
+                <Trans>Edit</Trans>
+              </Button>
             </span>
           ))}
       </PaneTitleRow>
@@ -452,11 +500,19 @@ export function SourceList({
         </div>
       )}
 
-      {editing && (
+      {customizing && (
         <p className="text-xs text-muted-foreground">
           <Trans>
             Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t
             changed.
+          </Trans>
+        </p>
+      )}
+      {arranging && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t
+            changed by it.
           </Trans>
         </p>
       )}
@@ -479,22 +535,18 @@ export function SourceList({
         </p>
       )}
 
-      {list.data &&
-        !editing &&
-        !arranging &&
-        sections.length > 0 &&
-        listedSections.length === 0 && (
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={() => setEditing(true)}
-            className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
-          >
-            <Trans>All sources are hidden. Tap to pick some.</Trans>
-          </Button>
-        )}
+      {list.data && !editing && sections.length > 0 && listedSections.length === 0 && (
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={() => setEditing(true)}
+          className="rounded-2xl border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-surface-2"
+        >
+          <Trans>All sources are hidden. Tap to pick some.</Trans>
+        </Button>
+      )}
 
-      {large && !editing && !arranging && (
+      {large && !editing && (
         <Input
           type="search"
           aria-label={t`Search sources`}
@@ -504,24 +556,18 @@ export function SourceList({
           className="h-9"
         />
       )}
-      <div
-        className={cn(
-          "flex flex-col",
-          (editing || arranging) && "gap-2.5",
-          large && "live-collection-scroll",
-        )}
-      >
-        {!editing && !arranging && search.trim() && filteredSections.length === 0 && (
+      <div className={cn("flex flex-col", editing && "gap-2.5", large && "live-collection-scroll")}>
+        {!editing && search.trim() && filteredSections.length === 0 && (
           <p className="py-3 text-sm text-muted-foreground">
             <Trans>No source matches “{search}”.</Trans>
           </p>
         )}
-        {(editing || arranging ? sections : filteredSections).map((section) => (
+        {(editing ? sections : filteredSections).map((section) => (
           <div
             key={section.items[0] ? sourceKey(section.items[0].source) : section.parent}
-            className={cn("flex flex-col", (editing || arranging) && "gap-2")}
+            className={cn("flex flex-col", editing && "gap-2")}
           >
-            {(editing || arranging) && section.parent !== null && (
+            {editing && section.parent !== null && (
               <h3 className="mt-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 {section.parentIsGroup ? (
                   <Folder className="size-3.5" aria-hidden="true" />
@@ -551,89 +597,14 @@ export function SourceList({
                 >
                   <ul className="flex flex-col divide-y divide-divider">
                     {section.items.map(({ source }) => {
-                      const editable = canEditSources && editableKind(source) !== null;
-                      const canRemove = canEditSources && removable(source);
-                      const canDuplicate = canEditSources && duplicable(source);
                       return (
                         <SortableSourceRow
                           key={sourceKey(source)}
                           source={source}
+                          listed={!hiddenSet.has(sceneKey(source))}
+                          onToggleListed={() => toggleHidden(sceneKey(source))}
                           canMove={canControl}
-                          menu={
-                            (editable || canControl || canDuplicate || canRemove) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    className="size-8"
-                                    aria-label={t`More for ${source.name}`}
-                                  >
-                                    <Ellipsis />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {editable && (
-                                    <DropdownMenuItem
-                                      onSelect={() =>
-                                        setEditor({ mode: "edit", name: source.name })
-                                      }
-                                    >
-                                      <Pencil />
-                                      <Trans>Edit…</Trans>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {canControl && (
-                                    <DropdownMenuItem
-                                      onSelect={() => setEditor({ mode: "position", source })}
-                                    >
-                                      <Move />
-                                      <Trans>Position…</Trans>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {canControl && sourceKind(source) === "browser" && (
-                                    <DropdownMenuItem onSelect={() => reloadSource.mutate(source)}>
-                                      <RotateCw />
-                                      <Trans>Reload page</Trans>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {canDuplicate && (
-                                    <DropdownMenuItem
-                                      onSelect={() =>
-                                        setEditor({
-                                          mode: "duplicate",
-                                          source,
-                                          // OBS can't add to a group: then the scene on air.
-                                          scene: source.parent_is_group
-                                            ? (list.data?.scene ?? source.parent)
-                                            : source.parent,
-                                          taken: (list.data?.sources ?? []).map(
-                                            (item) => item.name,
-                                          ),
-                                        })
-                                      }
-                                    >
-                                      <Copy />
-                                      <Trans>Duplicate…</Trans>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {(editable || canControl || canDuplicate) && canRemove && (
-                                    <DropdownMenuSeparator />
-                                  )}
-                                  {canRemove && (
-                                    <DropdownMenuItem
-                                      variant="destructive"
-                                      onSelect={() => setRemoving(source)}
-                                    >
-                                      <Trash2 />
-                                      <Trans>Remove from {source.parent}…</Trans>
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )
-                          }
+                          menu={rowMenu(source)}
                         />
                       );
                     })}
@@ -656,7 +627,7 @@ export function SourceList({
                     </span>
                   );
 
-                  if (editing) {
+                  if (customizing) {
                     const listed = !hiddenSet.has(sceneKey(source));
                     return (
                       <Button
@@ -772,6 +743,7 @@ export function SourceList({
                           </span>
                         </span>
                       </Button>
+                      {rowMenu(source)}
                     </div>
                   );
                 })}
@@ -789,10 +761,14 @@ function SortableSourceRow({
   source,
   canMove,
   menu,
+  listed,
+  onToggleListed,
 }: {
   source: ObsSource;
   canMove: boolean;
   menu: ReactNode;
+  listed: boolean;
+  onToggleListed: () => void;
 }) {
   const {
     attributes,
@@ -840,6 +816,24 @@ function SortableSourceRow({
       >
         {source.name}
       </span>
+      <Button
+        variant="ghost"
+        type="button"
+        aria-pressed={listed}
+        onClick={onToggleListed}
+        title={
+          listed
+            ? t`Listed here. Tap to hide it from this list.`
+            : t`Not listed here. Tap to list it.`
+        }
+        className={cn(
+          "h-7 shrink-0 gap-1 rounded-md px-2 text-[11px] font-semibold tracking-wider",
+          listed ? "text-primary-soft-foreground" : "text-muted-foreground opacity-70",
+        )}
+      >
+        {!listed && <EyeOff className="size-3" aria-hidden="true" />}
+        {listed ? <Trans>LISTED</Trans> : <Trans>UNLISTED</Trans>}
+      </Button>
       {menu}
     </li>
   );

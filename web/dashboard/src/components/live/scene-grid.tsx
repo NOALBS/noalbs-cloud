@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { EyeOff, LayoutGrid, List, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { EyeOff, LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
@@ -112,7 +112,8 @@ export function SceneGrid({
   };
   // Adding and removing scenes in OBS: a mode of its own, so a tap meant to
   // switch scenes can't remove one.
-  const [managing, setManaging] = useState(false);
+  // One Edit state: who may change OBS also gets the list that adds, renames and removes.
+  const managing = editing && canManage;
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<{ uuid: string; name: string } | null>(null);
   const refreshScenes = () =>
@@ -193,16 +194,7 @@ export function SceneGrid({
           </span>
         )}
         {list.data &&
-          (managing ? (
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => setManaging(false)}
-              className={cn(HEADER_BUTTON, "bg-primary text-primary-foreground hover:bg-primary")}
-            >
-              <Trans>Done</Trans>
-            </Button>
-          ) : editing ? (
+          (editing ? (
             <span className="flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -249,28 +241,17 @@ export function SceneGrid({
               <Button
                 variant="ghost"
                 type="button"
-                aria-label={t`Customize scenes`}
+                aria-label={t`Edit scenes`}
                 onClick={() => setEditing(true)}
                 className={cn(HEADER_BUTTON, "text-primary")}
               >
-                <SlidersHorizontal className="size-3.5" />
+                <Pencil className="size-3.5" />
               </Button>
-              {canManage && (
-                <Button
-                  variant="ghost"
-                  type="button"
-                  aria-label={t`Edit scenes`}
-                  onClick={() => setManaging(true)}
-                  className={cn(HEADER_BUTTON, "text-primary")}
-                >
-                  <Pencil className="size-3.5" />
-                </Button>
-              )}
             </span>
           ))}
       </PaneTitleRow>
 
-      {large && !editing && !managing && (
+      {large && !editing && (
         <div className="flex flex-col gap-2">
           <Input
             data-scene-search
@@ -408,8 +389,8 @@ export function SceneGrid({
       {editing && (
         <p className="text-xs text-muted-foreground">
           <Trans>
-            Tap scenes to show or hide them here. Only this browser remembers it; the scene on air
-            always shows.
+            Tap scenes below to show or hide them here. Only this browser remembers it; the scene on
+            air always shows.
           </Trans>
         </p>
       )}
@@ -479,7 +460,7 @@ export function SceneGrid({
         </div>
       )}
 
-      {list.data && !editing && !managing && visible.length > 0 && (
+      {list.data && !editing && visible.length > 0 && (
         <div
           data-scene-view={view}
           className={cn(
@@ -577,7 +558,7 @@ export function SceneGrid({
         </div>
       )}
 
-      {list.data && !editing && !managing && visible.length === 0 && (
+      {list.data && !editing && visible.length === 0 && (
         <Button
           variant="ghost"
           type="button"
