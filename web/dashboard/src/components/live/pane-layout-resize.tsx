@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { type PointerEvent as ReactPointerEvent, type RefObject, useEffect, useRef } from "react";
 import { type Action, minimum, type Row, resizePair, type VisualSlot } from "./pane-layout-model";
 
@@ -104,8 +105,8 @@ export function SlotDivider({
     <button
       type="button"
       className="live-slot-divider"
-      aria-label={`Resize columns ${left.index + 1} and ${right.index + 1}`}
-      title="Drag to resize · double-click or Enter to equalize"
+      aria-label={t`Resize columns ${left.index + 1} and ${right.index + 1}`}
+      title={t`Drag to resize · double-click or Enter to equalize`}
       onDoubleClick={equalize}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
@@ -175,8 +176,8 @@ export function RowDivider({
     <button
       type="button"
       className="live-row-divider"
-      aria-label={`Resize row ${source + 1} height`}
-      title="Drag to set minimum height · double-click for auto"
+      aria-label={t`Resize row ${source + 1} height`}
+      title={t`Drag to set minimum height · double-click for auto`}
       onDoubleClick={() => edit({ type: "height", row: source })}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === "Home") {

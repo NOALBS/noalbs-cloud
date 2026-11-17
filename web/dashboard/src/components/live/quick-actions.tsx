@@ -185,8 +185,8 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
               <span className="size-1.5 rounded-full bg-offline" />
               <span className="font-mono text-[13px] font-semibold tabular">
                 {status.stream_started_at
-                  ? `ON AIR ${formatUptime(status.stream_started_at, now)}`
-                  : "ON AIR"}
+                  ? t`ON AIR ${formatUptime(status.stream_started_at, now)}`
+                  : t`ON AIR`}
               </span>
               <span className={STOP}>
                 <Square className="size-3.5" />
@@ -267,10 +267,10 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
         ) : recording ? (
           <span className="font-mono text-[13px] font-semibold tabular">
             {paused
-              ? "REC paused"
+              ? t`REC paused`
               : status?.recording_started_at
-                ? `REC ${formatUptime(status.recording_started_at, now)}`
-                : "REC"}
+                ? t`REC ${formatUptime(status.recording_started_at, now)}`
+                : t`REC`}
           </span>
         ) : (
           t`Record`

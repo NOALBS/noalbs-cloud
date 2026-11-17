@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Keyboard, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { SwitcherStatus } from "@/api/types";
@@ -58,12 +60,12 @@ export function LiveTimer({
         )}
       />
       {unknown
-        ? "OBS disconnected"
+        ? t`OBS disconnected`
         : live
           ? status?.stream_started_at
-            ? `ON AIR ${formatUptime(status.stream_started_at, now)}`
-            : "On air"
-          : "Off air"}
+            ? t`ON AIR ${formatUptime(status.stream_started_at, now)}`
+            : t`On air`
+          : t`Off air`}
     </span>
   );
 }
@@ -87,10 +89,10 @@ export function RecordingStatus({
     >
       <span className={cn("size-1.5 rounded-full", paused ? "bg-low" : "bg-offline")} />
       {paused
-        ? "REC paused"
+        ? t`REC paused`
         : status.recording_started_at
-          ? `REC ${formatUptime(status.recording_started_at, now)}`
-          : "REC"}
+          ? t`REC ${formatUptime(status.recording_started_at, now)}`
+          : t`REC`}
     </span>
   );
 }
@@ -101,8 +103,8 @@ export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof u
     <Button
       variant="outline"
       size="icon-sm"
-      aria-label={operator.immersive ? "Exit immersive" : "Immersive"}
-      title={operator.immersive ? "Show the sidebar (F)" : "Immersive: hide the sidebar (F)"}
+      aria-label={operator.immersive ? t`Exit immersive` : t`Immersive`}
+      title={operator.immersive ? t`Show the sidebar (F)` : t`Immersive: hide the sidebar (F)`}
       onClick={operator.toggleImmersive}
     >
       {operator.immersive ? <Minimize2 /> : <Maximize2 />}
@@ -114,23 +116,23 @@ export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof u
       {/* biome-ignore lint/a11y/useSemanticElements: a two-button mode switch */}
       <div
         role="group"
-        aria-label="Page mode"
+        aria-label={t`Page mode`}
         className="flex gap-0.5 rounded-[10px] border bg-card p-[3px]"
       >
-        {(["Streamer", "Operator"] as const).map((name) => {
-          const on = operator.enabled === (name === "Operator");
+        {([false, true] as const).map((mode) => {
+          const on = operator.enabled === mode;
           return (
             <button
-              key={name}
+              key={String(mode)}
               type="button"
               aria-pressed={on}
-              onClick={() => operator.setMode(name === "Operator")}
+              onClick={() => operator.setMode(mode)}
               className={cn(
                 "h-6.5 rounded-[7px] px-3 text-[13px] font-medium text-muted-foreground",
                 on && "bg-surface-2 text-foreground",
               )}
             >
-              {name}
+              {mode ? t`Operator` : t`Streamer`}
             </button>
           );
         })}
@@ -139,8 +141,8 @@ export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof u
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Keyboard shortcuts"
-          title="Keyboard shortcuts (?)"
+          aria-label={t`Keyboard shortcuts`}
+          title={t`Keyboard shortcuts (?)`}
           onClick={() => operator.setHelp(true)}
         >
           <Keyboard />
@@ -149,20 +151,24 @@ export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof u
       {immersive}
       <Dialog open={operator.help} onOpenChange={operator.setHelp}>
         <DialogContent>
-          <DialogTitle>Operator shortcuts</DialogTitle>
+          <DialogTitle>
+            <Trans>Operator shortcuts</Trans>
+          </DialogTitle>
           <DialogDescription>
-            Active in operator mode on desktop, outside fields, dialogs and Edit layout.
+            <Trans>
+              Active in operator mode on desktop, outside fields, dialogs and Edit layout.
+            </Trans>
           </DialogDescription>
           <dl className="grid grid-cols-[1fr_auto] gap-3 text-sm">
             {[
-              ["Cue a scene (switch with Studio mode off)", "1–9"],
-              ["Cut directly", "Shift+1–9"],
-              ["Search scenes", "/"],
-              ["Take", "Space"],
-              ["Cut", "Enter"],
-              ["Shortcuts", "?"],
-              ["Immersive", "F"],
-              ["Exit immersive", "Esc"],
+              [t`Cue a scene (switch with Studio mode off)`, "1–9"],
+              [t`Cut directly`, "Shift+1–9"],
+              [t`Search scenes`, "/"],
+              [t`Take`, t`Space`],
+              [t`Cut`, t`Enter`],
+              [t`Shortcuts`, "?"],
+              [t`Immersive`, "F"],
+              [t`Exit immersive`, t`Esc`],
             ].map(([label, key]) => (
               <div key={key} className="contents">
                 <dt>{label}</dt>
@@ -171,7 +177,7 @@ export function LiveHeaderControls({ operator }: { operator: ReturnType<typeof u
             ))}
           </dl>
           <p className="text-sm text-muted-foreground">
-            No key starts or stops streaming or recording. Stopping asks to confirm.
+            <Trans>No key starts or stops streaming or recording. Stopping asks to confirm.</Trans>
           </p>
         </DialogContent>
       </Dialog>

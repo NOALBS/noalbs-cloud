@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 export const paneDefinitions = [
   { id: "monitors", title: "Preview / Program", min: 620, operator: true },
   { id: "preview", title: "Preview", min: 300 },
@@ -35,7 +36,37 @@ export type Action =
 export const GAP = 16;
 export const storageKey = (switcher: string, mode: Mode) =>
   `noalbs-live-rows:v1:${switcher}:${mode}`;
-export const title = (pane: PaneId) => paneDefinitions.find((p) => p.id === pane)?.title ?? pane;
+/** A pane's name in the reader's language; the definitions keep the English one. */
+export const title = (pane: PaneId): string => {
+  switch (pane) {
+    case "monitors":
+      return t`Preview / Program`;
+    case "preview":
+      return t`Preview`;
+    case "on-air":
+      return t`On air`;
+    case "controls":
+      return t`Actions`;
+    case "bitrate":
+      return t`Bitrate`;
+    case "scenes":
+      return t`Scenes`;
+    case "sources":
+      return t`Sources`;
+    case "audio":
+      return t`Audio`;
+    case "servers":
+      return t`Stream servers`;
+    case "devices":
+      return t`Devices`;
+    case "obs":
+      return t`OBS`;
+    case "activity":
+      return t`Activity`;
+    default:
+      return paneDefinitions.find((p) => p.id === pane)?.title ?? pane;
+  }
+};
 export const minimum = (slot: Slot | undefined) =>
   paneDefinitions.find((p) => p.id === slot?.pane)?.min ?? 180;
 const row = (...items: (PaneId | [PaneId, number])[]): Row => ({

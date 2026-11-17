@@ -8,6 +8,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { plural, t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { ArrowDown, ArrowUp, GripVertical, LayoutDashboard, Plus, X } from "lucide-react";
 import {
   type CSSProperties,
@@ -82,7 +84,7 @@ function PaneMenu({ available, add }: { available: PaneId[]; add: (id: PaneId) =
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" disabled={!available.length}>
           <Plus />
-          Add pane
+          <Trans>Add pane</Trans>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
@@ -110,20 +112,20 @@ function AddRow({
         <DropZone
           target={{ kind: "row", row: at }}
           className="live-row-drop"
-          label="Move to a new row"
+          label={t`Move to a new row`}
         />
       ) : (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
               <Plus />
-              Add row
+              <Trans>Add row</Trans>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {[1, 2, 3, 4].map((n) => (
               <DropdownMenuItem key={n} onSelect={() => edit({ type: "add-row", at, columns: n })}>
-                {n} {n === 1 ? "column" : "columns"}
+                {plural(n, { one: "# column", other: "# columns" })}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -169,19 +171,19 @@ function PaneSlot({
           <DropZone
             target={{ kind: "center", ...address }}
             className="live-pane-drop"
-            label="Swap panes"
+            label={t`Swap panes`}
           />
           {!full && (
             <>
               <DropZone
                 target={{ kind: "left", ...address }}
                 className="live-edge-drop live-edge-left"
-                label="Insert before"
+                label={t`Insert before`}
               />
               <DropZone
                 target={{ kind: "right", ...address }}
                 className="live-edge-drop live-edge-right"
-                label="Insert after"
+                label={t`Insert after`}
               />
             </>
           )}
@@ -221,13 +223,13 @@ function DesktopRow({
       {editing && first && (
         <div className="live-row-tools">
           <span>
-            Row {visual.source + 1} · {row.slots.length}{" "}
-            {row.slots.length === 1 ? "column" : "columns"}
+            {t`Row ${visual.source + 1}`} ·{" "}
+            {plural(row.slots.length, { one: "# column", other: "# columns" })}
           </span>
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Remove row ${visual.source + 1}`}
+            aria-label={t`Remove row ${visual.source + 1}`}
             onClick={() => edit({ type: "remove-row", row: visual.source })}
           >
             <X />
@@ -270,7 +272,9 @@ function DesktopRow({
                 </PaneSlot>
               ) : (
                 <div className="live-empty-slot">
-                  <span>Empty slot</span>
+                  <span>
+                    <Trans>Empty slot</Trans>
+                  </span>
                   <PaneMenu
                     available={available}
                     add={(pane) => edit({ type: "place", row: visual.source, slot: s.index, pane })}
@@ -279,7 +283,7 @@ function DesktopRow({
                     variant="ghost"
                     size="icon-sm"
                     className="live-remove-slot"
-                    aria-label="Remove empty slot"
+                    aria-label={t`Remove empty slot`}
                     onClick={() => edit({ type: "remove-slot", row: visual.source, slot: s.index })}
                   >
                     <X />
@@ -288,7 +292,7 @@ function DesktopRow({
                     <DropZone
                       target={{ kind: "center", row: visual.source, slot: s.index }}
                       className="live-pane-drop"
-                      label="Place here"
+                      label={t`Place here`}
                     />
                   )}
                 </div>
@@ -395,18 +399,24 @@ export function PaneLayout({
             size="sm"
             onClick={() => persist({ ...state.saved, phone: defaults(mode).phone })}
           >
-            Reset
+            <Trans>Reset</Trans>
           </Button>
         </>
       )}
       <Button
         variant={phoneEditing ? "default" : "outline"}
         size="sm"
-        aria-label={phoneEditing ? undefined : "Edit layout"}
+        aria-label={phoneEditing ? undefined : t`Edit layout`}
         onClick={() => setPhoneEditing((v) => !v)}
       >
         {!phoneEditing && <LayoutDashboard />}
-        {phoneEditing ? "Done" : <span className="live-wide">Edit layout</span>}
+        {phoneEditing ? (
+          t`Done`
+        ) : (
+          <span className="live-wide">
+            <Trans>Edit layout</Trans>
+          </span>
+        )}
       </Button>
     </>
   ) : state.draft ? (
@@ -419,32 +429,34 @@ export function PaneLayout({
           setState((s) => ({ ...s, draft: s.undo.at(-1) ?? s.draft, undo: s.undo.slice(0, -1) }))
         }
       >
-        Undo
+        <Trans>Undo</Trans>
       </Button>
       <Button
         variant="outline"
         size="sm"
         onClick={() => update({ ...current, desktop: defaults(mode).desktop })}
       >
-        Reset to default
+        <Trans>Reset to default</Trans>
       </Button>
       <Button variant="outline" size="sm" onClick={cancel}>
-        Cancel
+        <Trans>Cancel</Trans>
       </Button>
       <Button size="sm" onClick={() => persist(current)}>
-        Save
+        <Trans>Save</Trans>
       </Button>
     </>
   ) : (
     <Button
       variant="outline"
       size="sm"
-      aria-label="Edit layout"
-      title="Edit layout"
+      aria-label={t`Edit layout`}
+      title={t`Edit layout`}
       onClick={() => setState((s) => ({ ...s, draft: s.saved, undo: [] }))}
     >
       <LayoutDashboard />
-      <span className="live-wide">Edit layout</span>
+      <span className="live-wide">
+        <Trans>Edit layout</Trans>
+      </span>
     </Button>
   );
   return (
@@ -472,7 +484,7 @@ export function PaneLayout({
                           key={by}
                           size="icon-sm"
                           variant="ghost"
-                          aria-label={`Move ${title(id)} ${by < 0 ? "up" : "down"}`}
+                          aria-label={by < 0 ? t`Move ${title(id)} up` : t`Move ${title(id)} down`}
                           disabled={index + by < 0 || index + by >= current.phone.length}
                           onClick={() => {
                             const order = [...current.phone];
@@ -490,7 +502,7 @@ export function PaneLayout({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Hide ${title(id)}`}
+                      aria-label={t`Hide ${title(id)}`}
                       onClick={() =>
                         persist({ ...state.saved, phone: current.phone.filter((p) => p !== id) })
                       }

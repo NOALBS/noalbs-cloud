@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { SwitcherStatus } from "@/api/types";
 import { cn } from "@/lib/utils";
 import { streamState } from "./live-status";
@@ -27,15 +29,17 @@ export function OnAirPane({
     <Pane
       title={
         unknown ? (
-          <span className="text-low">OBS disconnected</span>
+          <span className="text-low">
+            <Trans>OBS disconnected</Trans>
+          </span>
         ) : state === "live" ? (
-          "On air"
+          t`On air`
         ) : (
-          "In OBS"
+          t`In OBS`
         )
       }
-      label="On air"
-      hint={unknown && lastKnownScene ? "Last known scene" : undefined}
+      label={t`On air`}
+      hint={unknown && lastKnownScene ? t`Last known scene` : undefined}
       className="flex flex-col"
     >
       <p
@@ -48,14 +52,14 @@ export function OnAirPane({
       </p>
       <p className="mt-1.5 text-[13px] text-muted-foreground">
         {unknown
-          ? "Stream state unknown · waiting for OBS"
+          ? t`Stream state unknown · waiting for OBS`
           : paused
-            ? "Not switching while paused"
+            ? t`Not switching while paused`
             : by
-              ? `Switched by ${by}`
+              ? t`Switched by ${by}`
               : status?.auto_switch
-                ? "Auto switch is on"
-                : "Auto switch is off"}
+                ? t`Auto switch is on`
+                : t`Auto switch is off`}
       </p>
       <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
         <FixButton controls={controls} disabled={disabled} variant="compact" />

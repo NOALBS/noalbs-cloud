@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { PcObsState } from "@/api/types";
 import { ConnectDialogPrograms, ConnectObsButtons } from "@/components/connect-controls";
 import { pcObsLabel } from "@/lib/connect";
@@ -33,7 +35,7 @@ export function ObsPane({
       hint={connect?.deviceName}
       tools={
         <PaneState tone={connected ? "text-live" : "text-offline"}>
-          {connected ? "Connected" : "Not connected"}
+          {connected ? t`Connected` : t`Not connected`}
         </PaneState>
       }
       className="flex flex-col gap-4 [&>div:first-child]:p-0"
@@ -44,7 +46,7 @@ export function ObsPane({
         <p className="text-sm text-muted-foreground">
           {connect
             ? `${pcObsLabel(connect.obs)}.`
-            : "Open OBS with the NOALBS browser source active to see its stats."}
+            : t`Open OBS with the NOALBS browser source active to see its stats.`}
         </p>
       )}
       {connect && canControlObs && (
@@ -60,7 +62,7 @@ export function ObsPane({
       {connect && canControlPrograms && <ConnectDialogPrograms path={path} />}
       {connect && !canControlObs && !canControlPrograms && (
         <p className="text-sm text-muted-foreground">
-          You don’t have access to control this computer.
+          <Trans>You don’t have access to control this computer.</Trans>
         </p>
       )}
     </Pane>

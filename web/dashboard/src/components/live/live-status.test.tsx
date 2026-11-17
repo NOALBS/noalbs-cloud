@@ -105,18 +105,20 @@ describe("Live status truth", () => {
       currentStatus: SwitcherStatus | null = status,
     ) =>
       renderToStaticMarkup(
-        <BitratePane
-          controls={controls}
-          status={currentStatus}
-          enabled
-          onlyWhileStreaming
-          canControl={false}
-          triggers={{ low: 2500, offline: 500, rtt: null, rtt_offline: null }}
-          server="Main"
-          sample={current}
-          points={[]}
-          now={now}
-        />,
+        <I18nProvider i18n={i18n}>
+          <BitratePane
+            controls={controls}
+            status={currentStatus}
+            enabled
+            onlyWhileStreaming
+            canControl={false}
+            triggers={{ low: 2500, offline: 500, rtt: null, rtt_offline: null }}
+            server="Main"
+            sample={current}
+            points={[]}
+            now={now}
+          />
+        </I18nProvider>,
       );
     expect(render(sample)).not.toContain("No feed");
     for (const markup of [

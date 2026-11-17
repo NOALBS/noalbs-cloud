@@ -1,4 +1,5 @@
 import type { useDraggable } from "@dnd-kit/core";
+import { t } from "@lingui/core/macro";
 import { GripVertical, Plus, X } from "lucide-react";
 import { createContext, type ReactNode, useContext, useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export function PaneTitleRow({
           data-layout-grip
           className="live-pane-grip flex size-8 shrink-0 items-center justify-center rounded-lg"
           {...layout.drag.attributes}
-          aria-label={`Drag ${layout.title}`}
+          aria-label={t`Drag ${layout.title}`}
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </button>
@@ -80,7 +81,7 @@ export function PaneTitleRow({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Add beside ${layout.title}`}
+            aria-label={t`Add beside ${layout.title}`}
             disabled={layout.full}
             onClick={layout.beside}
           >
@@ -89,7 +90,7 @@ export function PaneTitleRow({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Hide ${layout.title}`}
+            aria-label={t`Hide ${layout.title}`}
             onClick={layout.hide}
           >
             <X />

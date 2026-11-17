@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { SwitcherEvent } from "@/api/types";
 
 export type Scene = { uuid: string; name: string };
@@ -83,7 +84,11 @@ export function switchedBy(events: SwitcherEvent[], program?: string | null): st
   if (event?.kind !== "scene_switched" || event.data.to !== program) return null;
   const { by, reason, bitrate } = event.data;
   if (by) return by;
-  if (reason === "obs") return "Changed in OBS";
-  if (reason === "dashboard") return "dashboard";
-  return `auto switch${bitrate != null ? ` · ${bitrate.toLocaleString()} kbps` : ""}${event.data.server ? ` · ${event.data.server}` : ""}`;
+  if (reason === "obs") return t`Changed in OBS`;
+  if (reason === "dashboard") return t`the dashboard`;
+  return [
+    t`auto switch`,
+    ...(bitrate != null ? [`${bitrate.toLocaleString()} kbps`] : []),
+    ...(event.data.server ? [event.data.server] : []),
+  ].join(" · ");
 }

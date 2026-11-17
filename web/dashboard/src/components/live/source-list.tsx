@@ -710,16 +710,16 @@ export function SourceList({
                             <span
                               className="size-1.5 shrink-0 rounded-full bg-live"
                               role="img"
-                              aria-label="In cued Preview"
-                              title="In cued Preview"
+                              aria-label={t`In cued Preview`}
+                              title={t`In cued Preview`}
                             />
                           )}
                           {source.enabled && shown && list.data?.scene === programName && (
                             <span
                               className="source-program-dot"
-                              title="In Program"
+                              title={t`In Program`}
                               role="img"
-                              aria-label="In Program"
+                              aria-label={t`In Program`}
                             />
                           )}
                           {name}
