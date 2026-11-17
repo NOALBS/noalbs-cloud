@@ -75,6 +75,7 @@ export function SceneGrid({
   onPreviewSelect,
   onProgramSelect,
   operatorTools,
+  hotkeys = false,
 }: {
   path: { workspace_id: string; switcher_id: string };
   scenes: Scenes;
@@ -89,6 +90,7 @@ export function SceneGrid({
   onPreviewSelect?: (scene: { uuid: string; name: string }) => void;
   onProgramSelect?: (scene: { uuid: string; name: string }) => void;
   operatorTools?: ReactNode;
+  hotkeys?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [hidden, setHidden] = useHiddenScenes(path.switcher_id);
@@ -170,7 +172,11 @@ export function SceneGrid({
     scene.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
   /** Number hints show where the hotkeys work: operator mode. */
-  const keys = Boolean(onPreviewSelect || onProgramSelect);
+  const keys = hotkeys;
+  const large = all.length > 8;
+  const selections = large
+    ? all.filter((scene) => isCurrent(scene) || (onPreviewSelect && scene.uuid === previewUuid))
+    : [];
 
   const toggle = (key: string) =>
     setHidden(hiddenSet.has(key) ? hidden.filter((item) => item !== key) : [...hidden, key]);
@@ -227,16 +233,6 @@ export function SceneGrid({
                       : t`Tap to switch`
                     : t`Synced from OBS`}
               </span>
-              {all.length > 8 && (
-                <input
-                  type="search"
-                  aria-label={t`Search scenes`}
-                  placeholder={t`Search`}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="h-7 w-28 rounded-lg border bg-muted px-2.5 text-xs text-foreground placeholder:text-subtle-foreground"
-                />
-              )}
               <Button
                 variant="ghost"
                 type="button"
@@ -273,6 +269,44 @@ export function SceneGrid({
             </span>
           ))}
       </PaneTitleRow>
+
+      {large && !editing && !managing && (
+        <div className="flex flex-col gap-2">
+          <Input
+            data-scene-search
+            type="search"
+            aria-label={t`Search scenes`}
+            placeholder={keys ? t`Search scenes · /` : t`Search scenes`}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-9"
+          />
+          {keys && (
+            <p className="text-xs text-muted-foreground">
+              <Trans>1–9: first nine scenes · /: search</Trans>
+            </p>
+          )}
+          <fieldset
+            aria-label={t`Scene selections`}
+            className={cn("flex flex-col gap-1 text-xs", !obsConnected && "opacity-50")}
+          >
+            {selections.map((scene) => (
+              <span key={sceneKey(scene)} className="flex min-w-0 items-center gap-2">
+                <span className="shrink-0 font-semibold">
+                  {isCurrent(scene)
+                    ? currentLabel
+                    : obsConnected
+                      ? t`Preview`
+                      : t`Preview · last known`}
+                </span>
+                <span className="min-w-0 truncate" title={scene.name}>
+                  {scene.name}
+                </span>
+              </span>
+            ))}
+          </fieldset>
+        </div>
+      )}
 
       <NewSceneDialog
         path={path}
@@ -325,7 +359,12 @@ export function SceneGrid({
             <Plus />
             <Trans>New scene</Trans>
           </Button>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <div
+            className={cn(
+              "grid content-start grid-cols-2 gap-2.5 sm:grid-cols-3",
+              large && "live-collection-scroll",
+            )}
+          >
             {all.map((scene) => {
               const current = isCurrent(scene);
               const role = roleTags().find(([key]) => scene.uuid && scenes[key] === scene.uuid);
@@ -339,7 +378,9 @@ export function SceneGrid({
                   key={sceneKey(scene)}
                   className={cn(TILE, "relative border bg-card pr-10", current && "border-primary")}
                 >
-                  <span className="text-sm font-semibold">{scene.name}</span>
+                  <span className="w-full truncate text-sm font-semibold" title={scene.name}>
+                    {scene.name}
+                  </span>
                   <span className="text-[11px] font-semibold tracking-wider text-muted-foreground">
                     {current ? currentLabel : roleOf(scene.uuid)}
                   </span>
@@ -394,7 +435,12 @@ export function SceneGrid({
       )}
 
       {list.data && editing && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        <div
+          className={cn(
+            "grid content-start grid-cols-2 gap-2.5 sm:grid-cols-3",
+            large && "live-collection-scroll",
+          )}
+        >
           {all.map((scene) => {
             const key = sceneKey(scene);
             const shown = !hiddenSet.has(key);
@@ -412,7 +458,9 @@ export function SceneGrid({
                     : "border border-dashed border-border-strong bg-transparent text-muted-foreground opacity-70",
                 )}
               >
-                <span className="text-sm font-semibold">{scene.name}</span>
+                <span className="w-full truncate text-sm font-semibold" title={scene.name}>
+                  {scene.name}
+                </span>
                 <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider">
                   {shown ? (
                     <span className="text-primary-soft-foreground">
@@ -435,8 +483,10 @@ export function SceneGrid({
         <div
           data-scene-view={view}
           className={cn(
-            "grid gap-2.5",
-            view === "grid" ? "grid-cols-[repeat(auto-fill,minmax(150px,1fr))]" : "grid-cols-1",
+            "grid content-start",
+            view === "grid" ? "gap-2.5" : "gap-1",
+            large && "live-collection-scroll",
+            view === "grid" ? "grid-cols-[repeat(auto-fill,minmax(140px,1fr))]" : "grid-cols-1",
             !obsConnected && "opacity-50",
           )}
         >
@@ -472,7 +522,7 @@ export function SceneGrid({
                   "relative flex min-w-0 rounded-xl border bg-muted text-left transition-colors enabled:hover:border-border-strong enabled:hover:bg-surface-2",
                   view === "grid"
                     ? "min-h-[76px] flex-col justify-between gap-2 px-3.5 py-3"
-                    : "min-h-11 items-center gap-3 px-3.5 py-2",
+                    : "min-h-11 items-center gap-3 px-3.5 py-1 md:min-h-9",
                   current &&
                     (obsConnected && streaming
                       ? "border-offline/60 bg-offline/10"
@@ -483,8 +533,10 @@ export function SceneGrid({
               >
                 <span
                   className={cn(
-                    "flex items-center gap-2 text-[11px] text-subtle-foreground",
-                    view === "grid" ? "w-full justify-between" : "order-last ml-auto",
+                    "flex min-w-0 items-center gap-2 text-[11px] text-subtle-foreground",
+                    view === "grid"
+                      ? "w-full justify-between"
+                      : "order-last ml-auto max-w-24 shrink-0",
                   )}
                 >
                   <span className="truncate">
@@ -511,7 +563,9 @@ export function SceneGrid({
                     </kbd>
                   )}
                 </span>
-                <span className="min-w-0 truncate text-sm font-semibold">{scene.name}</span>
+                <span className="min-w-0 truncate text-sm font-semibold" title={scene.name}>
+                  {scene.name}
+                </span>
               </button>
             );
           })}

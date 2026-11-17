@@ -152,7 +152,7 @@ export function useOperator(
       const target = event.target instanceof Element ? event.target : null;
       const dialog = Boolean(document.querySelector('[role="dialog"], [role="alertdialog"]'));
       const editing = Boolean(root.current?.querySelector('[data-editing="true"]'));
-      if (event.key === "Escape" && immersive && !dialog && !editing) {
+      if (event.key === "Escape" && immersive && !dialog && !editing && !event.defaultPrevented) {
         exitImmersive();
         return;
       }
@@ -174,6 +174,8 @@ export function useOperator(
       event.stopPropagation();
       if (event.repeat) return;
       if (action.action === "help") setHelp(true);
+      else if (action.action === "search")
+        root.current?.querySelector<HTMLInputElement>("[data-scene-search]")?.focus();
       else if (action.action === "immersive") toggleImmersive();
       else if (action.action === "take" || action.action === "cut") take();
       else if (action.action === "scene") {

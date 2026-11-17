@@ -10,6 +10,8 @@ import {
   sourceKey,
   sourceKind,
   sourceSections,
+  sourceTreeSections,
+  visibleSourceKeys,
   withEnabled,
   withMovedTo,
   withRemoved,
@@ -28,6 +30,42 @@ const source = (name: string, depth: number, enabled: boolean, extra: Partial<Ob
     depth,
     ...extra,
   }) satisfies ObsSource;
+
+describe("source tree search and collapse", () => {
+  const outer = source("Overlay", 0, true, { is_group: true });
+  const nested = source("Widgets", 1, false, { parent: "Overlay", is_group: true });
+  const leaf = source("Countdown with chat", 2, true, { parent: "Widgets" });
+  const camera = source("Camera", 0, true);
+  const list = [outer, nested, leaf, camera];
+  const keys = (items: ObsSource[]) => new Set(items.map(sourceKey));
+  it("keeps all rows without a search and hides only descendants of collapsed groups", () => {
+    expect(visibleSourceKeys(list, "", new Set())).toEqual(keys(list));
+    expect(visibleSourceKeys(list, "", keys([outer]))).toEqual(keys([outer, camera]));
+    expect(visibleSourceKeys(list, "", keys([nested]))).toEqual(keys([outer, nested, camera]));
+  });
+  it("reveals both parent levels, even when hidden or collapsed, without modifying collapse state", () => {
+    const collapsed = keys([outer, nested]);
+    expect(visibleSourceKeys(list, "  COUNTDOWN ", collapsed)).toEqual(keys([outer, nested, leaf]));
+    expect(collapsed).toEqual(keys([outer, nested]));
+  });
+  it("includes a matched group's contents and excludes unrelated siblings", () => {
+    expect(visibleSourceKeys(list, "overlay", new Set())).toEqual(keys([outer, nested, leaf]));
+    expect(visibleSourceKeys(list, "camera", new Set())).toEqual(keys([camera]));
+  });
+  it("returns no results for empty data or an unmatched query", () => {
+    expect(visibleSourceKeys([], "chat", new Set())).toEqual(new Set());
+    expect(visibleSourceKeys(list, "missing", new Set())).toEqual(new Set());
+  });
+  it("renders nested search results next to their ancestors in original tree order", () => {
+    const sections = sourceTreeSections(list);
+    expect(sections.flatMap((section) => section.items.map(({ source }) => source.name))).toEqual(
+      list.map((source) => source.name),
+    );
+    expect(sections.map((section) => section.parent)).toEqual([null, "Overlay", "Widgets", null]);
+    expect(sections[2]?.items[0]?.shown).toBe(false);
+    expect(sourceTreeSections([])).toEqual([]);
+  });
+});
 
 describe("onStream", () => {
   it("hides whatever sits in a hidden scene or group", () => {

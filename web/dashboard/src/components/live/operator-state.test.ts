@@ -33,10 +33,11 @@ describe("operator shortcuts", () => {
     expect(operatorHotkey(key("Enter"), context)).toEqual({ action: "cut" });
     expect(operatorHotkey(key("?", { shiftKey: true }), context)).toEqual({ action: "help" });
     expect(operatorHotkey(key("f"), context)).toEqual({ action: "immersive" });
+    expect(operatorHotkey(key("/"), context)).toEqual({ action: "search" });
   });
   it("ignores fields/dialogs, Customize mode and phones", () => {
     for (const change of [{ blocked: true }, { editing: true }, { desktop: false }])
-      for (const input of ["1", " ", "Enter", "?", "f"])
+      for (const input of ["1", " ", "Enter", "?", "f", "/"])
         expect(operatorHotkey(key(input), { ...context, ...change })).toBeNull();
   });
   it("ignores repeats, composition and browser modifiers", () => {

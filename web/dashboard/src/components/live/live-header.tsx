@@ -184,6 +184,7 @@ export function LiveHeaderControls({
             {[
               ["Cue a scene (switch with Studio mode off)", "1–9"],
               ["Cut directly", "Shift+1–9"],
+              ["Search scenes", "/"],
               ["Take", "Space"],
               ["Cut", "Enter"],
               ["Shortcuts", "?"],

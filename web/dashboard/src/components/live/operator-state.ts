@@ -49,7 +49,7 @@ export function operatorHotkey(
   context: { desktop: boolean; editing: boolean; blocked: boolean; hold: boolean },
 ):
   | { action: "scene"; index: number; direct: boolean }
-  | { action: "take" | "cut" | "help" | "immersive" }
+  | { action: "take" | "cut" | "help" | "immersive" | "search" }
   | null {
   if (
     !context.desktop ||
@@ -63,6 +63,7 @@ export function operatorHotkey(
   )
     return null;
   if (event.key === "?") return { action: "help" };
+  if (event.key === "/") return { action: "search" };
   if (event.key.toLowerCase() === "f") return { action: "immersive" };
   const digit =
     /^(?:Digit|Numpad)([1-9])$/.exec(event.code)?.[1] ??

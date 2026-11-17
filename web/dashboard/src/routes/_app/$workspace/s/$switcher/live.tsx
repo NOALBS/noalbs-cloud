@@ -461,6 +461,7 @@ function LivePage() {
                 previewUuid={studio ? previewScene?.uuid : undefined}
                 onPreviewSelect={studio ? operator.cue : undefined}
                 onProgramSelect={operator.cutScene}
+                hotkeys={operator.enabled && operator.desktop}
                 operatorTools={
                   operator.enabled ? (
                     <span className="mr-2 flex items-center gap-2">

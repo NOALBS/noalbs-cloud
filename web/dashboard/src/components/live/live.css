@@ -36,6 +36,12 @@
 .live-pane-fit > section {
   min-width: 0;
 }
+.live-collection-scroll {
+  height: max(334px, calc(var(--row-min-height, 0px) - 190px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
 @media (min-width: 768px) {
   .live-pane[data-pane="preview"] .live-preview-frame {
     max-height: 180px;
