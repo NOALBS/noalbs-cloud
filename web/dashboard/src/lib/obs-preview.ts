@@ -1,5 +1,5 @@
 import { plural, t } from "@lingui/core/macro";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PreviewOffAir, PreviewWatcher } from "@/api/types";
 
 /**
@@ -79,6 +79,7 @@ export const qualityOptions = () =>
 export const DEFAULT_PREVIEW: PreviewSettings = { enabled: null, fps: 1, width: 640, quality: 60 };
 
 const KEY = "noalbs-obs-preview";
+const CHANGED = "noalbs-obs-preview-changed";
 
 const oneOf = <T extends number>(options: readonly T[], value: unknown, fallback: T): T =>
   options.includes(value as T) ? (value as T) : fallback;
@@ -132,16 +133,33 @@ function read(): PreviewSettings {
 
 export function usePreviewSettings() {
   const [settings, setSettings] = useState(read);
+  const latest = useRef(settings);
+  useEffect(() => {
+    const receive = (next: PreviewSettings) => {
+      latest.current = next;
+      setSettings(next);
+    };
+    const changed = (event: Event) => receive((event as CustomEvent<PreviewSettings>).detail);
+    const stored = (event: StorageEvent) => {
+      if (event.key === KEY || event.key === null) receive(read());
+    };
+    window.addEventListener(CHANGED, changed);
+    window.addEventListener("storage", stored);
+    return () => {
+      window.removeEventListener(CHANGED, changed);
+      window.removeEventListener("storage", stored);
+    };
+  }, []);
   const update = useCallback((patch: Partial<PreviewSettings>) => {
-    setSettings((current) => {
-      const next = { ...current, ...patch };
-      try {
-        localStorage.setItem(KEY, JSON.stringify(next));
-      } catch {
-        // Storage can be unavailable (private mode); the choice then lasts this visit.
-      }
-      return next;
-    });
+    const next = { ...latest.current, ...patch };
+    latest.current = next;
+    setSettings(next);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      // Storage can be unavailable (private mode); the choice then lasts this visit.
+    }
+    window.dispatchEvent(new CustomEvent(CHANGED, { detail: next }));
   }, []);
   return [settings, update] as const;
 }

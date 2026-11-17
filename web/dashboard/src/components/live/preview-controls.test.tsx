@@ -3,11 +3,18 @@ import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { previewOn, usePreviewSettings } from "@/lib/obs-preview";
+import { type PreviewSettings, previewOn, usePreviewSettings } from "@/lib/obs-preview";
 import { PreviewControls } from "./obs-preview";
 
 let host: HTMLDivElement;
 let root: Root;
+const updates: ((patch: Partial<PreviewSettings>) => void)[] = [];
+
+function Reader({ index }: { index: number }) {
+  const [settings, update] = usePreviewSettings();
+  updates[index] = update;
+  return <output>{JSON.stringify(settings)}</output>;
+}
 
 function Subject({ info }: { info?: string }) {
   const [settings, update] = usePreviewSettings();
@@ -103,5 +110,45 @@ describe("shared preview controls", () => {
     ).toBe("false");
     click("Show the OBS preview");
     expect(host.querySelector('[aria-label="Preview settings"]')).not.toBeNull();
+  });
+
+  it("synchronizes mounted instances immediately, including consecutive patches", () => {
+    act(() =>
+      root.render(
+        <>
+          <Reader index={0} />
+          <Reader index={1} />
+        </>,
+      ),
+    );
+    act(() => {
+      updates[0]({ enabled: false, fps: 5 });
+      updates[1]({ width: 960, quality: 80 });
+    });
+    const expected = { enabled: false, fps: 5, width: 960, quality: 80 };
+    for (const output of host.querySelectorAll("output"))
+      expect(JSON.parse(output.textContent ?? "{}")).toEqual(expected);
+    expect(JSON.parse(localStorage.getItem("noalbs-obs-preview") ?? "{}")).toEqual(expected);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("unavailable");
+    });
+    act(() => updates[1]({ enabled: true }));
+    for (const output of host.querySelectorAll("output"))
+      expect(JSON.parse(output.textContent ?? "{}")).toEqual({ ...expected, enabled: true });
+  });
+
+  it("follows storage changes from other tabs and resets after storage is cleared", () => {
+    render();
+    localStorage.setItem(
+      "noalbs-obs-preview",
+      JSON.stringify({ enabled: false, fps: 2, width: 960, quality: 80 }),
+    );
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: "unrelated" })));
+    expect(host.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: "noalbs-obs-preview" })));
+    expect(host.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("false");
+    localStorage.clear();
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: null })));
+    expect(host.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
   });
 });
