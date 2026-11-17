@@ -107,8 +107,8 @@ function LivePage() {
       <SwitcherPage
         className="live-page max-w-none"
         title={
-          <span className="flex flex-wrap items-center gap-3">
-            <span className="text-[17px] font-semibold tracking-tight">
+          <span className="flex flex-wrap items-center gap-2 md:gap-3">
+            <span className="live-title text-[17px] font-semibold tracking-tight">
               {switcher.name}
               <span className="mx-1.5 font-normal text-subtle-foreground">/</span>
               <Trans>Live</Trans>
@@ -150,11 +150,13 @@ function LivePage() {
                 />
               </ConnectDialog>
             ) : (
-              <Health
-                ok={Boolean(status?.browser_source)}
-                label={t`Browser source`}
-                shortLabel={t`Source`}
-              />
+              <span className="contents max-md:hidden">
+                <Health
+                  ok={Boolean(status?.browser_source)}
+                  label={t`Browser source`}
+                  shortLabel={t`Source`}
+                />
+              </span>
             )}
             {live.connection === "reconnecting" && <Health ok={false} label={t`Live feed`} />}
             <LiveHeaderControls operator={operator} />
@@ -640,8 +642,8 @@ function Health({
     <>
       <span className={cn("size-1.5 shrink-0 rounded-full", ok ? "bg-live" : "bg-offline")} />
       {/* Labels can carry a user-chosen computer name. */}
-      {shortLabel && <span className="md:hidden">{shortLabel}</span>}
-      <span className={cn("max-w-56 truncate", shortLabel && "hidden md:inline")}>{label}</span>
+      {shortLabel && <span className="live-narrow">{shortLabel}</span>}
+      <span className={cn("max-w-56 truncate", shortLabel && "live-wide")}>{label}</span>
       <span className="sr-only">{ok ? t`connected` : t`not connected`}</span>
     </>
   );

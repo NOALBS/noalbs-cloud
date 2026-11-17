@@ -402,10 +402,11 @@ export function PaneLayout({
       <Button
         variant={phoneEditing ? "default" : "outline"}
         size="sm"
+        aria-label={phoneEditing ? undefined : "Edit layout"}
         onClick={() => setPhoneEditing((v) => !v)}
       >
         {!phoneEditing && <LayoutDashboard />}
-        {phoneEditing ? "Done" : "Edit layout"}
+        {phoneEditing ? "Done" : <span className="live-wide">Edit layout</span>}
       </Button>
     </>
   ) : state.draft ? (
@@ -438,10 +439,12 @@ export function PaneLayout({
     <Button
       variant="outline"
       size="sm"
+      aria-label="Edit layout"
+      title="Edit layout"
       onClick={() => setState((s) => ({ ...s, draft: s.saved, undo: [] }))}
     >
       <LayoutDashboard />
-      Edit layout
+      <span className="live-wide">Edit layout</span>
     </Button>
   );
   return (

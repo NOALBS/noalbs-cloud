@@ -190,7 +190,9 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
               </span>
               <span className={STOP}>
                 <Square className="size-3.5" />
-                <Trans>Stop</Trans>
+                <span className="live-wide">
+                  <Trans>Stop</Trans>
+                </span>
               </span>
             </>
           ) : (
@@ -277,7 +279,9 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
       {variant === "compact" && recording && (
         <span className={STOP}>
           <Square className="size-3.5" />
-          <Trans>Stop</Trans>
+          <span className="live-wide">
+            <Trans>Stop</Trans>
+          </span>
         </span>
       )}
     </>
