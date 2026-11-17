@@ -482,6 +482,7 @@ export function SceneGrid({
               <button
                 key={sceneKey(scene)}
                 type="button"
+                data-scene-tile
                 // Only the scene being switched to waits: on a slow connection the
                 // other tiles stay usable, and the switches go out in tap order.
                 disabled={

@@ -125,30 +125,33 @@ function LivePage() {
         actions={
           <div className="live-header-bar">
             {status?.pc ? (
-              <ConnectDialog
-                path={path}
-                deviceName={connectDeviceName}
-                obs={status.pc.obs}
-                streaming={status.streaming}
-                canControlObs={canControlConnectObs}
-                canControlPrograms={canManageConnectPrograms(switcher.connect_programs, actor)}
-                settingsLink={
-                  <Link
-                    to="/$workspace/s/$switcher/obs"
-                    params={params}
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    <Trans>Connect settings</Trans>
-                  </Link>
-                }
-              >
-                <Health
-                  ok={Boolean(status.browser_source)}
-                  label={t`Connect · ${connectDeviceName}`}
-                  title={t`Connect controls`}
-                  interactive
-                />
-              </ConnectDialog>
+              <span className="contents max-md:hidden">
+                <ConnectDialog
+                  path={path}
+                  deviceName={connectDeviceName}
+                  obs={status.pc.obs}
+                  streaming={status.streaming}
+                  canControlObs={canControlConnectObs}
+                  canControlPrograms={canManageConnectPrograms(switcher.connect_programs, actor)}
+                  settingsLink={
+                    <Link
+                      to="/$workspace/s/$switcher/obs"
+                      params={params}
+                      className="font-semibold text-primary hover:underline"
+                    >
+                      <Trans>Connect settings</Trans>
+                    </Link>
+                  }
+                >
+                  <Health
+                    ok={Boolean(status.browser_source)}
+                    label={t`Connect · ${connectDeviceName}`}
+                    shortLabel={t`Connect`}
+                    title={t`Connect · ${connectDeviceName}`}
+                    interactive
+                  />
+                </ConnectDialog>
+              </span>
             ) : (
               <span className="contents max-md:hidden">
                 <Health
@@ -648,7 +651,7 @@ function Health({
     </>
   );
   const className =
-    "flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] text-muted-foreground";
+    "flex h-9 min-w-0 items-center gap-2 rounded-full border px-3 text-[13px] text-muted-foreground";
   if (!interactive) return <span className={className}>{content}</span>;
   return (
     <button
