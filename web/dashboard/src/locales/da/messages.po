@@ -2623,6 +2623,7 @@ msgstr "Bekræfter din betaling… det tager et par sekunder."
 
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Connect"
@@ -2659,10 +2660,6 @@ msgstr "Forbind ved at logge ind som bot-kontoen (ikke din egen), når platforme
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connect-computer"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Connect controls"
-msgstr "Connect-styring"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."

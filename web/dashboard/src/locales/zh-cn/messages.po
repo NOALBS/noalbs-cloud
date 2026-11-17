@@ -2623,6 +2623,7 @@ msgstr "正在确认你的付款……需要几秒钟。"
 
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Connect"
@@ -2659,10 +2660,6 @@ msgstr "平台要求时，请以机器人账号（而不是你自己的账号）
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connect 电脑"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Connect controls"
-msgstr "Connect 控制"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."

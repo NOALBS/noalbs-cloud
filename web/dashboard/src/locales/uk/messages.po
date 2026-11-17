@@ -2623,6 +2623,7 @@ msgstr "Підтверджуємо твій платіж… це займе кі
 
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Connect"
@@ -2659,10 +2660,6 @@ msgstr "Підключай, увійшовши як обліковий запи�
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Комп’ютер із Connect"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Connect controls"
-msgstr "Керування Connect"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."

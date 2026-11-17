@@ -2623,6 +2623,7 @@ msgstr "支払いを確認しています… 数秒かかります。"
 
 #: src/components/belabox/wifi-panel.tsx
 #: src/components/orgs/chat-bot-section.tsx
+#: src/routes/_app/$workspace/s/$switcher/live.tsx
 #: src/routes/_app/admin/chat-bots.tsx
 #: src/routes/_app/admin/status.tsx
 msgid "Connect"
@@ -2659,10 +2660,6 @@ msgstr "プラットフォームから求められたら、自分のアカウン
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Connect computer"
 msgstr "Connectのコンピューター"
-
-#: src/routes/_app/$workspace/s/$switcher/live.tsx
-msgid "Connect controls"
-msgstr "Connectの操作"
 
 #: src/components/connect-settings.tsx
 msgid "Connect is offline. Programs are shown when the computer is online."
