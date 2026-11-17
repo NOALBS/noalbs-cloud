@@ -110,4 +110,16 @@ describe("Start stream", () => {
     mutation.isPending = false;
     expect(render().disabled).toBe(false);
   });
+
+  it.each([false, true])("keeps phone Actions primary with disabled=%s", (disabled) => {
+    const button = render({ variant: "tile", status: offAir, disabled });
+    expect(button.disabled).toBe(disabled);
+    expect(button.textContent).toContain("asks to confirm");
+    expect(button.classList.contains("min-h-15")).toBe(true);
+    expect(button.classList.contains("bg-primary")).toBe(true);
+    expect(button.classList.contains("text-primary-foreground")).toBe(true);
+    expect(button.classList.contains("bg-surface-2")).toBe(false);
+    expect(button.classList.contains("dark:bg-input/30")).toBe(false);
+    expect(button.classList.contains("disabled:opacity-50")).toBe(true);
+  });
 });
