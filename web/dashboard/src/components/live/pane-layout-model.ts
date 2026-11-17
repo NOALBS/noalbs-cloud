@@ -91,6 +91,7 @@ export function defaults(mode: Mode): Saved {
             row("activity"),
           ],
     phone: [
+      "preview",
       "bitrate",
       "controls",
       "scenes",
