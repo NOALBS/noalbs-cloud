@@ -129,10 +129,10 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
-            variant="ghost"
+            variant="default"
             type="button"
             disabled={disabled || stream.isPending}
-            className={cn(className, "border-primary bg-primary text-primary-foreground")}
+            className={cn(VARIANT[variant], "border border-primary bg-primary")}
           >
             <Play className="size-4" />
             <span>

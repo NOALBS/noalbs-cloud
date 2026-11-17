@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Eye, Settings2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { previewWatchersQuery } from "@/api/queries";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   FPS_OPTIONS,
   formatBytes,
   fpsLabel,
+  type PreviewSettings,
   previewOn,
   qualityOptions,
   usePreviewSettings,
@@ -151,7 +152,6 @@ export function ObsPreview({
 }) {
   const desktop = useMediaQuery(DESKTOP);
   const [settings, update] = usePreviewSettings();
-  const [showSettings, setShowSettings] = useState(false);
   const on = previewOn(settings, desktop);
   const hidden = !streaming && !offAirAllowed;
   const { frame, problem } = useObsFrames(
@@ -236,58 +236,77 @@ export function ObsPreview({
           </p>
         )}
 
-        <div className="flex min-h-9 items-center justify-between gap-2 pt-2">
-          <p className="text-xs text-muted-foreground">
-            {on &&
-              frame &&
-              !hidden &&
-              t`${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
-          </p>
-          <span className="flex items-center gap-2">
-            {on && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t`Preview settings`}
-                aria-expanded={showSettings}
-                onClick={() => setShowSettings((shown) => !shown)}
-                className={cn(showSettings && "bg-surface-2")}
-              >
-                <Settings2 />
-              </Button>
-            )}
-            <Switch
-              checked={on}
-              onCheckedChange={(enabled) => update({ enabled })}
-              aria-label={t`Show the OBS preview`}
-            />
-          </span>
-        </div>
-
-        {on && showSettings && (
-          <div className="grid grid-cols-3 gap-2 border-t border-divider p-3">
-            <PreviewSelect
-              label={t`Rate`}
-              value={settings.fps}
-              options={FPS_OPTIONS.map((fps) => ({ value: fps, label: fpsLabel(fps) }))}
-              onChange={(fps) => update({ fps })}
-            />
-            <PreviewSelect
-              label={t`Size`}
-              value={settings.width}
-              options={WIDTH_OPTIONS.map((width) => ({ value: width, label: `${width} px` }))}
-              onChange={(width) => update({ width })}
-            />
-            <PreviewSelect
-              label={t`Quality`}
-              value={settings.quality}
-              options={qualityOptions().map((option) => ({ ...option }))}
-              onChange={(quality) => update({ quality })}
-            />
-          </div>
-        )}
+        <PreviewControls settings={settings} update={update} on={on}>
+          {on &&
+            frame &&
+            !hidden &&
+            t`${formatBytes(frame.bytes)} per frame · about ${bandwidthKbps(frame.bytes, settings.fps).toLocaleString(currentLocale())} kbps`}
+        </PreviewControls>
       </div>
     </section>
+  );
+}
+
+export function PreviewControls({
+  settings,
+  update,
+  on,
+  children,
+}: {
+  settings: PreviewSettings;
+  update: (patch: Partial<PreviewSettings>) => void;
+  on: boolean;
+  children?: ReactNode;
+}) {
+  const [showSettings, setShowSettings] = useState(false);
+  return (
+    <>
+      <div className="flex min-h-9 items-center justify-between gap-2 py-2">
+        <p className="text-xs text-muted-foreground">{children}</p>
+        <span className="flex items-center gap-2">
+          {on && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t`Preview settings`}
+              aria-expanded={showSettings}
+              onClick={() => setShowSettings((shown) => !shown)}
+              className={cn(showSettings && "bg-surface-2")}
+            >
+              <Settings2 />
+            </Button>
+          )}
+          <Switch
+            checked={on}
+            onCheckedChange={(enabled) => update({ enabled })}
+            aria-label={t`Show the OBS preview`}
+          />
+        </span>
+      </div>
+
+      {on && showSettings && (
+        <div className="mt-2 grid grid-cols-3 gap-2 border-t border-divider p-3">
+          <PreviewSelect
+            label={t`Rate`}
+            value={settings.fps}
+            options={FPS_OPTIONS.map((fps) => ({ value: fps, label: fpsLabel(fps) }))}
+            onChange={(fps) => update({ fps })}
+          />
+          <PreviewSelect
+            label={t`Size`}
+            value={settings.width}
+            options={WIDTH_OPTIONS.map((width) => ({ value: width, label: `${width} px` }))}
+            onChange={(width) => update({ width })}
+          />
+          <PreviewSelect
+            label={t`Quality`}
+            value={settings.quality}
+            options={qualityOptions().map((option) => ({ ...option }))}
+            onChange={(quality) => update({ quality })}
+          />
+        </div>
+      )}
+    </>
   );
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { previewOn, usePreviewSettings } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
-import { useObsFrames } from "./obs-preview";
+import { PreviewControls, useObsFrames } from "./obs-preview";
 import { clampDuration } from "./operator-state";
 import { PaneTitleRow } from "./pane-title-row";
 import type { useOperator } from "./use-operator";
@@ -48,7 +48,7 @@ export function Monitors({
   streaming: boolean;
   offAirAllowed: boolean;
 }) {
-  const [settings] = usePreviewSettings();
+  const [settings, update] = usePreviewSettings();
   const allowed = connected && (streaming || offAirAllowed);
   const on = previewOn(settings, operator.desktop);
   const { frame, problem } = useObsFrames(
@@ -96,7 +96,7 @@ export function Monitors({
               tag={connected ? t`PREVIEW` : t`PREVIEW · LAST KNOWN`}
               name={preview?.name}
             />
-            {cued.frame && preview ? (
+            {on && cued.frame && preview ? (
               <img
                 src={cued.frame.url}
                 alt={t`The cued scene`}
@@ -145,6 +145,7 @@ export function Monitors({
           )}
         </div>
       </div>
+      <PreviewControls settings={settings} update={update} on={on} />
       <div className="mt-4 flex flex-wrap items-center gap-2.5 border-t pt-4">
         <button
           type="button"
