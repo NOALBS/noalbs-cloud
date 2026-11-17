@@ -69,7 +69,7 @@ export function BitratePane({
           </Trans>
         </p>
       )}
-      <div className="flex items-end gap-6">
+      <div className="flex items-baseline gap-6">
         <div>
           <span className="font-mono text-[44px] leading-none font-medium tracking-tighter tabular">
             {current ? formatKbps(current.bitrate) : "—"}
@@ -78,7 +78,7 @@ export function BitratePane({
             <Trans>kbps</Trans>
           </span>
         </div>
-        <div className="pb-1">
+        <div>
           <span className="font-mono text-xl font-medium tabular">
             {current?.rtt != null ? Math.round(current.rtt) : "—"}
           </span>
