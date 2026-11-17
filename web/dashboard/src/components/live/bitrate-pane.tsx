@@ -79,13 +79,14 @@ export function BitratePane({
           <span className="ml-1.5 text-[13px] text-muted-foreground">ms RTT</span>
         </div>
       </div>
-      <div className="-mx-4 mt-3 flex min-h-16 flex-1 [--live-chart-height:100%] md:-mx-5 md:[--live-chart-height:100px]">
+      <div className="relative -mx-4 mt-3 min-h-24 flex-1 [--live-chart-height:100%] md:-mx-5">
         <BitrateChart
           points={points}
           now={now}
           low={triggers.low}
           offline={triggers.offline}
           tone={available ? lookFor(status).text : "text-offline"}
+          className="absolute inset-0"
         />
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted-foreground">

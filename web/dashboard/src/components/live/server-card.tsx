@@ -8,6 +8,9 @@ import type { Point } from "@/live/reducer";
 import { BitrateChart } from "./bitrate-chart";
 import { lookForState } from "./feed-state";
 
+const chip =
+  "rounded-md border bg-muted px-1.5 py-px text-[10px] leading-4 font-medium text-muted-foreground";
+
 export function ServerCard({
   server,
   points,
@@ -33,17 +36,17 @@ export function ServerCard({
         !server.enabled && "opacity-60",
       )}
     >
-      {rank != null && <span className="text-xs tabular-nums text-muted-foreground">P{rank}</span>}
-      <span
-        className={cn("size-1.5 shrink-0 rounded-full", server.enabled ? look.fill : "bg-idle")}
-      />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-semibold">{server.name}</span>
-          <span className="text-[11px] text-muted-foreground">
-            {kindInfo(server.kind).label}
-            {rank == null && ` · P${server.priority}`}
-            {inUse && <> · {rank == null ? <Trans>in use</Trans> : <Trans>IN USE</Trans>}</>}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="truncate text-sm font-semibold">{server.name}</span>
+          <span className="flex items-center gap-1.5">
+            <span className={chip}>{kindInfo(server.kind).label}</span>
+            <span className={cn(chip, "font-mono tabular")}>P{rank ?? server.priority}</span>
+            {inUse && (
+              <span className={cn(chip, "border-primary/40 bg-primary/10 text-primary")}>
+                <Trans>In use</Trans>
+              </span>
+            )}
           </span>
         </div>
         <p className="mt-1 font-mono text-xs text-muted-foreground tabular">

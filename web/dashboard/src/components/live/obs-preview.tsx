@@ -171,7 +171,7 @@ export function ObsPreview({
   return (
     <section aria-label={t`OBS preview`} className="flex flex-col gap-2.5">
       <PaneTitleRow>
-        <h2 className="font-semibold">
+        <h2 className="text-[15px] font-semibold tracking-tight">
           <Trans>Preview</Trans>
         </h2>
         {!obsConnected && (
@@ -184,7 +184,7 @@ export function ObsPreview({
         {on ? (
           <div
             className={cn(
-              "live-preview-frame relative flex aspect-video items-center justify-center overflow-hidden bg-black",
+              "live-preview-frame relative flex aspect-video items-center justify-center overflow-hidden rounded-xl border bg-black",
               !obsConnected && "opacity-50",
             )}
           >
@@ -230,7 +230,7 @@ export function ObsPreview({
           </p>
         )}
 
-        <div className="flex min-h-11 items-center justify-between gap-2 border-t border-divider py-1.5 pr-2.5 pl-4">
+        <div className="flex min-h-9 items-center justify-between gap-2 pt-2">
           <p className="text-xs text-muted-foreground">
             {on &&
               frame &&

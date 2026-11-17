@@ -23,8 +23,10 @@ export function Pane({
   return (
     <section aria-label={label} className="flex min-h-0 flex-1 flex-col">
       <PaneTitleRow className="mb-3.5">
-        <h2 className="shrink-0 text-[15px] font-semibold tracking-tight">{title}</h2>
-        {hint && <span className="min-w-0 truncate text-xs text-subtle-foreground">{hint}</span>}
+        <span className="flex min-w-0 items-baseline gap-2">
+          <h2 className="shrink-0 text-[15px] font-semibold tracking-tight">{title}</h2>
+          {hint && <span className="min-w-0 truncate text-xs text-subtle-foreground">{hint}</span>}
+        </span>
         <span className="flex-1" />
         {tools}
       </PaneTitleRow>
