@@ -177,7 +177,9 @@ export function ObsPreview({
           <Trans>Preview</Trans>
         </h2>
         {!obsConnected && (
-          <span className="ml-2 text-xs text-low">OBS disconnected · last known state</span>
+          <span className="ml-2 text-xs text-low">
+            <Trans>OBS disconnected · last known state</Trans>
+          </span>
         )}
         {watching && (
           <span

@@ -6536,6 +6536,10 @@ msgstr "OBS DESCONECTADO"
 msgid "OBS disconnected · last known scenes"
 msgstr ""
 
+#: src/components/live/obs-preview.tsx
+msgid "OBS disconnected · last known state"
+msgstr ""
+
 #: src/components/live/scene-grid.tsx
 msgid "OBS disconnected · no current scene data"
 msgstr ""
