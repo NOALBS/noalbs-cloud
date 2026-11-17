@@ -116,7 +116,8 @@ pub fn decode_data_uri(uri: &str) -> Option<Vec<u8>> {
     STANDARD.decode(data).ok()
 }
 
-type Key = (Uuid, u32, u8);
+/// Switcher, scene (None: the one on air), width and quality.
+type Key = (Uuid, Option<Uuid>, u32, u8);
 
 #[derive(Default)]
 pub struct Cache(Mutex<HashMap<Key, (Instant, Bytes)>>);
@@ -343,12 +344,13 @@ mod tests {
     fn fresh_frames_are_shared_per_size_and_quality() {
         let cache = Cache::default();
         let switcher = Uuid::new_v4();
-        cache.store((switcher, 640, 60), Bytes::from_static(b"frame"));
+        cache.store((switcher, None, 640, 60), Bytes::from_static(b"frame"));
         assert_eq!(
-            cache.fresh((switcher, 640, 60)),
+            cache.fresh((switcher, None, 640, 60)),
             Some(Bytes::from_static(b"frame"))
         );
-        assert_eq!(cache.fresh((switcher, 320, 60)), None);
-        assert_eq!(cache.fresh((Uuid::new_v4(), 640, 60)), None);
+        assert_eq!(cache.fresh((switcher, None, 320, 60)), None);
+        assert_eq!(cache.fresh((switcher, Some(Uuid::new_v4()), 640, 60)), None);
+        assert_eq!(cache.fresh((Uuid::new_v4(), None, 640, 60)), None);
     }
 }

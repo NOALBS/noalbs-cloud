@@ -1,20 +1,23 @@
 import type { SwitcherEvent } from "@/api/types";
 
 export type Scene = { uuid: string; name: string };
-export const transitions = ["Cut", "Fade", "Stinger", "Fade to black"] as const;
 export type OperatorState = {
   studio: boolean;
   preview: Scene | null;
-  transition: (typeof transitions)[number];
+  /** An OBS transition by name; null follows the one OBS has picked. */
+  transition: string | null;
+  /** Milliseconds, within what OBS accepts. */
   duration: number;
 };
 export const operatorKey = (id: string) => `noalbs-operator:v1:${id}`;
 export const initialOperator: OperatorState = {
   studio: true,
   preview: null,
-  transition: "Fade",
+  transition: null,
   duration: 300,
 };
+export const clampDuration = (value: number) =>
+  Number.isFinite(value) ? Math.max(50, Math.min(20000, Math.round(value))) : 300;
 export function readOperator(id: string): OperatorState {
   try {
     const value = JSON.parse(localStorage.getItem(operatorKey(id)) ?? "null");
@@ -27,10 +30,8 @@ export function readOperator(id: string): OperatorState {
         typeof value.preview.name === "string"
           ? value.preview
           : null,
-      transition: transitions.includes(value.transition) ? value.transition : "Fade",
-      duration: Number.isFinite(value.duration)
-        ? Math.max(0, Math.min(10000, value.duration))
-        : 300,
+      transition: typeof value.transition === "string" ? value.transition : null,
+      duration: clampDuration(value.duration),
     };
   } catch {
     return initialOperator;

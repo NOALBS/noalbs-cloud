@@ -11302,6 +11302,19 @@
               "format": "int32",
               "minimum": 0
             }
+          },
+          {
+            "name": "scene",
+            "in": "query",
+            "description": "A scene to show instead of the one on air (an operator's cued scene).\nOnly for those `preview_off_air` names, streaming or not: it isn't on air.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -12109,6 +12122,66 @@
           },
           "502": {
             "description": "`obs_error`, e.g. already streaming",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`obs_offline`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/transitions": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "The scene transitions in the switcher's OBS.",
+        "operationId": "obs_transitions",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "switcher_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObsTransitionsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`obs_error`",
             "content": {
               "application/json": {
                 "schema": {
@@ -22119,6 +22192,52 @@
           }
         }
       },
+      "ObsTransitionDto": {
+        "type": "object",
+        "required": [
+          "name",
+          "fixed"
+        ],
+        "properties": {
+          "fixed": {
+            "type": "boolean",
+            "description": "Its duration can't be set (Cut, a stinger)."
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ObsTransitionsDto": {
+        "type": "object",
+        "required": [
+          "transitions"
+        ],
+        "properties": {
+          "current": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The one OBS switches with now."
+          },
+          "duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Its duration in milliseconds; none when it is fixed.",
+            "minimum": 0
+          },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObsTransitionDto"
+            }
+          }
+        }
+      },
       "Organization": {
         "type": "object",
         "required": [
@@ -24950,9 +25069,29 @@
           "scene_uuid"
         ],
         "properties": {
+          "cut": {
+            "type": "boolean",
+            "description": "Switch at once with OBS's Cut, whatever transition it has picked, and\nleave that pick as it was. Wins over `transition`."
+          },
+          "duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How long `transition` takes, in milliseconds (50 to 20000). Ignored\nwithout `transition`, and by a fixed one such as Cut.",
+            "minimum": 0
+          },
           "scene_uuid": {
             "type": "string",
             "format": "uuid"
+          },
+          "transition": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The OBS transition to switch with, by name (see `obs/transitions`).\nOBS keeps it for later switches. Left out: whichever OBS has picked."
           }
         }
       },

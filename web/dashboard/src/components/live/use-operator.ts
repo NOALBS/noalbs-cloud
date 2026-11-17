@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
-import { eventsQuery, obsScenesQuery, queryKeys } from "@/api/queries";
+import { eventsQuery, obsScenesQuery, obsTransitionsQuery, queryKeys } from "@/api/queries";
 import type { SwitcherEvent, SwitcherStatus } from "@/api/types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { errorMessage } from "@/lib/errors";
@@ -90,17 +90,43 @@ export function useOperator(
     (scene) => !hidden.includes(sceneKey(scene)) || scene.uuid === program?.uuid,
   );
   const preview = validScenes.find((scene) => scene.uuid === state.preview?.uuid) ?? null;
+  const transitionList = useQuery({
+    ...obsTransitionsQuery(path.workspace_id, path.switcher_id),
+    enabled: enabled && Boolean(status?.obs_connected),
+  });
+  const transitions = transitionList.data?.transitions ?? [];
+  // A saved pick that OBS no longer has falls back to the one OBS has picked.
+  const transition =
+    transitions.find((item) => item.name === state.transition) ??
+    transitions.find((item) => item.name === transitionList.data?.current) ??
+    null;
   const backlog = useInfiniteQuery(eventsQuery(path.workspace_id, path.switcher_id));
   const by = switchedBy([...events, ...(backlog.data?.pages.flat() ?? [])], program?.name);
   const client = useQueryClient();
   const switching = useRef(false);
   const mutation = useMutation({
     scope: { id: `scene-switch-${path.switcher_id}` },
-    mutationFn: ({ target }: { target: Scene; previous: Scene | null; swap: boolean }) =>
+    mutationFn: ({
+      target,
+      how,
+    }: {
+      target: Scene;
+      previous: Scene | null;
+      swap: boolean;
+      how: "plain" | "cut" | "transition";
+    }) =>
       unwrap(
         api.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/scene", {
           params: { path },
-          body: { scene_uuid: target.uuid },
+          body: {
+            scene_uuid: target.uuid,
+            ...(how === "cut" && { cut: true }),
+            ...(how === "transition" &&
+              transition && {
+                transition: transition.name,
+                ...(!transition.fixed && { duration_ms: state.duration }),
+              }),
+          },
         }),
       ),
     onSuccess: (_, variables) => {
@@ -115,18 +141,28 @@ export function useOperator(
       void client.invalidateQueries({
         queryKey: queryKeys.obsScenes(path.workspace_id, path.switcher_id),
       });
+      void client.invalidateQueries({
+        queryKey: queryKeys.obsTransitions(path.workspace_id, path.switcher_id),
+      });
     },
   });
   const cue = (scene: Scene) => {
     if (!disabled) setState((previous) => ({ ...previous, preview: scene }));
   };
-  const cutScene = (target: Scene, swap = false) => {
+  const switchTo = (target: Scene, swap: boolean, how: "plain" | "cut" | "transition") => {
     if (disabled || switching.current || target.uuid === program?.uuid) return;
     switching.current = true;
-    mutation.mutate({ target, previous: program, swap });
+    mutation.mutate({ target, previous: program, swap, how });
   };
+  /** Puts a scene on air directly, with whatever transition OBS has picked. */
+  const cutScene = (target: Scene) => switchTo(target, false, "plain");
+  /** Puts the cued scene on air with the picked transition. */
   const take = () => {
-    if (enabled && state.studio && preview) cutScene(preview, true);
+    if (enabled && state.studio && preview) switchTo(preview, true, "transition");
+  };
+  /** Puts the cued scene on air at once. */
+  const cut = () => {
+    if (enabled && state.studio && preview) switchTo(preview, true, "cut");
   };
   const exitImmersive = () => {
     setImmersive(false);
@@ -177,7 +213,8 @@ export function useOperator(
       else if (action.action === "search")
         root.current?.querySelector<HTMLInputElement>("[data-scene-search]")?.focus();
       else if (action.action === "immersive") toggleImmersive();
-      else if (action.action === "take" || action.action === "cut") take();
+      else if (action.action === "take") take();
+      else if (action.action === "cut") cut();
       else if (action.action === "scene") {
         const scene = visible[action.index];
         if (scene) {
@@ -203,6 +240,9 @@ export function useOperator(
     cue,
     cutScene,
     take,
+    cut,
+    transitions,
+    transition,
     disabled,
     pending: mutation.isPending,
     help: enabled && help,

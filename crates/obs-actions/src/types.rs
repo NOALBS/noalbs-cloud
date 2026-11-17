@@ -146,6 +146,33 @@ pub struct GetSourceScreenshot {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct GetSceneTransitionList {
+    /// None when OBS has no transition picked.
+    pub current_scene_transition_name: Option<String>,
+    pub transitions: Vec<SceneTransition>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SceneTransition {
+    pub transition_name: String,
+    /// `cut_transition`, `fade_transition`, …
+    #[serde(default)]
+    pub transition_kind: String,
+    /// Its duration can't be set (Cut, a stinger).
+    #[serde(default)]
+    pub transition_fixed: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetCurrentSceneTransition {
+    /// Milliseconds; None for a fixed transition.
+    pub transition_duration: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetSceneList {
     /// Current program scene
     pub current_program_scene_name: String,
@@ -470,6 +497,17 @@ pub enum RequestKind<'a> {
         scene_uuid: uuid::Uuid,
     },
     GetSceneList,
+    GetSceneTransitionList,
+    GetCurrentSceneTransition,
+    SetCurrentSceneTransition {
+        #[serde(rename = "transitionName")]
+        transition_name: &'a str,
+    },
+    /// Milliseconds, 50 to 20000. OBS refuses it for a fixed transition (Cut, a stinger).
+    SetCurrentSceneTransitionDuration {
+        #[serde(rename = "transitionDuration")]
+        transition_duration: u32,
+    },
     GetSceneItemList {
         #[serde(rename = "sceneName")]
         scene_name: &'a str,

@@ -58,6 +58,8 @@ export function useObsFrames(
   fps: number,
   width: number,
   quality: number,
+  /** A scene to show instead of the one on air. */
+  scene?: string,
 ) {
   const [frame, setFrame] = useState<Frame | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function useObsFrames(
           const { data, response } = await api.GET(
             "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/screenshot",
             {
-              params: { path, query: { width, quality } },
+              params: { path, query: { width, quality, ...(scene && { scene }) } },
               parseAs: "blob",
               signal,
             },
@@ -120,7 +122,7 @@ export function useObsFrames(
       controller.abort();
       if (shown) URL.revokeObjectURL(shown);
     };
-  }, [active, fps, width, quality, workspaceId, switcherId]);
+  }, [active, fps, width, quality, workspaceId, switcherId, scene]);
 
   return { frame, problem };
 }

@@ -65,6 +65,7 @@ pub fn router() -> OpenApiRouter<ApiState> {
         .routes(routes!(preview_watchers))
         .routes(routes!(obs_stats))
         .routes(routes!(switch_scene))
+        .routes(routes!(obs_transitions))
         .routes(routes!(set_streaming))
         .routes(routes!(set_recording))
         .routes(routes!(fix_feed))
@@ -1701,6 +1702,9 @@ pub struct ScreenshotQuery {
     pub width: Option<u32>,
     /// JPEG quality, 1 (smallest) to 100 (best); default 60.
     pub quality: Option<u8>,
+    /// A scene to show instead of the one on air (an operator's cued scene).
+    /// Only for those `preview_off_air` names, streaming or not: it isn't on air.
+    pub scene: Option<Uuid>,
 }
 
 /// A JPEG still of the scene on air, for the Live page's preview. Each one is
@@ -1724,12 +1728,16 @@ async fn obs_screenshot(
     let access = authorized.into_access();
     let switcher_id = access.switcher.id;
     let status = state.status_of(switcher_id).await;
-    if !status.as_ref().is_some_and(|status| status.streaming) {
+    if query.scene.is_some() || !status.as_ref().is_some_and(|status| status.streaming) {
         let viewer = screenshots::viewer_for(&state, &access.workspace).await?;
         if !screenshots::allowed_off_air(access.switcher.preview_off_air, viewer) {
             return Err(ApiError::forbidden(
                 "preview_off_air",
-                "The preview is only shown while the stream is live.",
+                if query.scene.is_some() {
+                    "Scenes that aren't on air are only shown to those the switcher allows."
+                } else {
+                    "The preview is only shown while the stream is live."
+                },
             ));
         }
     }
@@ -1752,24 +1760,26 @@ async fn obs_screenshot(
     }
 
     let (width, quality) = screenshots::settings(query.width, query.quality);
-    let key = (switcher_id, width, quality);
+    let key = (switcher_id, query.scene, width, quality);
     let frame = match state.screenshots.fresh(key) {
         Some(frame) => frame,
         None => {
             let obs = connected_obs(&state, switcher_id).await?;
             // The scene on air, as obs-link last reported it.
-            let scene = status
-                .and_then(|status| status.current_scene)
-                .ok_or_else(|| {
-                    ApiError::new(
+            let on_air = status.and_then(|status| status.current_scene);
+            let source = match (query.scene, &on_air) {
+                (Some(uuid), _) => SceneSource::Uuid(uuid),
+                (None, Some(scene)) => match scene.uuid {
+                    Some(uuid) => SceneSource::Uuid(uuid),
+                    None => SceneSource::Name(&scene.name),
+                },
+                (None, None) => {
+                    return Err(ApiError::new(
                         StatusCode::SERVICE_UNAVAILABLE,
                         "obs_offline",
                         "OBS hasn't reported its scene yet.",
-                    )
-                })?;
-            let source = match scene.uuid {
-                Some(uuid) => SceneSource::Uuid(uuid),
-                None => SceneSource::Name(&scene.name),
+                    ));
+                }
             };
             let uri = obs
                 .scene_screenshot(source, width, i32::from(quality))
@@ -1913,6 +1923,68 @@ async fn obs_stats(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SwitchScene {
     pub scene_uuid: Uuid,
+    /// The OBS transition to switch with, by name (see `obs/transitions`).
+    /// OBS keeps it for later switches. Left out: whichever OBS has picked.
+    pub transition: Option<String>,
+    /// How long `transition` takes, in milliseconds (50 to 20000). Ignored
+    /// without `transition`, and by a fixed one such as Cut.
+    pub duration_ms: Option<u32>,
+    /// Switch at once with OBS's Cut, whatever transition it has picked, and
+    /// leave that pick as it was. Wins over `transition`.
+    #[serde(default)]
+    pub cut: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ObsTransitionDto {
+    pub name: String,
+    /// Its duration can't be set (Cut, a stinger).
+    pub fixed: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ObsTransitionsDto {
+    /// The one OBS switches with now.
+    pub current: Option<String>,
+    /// Its duration in milliseconds; none when it is fixed.
+    pub duration_ms: Option<u32>,
+    pub transitions: Vec<ObsTransitionDto>,
+}
+
+/// The scene transitions in the switcher's OBS.
+#[utoipa::path(get, path = "/workspaces/{workspace_id}/switchers/{switcher_id}/obs/transitions", tag = "live",
+    params(("workspace_id" = Uuid, Path), ("switcher_id" = Uuid, Path)),
+    responses(
+        (status = OK, body = ObsTransitionsDto),
+        (status = SERVICE_UNAVAILABLE, description = "`obs_offline`", body = ErrorBody),
+        (status = BAD_GATEWAY, description = "`obs_error`", body = ErrorBody),
+    ))]
+async fn obs_transitions(
+    State(state): State<ApiState>,
+    authorized: SwitcherAuthorized<SwitcherView>,
+) -> ApiResult<Json<ObsTransitionsDto>> {
+    let obs = connected_obs(&state, authorized.into_access().switcher.id).await?;
+    let list = obs
+        .scene_transitions()
+        .await
+        .map_err(|error| control_error(error.into()))?;
+    let duration_ms = obs
+        .scene_transition_duration()
+        .await
+        .map_err(|error| control_error(error.into()))?;
+
+    Ok(Json(ObsTransitionsDto {
+        current: list.current_scene_transition_name,
+        duration_ms,
+        transitions: list
+            .transitions
+            .into_iter()
+            .map(|transition| ObsTransitionDto {
+                name: transition.transition_name,
+                fixed: transition.transition_fixed,
+            })
+            .collect(),
+    }))
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -1936,11 +2008,32 @@ async fn switch_scene(
 ) -> ApiResult<StatusCode> {
     let access = authorized.into_access();
     let by = access.workspace.display_name(&state).await?;
-    state
-        .control()
-        .pick_scene(access.switcher.id, request.scene_uuid, &by)
-        .await
-        .map_err(control_error)?;
+    let control = state.control();
+    match request.transition.as_deref() {
+        _ if request.cut => {
+            control
+                .cut_scene(access.switcher.id, request.scene_uuid, &by)
+                .await
+        }
+        Some(transition) => {
+            let duration_ms = request.duration_ms.map(|ms| ms.clamp(50, 20_000));
+            control
+                .take_scene(
+                    access.switcher.id,
+                    request.scene_uuid,
+                    transition,
+                    duration_ms,
+                    &by,
+                )
+                .await
+        }
+        None => {
+            control
+                .pick_scene(access.switcher.id, request.scene_uuid, &by)
+                .await
+        }
+    }
+    .map_err(control_error)?;
 
     Ok(StatusCode::NO_CONTENT)
 }

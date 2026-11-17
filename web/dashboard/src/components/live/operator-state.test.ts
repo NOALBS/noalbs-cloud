@@ -92,9 +92,9 @@ describe("local studio preference and swaps", () => {
     expect(readOperator("two")).toEqual(initialOperator);
     localStorage.setItem(
       operatorKey("one"),
-      JSON.stringify({ transition: "bogus", duration: -20, preview: "x" }),
+      JSON.stringify({ transition: 7, duration: -20, preview: "x" }),
     );
-    expect(readOperator("one")).toMatchObject({ transition: "Fade", duration: 0, preview: null });
+    expect(readOperator("one")).toMatchObject({ transition: null, duration: 50, preview: null });
   });
   it("puts the old Program in Preview only after a successful take", () => {
     const state = { ...initialOperator, preview: { uuid: "b", name: "B" } };

@@ -64,6 +64,8 @@ export const queryKeys = {
   chatBots: (workspaceId: string) => ["workspaces", workspaceId, "chat-bots"] as const,
   events: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "events"] as const,
+  obsTransitions: (workspaceId: string, switcherId: string) =>
+    ["obs-transitions", workspaceId, switcherId] as const,
   obsScenes: (workspaceId: string, switcherId: string) =>
     ["workspaces", workspaceId, "switchers", switcherId, "obs-scenes"] as const,
   obsSources: (workspaceId: string, switcherId: string) =>
@@ -348,6 +350,20 @@ export const previewWatchersQuery = (workspaceId: string, switcherId: string) =>
         }),
       ),
     refetchInterval: 5_000,
+  });
+
+/** The scene transitions in the switcher's OBS, and the one it switches with. */
+export const obsTransitionsQuery = (workspaceId: string, switcherId: string) =>
+  queryOptions({
+    queryKey: queryKeys.obsTransitions(workspaceId, switcherId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/workspaces/{workspace_id}/switchers/{switcher_id}/obs/transitions", {
+          params: { path: { workspace_id: workspaceId, switcher_id: switcherId } },
+        }),
+      ),
+    retry: false,
+    staleTime: 10_000,
   });
 
 /** The scenes in the switcher's OBS; fails with `obs_offline` while OBS isn't connected. */

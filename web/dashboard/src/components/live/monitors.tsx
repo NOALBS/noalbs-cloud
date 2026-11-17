@@ -1,8 +1,11 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { previewOn, usePreviewSettings } from "@/lib/obs-preview";
 import { cn } from "@/lib/utils";
 import { useObsFrames } from "./obs-preview";
-import { transitions } from "./operator-state";
+import { clampDuration } from "./operator-state";
 import { PaneTitleRow } from "./pane-title-row";
 import type { useOperator } from "./use-operator";
 
@@ -56,15 +59,31 @@ export function Monitors({
     settings.width,
     settings.quality,
   );
-  const { state, setState, studio, preview, program, by, take, pending } = operator;
+  const { state, setState, studio, preview, program, by, take, cut, pending } = operator;
+  const { transitions, transition } = operator;
+  // The cued scene isn't on air, so its picture follows the off-air privacy
+  // setting even while streaming. A couple of frames a second is plenty for it.
+  const cued = useObsFrames(
+    path.workspace_id,
+    path.switcher_id,
+    studio && connected && offAirAllowed && on && Boolean(preview),
+    Math.min(settings.fps, 2),
+    settings.width,
+    settings.quality,
+    preview?.uuid,
+  );
+  const [duration, setDuration] = useState(String(state.duration));
+  useEffect(() => setDuration(String(state.duration)), [state.duration]);
   const ready =
     studio && Boolean(preview) && preview?.uuid !== program?.uuid && !pending && !operator.disabled;
   const screen =
     "relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black text-center text-sm text-white/60";
   return (
-    <section aria-label="Preview and Program" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={t`Preview and Program`} className="flex min-h-0 flex-1 flex-col">
       <PaneTitleRow layoutOnly className="mb-3.5">
-        <h2 className="text-[15px] font-semibold tracking-tight">Preview / Program</h2>
+        <h2 className="text-[15px] font-semibold tracking-tight">
+          <Trans>Preview / Program</Trans>
+        </h2>
       </PaneTitleRow>
       <div
         className="live-monitor-screens flex min-h-0 gap-5"
@@ -74,34 +93,54 @@ export function Monitors({
           <div className={cn(screen, !connected && "opacity-50")}>
             <Label
               tone={connected ? "bg-live" : "bg-low"}
-              tag={connected ? "PREVIEW" : "PREVIEW · LAST KNOWN"}
+              tag={connected ? t`PREVIEW` : t`PREVIEW · LAST KNOWN`}
               name={preview?.name}
             />
-            <span className="px-6">
-              <strong className="block text-lg font-semibold text-white">
-                {preview?.name ?? "Cue a scene below"}
-              </strong>
-              OBS sends no picture for the cued scene yet
-            </span>
+            {cued.frame && preview ? (
+              <img
+                src={cued.frame.url}
+                alt={t`The cued scene`}
+                className="size-full object-contain"
+              />
+            ) : (
+              <span className="px-6">
+                <strong className="block text-lg font-semibold text-white">
+                  {preview?.name ?? <Trans>Cue a scene below</Trans>}
+                </strong>
+                {!preview
+                  ? null
+                  : !connected
+                    ? t`OBS disconnected`
+                    : !offAirAllowed
+                      ? t`Its picture is private until it’s on air`
+                      : !on
+                        ? t`The preview is turned off`
+                        : (cued.problem ?? t`Waiting for the first picture…`)}
+              </span>
+            )}
           </div>
         )}
         <div className={cn(screen, !connected && "opacity-50")}>
           <Label
             tone={!connected ? "bg-low" : streaming ? "bg-offline" : "bg-idle"}
-            tag={!connected ? "PROGRAM · LAST KNOWN" : streaming ? "ON AIR" : "PROGRAM · ACTIVE"}
+            tag={!connected ? t`PROGRAM · LAST KNOWN` : streaming ? t`ON AIR` : t`PROGRAM · ACTIVE`}
             name={program?.name}
           />
           {allowed && on && frame ? (
-            <img src={frame.url} alt="OBS Program output" className="size-full object-contain" />
+            <img
+              src={frame.url}
+              alt={t`What OBS is showing`}
+              className="size-full object-contain"
+            />
           ) : (
             <span className="px-6">
               {!connected
-                ? "OBS disconnected · stream state unknown"
+                ? t`OBS disconnected · stream state unknown`
                 : !allowed
-                  ? "Off air: the picture is private"
+                  ? t`Off air: the picture is private`
                   : !on
-                    ? "The preview is turned off"
-                    : (problem ?? "Waiting for the first picture…")}
+                    ? t`The preview is turned off`
+                    : (problem ?? t`Waiting for the first picture…`)}
             </span>
           )}
         </div>
@@ -113,65 +152,85 @@ export function Monitors({
           onClick={take}
           className="inline-flex h-10 items-center gap-3 rounded-xl bg-foreground px-4.5 font-semibold text-background disabled:opacity-40"
         >
-          Take <Kbd dark>Space</Kbd>
+          <Trans>Take</Trans> <Kbd dark>Space</Kbd>
         </button>
         <button
           type="button"
           disabled={!ready}
-          onClick={take}
+          onClick={cut}
           className="inline-flex h-10 items-center gap-3 rounded-xl border bg-muted px-4 font-semibold disabled:opacity-40"
         >
-          Cut <Kbd>Enter</Kbd>
+          <Trans>Cut</Trans> <Kbd>Enter</Kbd>
         </button>
         {/* biome-ignore lint/a11y/useSemanticElements: a row of toggle buttons */}
         <div
           role="group"
-          aria-label="Transition"
+          aria-label={t`Transition`}
           className="ml-1 flex gap-1 rounded-[9px] border bg-muted p-[3px]"
         >
-          {transitions.map((name) => (
+          {transitions.map(({ name }) => (
             <button
               key={name}
               type="button"
-              aria-pressed={state.transition === name}
+              aria-pressed={transition?.name === name}
+              disabled={operator.disabled}
               onClick={() => setState((previous) => ({ ...previous, transition: name }))}
               className={cn(
-                "h-6 rounded-md px-2.5 text-xs font-medium text-muted-foreground",
-                state.transition === name && "bg-card text-foreground",
+                "h-6 max-w-40 truncate rounded-md px-2.5 text-xs font-medium text-muted-foreground",
+                transition?.name === name && "bg-card text-foreground",
               )}
             >
               {name}
             </button>
           ))}
+          {transitions.length === 0 && (
+            <span className="flex h-6 items-center px-2.5 text-xs text-subtle-foreground">
+              {connected ? <Trans>Loading transitions…</Trans> : <Trans>OBS disconnected</Trans>}
+            </span>
+          )}
         </div>
-        <label className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+        <label
+          className={cn(
+            "flex items-center gap-1.5 font-mono text-xs text-muted-foreground",
+            (!transition || transition.fixed) && "opacity-50",
+          )}
+          title={transition?.fixed ? t`${transition.name} has a fixed duration` : undefined}
+        >
           <input
-            aria-label="Transition duration"
+            aria-label={t`Transition duration`}
             type="number"
-            min={0}
-            max={10000}
+            min={50}
+            max={20000}
             step={50}
-            value={state.duration}
-            onChange={(event) =>
-              setState((previous) => ({
-                ...previous,
-                duration: Math.max(0, Math.min(10000, Number(event.target.value))),
-              }))
-            }
+            disabled={!transition || transition.fixed}
+            value={duration}
+            onChange={(event) => setDuration(event.target.value)}
+            onBlur={() => {
+              const next = clampDuration(Number(duration));
+              setDuration(String(next));
+              setState((previous) => ({ ...previous, duration: next }));
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.currentTarget.blur();
+            }}
             className="h-7 w-16 [appearance:textfield] rounded-md border bg-muted px-2 text-right text-foreground [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           ms
         </label>
         <span className="flex-1" />
-        {by && <span className="truncate text-xs text-muted-foreground">Switched by {by}</span>}
+        {by && (
+          <span className="truncate text-xs text-muted-foreground">
+            <Trans>Switched by {by}</Trans>
+          </span>
+        )}
         <label className="flex items-center gap-2 text-sm font-medium" htmlFor="live-studio-mode">
           <Switch
             id="live-studio-mode"
-            aria-label="Studio mode"
+            aria-label={t`Studio mode`}
             checked={state.studio}
             onCheckedChange={(value) => setState((previous) => ({ ...previous, studio: value }))}
           />
-          Studio mode
+          <Trans>Studio mode</Trans>
         </label>
       </div>
     </section>
