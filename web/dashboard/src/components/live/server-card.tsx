@@ -34,7 +34,7 @@ export function ServerCard({
         !server.enabled && "opacity-60",
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-start gap-2">
         <span
           title={t`Priority ${rank ?? server.priority}`}
           className="shrink-0 rounded-md border bg-card px-1.5 font-mono text-[10px] leading-5 font-semibold text-muted-foreground tabular"
@@ -42,7 +42,7 @@ export function ServerCard({
           P{rank ?? server.priority}
         </span>
         <span
-          className="min-w-0 truncate text-sm font-semibold"
+          className="line-clamp-2 min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]"
           title={`${server.name} · ${kindInfo(server.kind).label}`}
         >
           {server.name}
@@ -53,7 +53,7 @@ export function ServerCard({
             <Trans>In use</Trans>
           </span>
         )}
-        <span className="hidden shrink-0 text-[11px] text-subtle-foreground @[18rem]:inline">
+        <span className="hidden shrink-0 text-[11px] leading-5 text-subtle-foreground @[18rem]:inline">
           {kindInfo(server.kind).label}
         </span>
       </div>

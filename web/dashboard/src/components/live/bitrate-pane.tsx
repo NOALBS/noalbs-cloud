@@ -47,7 +47,7 @@ export function BitratePane({
       tools={
         <label
           htmlFor="live-auto-switch"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
+          className="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-muted-foreground"
         >
           {waiting ? "Auto switch · waiting for the stream" : "Auto switch"}
           <Switch
