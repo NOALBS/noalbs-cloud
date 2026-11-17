@@ -113,8 +113,13 @@ function LivePage() {
               <span className="mx-1.5 font-normal text-subtle-foreground">/</span>
               <Trans>Live</Trans>
             </span>
-            <LiveTimer status={status} now={now} />
-            <RecordingStatus status={status} now={now} />
+            {/* On desktop the stream and record buttons carry the timers. */}
+            {(!operator.desktop || streamState(status, now) === "unknown") && (
+              <>
+                <LiveTimer status={status} now={now} />
+                <RecordingStatus status={status} now={now} />
+              </>
+            )}
           </span>
         }
         actions={

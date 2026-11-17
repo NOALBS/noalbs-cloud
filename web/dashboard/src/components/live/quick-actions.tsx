@@ -114,9 +114,12 @@ const VARIANT = {
   tile: "min-h-15 justify-start bg-surface-2 px-3 text-left",
   compact: "h-8 px-3",
 };
+/** The action half of a status-and-stop button. */
+const STOP = "ml-1 flex items-center gap-1.5 border-l border-current/25 pl-2.5 font-medium";
 const BASE = buttonVariants({ variant: "outline" });
 
 export function StreamButton({ controls, status, disabled, variant }: ControlProps) {
+  const now = useNow();
   const { stream } = controls;
   const className = cn(BASE, VARIANT[variant]);
 
@@ -174,17 +177,33 @@ export function StreamButton({ controls, status, disabled, variant }: ControlPro
           variant="ghost"
           type="button"
           disabled={disabled || stream.isPending}
+          aria-label={t`Stop stream`}
           className={cn(className, "border-offline/50 bg-offline/10 text-destructive-foreground")}
         >
-          <Square className="size-4" />
-          <span>
-            <Trans>Stop stream</Trans>
-            {variant === "tile" && (
-              <span className="block text-[11px] font-normal opacity-70">
-                <Trans>asks to confirm</Trans>
+          {variant === "compact" ? (
+            <>
+              <span className="size-1.5 rounded-full bg-offline" />
+              <span className="font-mono text-[13px] font-semibold tabular">
+                {status.stream_started_at
+                  ? `ON AIR ${formatUptime(status.stream_started_at, now)}`
+                  : "ON AIR"}
               </span>
-            )}
-          </span>
+              <span className={STOP}>
+                <Square className="size-3.5" />
+                <Trans>Stop</Trans>
+              </span>
+            </>
+          ) : (
+            <>
+              <Square className="size-4" />
+              <span>
+                <Trans>Stop stream</Trans>
+                <span className="block text-[11px] font-normal opacity-70">
+                  <Trans>asks to confirm</Trans>
+                </span>
+              </span>
+            </>
+          )}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -244,11 +263,23 @@ export function RecordButton({ controls, status, disabled, variant }: ControlPro
             </span>
           </>
         ) : recording ? (
-          t`Stop recording`
+          <span className="font-mono text-[13px] font-semibold tabular">
+            {paused
+              ? "REC paused"
+              : status?.recording_started_at
+                ? `REC ${formatUptime(status.recording_started_at, now)}`
+                : "REC"}
+          </span>
         ) : (
           t`Record`
         )}
       </span>
+      {variant === "compact" && recording && (
+        <span className={STOP}>
+          <Square className="size-3.5" />
+          <Trans>Stop</Trans>
+        </span>
+      )}
     </>
   );
   const className = cn(BASE, VARIANT[variant], variant === "compact" && "bg-card");
