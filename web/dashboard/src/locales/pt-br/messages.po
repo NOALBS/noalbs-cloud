@@ -159,7 +159,7 @@ msgstr "{0, plural, one {# cliente} other {# clientes}}"
 #. placeholder {0}: row.slots.length
 #: src/components/live/pane-layout.tsx
 msgid "{0, plural, one {# column} other {# columns}}"
-msgstr ""
+msgstr "{0, plural, one {# coluna} other {# colunas}}"
 
 #. placeholder {0}: client.customers
 #: src/routes/_app/admin/organizations/$organization.tsx
@@ -476,7 +476,7 @@ msgstr "{0} para esta combinação"
 #. placeholder {0}: transition.name
 #: src/components/live/monitors.tsx
 msgid "{0} has a fixed duration"
-msgstr ""
+msgstr "{0} tem duração fixa"
 
 #. placeholder {0}: workspace.name
 #: src/components/support/support-gate.tsx
@@ -875,11 +875,11 @@ msgstr "O time de {managedBy} também vê fora do ar. Administradores e operador
 
 #: src/components/live/quick-actions.tsx
 msgid "{markerCount} this stream"
-msgstr ""
+msgstr "{markerCount} nesta transmissão"
 
 #: src/components/live/pane-layout.tsx
 msgid "{n, plural, one {# column} other {# columns}}"
-msgstr ""
+msgstr "{n, plural, one {# coluna} other {# colunas}}"
 
 #: src/components/admin/products.tsx
 msgid "{name} is no longer sold: {label}"
@@ -1089,7 +1089,7 @@ msgstr "1 a {NAME_MAX_BYTES} caracteres"
 
 #: src/components/live/scene-grid.tsx
 msgid "1–9: first nine scenes · /: search"
-msgstr ""
+msgstr "1–9: nove primeiras cenas · /: buscar"
 
 #: src/lib/support.ts
 msgid "24 hours"
@@ -1263,11 +1263,11 @@ msgstr "Configurações da conta"
 #: src/components/live/pane-layout-model.ts
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Actions"
-msgstr ""
+msgstr "Ações"
 
 #: src/components/live/scene-grid.tsx
 msgid "Active"
-msgstr ""
+msgstr "Ativa"
 
 #. placeholder {0}: formatRelative(session.last_used_at)
 #: src/routes/_app/$workspace/account.tsx
@@ -1280,7 +1280,7 @@ msgstr "Ativo em qualquer data"
 
 #: src/components/live/live-header.tsx
 msgid "Active in operator mode on desktop, outside fields, dialogs and Edit layout."
-msgstr ""
+msgstr "Ativos no modo operador no desktop, fora de campos, diálogos e Editar layout."
 
 #: src/routes/_app/$workspace/account.tsx
 msgid "Active now"
@@ -1354,7 +1354,7 @@ msgstr "Adicionar um workspace"
 #. placeholder {0}: layout.title
 #: src/components/live/pane-title-row.tsx
 msgid "Add beside {0}"
-msgstr ""
+msgstr "Adicionar ao lado de {0}"
 
 #: src/components/scene-rules-section.tsx
 msgid "Add combination"
@@ -1370,7 +1370,7 @@ msgstr "Adicione um para conectar seu OBS. A configuração leva alguns minutos.
 
 #: src/components/live/pane-layout.tsx
 msgid "Add pane"
-msgstr ""
+msgstr "Adicionar painel"
 
 #: src/components/connect-settings.tsx
 msgid "Add program"
@@ -1378,7 +1378,7 @@ msgstr "Adicionar programa"
 
 #: src/components/live/pane-layout.tsx
 msgid "Add row"
-msgstr ""
+msgstr "Adicionar linha"
 
 #: src/components/live/scene-grid.tsx
 msgid "Add scene"
@@ -1765,7 +1765,7 @@ msgstr "Pediu à fonte de navegador para reconectar"
 
 #: src/components/live/quick-actions.tsx
 msgid "asks to confirm"
-msgstr ""
+msgstr "pede confirmação"
 
 #. placeholder {0}: formatOffset(event.data.offset_seconds)
 #. placeholder {1}: by(event.data.by, t`from the dashboard`)
@@ -1828,7 +1828,7 @@ msgstr "Auto"
 
 #: src/components/live/operator-state.ts
 msgid "auto switch"
-msgstr ""
+msgstr "troca automática"
 
 #: src/components/live/bitrate-pane.tsx
 #: src/components/live/quick-actions.tsx
@@ -1838,15 +1838,15 @@ msgstr "Troca automática"
 
 #: src/components/live/bitrate-pane.tsx
 msgid "Auto switch · waiting for the stream"
-msgstr ""
+msgstr "Troca automática · aguardando a transmissão"
 
 #: src/components/live/on-air-pane.tsx
 msgid "Auto switch is off"
-msgstr ""
+msgstr "A troca automática está desligada"
 
 #: src/components/live/on-air-pane.tsx
 msgid "Auto switch is on"
-msgstr ""
+msgstr "A troca automática está ligada"
 
 #: src/lib/live-format.ts
 msgid "Auto switch off"
@@ -2070,7 +2070,7 @@ msgstr "Período de cobrança"
 #: src/components/live/bitrate-pane.tsx
 #: src/components/live/pane-layout-model.ts
 msgid "Bitrate"
-msgstr ""
+msgstr "Bitrate"
 
 #. placeholder {0}: formatKbps(result.bitrate)
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -2137,7 +2137,7 @@ msgstr "Embaixo à direita"
 
 #: src/components/live/scene-grid.tsx
 msgid "BRB"
-msgstr ""
+msgstr "BRB"
 
 #. placeholder {0}: formatKbps(switcher.triggers.offline)
 #. placeholder {0}: formatKbps(triggers.offline)
@@ -2521,7 +2521,7 @@ msgstr "Limpar"
 
 #: src/components/live/scene-grid.tsx
 msgid "Click to cue · Shift+click cuts"
-msgstr ""
+msgstr "Clique para preparar · Shift+clique corta"
 
 #: src/lib/api-messages.ts
 msgid "Client not found"
@@ -2909,11 +2909,11 @@ msgstr "Não foi possível conectar. Tente de novo."
 
 #: src/components/live/activity-feed.tsx
 msgid "Couldn’t load activity."
-msgstr ""
+msgstr "Não foi possível carregar a atividade."
 
 #: src/components/live/scene-grid.tsx
 msgid "Couldn’t load scenes."
-msgstr ""
+msgstr "Não foi possível carregar as cenas."
 
 #: src/routes/_app/invite.$token.tsx
 #: src/routes/_app/org-invite.$token.tsx
@@ -3106,15 +3106,15 @@ msgstr "Cortar em cima"
 #. placeholder {0}: scene.name
 #: src/components/live/scene-grid.tsx
 msgid "Cue {0}"
-msgstr ""
+msgstr "Preparar {0}"
 
 #: src/components/live/live-header.tsx
 msgid "Cue a scene (switch with Studio mode off)"
-msgstr ""
+msgstr "Preparar uma cena (troca direto com o modo Estúdio desligado)"
 
 #: src/components/live/monitors.tsx
 msgid "Cue a scene below"
-msgstr ""
+msgstr "Prepare uma cena abaixo"
 
 #: src/components/admin/products.tsx
 msgid "Currency"
@@ -3183,11 +3183,11 @@ msgstr "Personalizar"
 #: src/components/live/live-header.tsx
 #: src/components/live/monitors.tsx
 msgid "Cut"
-msgstr ""
+msgstr "Corte"
 
 #: src/components/live/live-header.tsx
 msgid "Cut directly"
-msgstr ""
+msgstr "Cortar direto"
 
 #: src/components/app-shell.tsx
 msgid "Dark"
@@ -3345,7 +3345,7 @@ msgstr "Dispositivo removido"
 
 #: src/components/live/pane-layout-model.ts
 msgid "Devices"
-msgstr ""
+msgstr "Dispositivos"
 
 #: src/routes/_app/admin/users/$user.tsx
 msgid "Disable"
@@ -3458,7 +3458,7 @@ msgstr "Arrastar"
 #. placeholder {0}: layout.title
 #: src/components/live/pane-title-row.tsx
 msgid "Drag {0}"
-msgstr ""
+msgstr "Arrastar {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "Drag across a chart to zoom in"
@@ -3466,15 +3466,15 @@ msgstr "Arraste em um gráfico para dar zoom"
 
 #: src/components/live/source-list.tsx
 msgid "Drag to reorder in OBS. “Listed” only picks what this browser shows here; OBS isn’t changed by it."
-msgstr ""
+msgstr "Arraste para reordenar no OBS. “Listado” só escolhe o que este navegador mostra aqui; o OBS não é alterado."
 
 #: src/components/live/pane-layout-resize.tsx
 msgid "Drag to resize · double-click or Enter to equalize"
-msgstr ""
+msgstr "Arraste para redimensionar · clique duplo ou Enter para igualar"
 
 #: src/components/live/pane-layout-resize.tsx
 msgid "Drag to set minimum height · double-click for auto"
-msgstr ""
+msgstr "Arraste para definir a altura mínima · clique duplo para automático"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Dropped frames"
@@ -3530,7 +3530,7 @@ msgstr "Editar {name}"
 
 #: src/components/live/pane-layout.tsx
 msgid "Edit layout"
-msgstr ""
+msgstr "Editar layout"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Edit notice"
@@ -3542,7 +3542,7 @@ msgstr "Editar programa"
 
 #: src/components/live/scene-grid.tsx
 msgid "Edit scenes"
-msgstr ""
+msgstr "Editar cenas"
 
 #: src/components/scene-rules-section.tsx
 msgid "Edit server combination"
@@ -3583,7 +3583,7 @@ msgstr "Acesso de emergência…"
 
 #: src/components/live/pane-layout.tsx
 msgid "Empty slot"
-msgstr ""
+msgstr "Espaço vazio"
 
 #: src/components/live/source-editor.tsx
 msgid "Empty to detect it, or e.g. mpegts."
@@ -3628,27 +3628,27 @@ msgstr "Encoder"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder connecting…"
-msgstr ""
+msgstr "Encoder conectando…"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder key refused"
-msgstr ""
+msgstr "Chave do encoder recusada"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder not connected"
-msgstr ""
+msgstr "Encoder não conectado"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder offline"
-msgstr ""
+msgstr "Encoder offline"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder ready"
-msgstr ""
+msgstr "Encoder pronto"
 
 #: src/components/live/belabox-card.tsx
 msgid "Encoder streaming"
-msgstr ""
+msgstr "Encoder transmitindo"
 
 #: src/components/live/obs-stats-popover.tsx
 msgid "Encoding lag"
@@ -3718,7 +3718,7 @@ msgstr "termina {0}"
 
 #: src/components/live/live-header.tsx
 msgid "Enter"
-msgstr ""
+msgstr "Enter"
 
 #: src/lib/api-messages.ts
 msgid "Enter a stream URL, like srt://, rtmp:// or https://. Files on the OBS computer can only be picked in OBS."
@@ -3766,7 +3766,7 @@ msgstr "Registros"
 
 #: src/components/live/live-header.tsx
 msgid "Esc"
-msgstr ""
+msgstr "Esc"
 
 #: src/routes/_app/admin/status.tsx
 msgid "EventSub cost"
@@ -3845,12 +3845,12 @@ msgstr "Fonte existente"
 
 #: src/components/live/live-header.tsx
 msgid "Exit immersive"
-msgstr ""
+msgstr "Sair do modo imersivo"
 
 #. placeholder {0}: source.name
 #: src/components/live/source-list.tsx
 msgid "Expand or collapse {0}"
-msgstr ""
+msgstr "Expandir ou recolher {0}"
 
 #: src/routes/_app/$workspace/settings/members.tsx
 msgid "Expires"
@@ -4083,7 +4083,7 @@ msgstr "Ocultar"
 #: src/components/live/pane-layout.tsx
 #: src/components/live/pane-title-row.tsx
 msgid "Hide {0}"
-msgstr ""
+msgstr "Ocultar {0}"
 
 #: src/components/copy-field.tsx
 #: src/components/secret-url-input.tsx
@@ -4208,11 +4208,11 @@ msgstr "Ignorando {0}"
 
 #: src/components/live/live-header.tsx
 msgid "Immersive"
-msgstr ""
+msgstr "Imersivo"
 
 #: src/components/live/live-header.tsx
 msgid "Immersive: hide the sidebar (F)"
-msgstr ""
+msgstr "Imersivo: ocultar a barra lateral (F)"
 
 #: src/routes/_app/orgs/$organization/clients.tsx
 msgid "Import"
@@ -4256,7 +4256,7 @@ msgstr "Em 7 dias"
 
 #: src/components/live/source-list.tsx
 msgid "In cued Preview"
-msgstr ""
+msgstr "Na Prévia preparada"
 
 #: src/components/admin/organization-limits-form.tsx
 msgid "In every client."
@@ -4272,7 +4272,7 @@ msgstr "no OBS"
 
 #: src/components/live/on-air-pane.tsx
 msgid "In OBS"
-msgstr ""
+msgstr "No OBS"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "In OBS, open <0>Tools → WebSocket Server Settings</0>, turn on the WebSocket server and enter its port and password here (<1>Show Connect Info</1> shows both)."
@@ -4280,7 +4280,7 @@ msgstr "No OBS, abra <0>Tools → WebSocket Server Settings</0>, ligue o servido
 
 #: src/components/live/source-list.tsx
 msgid "In Program"
-msgstr ""
+msgstr "No Programa"
 
 #: src/components/scene-rules-section.tsx
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
@@ -4289,7 +4289,7 @@ msgstr "em uso"
 
 #: src/components/live/server-card.tsx
 msgid "In use"
-msgstr ""
+msgstr "Em uso"
 
 #: src/routes/_app/admin/users/index.tsx
 msgid "Inactive 30+ days"
@@ -4305,11 +4305,11 @@ msgstr "Formato de entrada"
 
 #: src/components/live/pane-layout.tsx
 msgid "Insert after"
-msgstr ""
+msgstr "Inserir depois"
 
 #: src/components/live/pane-layout.tsx
 msgid "Insert before"
-msgstr ""
+msgstr "Inserir antes"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Instances"
@@ -4463,7 +4463,7 @@ msgstr "Ela sai do OBS na hora, ao vivo. Se nenhuma outra cena a usa, o OBS a ap
 
 #: src/components/live/scene-grid.tsx
 msgid "It’s the current scene: switch to another scene first."
-msgstr ""
+msgstr "É a cena atual: troque para outra cena primeiro."
 
 #: src/components/live/source-editor.tsx
 msgid "It’s the same source, not a copy: changing it changes it in every scene it’s in. To change one on its own, duplicate it instead."
@@ -4499,7 +4499,7 @@ msgstr "O próprio tamanho."
 
 #: src/components/live/monitors.tsx
 msgid "Its picture is private until it’s on air"
-msgstr ""
+msgstr "A imagem é privada até entrar no ar"
 
 #: src/lib/live-format.ts
 msgid "Its remote control reached NOALBS"
@@ -4623,11 +4623,11 @@ msgstr "Mantido para todos os clientes."
 
 #: src/components/live/live-header.tsx
 msgid "Keyboard shortcuts"
-msgstr ""
+msgstr "Atalhos de teclado"
 
 #: src/components/live/live-header.tsx
 msgid "Keyboard shortcuts (?)"
-msgstr ""
+msgstr "Atalhos de teclado (?)"
 
 #: src/routes/_app/admin/status.tsx
 msgid "Kick"
@@ -4662,7 +4662,7 @@ msgstr "Idioma"
 
 #: src/components/live/bitrate-pane.tsx
 msgid "Last 2 min"
-msgstr ""
+msgstr "Últimos 2 min"
 
 #: src/routes/_app/admin/users/$user.tsx
 #: src/routes/_app/admin/users/index.tsx
@@ -4678,11 +4678,11 @@ msgstr "Último erro {0}{1}: {2}"
 
 #: src/components/live/scene-grid.tsx
 msgid "Last known"
-msgstr ""
+msgstr "Último estado conhecido"
 
 #: src/components/live/on-air-pane.tsx
 msgid "Last known scene"
-msgstr ""
+msgstr "Última cena conhecida"
 
 #. placeholder {0}: formatRelative(device.last_seen_at)
 #: src/components/connect-settings.tsx
@@ -4845,7 +4845,7 @@ msgstr "Links copiados"
 
 #: src/components/live/source-list.tsx
 msgid "LISTED"
-msgstr ""
+msgstr "LISTADO"
 
 #: src/components/admin/products.tsx
 msgid "Listed as currently unavailable: nobody can buy more, those who have it keep it."
@@ -4853,7 +4853,7 @@ msgstr "Listado como indisponível no momento: ninguém pode comprar mais, quem 
 
 #: src/components/live/source-list.tsx
 msgid "Listed here. Tap to hide it from this list."
-msgstr ""
+msgstr "Listado aqui. Toque para ocultar desta lista."
 
 #: src/components/admin/products.tsx
 msgid "Listed, but nobody can buy it yet."
@@ -4873,7 +4873,7 @@ msgstr "Ao vivo"
 
 #: src/components/live/scene-grid.tsx
 msgid "LIVE"
-msgstr ""
+msgstr "LIVE"
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Live feed"
@@ -4932,7 +4932,7 @@ msgstr "Carregando programas…"
 
 #: src/components/live/monitors.tsx
 msgid "Loading transitions…"
-msgstr ""
+msgstr "Carregando transições…"
 
 #: src/components/live/activity-feed.tsx
 #: src/components/live/obs-preview.tsx
@@ -5018,7 +5018,7 @@ msgstr "Baixo"
 
 #: src/components/live/scene-grid.tsx
 msgid "LOW"
-msgstr ""
+msgstr "BAIXO"
 
 #. placeholder {0}: formatKbps(switcher.triggers.low)
 #. placeholder {0}: formatKbps(triggers.low)
@@ -5145,7 +5145,7 @@ msgstr "Marcar como visto"
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment"
-msgstr ""
+msgstr "Marcar este momento"
 
 #: src/components/live/quick-actions.tsx
 msgid "Mark this moment on the stream"
@@ -5293,7 +5293,7 @@ msgstr "Moblin conectado"
 
 #: src/components/live/moblin-card.tsx
 msgid "Moblin connecting…"
-msgstr ""
+msgstr "Moblin conectando…"
 
 #: src/lib/live-format.ts
 msgid "Moblin connection priorities off"
@@ -5346,7 +5346,7 @@ msgstr "Moblin sem som"
 
 #: src/components/live/moblin-card.tsx
 msgid "Moblin not connected"
-msgstr ""
+msgstr "Moblin não conectado"
 
 #: src/components/moblin-settings.tsx
 msgid "Moblin password"
@@ -5358,7 +5358,7 @@ msgstr "Senha do Moblin recusada"
 
 #: src/components/live/moblin-card.tsx
 msgid "Moblin paused"
-msgstr ""
+msgstr "Moblin pausado"
 
 #: src/lib/live-format.ts
 msgid "Moblin problem"
@@ -5366,7 +5366,7 @@ msgstr "Problema no Moblin"
 
 #: src/components/live/moblin-card.tsx
 msgid "Moblin ready"
-msgstr ""
+msgstr "Moblin pronto"
 
 #: src/lib/live-format.ts
 msgid "Moblin recording"
@@ -5403,7 +5403,7 @@ msgstr "O Moblin para de enviar, então o servidor de stream perde o feed."
 
 #: src/components/live/moblin-card.tsx
 msgid "Moblin streaming"
-msgstr ""
+msgstr "Moblin transmitindo"
 
 #: src/lib/live-format.ts
 msgid "Moblin unmuted"
@@ -5498,12 +5498,12 @@ msgstr "Mover {0}"
 #. placeholder {0}: title(id)
 #: src/components/live/pane-layout.tsx
 msgid "Move {0} down"
-msgstr ""
+msgstr "Mover {0} para baixo"
 
 #. placeholder {0}: title(id)
 #: src/components/live/pane-layout.tsx
 msgid "Move {0} up"
-msgstr ""
+msgstr "Mover {0} para cima"
 
 #: src/components/scene-rules-section.tsx
 msgid "Move {label}"
@@ -5511,7 +5511,7 @@ msgstr "Mover {label}"
 
 #: src/components/live/pane-layout.tsx
 msgid "Move to a new row"
-msgstr ""
+msgstr "Mover para uma nova linha"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Move to Free"
@@ -5545,7 +5545,7 @@ msgstr "MRR"
 #: src/components/live/bitrate-pane.tsx
 #: src/components/live/server-card.tsx
 msgid "ms RTT"
-msgstr ""
+msgstr "ms RTT"
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/moblin-card.tsx
@@ -5860,7 +5860,7 @@ msgstr "Sem feed"
 
 #: src/components/live/bitrate-pane.tsx
 msgid "No feed <0>· bitrate unavailable</0>"
-msgstr ""
+msgstr "Sem sinal <0>· bitrate indisponível</0>"
 
 #. placeholder {0}: event.data.minutes
 #: src/lib/live-format.ts
@@ -5885,7 +5885,7 @@ msgstr "Nenhuma instância seguiu chats do YouTube ainda."
 
 #: src/components/live/live-header.tsx
 msgid "No key starts or stops streaming or recording. Stopping asks to confirm."
-msgstr ""
+msgstr "Nenhuma tecla inicia ou para a transmissão ou a gravação. Parar pede confirmação."
 
 #: src/components/connect-settings.tsx
 msgid "No logs yet. Connect uploads one after an OBS crash, or get the latest one here."
@@ -5961,7 +5961,7 @@ msgstr "Nenhum programa foi adicionado ainda."
 
 #: src/components/live/scene-grid.tsx
 msgid "No role"
-msgstr ""
+msgstr "Sem função"
 
 #: src/routes/_app/orgs/$organization/live.tsx
 #: src/routes/_app/workspaces/live.tsx
@@ -5970,7 +5970,7 @@ msgstr "Sem cena"
 
 #: src/components/live/scene-grid.tsx
 msgid "No scene matches “{search}”."
-msgstr ""
+msgstr "Nenhuma cena corresponde a “{search}”."
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "No server swaps in its own scenes. "
@@ -5997,7 +5997,7 @@ msgstr "Sem chip"
 
 #: src/components/live/source-list.tsx
 msgid "No source matches “{search}”."
-msgstr ""
+msgstr "Nenhuma fonte corresponde a “{search}”."
 
 #: src/routes/_app/$workspace/s/$switcher/history/$stream.tsx
 msgid "No stats from this server."
@@ -6005,7 +6005,7 @@ msgstr "Sem estatísticas deste servidor."
 
 #: src/components/live/bitrate-pane.tsx
 msgid "No stream server"
-msgstr ""
+msgstr "Nenhum servidor de stream"
 
 #: src/components/history/raw-explorer.tsx
 msgid "No stream server reported stats during this stream."
@@ -6320,7 +6320,7 @@ msgstr "Não ignorado"
 
 #: src/components/live/source-list.tsx
 msgid "Not listed here. Tap to list it."
-msgstr ""
+msgstr "Não listado aqui. Toque para listar."
 
 #: src/components/admin/products.tsx
 msgid "Not listed. Workspaces that already have it still see it and can lower it."
@@ -6369,7 +6369,7 @@ msgstr "Não suspenso."
 
 #: src/components/live/on-air-pane.tsx
 msgid "Not switching while paused"
-msgstr ""
+msgstr "Sem troca durante a pausa"
 
 #: src/components/live/quick-actions.tsx
 msgid "Not yet"
@@ -6534,19 +6534,19 @@ msgstr "OBS DESCONECTADO"
 
 #: src/components/live/scene-grid.tsx
 msgid "OBS disconnected · last known scenes"
-msgstr ""
+msgstr "OBS desconectado · últimas cenas conhecidas"
 
 #: src/components/live/obs-preview.tsx
 msgid "OBS disconnected · last known state"
-msgstr ""
+msgstr "OBS desconectado · último estado conhecido"
 
 #: src/components/live/scene-grid.tsx
 msgid "OBS disconnected · no current scene data"
-msgstr ""
+msgstr "OBS desconectado · sem dados da cena atual"
 
 #: src/components/live/monitors.tsx
 msgid "OBS disconnected · stream state unknown"
-msgstr ""
+msgstr "OBS desconectado · estado da transmissão desconhecido"
 
 #: src/components/live/source-editor.tsx
 msgid "OBS doesn’t have the VLC plugin"
@@ -6697,7 +6697,7 @@ msgstr "Desligado"
 
 #: src/components/live/live-header.tsx
 msgid "Off air"
-msgstr ""
+msgstr "Fora do ar"
 
 #: src/components/live/source-position.tsx
 msgid "Off air, the preview is hidden: the box is drawn without it."
@@ -6709,7 +6709,7 @@ msgstr "Fora do ar, a prévia fica oculta. Ela volta a aparecer quando o stream 
 
 #: src/components/live/monitors.tsx
 msgid "Off air: the picture is private"
-msgstr ""
+msgstr "Fora do ar: a imagem é privada"
 
 #: src/components/live/moblin-card.tsx
 msgid "Off: Moblin uses every connection alike. Turn on to switch connections off or prefer one. Only SRTLA streams use these."
@@ -6785,7 +6785,7 @@ msgstr "NO AR"
 #: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "ON AIR {0}"
-msgstr ""
+msgstr "NO AR {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/scenes.tsx
 msgid "On command"
@@ -6963,7 +6963,7 @@ msgstr "Rede aberta: sem senha"
 
 #: src/components/live/obs-pane.tsx
 msgid "Open OBS with the NOALBS browser source active to see its stats."
-msgstr ""
+msgstr "Abra o OBS com a fonte de navegador do NOALBS ativa para ver as estatísticas."
 
 #: src/routes/_app/$workspace/s/$switcher/live.tsx
 msgid "Open settings"
@@ -7034,7 +7034,7 @@ msgstr "Operadora {saved}"
 
 #: src/components/live/live-header.tsx
 msgid "Operator shortcuts"
-msgstr ""
+msgstr "Atalhos do operador"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "Optional"
@@ -7152,7 +7152,7 @@ msgstr "Proprietários, administradores e operadores podem usar."
 
 #: src/components/live/live-header.tsx
 msgid "Page mode"
-msgstr ""
+msgstr "Modo da página"
 
 #: src/components/live/source-editor.tsx
 msgid "page URL"
@@ -7192,7 +7192,7 @@ msgstr "Pausar, e continuar ao aparecer"
 
 #: src/components/live/quick-actions.tsx
 msgid "paused"
-msgstr ""
+msgstr "pausado"
 
 #: src/routes/_app/admin/status.tsx
 #: src/routes/_app/admin/workspaces/$workspace.tsx
@@ -7326,7 +7326,7 @@ msgstr "Pixels cortados de cada lado da fonte, antes de ela ser dimensionada."
 
 #: src/components/live/pane-layout.tsx
 msgid "Place here"
-msgstr ""
+msgstr "Colocar aqui"
 
 #: src/components/app-shell.tsx
 #: src/components/orgs/managed-plan.tsx
@@ -7435,24 +7435,24 @@ msgstr "Prévia"
 
 #: src/components/live/monitors.tsx
 msgid "PREVIEW"
-msgstr ""
+msgstr "PRÉVIA"
 
 #: src/components/live/scene-grid.tsx
 msgid "Preview · last known"
-msgstr ""
+msgstr "Prévia · último estado conhecido"
 
 #: src/components/live/monitors.tsx
 msgid "PREVIEW · LAST KNOWN"
-msgstr ""
+msgstr "PRÉVIA · ÚLTIMO ESTADO CONHECIDO"
 
 #: src/components/live/monitors.tsx
 #: src/components/live/pane-layout-model.ts
 msgid "Preview / Program"
-msgstr ""
+msgstr "Prévia / Programa"
 
 #: src/components/live/monitors.tsx
 msgid "Preview and Program"
-msgstr ""
+msgstr "Prévia e Programa"
 
 #: src/components/live/obs-preview.tsx
 msgid "Preview settings"
@@ -7491,7 +7491,7 @@ msgstr "Principal"
 #. placeholder {0}: rank ?? server.priority
 #: src/components/live/server-card.tsx
 msgid "Priority {0}"
-msgstr ""
+msgstr "Prioridade {0}"
 
 #: src/components/live/moblin-card.tsx
 msgid "Priority: higher is used more when stable"
@@ -7515,11 +7515,11 @@ msgstr "Produtos"
 
 #: src/components/live/monitors.tsx
 msgid "PROGRAM · ACTIVE"
-msgstr ""
+msgstr "PROGRAMA · ATIVO"
 
 #: src/components/live/monitors.tsx
 msgid "PROGRAM · LAST KNOWN"
-msgstr ""
+msgstr "PROGRAMA · ÚLTIMO ESTADO CONHECIDO"
 
 #: src/lib/live-format.ts
 msgid "Program added"
@@ -7614,12 +7614,12 @@ msgstr "REC"
 #: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "REC {0}"
-msgstr ""
+msgstr "REC {0}"
 
 #: src/components/live/live-header.tsx
 #: src/components/live/quick-actions.tsx
 msgid "REC paused"
-msgstr ""
+msgstr "REC pausado"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Receiving"
@@ -7649,7 +7649,7 @@ msgstr "Espera para reconectar (s)"
 
 #: src/components/live/quick-actions.tsx
 msgid "reconnect sources"
-msgstr ""
+msgstr "reconectar fontes"
 
 #: src/routes/_app/admin/workspaces/$workspace.tsx
 msgid "Reconnect the browser source?"
@@ -7691,7 +7691,7 @@ msgstr "Registrado no log de auditoria da equipe."
 
 #: src/components/live/quick-actions.tsx
 msgid "recording"
-msgstr ""
+msgstr "gravação"
 
 #: src/components/live/moblin-card.tsx
 #: src/routes/_app/admin/status.tsx
@@ -7828,7 +7828,7 @@ msgstr "Remover o apelido {alias}"
 
 #: src/components/live/pane-layout.tsx
 msgid "Remove empty slot"
-msgstr ""
+msgstr "Remover espaço vazio"
 
 #. placeholder {0}: source.parent
 #: src/components/live/source-list.tsx
@@ -7850,7 +7850,7 @@ msgstr "Remover programa?"
 #. placeholder {0}: visual.source + 1
 #: src/components/live/pane-layout.tsx
 msgid "Remove row {0}"
-msgstr ""
+msgstr "Remover linha {0}"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Remove server"
@@ -7957,7 +7957,7 @@ msgstr "Renomear {0}"
 
 #: src/components/live/belabox-card.tsx
 msgid "Rename interface {title}"
-msgstr ""
+msgstr "Renomear a interface {title}"
 
 #: src/components/connect-settings.tsx
 #: src/routes/_app/$workspace/s/$switcher/obs.tsx
@@ -8031,22 +8031,22 @@ msgstr "Pediu um log do OBS pelo Connect"
 
 #: src/components/live/pane-layout.tsx
 msgid "Reset"
-msgstr ""
+msgstr "Redefinir"
 
 #: src/components/live/pane-layout.tsx
 msgid "Reset to default"
-msgstr ""
+msgstr "Restaurar padrão"
 
 #. placeholder {0}: left.index + 1
 #. placeholder {1}: right.index + 1
 #: src/components/live/pane-layout-resize.tsx
 msgid "Resize columns {0} and {1}"
-msgstr ""
+msgstr "Redimensionar as colunas {0} e {1}"
 
 #. placeholder {0}: source + 1
 #: src/components/live/pane-layout-resize.tsx
 msgid "Resize row {0} height"
-msgstr ""
+msgstr "Redimensionar a altura da linha {0}"
 
 #: src/components/connect-controls.tsx
 #: src/lib/connect.ts
@@ -8096,7 +8096,7 @@ msgstr "Retomou a assinatura"
 #: src/components/live/activity-feed.tsx
 #: src/components/live/scene-grid.tsx
 msgid "Retry"
-msgstr ""
+msgstr "Tentar novamente"
 
 #: src/lib/api-messages.ts
 msgid "Retry attempts must be between 0 and 100"
@@ -8188,7 +8188,7 @@ msgstr "Tempo de ida e volta (RTT)"
 #. placeholder {0}: visual.source + 1
 #: src/components/live/pane-layout.tsx
 msgid "Row {0}"
-msgstr ""
+msgstr "Linha {0}"
 
 #: src/lib/belabox.ts
 msgid "RTMP ingest - {stream}"
@@ -8392,7 +8392,7 @@ msgstr "Substituições de cena"
 
 #: src/components/live/scene-grid.tsx
 msgid "Scene selections"
-msgstr ""
+msgstr "Seleções de cena"
 
 #: src/lib/organizations.ts
 msgid "Scene switches"
@@ -8460,15 +8460,15 @@ msgstr "Buscar por workspace ou switcher"
 #: src/components/live/live-header.tsx
 #: src/components/live/scene-grid.tsx
 msgid "Search scenes"
-msgstr ""
+msgstr "Buscar cenas"
 
 #: src/components/live/scene-grid.tsx
 msgid "Search scenes · /"
-msgstr ""
+msgstr "Buscar cenas · /"
 
 #: src/components/live/source-list.tsx
 msgid "Search sources"
-msgstr ""
+msgstr "Buscar fontes"
 
 #: src/components/belabox/wifi-panel.tsx
 msgid "Secured"
@@ -8723,7 +8723,7 @@ msgstr "Desloca o áudio em relação ao vídeo, de {AUDIO_DELAY_MIN} a {AUDIO_D
 
 #: src/components/live/live-header.tsx
 msgid "Shortcuts"
-msgstr ""
+msgstr "Atalhos"
 
 #: src/components/history/raw-explorer.tsx
 #: src/routes/_app/admin/audit.tsx
@@ -8772,11 +8772,11 @@ msgstr "Mostrar mais antigos"
 
 #: src/components/live/scene-grid.tsx
 msgid "Show scenes as grid"
-msgstr ""
+msgstr "Mostrar cenas em grade"
 
 #: src/components/live/scene-grid.tsx
 msgid "Show scenes as list"
-msgstr ""
+msgstr "Mostrar cenas em lista"
 
 #: src/components/connect-settings.tsx
 msgid "Show sensitive values"
@@ -8792,7 +8792,7 @@ msgstr "Mostrar a prévia do OBS"
 
 #: src/components/live/live-header.tsx
 msgid "Show the sidebar (F)"
-msgstr ""
+msgstr "Mostrar a barra lateral (F)"
 
 #: src/routes/_app/$workspace/s/$switcher/triggers.tsx
 msgid "Show the Starting scene when the stream starts."
@@ -8813,7 +8813,7 @@ msgstr "Em exibição"
 
 #: src/components/live/source-list.tsx
 msgid "Shown"
-msgstr ""
+msgstr "Exibido"
 
 #: src/components/live/audio-mixer.tsx
 #: src/components/live/scene-grid.tsx
@@ -8823,7 +8823,7 @@ msgstr "VISÍVEL"
 
 #: src/components/live/source-list.tsx
 msgid "Shown · parent hidden"
-msgstr ""
+msgstr "Exibido · item pai oculto"
 
 #: src/components/admin/notice-dialog.tsx
 msgid "Shown at the top of the dashboard to everyone who is signed in. Plain text only."
@@ -8996,7 +8996,7 @@ msgstr "As fontes aparecem quando o OBS estiver conectado."
 
 #: src/components/live/live-header.tsx
 msgid "Space"
-msgstr ""
+msgstr "Espaço"
 
 #: src/routes/_app/$workspace/settings/plan.tsx
 msgid "Sponsor on GitHub"
@@ -9369,7 +9369,7 @@ msgstr "Stream iniciado"
 
 #: src/components/live/on-air-pane.tsx
 msgid "Stream state unknown · waiting for OBS"
-msgstr ""
+msgstr "Estado da transmissão desconhecido · aguardando o OBS"
 
 #: src/lib/live-format.ts
 msgid "Stream stopped"
@@ -9385,7 +9385,7 @@ msgstr "URL do stream"
 
 #: src/components/live/live-header.tsx
 msgid "Streamer"
-msgstr ""
+msgstr "Streamer"
 
 #: src/routes/_app/$workspace/s/$switcher/servers.tsx
 msgid "Streaming from your phone straight to Twitch or Kick? Then there’s no server to read yet: you need one in between."
@@ -9429,7 +9429,7 @@ msgstr "Travou em uma etapa? O <0>guia de início rápido</0> explica o passo a 
 
 #: src/components/live/monitors.tsx
 msgid "Studio mode"
-msgstr ""
+msgstr "Modo Estúdio"
 
 #: src/routes/_app/$workspace/s/$switcher/chat.tsx
 msgid "Subscribers"
@@ -9514,7 +9514,7 @@ msgstr "Suspensão encerrada"
 
 #: src/components/live/pane-layout.tsx
 msgid "Swap panes"
-msgstr ""
+msgstr "Trocar painéis"
 
 #: src/components/chat/chat-links.tsx
 msgid "Switch alerts are off for this switcher. <0>Turn on</0>"
@@ -9601,7 +9601,7 @@ msgstr "Trocar de workspace"
 #: src/components/live/monitors.tsx
 #: src/components/live/on-air-pane.tsx
 msgid "Switched by {by}"
-msgstr ""
+msgstr "Trocada por {by}"
 
 #: src/lib/support.ts
 msgid "Switched scene"
@@ -9694,7 +9694,7 @@ msgstr "Sincronizado do OBS {0}"
 #: src/components/live/live-header.tsx
 #: src/components/live/monitors.tsx
 msgid "Take"
-msgstr ""
+msgstr "Take"
 
 #: src/components/live/audio-mixer.tsx
 msgid "Tap inputs to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9702,7 +9702,7 @@ msgstr "Toque nas entradas para mostrar ou ocultar aqui. Só este navegador lemb
 
 #: src/components/live/scene-grid.tsx
 msgid "Tap scenes below to show or hide them here. Only this browser remembers it; the scene on air always shows."
-msgstr ""
+msgstr "Toque nas cenas abaixo para mostrá-las ou ocultá-las aqui. Só este navegador se lembra disso; a cena no ar sempre aparece."
 
 #: src/components/live/source-list.tsx
 msgid "Tap sources to show or hide them here. Only this browser remembers it, and OBS isn’t changed."
@@ -9955,7 +9955,7 @@ msgstr "A fonte de navegador alcançou o OBS"
 
 #: src/components/live/monitors.tsx
 msgid "The cued scene"
-msgstr ""
+msgstr "A cena preparada"
 
 #: src/routes/_app/$workspace/s/$switcher/setup.tsx
 msgid "The current link stops working, so you’ll need to paste the new one into OBS."
@@ -9967,7 +9967,7 @@ msgstr "O link atual para de funcionar, então você precisará colar o novo no 
 
 #: src/components/live/operator-state.ts
 msgid "the dashboard"
-msgstr ""
+msgstr "o painel"
 
 #: src/components/billing/addon-card.tsx
 #: src/routes/_app/$workspace/settings/plan.tsx
@@ -10130,7 +10130,7 @@ msgstr "A prévia só é mostrada enquanto o stream está ao vivo."
 
 #: src/components/live/monitors.tsx
 msgid "The preview is turned off"
-msgstr ""
+msgstr "A prévia está desligada"
 
 #: src/lib/obs-preview.ts
 msgid "The preview shows only while the stream is live."
@@ -10591,11 +10591,11 @@ msgstr "Transferindo…"
 
 #: src/components/live/monitors.tsx
 msgid "Transition"
-msgstr ""
+msgstr "Transição"
 
 #: src/components/live/monitors.tsx
 msgid "Transition duration"
-msgstr ""
+msgstr "Duração da transição"
 
 #: src/lib/support.ts
 msgid "Tried to change support access"
@@ -10692,7 +10692,7 @@ msgstr "Sem alteração"
 
 #: src/components/live/pane-layout.tsx
 msgid "Undo"
-msgstr ""
+msgstr "Desfazer"
 
 #: src/components/live/source-position.tsx
 msgid "Undo changes"
@@ -10751,7 +10751,7 @@ msgstr "Desvincular um canal o remove de todos os switchers, em todos os workspa
 
 #: src/components/live/source-list.tsx
 msgid "UNLISTED"
-msgstr ""
+msgstr "NÃO LISTADO"
 
 #: src/components/live/audio-mixer.tsx
 msgid "Unmute"
@@ -10978,7 +10978,7 @@ msgstr "Aguardando a fonte de navegador…"
 
 #: src/components/live/monitors.tsx
 msgid "Waiting for the first picture…"
-msgstr ""
+msgstr "Aguardando a primeira imagem…"
 
 #: src/components/live/quick-actions.tsx
 msgid "Waiting: switches once OBS is streaming"
