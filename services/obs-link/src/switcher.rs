@@ -544,29 +544,38 @@ impl Runtime {
             return;
         };
         tracing::info!(minutes, ?stop, "Timeout reached, stopping the stream");
+        // A stream action the API or chat dispatched may still hold the claim
+        // (a start keeps it until OBS reports streaming); stopping on top of
+        // it can crash the output mid-handshake. Wait it out instead of
+        // skipping: `timed_out` already restarted the countdown, and the
+        // claim lapses at `live::ACTION_CLAIM_TTL`.
+        let key = format!("stream.{}", self.id());
+        let deadline = Instant::now() + live::ACTION_CLAIM_TTL * 2;
+        let revision = loop {
+            match self.deps.actions.create(&key, "".into()).await {
+                Ok(revision) => break Some(revision),
+                Err(error) if error.kind() == CreateErrorKind::AlreadyExists => {
+                    if Instant::now() >= deadline {
+                        tracing::info!(
+                            ?stop,
+                            "Timeout stop skipped: a stream action is still running"
+                        );
+                        return;
+                    }
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "Couldn't claim the stream action; stopping anyway");
+                    break None;
+                }
+            }
+        };
         let action = IntentAction::Stream { active: false };
         self.attribution().add_intent(Intent {
             action: action.clone(),
             by: by.into(),
             picked: false,
         });
-        // A stream action the API or chat dispatched may still hold the claim
-        // (a start keeps it until OBS reports streaming); stopping on top of
-        // it can crash the output mid-handshake, so skip while it's held —
-        // it lapses at `live::ACTION_CLAIM_TTL` and the next check retries.
-        let key = format!("stream.{}", self.id());
-        let revision = match self.deps.actions.create(&key, "".into()).await {
-            Ok(revision) => Some(revision),
-            Err(error) if error.kind() == CreateErrorKind::AlreadyExists => {
-                self.take_intent(&action);
-                tracing::info!(?stop, "Timeout stop skipped: a stream action is running");
-                return;
-            }
-            Err(error) => {
-                tracing::warn!(%error, "Couldn't claim the stream action; stopping anyway");
-                None
-            }
-        };
         match self.obs.stream(false).await {
             Ok(()) => self.record(event(minutes)).await,
             Err(error) => {
