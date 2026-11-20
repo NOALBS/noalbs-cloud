@@ -125,6 +125,9 @@ struct Runtime {
     recording: bool,
     recording_paused: bool,
     server_tasks: Vec<tokio::task::JoinHandle<()>>,
+    /// Detached timeout stops ([`Self::stop_for_timeout`]), so a restart
+    /// cancels one still waiting for its claim.
+    stop_tasks: Vec<tokio::task::JoinHandle<()>>,
     started: Instant,
     /// Stream history, while streaming.
     recorder: Option<Recorder>,
@@ -132,7 +135,7 @@ struct Runtime {
 
 impl Drop for Runtime {
     fn drop(&mut self) {
-        for task in &self.server_tasks {
+        for task in self.server_tasks.iter().chain(&self.stop_tasks) {
             task.abort();
         }
         // A restart or OBS going away mid-bucket: write what we have. The next
@@ -181,6 +184,7 @@ pub async fn run(deps: Deps, obs_events: &mut mpsc::UnboundedReceiver<Event>) ->
         recording: false,
         recording_paused: false,
         server_tasks: Vec::new(),
+        stop_tasks: Vec::new(),
         started: Instant::now(),
         recorder: None,
         settings,
@@ -536,7 +540,7 @@ impl Runtime {
     /// claim is taken before the intent is added: a skipped stop leaves
     /// nothing to take back (and `take_intent` could have matched the
     /// in-flight action's own intent).
-    fn stop_for_timeout(&self, stop: Stop) {
+    fn stop_for_timeout(&mut self, stop: Stop) {
         let (minutes, by, event): (_, _, fn(u32) -> EventDetail) = match stop {
             Stop::OfflineTimeout => (
                 timeout_minutes(self.settings.offline_timeout),
@@ -555,7 +559,7 @@ impl Runtime {
         tracing::info!(minutes, ?stop, "Timeout reached, stopping the stream");
         let deps = self.deps.clone();
         let obs = self.obs.clone();
-        crate::spawn(async move {
+        self.stop_tasks.push(crate::spawn(async move {
             // `timed_out` already restarted the countdown, so waiting out a
             // held claim (it lapses at `live::ACTION_CLAIM_TTL`) is better than
             // skipping and leaving dead air for a whole extra timeout.
@@ -614,7 +618,7 @@ impl Runtime {
             {
                 tracing::debug!(%error, "Claim already gone");
             }
-        });
+        }));
     }
 
     /// Starts recording history for the stream that started at `started_at`:
