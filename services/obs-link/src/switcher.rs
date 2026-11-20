@@ -11,6 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use async_nats::jetstream::kv::{self, CreateErrorKind};
 use chrono::Utc;
 use db::stream_servers::{self, StreamServer, StreamServerKind};
 use live::{
@@ -104,6 +105,10 @@ pub struct Deps {
     pub data_key: common::crypto::DataKey,
     /// The BELABOX Cloud link, when the switcher has a remote key.
     pub belabox: Option<belabox::Handle>,
+    /// The action-claims bucket ([`live::ACTIONS_BUCKET`]): a stream action
+    /// the API or chat dispatched holds `stream.<switcher ID>` until OBS
+    /// reports the change, and our own stream stops must not interleave.
+    pub actions: kv::Store,
 }
 
 struct Runtime {
@@ -545,12 +550,38 @@ impl Runtime {
             by: by.into(),
             picked: false,
         });
+        // A stream action the API or chat dispatched may still hold the claim
+        // (a start keeps it until OBS reports streaming); stopping on top of
+        // it can crash the output mid-handshake, so skip while it's held —
+        // it lapses at `live::ACTION_CLAIM_TTL` and the next check retries.
+        let key = format!("stream.{}", self.id());
+        let revision = match self.deps.actions.create(&key, "".into()).await {
+            Ok(revision) => Some(revision),
+            Err(error) if error.kind() == CreateErrorKind::AlreadyExists => {
+                self.take_intent(&action);
+                tracing::info!(?stop, "Timeout stop skipped: a stream action is running");
+                return;
+            }
+            Err(error) => {
+                tracing::warn!(%error, "Couldn't claim the stream action; stopping anyway");
+                None
+            }
+        };
         match self.obs.stream(false).await {
             Ok(()) => self.record(event(minutes)).await,
             Err(error) => {
                 self.take_intent(&action);
                 tracing::warn!(%error, ?stop, "Couldn't stop the stream for the timeout");
             }
+        }
+        if let Some(revision) = revision
+            && let Err(error) = self
+                .deps
+                .actions
+                .delete_expect_revision(key, Some(revision))
+                .await
+        {
+            tracing::debug!(%error, "Claim already gone");
         }
     }
 
