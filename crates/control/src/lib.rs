@@ -10,7 +10,7 @@
 //! BELABOX commands go to obs-link's BELABOX link as a request ([`Control::belabox`]), Moblin
 //! commands to the connected Moblin ([`Control::moblin`]).
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use async_nats::jetstream::kv::{self, CreateErrorKind, UpdateErrorKind};
 use live::{
@@ -457,8 +457,12 @@ impl Control {
     }
 
     /// Starts (`active`) or stops the stream. A start and a stop (or two of
-    /// either) may not interleave, so the claim lasts the call (renewed for a
-    /// slow one): a stop right after a start still goes through.
+    /// either) may not interleave, so the claim lasts the call — and the
+    /// output's asynchronous start after it: obs-websocket answers once OBS
+    /// takes the request, but `streaming` only flips when obs-link sees the
+    /// started event, and a second start landing in that gap restarts the
+    /// output mid-handshake (which crashes OBS). The claim is held until the
+    /// status catches up, bounded by [`live::ACTION_CLAIM_TTL`].
     pub async fn stream(&self, switcher_id: Uuid, active: bool, by: &str) -> Result<()> {
         let obs = self.controllable_obs(switcher_id).await?;
         let claim = self.action_claim(switcher_id, "stream").await?;
@@ -466,18 +470,48 @@ impl Control {
             .await;
         let renewal = claim.renewing();
         let result = obs.stream(active).await;
+        if result.is_ok() {
+            self.settled(switcher_id, |status| status.streaming == active)
+                .await;
+        }
         renewal.stop().await.release().await;
         result?;
         Ok(())
     }
 
-    /// Starts (`active`) or stops recording.
+    /// Starts (`active`) or stops recording, claimed like
+    /// [`stream`](Self::stream).
     pub async fn record(&self, switcher_id: Uuid, active: bool, by: &str) -> Result<()> {
         let obs = self.controllable_obs(switcher_id).await?;
+        let claim = self.action_claim(switcher_id, "record").await?;
         self.announce(switcher_id, IntentAction::Record { active }, by)
             .await;
-        obs.record(active).await?;
+        let renewal = claim.renewing();
+        let result = obs.record(active).await;
+        if result.is_ok() {
+            self.settled(switcher_id, |status| status.recording == active)
+                .await;
+        }
+        renewal.stop().await.release().await;
+        result?;
         Ok(())
+    }
+
+    /// Waits for obs-link's status to catch up with a dispatched OBS request.
+    /// OBS answers a start/stop when it takes it, but the output keeps
+    /// (re)initializing asynchronously and the status only flips on OBS's
+    /// event; until then a second request would reach OBS mid-handshake, so
+    /// the caller keeps its claim for this long at most.
+    async fn settled(&self, switcher_id: Uuid, done: impl Fn(&SwitcherStatus) -> bool) {
+        let deadline = Instant::now() + live::ACTION_CLAIM_TTL;
+        while !self
+            .status(switcher_id)
+            .await
+            .is_some_and(|status| done(&status))
+            && Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
     }
 
     /// Fixes a frozen feed like NOALBS's `!fix`: the network media sources

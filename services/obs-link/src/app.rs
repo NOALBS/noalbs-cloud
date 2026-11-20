@@ -1041,6 +1041,7 @@ impl Connection {
             handover: session.handover.clone(),
             data_key: self.shared.data_key.clone(),
             belabox: session.belabox.as_ref().map(belabox::Link::handle),
+            actions: self.shared.stores.actions.clone(),
         };
         let (events, mut events_rx) = mpsc::unbounded_channel();
 
