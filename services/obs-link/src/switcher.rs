@@ -519,7 +519,7 @@ impl Runtime {
             self.switch_to(target, cause).await;
         }
         if let Some(stop) = outcome.stop {
-            self.stop_for_timeout(stop).await;
+            self.stop_for_timeout(stop);
         }
     }
 
@@ -527,7 +527,16 @@ impl Runtime {
     /// for the ending timeout: stop the stream (and, through
     /// [`Self::on_stream`], whatever follows it). Chat hears about it from the
     /// `OfflineTimeout` / `EndingTimeout` event.
-    async fn stop_for_timeout(&mut self, stop: Stop) {
+    ///
+    /// Runs detached: a stream action the API or chat dispatched may still
+    /// hold the claim (a start keeps it until OBS reports streaming), and
+    /// stopping on top of it can crash the output mid-handshake. Waiting it
+    /// out inside the check would stall OBS event processing — the very
+    /// events that free the claim — so the stop waits off the loop, and the
+    /// claim is taken before the intent is added: a skipped stop leaves
+    /// nothing to take back (and `take_intent` could have matched the
+    /// in-flight action's own intent).
+    fn stop_for_timeout(&self, stop: Stop) {
         let (minutes, by, event): (_, _, fn(u32) -> EventDetail) = match stop {
             Stop::OfflineTimeout => (
                 timeout_minutes(self.settings.offline_timeout),
@@ -544,54 +553,68 @@ impl Runtime {
             return;
         };
         tracing::info!(minutes, ?stop, "Timeout reached, stopping the stream");
-        // A stream action the API or chat dispatched may still hold the claim
-        // (a start keeps it until OBS reports streaming); stopping on top of
-        // it can crash the output mid-handshake. Wait it out instead of
-        // skipping: `timed_out` already restarted the countdown, and the
-        // claim lapses at `live::ACTION_CLAIM_TTL`.
-        let key = format!("stream.{}", self.id());
-        let deadline = Instant::now() + live::ACTION_CLAIM_TTL * 2;
-        let revision = loop {
-            match self.deps.actions.create(&key, "".into()).await {
-                Ok(revision) => break Some(revision),
-                Err(error) if error.kind() == CreateErrorKind::AlreadyExists => {
-                    if Instant::now() >= deadline {
-                        tracing::info!(
-                            ?stop,
-                            "Timeout stop skipped: a stream action is still running"
-                        );
-                        return;
+        let deps = self.deps.clone();
+        let obs = self.obs.clone();
+        crate::spawn(async move {
+            // `timed_out` already restarted the countdown, so waiting out a
+            // held claim (it lapses at `live::ACTION_CLAIM_TTL`) is better than
+            // skipping and leaving dead air for a whole extra timeout.
+            let key = format!("stream.{}", deps.switcher_id);
+            let deadline = Instant::now() + live::ACTION_CLAIM_TTL * 2;
+            let revision = loop {
+                match deps.actions.create(&key, "".into()).await {
+                    Ok(revision) => break Some(revision),
+                    Err(error) if error.kind() == CreateErrorKind::AlreadyExists => {
+                        if Instant::now() >= deadline {
+                            tracing::info!(
+                                ?stop,
+                                "Timeout stop skipped: a stream action is still running"
+                            );
+                            return;
+                        }
+                        tokio::time::sleep(Duration::from_millis(500)).await;
                     }
-                    tokio::time::sleep(Duration::from_millis(500)).await;
+                    Err(error) => {
+                        tracing::warn!(%error, "Couldn't claim the stream action; stopping anyway");
+                        break None;
+                    }
+                }
+            };
+            let action = IntentAction::Stream { active: false };
+            deps.attribution
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .add_intent(Intent {
+                    action: action.clone(),
+                    by: by.into(),
+                    picked: false,
+                });
+            match obs.stream(false).await {
+                Ok(()) => {
+                    if let Err(error) =
+                        live::record_event(&deps.db, &deps.nats, deps.switcher_id, event(minutes))
+                            .await
+                    {
+                        tracing::warn!(%error, "Failed to record switcher event");
+                    }
                 }
                 Err(error) => {
-                    tracing::warn!(%error, "Couldn't claim the stream action; stopping anyway");
-                    break None;
+                    deps.attribution
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .take_intent(&action);
+                    tracing::warn!(%error, ?stop, "Couldn't stop the stream for the timeout");
                 }
             }
-        };
-        let action = IntentAction::Stream { active: false };
-        self.attribution().add_intent(Intent {
-            action: action.clone(),
-            by: by.into(),
-            picked: false,
-        });
-        match self.obs.stream(false).await {
-            Ok(()) => self.record(event(minutes)).await,
-            Err(error) => {
-                self.take_intent(&action);
-                tracing::warn!(%error, ?stop, "Couldn't stop the stream for the timeout");
+            if let Some(revision) = revision
+                && let Err(error) = deps
+                    .actions
+                    .delete_expect_revision(key, Some(revision))
+                    .await
+            {
+                tracing::debug!(%error, "Claim already gone");
             }
-        }
-        if let Some(revision) = revision
-            && let Err(error) = self
-                .deps
-                .actions
-                .delete_expect_revision(key, Some(revision))
-                .await
-        {
-            tracing::debug!(%error, "Claim already gone");
-        }
+        });
     }
 
     /// Starts recording history for the stream that started at `started_at`:
@@ -1062,6 +1085,7 @@ fn recording_scene_action(
 }
 
 /// Sends OBS requests over the browser source's connection.
+#[derive(Clone)]
 pub struct InnerCommSender(pub mpsc::UnboundedSender<app::InnerCommMessage>);
 
 #[async_trait::async_trait]
