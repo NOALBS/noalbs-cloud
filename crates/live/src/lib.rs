@@ -25,6 +25,7 @@
 
 mod audio;
 mod belabox;
+pub mod coordination;
 mod moblin;
 
 pub use audio::*;
