@@ -402,7 +402,10 @@ impl Connection {
         loop {
             tokio::select! {
                 _ = self.shutdown.changed() => {
-                    self.socket.close(None).await?;
+                    self.socket.close(Some(tokio_tungstenite::tungstenite::protocol::CloseFrame {
+                        code: tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Again,
+                        reason: "Server draining; reconnect".into(),
+                    })).await?;
                     return Ok(());
                 }
                 message = self.socket.next() => match message {

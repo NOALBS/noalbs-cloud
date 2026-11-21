@@ -215,6 +215,28 @@ chat environment), so nobody else can send OBS requests or chat commands:
 
 ### Updating
 
+API and chat expose `/health` (liveness) and `/ready` (readiness) on their HTTP
+ports. obs-link exposes the same endpoints on `OBS_LINK_HEALTH_PORT` (default
+`11001`), separate from its WebSocket listener. Readiness requires completed
+initialization, a connected NATS client and a database pool checkout within
+500 ms; liveness does not probe dependencies. Keep the obs-link health port
+internal; it need not be exposed by the public Service or proxy.
+
+On SIGTERM each service immediately becomes not-ready, continues serving for
+`DRAIN_DELAY_SECONDS` (default `5`, capped at `10`), then stops accepting work.
+Allow a **45-second termination grace**: application shutdown has a 25-second
+deadline after that delay, with time left for telemetry and process exit.
+API closes SSE feeds and joins its HTTP server. obs-link sends WebSocket close
+code `1013` (try again), stops session work and releases ownership last. Chat
+waits up to 15 seconds for in-flight commands before cancelling them and
+releasing claims. Deadline overruns are logged; work cannot be guaranteed to
+finish past these bounds.
+
+The Kubernetes API/obs-link Deployments use `maxSurge: 1`, `maxUnavailable: 0`.
+Chat remains a StatefulSet with ordinal-by-ordinal rolling replacement, not a
+surging Deployment; a single chat replica still has a rollout availability gap.
+No replica counts are changed by these settings.
+
 ```sh
 docker compose pull && docker compose up -d
 ```
@@ -387,6 +409,7 @@ are in each service's `src/config.rs`.
 | `NATS_USER`, `NATS_PASSWORD` | unset | The service's NATS user, if the NATS server requires one (see [NATS users](#nats-users)). |
 | `DATA_ENCRYPTION_KEY` | example key | Same as the API's. Required in release builds. |
 | `HOST`, `PORT` | `0.0.0.0`, `11000` | |
+| `HEALTH_PORT` | `11001` | Internal HTTP liveness/readiness listener. |
 | `POSTGRES_MAX_CONNECTIONS` | `10` | |
 | `BELABOX_URL` | `wss://remote.belabox.net/ws/remote` | BELABOX Cloud's remote endpoint (outbound WebSocket, for switchers with a BELABOX remote key). |
 | `ALLOW_PRIVATE_STATS_URLS` | `false` | Poll stats URLs on private addresses. Local testing or a self-hosted setup with servers on your own network only. |

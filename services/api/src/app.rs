@@ -19,6 +19,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ApiState {
+    pub stopping: tokio::sync::watch::Receiver<bool>,
     pub db: db::DbPool,
     pub nats: async_nats::Client,
     /// Changes whenever the NATS connection is made again (`live::Connections`).
@@ -284,6 +285,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         limits: std::sync::Arc::default(),
         client_ip_header: client_ip_header(&config)?,
         cookie_key: private_cookie_key(&config.cookie_secret)?,
+        stopping: shutdown_handle.subscribe(),
     };
 
     if config.dev_login {
@@ -299,6 +301,10 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         shutdown_handle.clone(),
     );
 
+    let readiness = shutdown_handle.readiness();
+    let probe_readiness = readiness.clone();
+    let probe_nats = state.nats.clone();
+    let probe_db = state.db.clone();
     let (router, openapi) = api_router().split_for_parts();
     let app = router
         .route("/", axum::routing::get(root))
@@ -314,10 +320,35 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         .layer(axum::middleware::from_fn(
             crate::request_spans::trace_requests,
         ))
-        .with_state(state);
+        .with_state(state)
+        .route("/health", axum::routing::get(|| async { "ok" }))
+        .route(
+            "/ready",
+            axum::routing::get(move || {
+                let (ready, nats, db) = (
+                    probe_readiness.clone(),
+                    probe_nats.clone(),
+                    probe_db.clone(),
+                );
+                async move {
+                    if ready
+                        .check(
+                            nats.connection_state() == async_nats::connection::State::Connected,
+                            async { db.acquire().await.is_ok() },
+                        )
+                        .await
+                    {
+                        axum::http::StatusCode::OK
+                    } else {
+                        axum::http::StatusCode::SERVICE_UNAVAILABLE
+                    }
+                }
+            }),
+        );
 
     let addr = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
+    readiness.initialized();
 
     axum::serve(
         listener,

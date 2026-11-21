@@ -131,9 +131,9 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
         tracing::warn!("No chat platform is configured: nothing to do");
     }
 
+    let mut handlers = tokio::spawn(handler::run(state.clone(), shutdown.clone()));
     let tasks = [
         tokio::spawn(twitch::shards::start(state.clone())),
-        tokio::spawn(handler::run(state.clone())),
         tokio::spawn(reconcile::run(state.clone())),
         tokio::spawn(events::run(state.clone())),
         tokio::spawn(notify::run(state.clone())),
@@ -147,13 +147,37 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
     let kick_raids = tokio::spawn(kick::raids::run(state.clone()));
     let youtube_chats = tokio::spawn(youtube::watcher::run(state.clone()));
 
+    let readiness = shutdown.readiness();
+    let probe_readiness = readiness.clone();
+    let probe_state = state.clone();
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
+        .route(
+            "/ready",
+            get(move || {
+                let (ready, state) = (probe_readiness.clone(), probe_state.clone());
+                async move {
+                    if ready
+                        .check(
+                            state.nats.connection_state()
+                                == async_nats::connection::State::Connected,
+                            async { state.db.acquire().await.is_ok() },
+                        )
+                        .await
+                    {
+                        axum::http::StatusCode::OK
+                    } else {
+                        axum::http::StatusCode::SERVICE_UNAVAILABLE
+                    }
+                }
+            }),
+        )
         .route("/chat/webhooks/kick", post(kick::webhook::handle))
         .with_state(state.clone());
     let listener =
         tokio::net::TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
     tracing::info!(host = %config.host, port = config.port, "Listening");
+    readiness.initialized();
     let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
     let server = tokio::spawn(
         axum::serve(listener, app)
@@ -174,6 +198,14 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
     youtube_chats.abort();
     let _ = kick_raids.await;
     let _ = youtube_chats.await;
+    if tokio::time::timeout(Duration::from_secs(15), &mut handlers)
+        .await
+        .is_err()
+    {
+        tracing::warn!("Chat command drain deadline reached");
+        handlers.abort();
+        let _ = handlers.await;
+    }
     // Hand the shards, the Kick raids and the YouTube chats over now rather than
     // when the claims lapse.
     twitch::shards::release_all(&state).await;

@@ -28,7 +28,7 @@ use crate::{
 /// flood queues in NATS rather than as tasks and database connections here.
 const MAX_IN_FLIGHT: usize = 256;
 
-pub async fn run(state: State) {
+pub async fn run(state: State, mut shutdown: common::shutdown::ShutdownHandler) {
     let mut messages = match state
         .nats
         .queue_subscribe(state.subject("inbound"), state.queue("chat"))
@@ -41,22 +41,45 @@ pub async fn run(state: State) {
         }
     };
     let in_flight = Arc::new(Semaphore::new(MAX_IN_FLIGHT));
-    while let Some(message) = messages.next().await {
+    let mut handlers = tokio::task::JoinSet::new();
+    let mut draining = false;
+    loop {
+        let message = tokio::select! {
+            biased;
+            _ = shutdown.changed(), if !draining => {
+                if let Err(error) = messages.drain().await {
+                    tracing::warn!(%error, "Couldn't drain the chat subscription");
+                    break;
+                }
+                draining = true;
+                continue;
+            },
+            message = messages.next() => { let Some(message) = message else { break; }; message }
+        };
+        while handlers.try_join_next().is_some() {}
         let Ok(message) = serde_json::from_slice::<InboundMessage>(&message.payload) else {
             tracing::warn!("Dropped an unreadable chat message");
             continue;
         };
         let Ok(permit) = in_flight.clone().acquire_owned().await else {
-            return;
+            break;
         };
         let state = state.clone();
-        tokio::spawn(async move {
+        handlers.spawn(async move {
             if let Err(error) = handle(&state, &message).await {
                 tracing::warn!(%error, channel = %message.channel_label(), "Couldn't handle a chat message");
             }
             drop(permit);
         });
     }
+    drop(messages);
+    let _ = state.nats.flush().await;
+    tracing::info!(
+        remaining = handlers.len(),
+        "Waiting for in-flight chat commands"
+    );
+    while handlers.join_next().await.is_some() {}
+    tracing::info!("Chat commands drained");
 }
 
 /// The links that answer this message: on Twitch, those read by the bot whose
