@@ -944,6 +944,8 @@ pub enum IntentAction {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Takeover {
     pub connection_id: Uuid,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identified_at_ms: Option<i64>,
 }
 
 /// A reconnect request. With no device ID, any session is closed (as for staff

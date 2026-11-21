@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use async_nats::jetstream::kv::Store;
+use futures_util::{FutureExt, StreamExt};
 use live::coordination::Lease;
 use tokio::{
     sync::{oneshot, watch},
@@ -20,7 +21,7 @@ impl Owner {
         store: &Store,
         nats: &async_nats::Client,
         switcher: Uuid,
-        connection: Uuid,
+        takeover: live::Takeover,
         lost: watch::Sender<bool>,
         mut connections: live::Connections,
     ) -> Result<Option<Self>> {
@@ -32,6 +33,14 @@ impl Owner {
         .map_err(|error| Error::Nats(error.to_string()))?
         .map_err(|error| Error::Nats(error.to_string()))?;
         connections.borrow_and_update();
+        let mut takeovers = nats
+            .subscribe(live::takeover_subject(switcher))
+            .await
+            .map_err(|error| Error::Nats(error.to_string()))?;
+        nats.flush()
+            .await
+            .map_err(|error| Error::Nats(error.to_string()))?;
+        let connection = takeover.connection_id;
         let holder = format!(
             "{}:{connection}",
             std::env::var("HOSTNAME").unwrap_or_default()
@@ -39,10 +48,21 @@ impl Owner {
         let key = switcher.to_string();
         let deadline = tokio::time::Instant::now() + live::OWNER_TTL + Duration::from_secs(3);
         loop {
+            while let Some(Some(message)) = takeovers.next().now_or_never() {
+                if supersedes(&message.payload, &takeover) {
+                    return Err(Error::OwnershipSuperseded);
+                }
+            }
             match tokio::time::timeout(Duration::from_secs(3), Lease::acquire(store, &key, &holder))
                 .await
             {
                 Ok(Ok(Some(lease))) => {
+                    while let Some(Some(message)) = takeovers.next().now_or_never() {
+                        if supersedes(&message.payload, &takeover) {
+                            lease.release().await;
+                            return Err(Error::OwnershipSuperseded);
+                        }
+                    }
                     return Ok(Some(Self::start(
                         lease,
                         lost,
@@ -54,16 +74,26 @@ impl Owner {
                 Ok(Err(error)) => return Err(Error::Nats(error.to_string())),
                 Err(error) => return Err(Error::Nats(error.to_string())),
             }
-            let payload = serde_json::to_vec(&live::Takeover {
-                connection_id: connection,
-            })?;
+            let payload = serde_json::to_vec(&takeover)?;
             nats.publish(live::takeover_subject(switcher), payload.into())
                 .await?;
             if tokio::time::Instant::now() >= deadline {
                 tracing::warn!(%switcher, "Timed out waiting for the previous switcher owner; reconnect required");
                 return Ok(None);
             }
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            let delay = tokio::time::sleep(Duration::from_millis(250));
+            tokio::pin!(delay);
+            loop {
+                tokio::select! {
+                    _ = &mut delay => break,
+                    message = takeovers.next() => {
+                        let Some(message) = message else { return Err(Error::Nats("Takeover subscription closed".into())); };
+                        if supersedes(&message.payload, &takeover) {
+                            return Err(Error::OwnershipSuperseded);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -106,6 +136,21 @@ impl Owner {
     }
 }
 
+pub fn supersedes(payload: &[u8], current: &live::Takeover) -> bool {
+    let Ok(other) = serde_json::from_slice::<live::Takeover>(payload) else {
+        return false;
+    };
+    if other.connection_id == current.connection_id {
+        return false;
+    }
+    match (other.identified_at_ms, current.identified_at_ms) {
+        (Some(other_time), Some(current_time)) => {
+            (other_time, other.connection_id) > (current_time, current.connection_id)
+        }
+        _ => true,
+    }
+}
+
 pub async fn guard<T>(mut lost: watch::Receiver<bool>, work: impl Future<Output = T>) -> Option<T> {
     tokio::select! {
         biased;
@@ -126,6 +171,30 @@ pub fn spawn(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn takeover_ordering_and_legacy_payloads() {
+        let current = live::Takeover {
+            connection_id: Uuid::from_u128(2),
+            identified_at_ms: Some(10),
+        };
+        let payload = |id, time| {
+            serde_json::to_vec(&live::Takeover {
+                connection_id: Uuid::from_u128(id),
+                identified_at_ms: time,
+            })
+            .unwrap()
+        };
+        assert!(!supersedes(&payload(3, Some(9)), &current));
+        assert!(supersedes(&payload(1, Some(11)), &current));
+        assert!(!supersedes(&payload(1, Some(10)), &current));
+        assert!(supersedes(&payload(3, Some(10)), &current));
+        assert!(!supersedes(&payload(2, Some(11)), &current));
+        assert!(supersedes(&payload(1, None), &current));
+        assert!(!supersedes(b"invalid", &current));
+        let legacy = serde_json::json!({ "connection_id": Uuid::from_u128(1) });
+        assert!(supersedes(&serde_json::to_vec(&legacy).unwrap(), &current));
+    }
 
     #[tokio::test]
     async fn lost_ownership_does_not_poll_work() {

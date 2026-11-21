@@ -4,6 +4,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("A newer connection is already waiting for this switcher")]
+    OwnershipSuperseded,
     #[error("Config error: {0}")]
     Config(#[from] config::ConfigError),
 
