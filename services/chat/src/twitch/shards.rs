@@ -58,7 +58,6 @@ pub async fn run(state: State) {
             .await
         {
             tracing::warn!(%error, "Couldn't write the instance heartbeat");
-            continue;
         }
 
         // Renew what we hold; drop what lapsed (another instance may have it now).
@@ -74,9 +73,12 @@ pub async fn run(state: State) {
             {
                 Ok(Some(revision)) => claim.revision = revision,
                 Ok(None) => lost.push(*shard),
-                Err(error) => tracing::warn!(%error, shard, "Couldn't renew a shard claim"),
+                Err(error) => {
+                    tracing::warn!(%error, shard, "Couldn't renew a shard claim");
+                    lost.push(*shard);
+                }
             }
-            if claim.session.is_finished() {
+            if !lost.contains(shard) && claim.session.is_finished() {
                 // The session gave up (e.g. no conduit yet): start another.
                 claim.session = spawn_session(state.clone(), *shard);
             }
