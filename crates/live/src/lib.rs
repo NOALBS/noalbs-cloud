@@ -945,6 +945,8 @@ pub enum IntentAction {
 pub struct Takeover {
     pub connection_id: Uuid,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identified_at_ms: Option<i64>,
 }
 

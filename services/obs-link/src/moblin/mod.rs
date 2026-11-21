@@ -333,6 +333,7 @@ impl Connection {
         match serde_json::to_vec(&Takeover {
             connection_id: id,
             identified_at_ms: None,
+            sequence: None,
         }) {
             Ok(payload) => {
                 if let Err(error) = deps

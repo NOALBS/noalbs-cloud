@@ -943,24 +943,18 @@ impl Connection {
         tracing::info!("Browser source identified");
         let identified_at_ms = chrono::Utc::now().timestamp_millis();
 
-        self.owner = match crate::ownership::Owner::acquire(
+        let ownership = match crate::ownership::Owner::identify(
             &self.shared.owners,
             &self.shared.nats,
             switcher_id,
-            Takeover {
-                connection_id: self.id,
-                identified_at_ms: Some(identified_at_ms),
-            },
+            self.id,
+            identified_at_ms,
             self.lost.clone(),
-            {
-                let mut connections = self.shared.nats_connections.clone();
-                connections.borrow_and_update();
-                connections
-            },
+            self.shared.nats_connections.clone(),
         )
         .await
         {
-            Ok(owner) => owner,
+            Ok(owner) => Some(owner),
             Err(Error::OwnershipSuperseded) => {
                 return self.refuse(RequestErrorKind::AlreadyConnected).await;
             }
@@ -969,7 +963,7 @@ impl Connection {
                 None
             }
         };
-        if self.owner.is_none() {
+        let Some((Some(owner), takeover)) = ownership else {
             self.websocket
                 .close(Some(tokio_tungstenite::tungstenite::protocol::CloseFrame {
                     code: tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Again,
@@ -977,7 +971,8 @@ impl Connection {
                 }))
                 .await?;
             return Ok(Flow::Close);
-        }
+        };
+        self.owner = Some(owner);
 
         self.send_request(RequestKind::IdentifyAck(true), None)
             .await?;
@@ -1057,8 +1052,7 @@ impl Connection {
                 listen_for_control(
                     self.shared.nats.clone(),
                     switcher_id,
-                    self.id,
-                    identified_at_ms,
+                    takeover,
                     self.control_tx.clone(),
                 ),
             ),
@@ -1696,8 +1690,7 @@ async fn collect_intents(
 async fn listen_for_control(
     nats: async_nats::Client,
     switcher_id: Uuid,
-    connection_id: Uuid,
-    identified_at_ms: i64,
+    takeover_order: Takeover,
     control: mpsc::UnboundedSender<Control>,
 ) {
     let subscriptions = tokio::try_join!(
@@ -1720,7 +1713,7 @@ async fn listen_for_control(
                 Control::ConfigChanged(parse_config_change(&message.payload))
             }
             Some(message) = takeover.next() => {
-                if crate::ownership::supersedes(&message.payload, &Takeover { connection_id, identified_at_ms: Some(identified_at_ms) }) {
+                if crate::ownership::supersedes(&message.payload, &takeover_order) {
                     Control::TakenOver
                 } else { continue; }
             }
@@ -1840,7 +1833,7 @@ mod ownership_tests {
 
     #[tokio::test]
     #[ignore = "requires NATS with JetStream on port 4222"]
-    async fn ownership_newer_waiter_supersedes_older_waiter_and_ignores_its_retries() {
+    async fn ownership_later_sequence_wins_despite_earlier_clock_and_ignores_older_retries() {
         use futures_util::StreamExt;
         use tokio::sync::{mpsc, watch};
 
@@ -1850,14 +1843,13 @@ mod ownership_tests {
             .await
             .unwrap()
             .unwrap();
-        let older = live::Takeover {
-            connection_id: Uuid::new_v4(),
-            identified_at_ms: Some(1),
-        };
-        let newer = live::Takeover {
-            connection_id: Uuid::new_v4(),
-            identified_at_ms: Some(2),
-        };
+        let older = crate::ownership::next_takeover(&store, switcher, Uuid::new_v4(), 200)
+            .await
+            .unwrap();
+        let newer = crate::ownership::next_takeover(&store, switcher, Uuid::new_v4(), 100)
+            .await
+            .unwrap();
+        assert!(newer.sequence > older.sequence);
         let mut announcements = nats
             .subscribe(live::takeover_subject(switcher))
             .await
@@ -1921,8 +1913,7 @@ mod ownership_tests {
         let listener = crate::spawn(super::listen_for_control(
             nats.clone(),
             switcher,
-            newer.connection_id,
-            2,
+            newer.clone(),
             controls,
         ));
         // Repeated older announcements must neither close nor permanently refuse the new owner.
@@ -1939,10 +1930,9 @@ mod ownership_tests {
                     .is_err()
             );
         }
-        let newest = live::Takeover {
-            connection_id: Uuid::new_v4(),
-            identified_at_ms: Some(3),
-        };
+        let newest = crate::ownership::next_takeover(&store, switcher, Uuid::new_v4(), 50)
+            .await
+            .unwrap();
         nats.publish(
             live::takeover_subject(switcher),
             serde_json::to_vec(&newest).unwrap().into(),
@@ -1974,7 +1964,7 @@ mod ownership_tests {
             live::connect("nats://localhost:4222", async_nats::ConnectOptions::new)
                 .await
                 .unwrap();
-        connections.borrow_and_update();
+        connections.wait_for(|count| *count > 0).await.unwrap();
         let js = async_nats::jetstream::new(nats.clone());
         let store = js
             .create_key_value(async_nats::jetstream::kv::Config {
@@ -2004,6 +1994,7 @@ mod ownership_tests {
             live::Takeover {
                 connection_id: first_id,
                 identified_at_ms: Some(1),
+                sequence: None,
             },
             lost.clone(),
             connections.clone(),
@@ -2019,7 +2010,16 @@ mod ownership_tests {
         let (controls, mut control_rx) = mpsc::unbounded_channel();
         let listener = crate::ownership::spawn(
             lost.subscribe(),
-            super::listen_for_control(nats.clone(), switcher, first_id, 1, controls),
+            super::listen_for_control(
+                nats.clone(),
+                switcher,
+                live::Takeover {
+                    connection_id: first_id,
+                    identified_at_ms: Some(1),
+                    sequence: None,
+                },
+                controls,
+            ),
         );
         // A request proves that the production forwarder has subscribed.
         let inbox = nats.new_inbox();
@@ -2049,6 +2049,7 @@ mod ownership_tests {
                 live::Takeover {
                     connection_id: Uuid::new_v4(),
                     identified_at_ms: Some(2),
+                    sequence: None,
                 },
                 second_lost,
                 connections,
@@ -2119,6 +2120,7 @@ mod ownership_tests {
             live::Takeover {
                 connection_id: Uuid::new_v4(),
                 identified_at_ms: Some(1),
+                sequence: None,
             },
             lost,
             connections,
@@ -2143,6 +2145,7 @@ mod ownership_tests {
             live::Takeover {
                 connection_id: Uuid::new_v4(),
                 identified_at_ms: Some(1),
+                sequence: None,
             },
             lost.clone(),
             connections,
