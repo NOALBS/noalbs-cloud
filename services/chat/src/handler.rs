@@ -9,7 +9,7 @@
 //! holds (the channel's links, with their prefixes, and each switcher's command
 //! words): no database query, and nothing written to NATS.
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use db::chat::{ChatLink, ChatPlatform};
 use futures_util::StreamExt;
@@ -122,17 +122,11 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
     if !might_be_a_command(&links, message) {
         return Ok(());
     }
-    // Only now, for the few messages that might be commands: was this delivery
-    // handled already? (If that can't be told, it runs: better twice than not.)
-    if let Some(seen) = message.seen_key() {
-        match kv::first_time(&state.buckets.seen, &seen).await {
-            Ok(true) => {}
-            Ok(false) => {
-                tracing::debug!(channel = %message.channel_label(), "A repeated delivery");
-                return Ok(());
-            }
-            Err(error) => tracing::warn!(%error, "Couldn't check for a repeated delivery"),
-        }
+    // Every command can reply as the bot, including queries and unknown words.
+    if let Some(seen) = message.seen_key()
+        && !confirmed_delivery(message.platform, kv::first_time(&state.buckets.seen, &seen)).await
+    {
+        return Ok(());
     }
     // Bots never command each other (or themselves).
     if state
@@ -157,6 +151,28 @@ pub async fn handle(state: &State, message: &InboundMessage) -> Result<()> {
         }
     }
     Ok(())
+}
+
+async fn confirmed_delivery(
+    platform: ChatPlatform,
+    check: impl Future<Output = Result<bool>>,
+) -> bool {
+    match tokio::time::timeout(Duration::from_millis(200), check).await {
+        Ok(Ok(first)) => first,
+        Ok(Err(error)) => {
+            tracing::warn!(%error, platform = platform.as_str(), "Skipping chat command: deduplication could not be confirmed");
+            crate::metrics::dedup_skipped(platform, "error");
+            false
+        }
+        Err(_) => {
+            tracing::warn!(
+                platform = platform.as_str(),
+                "Skipping chat command: deduplication timed out"
+            );
+            crate::metrics::dedup_skipped(platform, "timeout");
+            false
+        }
+    }
 }
 
 async fn handle_link(
@@ -336,8 +352,41 @@ mod tests {
     use db::chat::{ChatLink, ChatPlatform};
     use uuid::Uuid;
 
-    use super::{answering, might_be_a_command};
+    use super::{answering, confirmed_delivery, might_be_a_command};
     use crate::inbound::{Chatter, InboundMessage};
+
+    #[tokio::test]
+    async fn command_candidates_require_confirmed_dedup_even_for_read_only_replies() {
+        let links = [link("bot")];
+        for word in [
+            "bitrate",
+            "serverinfo",
+            "bbs",
+            "mstats",
+            "switch",
+            "start",
+            "alias",
+            "unknown",
+        ] {
+            let mut message = message(ChatPlatform::Kick, None);
+            message.text = format!("!{word}");
+            assert!(might_be_a_command(&links, &message));
+            assert!(
+                !confirmed_delivery(message.platform, async {
+                    Err(crate::error::Error::Other("dedup unavailable".into()))
+                })
+                .await
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn dedup_allows_only_confirmed_new_deliveries_and_bounds_stalled_checks() {
+        let platform = ChatPlatform::Twitch;
+        assert!(confirmed_delivery(platform, async { Ok(true) }).await);
+        assert!(!confirmed_delivery(platform, async { Ok(false) }).await);
+        assert!(!confirmed_delivery(platform, std::future::pending()).await);
+    }
 
     fn link(bot: &str) -> ChatLink {
         ChatLink {
