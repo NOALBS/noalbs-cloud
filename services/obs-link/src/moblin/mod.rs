@@ -330,7 +330,10 @@ impl Connection {
         let (control_tx, control) = mpsc::unbounded_channel();
 
         // Older connections for this switcher close when they see this.
-        match serde_json::to_vec(&Takeover { connection_id: id }) {
+        match serde_json::to_vec(&Takeover {
+            connection_id: id,
+            identified_at_ms: None,
+        }) {
             Ok(payload) => {
                 if let Err(error) = deps
                     .nats

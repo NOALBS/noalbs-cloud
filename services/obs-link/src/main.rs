@@ -8,6 +8,7 @@ mod error;
 mod history;
 mod metrics;
 mod moblin;
+mod ownership;
 mod status;
 mod stream_servers;
 mod switcher;
