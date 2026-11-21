@@ -23,6 +23,23 @@ static REPLIES: LazyLock<Counter<u64>> = LazyLock::new(|| {
         .build()
 });
 
+static DEDUP_SKIPPED: LazyLock<Counter<u64>> = LazyLock::new(|| {
+    telemetry::meter()
+        .u64_counter("noalbs.chat.dedup.skipped")
+        .with_description("Command deliveries skipped because deduplication could not be confirmed")
+        .build()
+});
+
+pub fn dedup_skipped(platform: ChatPlatform, reason: &'static str) {
+    DEDUP_SKIPPED.add(
+        1,
+        &[
+            KeyValue::new("chat.platform", platform.as_str()),
+            KeyValue::new("reason", reason),
+        ],
+    );
+}
+
 /// A command a chatter may run, about to run (the names come from our catalog).
 pub fn command(platform: ChatPlatform, command: &str) {
     COMMANDS.add(
