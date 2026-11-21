@@ -833,13 +833,11 @@ async fn apply_stripe(state: &ApiState, subscription: &stripe::Subscription) -> 
 
 /// Ends holds whose period is over (normally the renewal webhook does it first)
 /// and tells obs-link about workspaces whose plan changed.
-pub fn spawn_upkeep(state: ApiState, mut shutdown: ShutdownHandler) {
-    tokio::spawn(async move {
-        let mut every = tokio::time::interval(UPKEEP_EVERY);
-        loop {
-            tokio::select! {
-                _ = shutdown.changed() => return,
-                _ = every.tick() => match db::billing::expire_holds(&state.db).await {
+pub fn spawn_upkeep(state: ApiState, shutdown: ShutdownHandler) {
+    state.leadership.clone().spawn_job(UPKEEP_EVERY, shutdown, move || {
+        let state = state.clone();
+        async move {
+            match db::billing::expire_holds(&state.db).await {
                     Ok(changes) => {
                         for (workspace_id, change) in changes {
                             tracing::info!(%workspace_id, before = %change.before, after = %change.after, "Plan changed at the end of the period");
@@ -847,7 +845,6 @@ pub fn spawn_upkeep(state: ApiState, mut shutdown: ShutdownHandler) {
                         }
                     }
                     Err(error) => tracing::warn!(%error, "Couldn't expire billing holds"),
-                },
             }
         }
     });

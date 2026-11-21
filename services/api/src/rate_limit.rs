@@ -29,6 +29,8 @@ use common::shutdown::ShutdownHandler;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::{app::ApiState, routes::ApiError};
+
 pub const BUCKET: &str = "api-ratelimits";
 
 pub async fn open_bucket(
@@ -46,8 +48,6 @@ pub async fn open_bucket(
         })
         .await?)
 }
-
-use crate::{app::ApiState, routes::ApiError};
 
 /// How often buckets that filled up again are forgotten.
 const PRUNE_EVERY: Duration = Duration::from_secs(60);
@@ -285,6 +285,13 @@ fn is_sign_in(path: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use super::{Limiter, client_ip, is_sign_in};
+    use axum::http::{HeaderMap, HeaderName, HeaderValue};
+    use std::{
+        net::IpAddr,
+        time::{Duration, Instant},
+    };
+
     #[tokio::test]
     async fn backend_failure_and_timeout_preserve_local_limits() {
         let local = super::Limiter::new(1, Duration::from_secs(60));
@@ -354,15 +361,6 @@ mod tests {
         }
         js.delete_key_value(name).await.unwrap();
     }
-
-    use std::{
-        net::IpAddr,
-        time::{Duration, Instant},
-    };
-
-    use axum::http::{HeaderMap, HeaderName, HeaderValue};
-
-    use super::{Limiter, client_ip, is_sign_in};
 
     #[test]
     fn a_bucket_empties_refills_and_says_how_long_to_wait() {

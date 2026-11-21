@@ -49,7 +49,7 @@ pub struct ApiState {
     pub preview_watchers: std::sync::Arc<crate::screenshots::Watchers>,
     /// A few seconds of memory for the session and permission lookups every request starts with.
     pub auth: std::sync::Arc<crate::auth_cache::AuthCache>,
-    /// In-memory rate limits (`crate::rate_limit`).
+    /// Shared sensitive limits and local flood/outage guards (`crate::rate_limit`).
     pub limits: std::sync::Arc<crate::rate_limit::RateLimits>,
     /// Where the visitor's IP is, behind a proxy (config `client_ip_header`).
     pub client_ip_header: Option<axum::http::HeaderName>,
@@ -262,8 +262,6 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
     let stores_keeper = tokio::spawn(live::keep_stores(js.clone(), nats_connections.clone()));
 
-    history::spawn_upkeep(db.clone(), shutdown_handle.clone());
-    crate::privacy::spawn_upkeep(db.clone(), shutdown_handle.clone());
     let billing = billing(&config);
 
     let chat_environment = db::chat::environment_id(&db).await?;
@@ -303,6 +301,16 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         tracing::warn!("Dev login is enabled; never enable this in production");
     }
 
+    history::spawn_upkeep(
+        state.db.clone(),
+        state.leadership.clone(),
+        shutdown_handle.clone(),
+    );
+    crate::privacy::spawn_upkeep(
+        state.db.clone(),
+        state.leadership.clone(),
+        shutdown_handle.clone(),
+    );
     billing::spawn_upkeep(state.clone(), shutdown_handle.clone());
     crate::metrics::spawn_refresh(state.clone(), shutdown_handle.clone());
     crate::rate_limit::spawn_upkeep(state.limits.clone(), js, shutdown_handle.clone());

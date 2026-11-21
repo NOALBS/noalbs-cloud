@@ -13,6 +13,10 @@ use crate::{app::ApiState, routes::admin_status::switcher_statuses};
 
 const WINDOWS: [(&str, i64); 3] = [("1d", 1), ("7d", 7), ("30d", 30)];
 
+pub(crate) fn can_report(leadership: &crate::leadership::Leadership, epoch: uuid::Uuid) -> bool {
+    leadership.epoch() == Some(epoch)
+}
+
 #[derive(Default)]
 struct Snapshot {
     users: [u64; 3],
@@ -33,7 +37,7 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         .with_callback(move |observer| {
             if let Ok(snapshot) = users.read()
                 && let Some((epoch, snapshot)) = snapshot.as_ref()
-                && users_leader.epoch() == Some(*epoch)
+                && can_report(&users_leader, *epoch)
             {
                 for (index, (window, _)) in WINDOWS.iter().enumerate() {
                     observer.observe(snapshot.users[index], &[KeyValue::new("window", *window)]);
@@ -49,7 +53,7 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         .with_callback(move |observer| {
             if let Ok(snapshot) = switchers.read()
                 && let Some((epoch, snapshot)) = snapshot.as_ref()
-                && switchers_leader.epoch() == Some(*epoch)
+                && can_report(&switchers_leader, *epoch)
             {
                 for (index, (window, _)) in WINDOWS.iter().enumerate() {
                     observer.observe(
@@ -68,7 +72,7 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         .with_callback(move |observer| {
             if let Ok(snapshot) = devices.read()
                 && let Some((epoch, snapshot)) = snapshot.as_ref()
-                && devices_leader.epoch() == Some(*epoch)
+                && can_report(&devices_leader, *epoch)
             {
                 for (index, state) in ["paired", "active_1d", "active_30d"].iter().enumerate() {
                     observer.observe(snapshot.devices[index], &[KeyValue::new("state", *state)]);
@@ -89,11 +93,11 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
                         continue;
                     };
                     if refreshed.is_some_and(|(previous, at): (_, tokio::time::Instant)| previous == epoch && at.elapsed() < Duration::from_secs(300)) { continue; }
+                    refreshed = Some((epoch, tokio::time::Instant::now()));
                     match refresh(&state).await {
                         Ok(snapshot) => {
                             if state.leadership.epoch() == Some(epoch) {
                                 if let Ok(mut latest) = latest.write() { *latest = Some((epoch, snapshot)); }
-                                refreshed = Some((epoch, tokio::time::Instant::now()));
                             }
                         }
                         Err(error) => tracing::warn!(%error, "Couldn't refresh activity metrics"),
