@@ -5,32 +5,53 @@ use std::{
     },
     time::Duration,
 };
-use tokio::sync::{mpsc, watch};
+use tokio::{
+    sync::{Mutex, mpsc, watch},
+    time::Instant,
+};
 
 #[derive(Clone, Default)]
-pub struct Readiness(Arc<AtomicU8>);
+pub struct Readiness(Arc<ReadinessState>);
+
+#[derive(Default)]
+struct ReadinessState {
+    phase: AtomicU8,
+    dependency: Mutex<Option<(Instant, bool)>>,
+}
 
 impl Readiness {
     pub fn initialized(&self) {
         let _ = self
             .0
+            .phase
             .compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst);
     }
     pub fn begin_draining(&self) {
-        self.0.store(2, Ordering::SeqCst);
+        self.0.phase.store(2, Ordering::SeqCst);
     }
     pub fn is_ready(&self) -> bool {
-        self.0.load(Ordering::SeqCst) == 1
+        self.0.phase.load(Ordering::SeqCst) == 1
     }
 
     pub async fn check(&self, connected: bool, database: impl Future<Output = bool>) -> bool {
-        self.is_ready()
-            && connected
-            && matches!(
-                tokio::time::timeout(Duration::from_millis(500), database).await,
-                Ok(true)
-            )
-            && self.is_ready()
+        if !self.is_ready() || !connected {
+            return false;
+        }
+        let mut cached = self.0.dependency.lock().await;
+        if !self.is_ready() {
+            return false;
+        }
+        if let Some((checked, result)) = *cached
+            && checked.elapsed() < Duration::from_secs(1)
+        {
+            return result;
+        }
+        let result = matches!(
+            tokio::time::timeout(Duration::from_millis(500), database).await,
+            Ok(true)
+        );
+        *cached = Some((Instant::now(), result));
+        result && self.is_ready()
     }
 }
 
@@ -150,7 +171,9 @@ mod tests {
                 })
                 .await
         );
-        assert!(!clone.check(true, async { false }).await);
+        let unhealthy = Readiness::default();
+        unhealthy.initialized();
+        assert!(!unhealthy.check(true, async { false }).await);
         clone.begin_draining();
         assert!(!ready.check(true, async { true }).await);
         ready.initialized();
@@ -163,6 +186,58 @@ mod tests {
         ready.begin_draining();
         ready.initialized();
         assert!(!ready.is_ready());
+    }
+
+    #[tokio::test]
+    async fn readiness_coalesces_concurrent_checks_and_expires_cached_results() {
+        let ready = Readiness::default();
+        ready.initialized();
+        let clone = ready.clone();
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let check = || async {
+            calls.fetch_add(1, Ordering::SeqCst);
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            true
+        };
+        assert_eq!(
+            tokio::join!(ready.check(true, check()), clone.check(true, check())),
+            (true, true)
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        tokio::time::sleep(Duration::from_millis(1010)).await;
+        assert!(!ready.check(true, async { false }).await);
+        assert!(
+            !clone
+                .check(true, async { panic!("cached failure was not reused") })
+                .await
+        );
+        ready.begin_draining();
+        assert!(
+            !clone
+                .check(true, async {
+                    panic!("draining readiness checked a dependency")
+                })
+                .await
+        );
+    }
+
+    #[tokio::test]
+    async fn readiness_times_out_and_caches_a_stalled_dependency() {
+        let ready = Readiness::default();
+        assert!(
+            !ready
+                .check(true, async {
+                    panic!("uninitialized readiness checked a dependency")
+                })
+                .await
+        );
+        ready.initialized();
+        assert!(!ready.check(true, std::future::pending()).await);
+        assert!(
+            !ready
+                .check(true, async { panic!("cached timeout was not reused") })
+                .await
+        );
     }
 
     #[tokio::test]

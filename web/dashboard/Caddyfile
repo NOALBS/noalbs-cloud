@@ -5,6 +5,10 @@
 {$SITE_ADDRESS} {
 	# The API, without the /api prefix. OAuth callbacks come back through here
 	# too, so the API's base_url is https://<domain>/api.
+	handle /api/ready {
+		respond "" 404
+	}
+
 	handle_path /api/* {
 		reverse_proxy {$API_UPSTREAM}
 	}

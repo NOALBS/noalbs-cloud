@@ -219,7 +219,11 @@ API and chat expose `/health` (liveness) and `/ready` (readiness) on their HTTP
 ports. obs-link exposes the same endpoints on `OBS_LINK_HEALTH_PORT` (default
 `11001`), separate from its WebSocket listener. Readiness requires completed
 initialization, a connected NATS client and a database pool checkout within
-500 ms; liveness does not probe dependencies. Keep the obs-link health port
+500 ms. Dependency results are cached for one second and concurrent probes share
+one check; draining bypasses the cache. Liveness does not probe dependencies.
+The dashboard proxy returns 404 for `/api/ready`; probes must hit pods directly.
+Only `/chat/webhooks/*` is proxied to chat, not its `/ready` endpoint.
+Keep the obs-link health port
 internal; it need not be exposed by the public Service or proxy.
 
 On SIGTERM each service immediately becomes not-ready, continues serving for
