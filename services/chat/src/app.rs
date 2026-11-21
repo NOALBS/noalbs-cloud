@@ -192,20 +192,13 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
     let _ = stop.send(());
     for task in tasks {
         task.abort();
+        let _ = task.await;
     }
     // Wait for the lease holders to stop (they can't renew their leases after this).
     kick_raids.abort();
     youtube_chats.abort();
     let _ = kick_raids.await;
     let _ = youtube_chats.await;
-    if tokio::time::timeout(Duration::from_secs(15), &mut handlers)
-        .await
-        .is_err()
-    {
-        tracing::warn!("Chat command drain deadline reached");
-        handlers.abort();
-        let _ = handlers.await;
-    }
     // Hand the shards, the Kick raids and the YouTube chats over now rather than
     // when the claims lapse.
     twitch::shards::release_all(&state).await;
@@ -216,6 +209,15 @@ pub async fn run(config: Config, mut shutdown: ShutdownHandler) -> Result<()> {
         .instances
         .delete(state.key(&[&state.instance_id]))
         .await;
+    tracing::info!("Watcher ownership released; waiting for chat handlers");
+    if tokio::time::timeout(Duration::from_secs(15), &mut handlers)
+        .await
+        .is_err()
+    {
+        tracing::warn!("Chat command drain deadline reached");
+        handlers.abort();
+        let _ = handlers.await;
+    }
     match server.await {
         Ok(result) => result?,
         Err(error) => tracing::warn!(%error, "The HTTP server task failed"),

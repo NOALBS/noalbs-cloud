@@ -233,8 +233,8 @@ deadline after that delay, with time left for telemetry and process exit.
 Compose sets `stop_grace_period: 45s` for API, obs-link and chat, matching Kubernetes.
 API closes SSE feeds and joins its HTTP server. obs-link sends WebSocket close
 code `1013` (try again), stops session work and releases ownership last. Chat
-waits up to 15 seconds for in-flight commands before cancelling them and
-releasing claims. Deadline overruns are logged; work cannot be guaranteed to
+stops its watchers and releases their claims before waiting up to 15 seconds for
+in-flight commands, then cancels remaining handlers. Deadline overruns are logged; work cannot be guaranteed to
 finish past these bounds.
 
 The Kubernetes API/obs-link Deployments use `maxSurge: 1`, `maxUnavailable: 0`.
