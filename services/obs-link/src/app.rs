@@ -69,6 +69,8 @@ const READ_BUFFER_SIZE: usize = 16 << 10;
 /// Everything connections share.
 struct Shared {
     nats: async_nats::Client,
+    owners: async_nats::jetstream::kv::Store,
+    nats_connections: live::Connections,
     stores: live::Stores,
     belabox_url: String,
     db: db::DbPool,
@@ -86,6 +88,9 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     })
     .await?;
     let js = jetstream::new(nats.clone());
+    let owners = live::owners_bucket(&js)
+        .await
+        .map_err(|error| Error::Nats(error.to_string()))?;
     let stores = live::Stores::open(&js)
         .await
         .map_err(|error| Error::Nats(error.to_string()))?;
@@ -100,10 +105,20 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     let reqwest =
         crate::stream_servers::http_client(APP_USER_AGENT, config.allow_private_stats_urls)?;
 
-    let stores_keeper = tokio::spawn(live::keep_stores(js, nats_connections));
+    let owner_connections = nats_connections.clone();
+    let stores_keeper = tokio::spawn(async move {
+        tokio::join!(
+            live::keep_stores(js.clone(), nats_connections.clone()),
+            live::reopen(nats_connections, "switcher owners", || live::owners_bucket(
+                &js
+            )),
+        );
+    });
 
     let shared = Arc::new(Shared {
         nats,
+        owners,
+        nats_connections: owner_connections,
         stores,
         belabox_url: config.belabox_url.clone(),
         db,
@@ -202,6 +217,7 @@ async fn handle_connection(
 
     let (inner_comm, inner_comm_rx) = mpsc::unbounded_channel();
     let (control_tx, control_rx) = mpsc::unbounded_channel();
+    let (lost, lost_rx) = tokio::sync::watch::channel(false);
     let mut connection = Connection {
         counted,
         id: Uuid::new_v4(),
@@ -213,12 +229,17 @@ async fn handle_connection(
         requests: HashMap::new(),
         session: None,
         taken_over: false,
+        owner: None,
+        lost,
     };
 
-    if let Err(error) = connection.run(inner_comm_rx, control_rx).await {
+    if let Some(Err(error)) =
+        crate::ownership::guard(lost_rx, connection.run(inner_comm_rx, control_rx)).await
+    {
         tracing::warn!(%error, "Connection ended with an error");
     }
     connection.cleanup().await;
+    let _ = connection.websocket.close(None).await;
 }
 
 /// A message for the browser source, from the switcher or the API.
@@ -436,6 +457,8 @@ struct RunningSwitcher {
 }
 
 struct Connection {
+    owner: Option<crate::ownership::Owner>,
+    lost: tokio::sync::watch::Sender<bool>,
     counted: metrics::Gauge,
     id: Uuid,
     websocket: tokio_tungstenite::WebSocketStream<net::TcpStream>,
@@ -477,7 +500,10 @@ impl Connection {
                         Some(Ok(Message::Text(text))) => match self.handle_message(&text).await {
                             Ok(Flow::Continue) => {}
                             Ok(Flow::Close) => return self.close().await,
-                            Err(error) => tracing::warn!(%error, "Error handling message"),
+                            Err(error) => {
+                                if self.owner.is_some() && self.session.is_none() { return Err(error); }
+                                tracing::warn!(%error, "Error handling message");
+                            }
                         },
                         Some(Ok(Message::Close(_))) | None => {
                             tracing::info!("WebSocket connection closed by client");
@@ -832,6 +858,36 @@ impl Connection {
         Span::current().record("switcher.id", tracing::field::display(switcher_id));
         tracing::info!("Browser source identified");
 
+        self.owner = match crate::ownership::Owner::acquire(
+            &self.shared.owners,
+            &self.shared.nats,
+            switcher_id,
+            self.id,
+            self.lost.clone(),
+            {
+                let mut connections = self.shared.nats_connections.clone();
+                connections.borrow_and_update();
+                connections
+            },
+        )
+        .await
+        {
+            Ok(owner) => owner,
+            Err(error) => {
+                tracing::warn!(%error, "Couldn't establish switcher ownership; reconnect required");
+                None
+            }
+        };
+        if self.owner.is_none() {
+            self.websocket
+                .close(Some(tokio_tungstenite::tungstenite::protocol::CloseFrame {
+                    code: tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Again,
+                    reason: "Switcher ownership unavailable; reconnect".into(),
+                }))
+                .await?;
+            return Ok(Flow::Close);
+        }
+
         self.send_request(RequestKind::IdentifyAck(true), None)
             .await?;
         let is_connect = identify.client.as_deref() == Some("connect");
@@ -872,49 +928,54 @@ impl Connection {
         let status = StatusHandle::new(initial);
         let attribution = SharedAttribution::default();
         let tasks = vec![
-            crate::spawn(metrics::track_switcher(status.subscribe(), client)),
-            crate::spawn(status::publish(
-                self.shared.stores.status.clone(),
-                switcher_id,
-                live::STATUS_HEARTBEAT,
-                status.subscribe(),
-            )),
-            crate::spawn(forward_obs_requests(
-                self.shared.nats.clone(),
-                switcher_id,
-                self.inner_comm.clone(),
-            )),
-            crate::spawn(forward_connect_commands(
-                self.shared.nats.clone(),
-                switcher_id,
-                self.control_tx.clone(),
-            )),
-            crate::spawn(collect_intents(
-                self.shared.nats.clone(),
-                switcher_id,
-                attribution.clone(),
-            )),
-            crate::spawn(listen_for_control(
-                self.shared.nats.clone(),
-                switcher_id,
-                self.id,
-                self.control_tx.clone(),
-            )),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                metrics::track_switcher(status.subscribe(), client),
+            ),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                status::publish(
+                    self.shared.stores.status.clone(),
+                    switcher_id,
+                    live::STATUS_HEARTBEAT,
+                    status.subscribe(),
+                ),
+            ),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                forward_obs_requests(
+                    self.shared.nats.clone(),
+                    switcher_id,
+                    self.inner_comm.clone(),
+                ),
+            ),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                forward_connect_commands(
+                    self.shared.nats.clone(),
+                    switcher_id,
+                    self.control_tx.clone(),
+                ),
+            ),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                collect_intents(self.shared.nats.clone(), switcher_id, attribution.clone()),
+            ),
+            crate::ownership::spawn(
+                self.lost.subscribe(),
+                listen_for_control(
+                    self.shared.nats.clone(),
+                    switcher_id,
+                    self.id,
+                    self.control_tx.clone(),
+                ),
+            ),
         ];
-
-        // Older connections for this switcher close when they see this.
-        let takeover = serde_json::to_vec(&Takeover {
-            connection_id: self.id,
-        })?;
-        self.shared
-            .nats
-            .publish(live::takeover_subject(switcher_id), takeover.into())
-            .await?;
 
         let belabox = if paused {
             None
         } else {
-            start_belabox(&self.shared, &switcher)
+            start_belabox(&self.shared, &switcher, self.lost.subscribe())
         };
 
         self.session = Some(Session {
@@ -1029,6 +1090,7 @@ impl Connection {
         }
 
         let deps = switcher::Deps {
+            lost: self.lost.subscribe(),
             switcher_id: session.switcher_id,
             db: self.shared.db.clone(),
             nats: self.shared.nats.clone(),
@@ -1045,7 +1107,7 @@ impl Connection {
         };
         let (events, mut events_rx) = mpsc::unbounded_channel();
 
-        let task = crate::spawn(async move {
+        let task = crate::ownership::spawn(self.lost.subscribe(), async move {
             loop {
                 match switcher::run(deps.clone(), &mut events_rx).await {
                     // OBS went away; the connection stops us.
@@ -1180,6 +1242,7 @@ impl Connection {
             Control::TakenOver => {
                 tracing::info!("A newer browser source took over this switcher");
                 self.taken_over = true;
+                self.stop_session_work(false).await;
                 self.refuse(RequestErrorKind::AlreadyConnected).await
             }
             Control::ConfigChanged(change) => match change.renamed_device_id {
@@ -1285,7 +1348,7 @@ impl Connection {
                     link.stop(true).await;
                 }
                 if want_belabox {
-                    session.belabox = start_belabox(&self.shared, &switcher);
+                    session.belabox = start_belabox(&self.shared, &switcher, self.lost.subscribe());
                 }
                 session.belabox_key = switcher.belabox_remote_key.clone();
             }
@@ -1335,10 +1398,39 @@ impl Connection {
         Ok(())
     }
 
-    async fn cleanup(&mut self) {
-        let Some(mut session) = self.session.take() else {
+    async fn stop_session_work(&mut self, clear: bool) {
+        let Some(session) = self.session.as_mut() else {
             return;
         };
+        if let Some(running) = session.switcher.take() {
+            running.task.abort();
+            let _ = running.task.await;
+        }
+        for task in &session.tasks {
+            task.abort();
+        }
+        for task in session.tasks.drain(..) {
+            let _ = task.await;
+        }
+        if let Some(link) = session.belabox.take() {
+            link.stop(clear).await;
+        }
+    }
+
+    async fn cleanup(&mut self) {
+        let clear = !self.taken_over && !*self.lost.borrow();
+        if !clear {
+            self.lost.send_replace(true);
+        }
+        self.stop_session_work(clear).await;
+        let Some(mut session) = self.session.take() else {
+            if let Some(owner) = self.owner.take() {
+                owner.release().await;
+            }
+            return;
+        };
+        // Flush subscription drops before the next owner can subscribe.
+        let _ = self.shared.nats.flush().await;
         for (_, pending) in session.pending_connect_commands.drain() {
             let reply = live::ConnectObsCommandReply {
                 ok: false,
@@ -1353,17 +1445,7 @@ impl Connection {
                 tracing::warn!(%error, "Failed to reply to a pending Connect command");
             }
         }
-        if let Some(running) = session.switcher.take() {
-            running.task.abort();
-        }
-        for task in session.tasks {
-            task.abort();
-        }
-        if let Some(link) = session.belabox.take() {
-            link.stop(!self.taken_over).await;
-        }
-
-        if !self.taken_over {
+        if clear && !*self.lost.borrow() {
             let key = live::status_key(session.switcher_id);
             if let Err(error) = self.shared.stores.status.delete(&key).await {
                 tracing::warn!(%error, "Failed to clear switcher status");
@@ -1374,6 +1456,10 @@ impl Connection {
         {
             tracing::warn!(%error, "Failed to update last seen");
         }
+        self.lost.send_replace(true);
+        if let Some(owner) = self.owner.take() {
+            owner.release().await;
+        }
     }
 }
 
@@ -1382,7 +1468,11 @@ fn expects_keepalive(is_connect: bool, capabilities: &[String]) -> bool {
 }
 
 /// Starts the BELABOX Cloud link, if the switcher has a remote key.
-fn start_belabox(shared: &Shared, switcher: &db::switchers::Switcher) -> Option<belabox::Link> {
+fn start_belabox(
+    shared: &Shared,
+    switcher: &db::switchers::Switcher,
+    lost: tokio::sync::watch::Receiver<bool>,
+) -> Option<belabox::Link> {
     let encrypted = switcher.belabox_remote_key.as_deref()?;
     let key = shared
         .data_key
@@ -1395,6 +1485,7 @@ fn start_belabox(shared: &Shared, switcher: &db::switchers::Switcher) -> Option<
     };
 
     Some(belabox::Link::start(belabox::Deps {
+        lost,
         switcher_id: switcher.id,
         url: shared.belabox_url.clone(),
         key,
@@ -1646,6 +1737,236 @@ struct Identify {
     pub os: Option<String>,
     #[serde(default)]
     pub obs_version: Option<String>,
+}
+
+#[cfg(test)]
+mod ownership_tests {
+    use std::time::Duration;
+
+    use live::SwitcherStatus;
+    use uuid::Uuid;
+
+    async fn owners_fixture(
+        ttl: Duration,
+    ) -> (
+        async_nats::Client,
+        live::Connections,
+        async_nats::jetstream::Context,
+        async_nats::jetstream::kv::Store,
+    ) {
+        let (nats, mut connections) =
+            live::connect("nats://localhost:4222", async_nats::ConnectOptions::new)
+                .await
+                .unwrap();
+        connections.borrow_and_update();
+        let js = async_nats::jetstream::new(nats.clone());
+        let store = js
+            .create_key_value(async_nats::jetstream::kv::Config {
+                bucket: format!("owners_test_{}", Uuid::new_v4().simple()),
+                max_age: ttl,
+                storage: async_nats::jetstream::stream::StorageType::Memory,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        (nats, connections, js, store)
+    }
+
+    #[tokio::test]
+    #[ignore = "requires NATS with JetStream on port 4222"]
+    async fn ownership_takeover_removes_old_command_subscription_before_acquire() {
+        use futures_util::StreamExt;
+        use tokio::sync::{mpsc, watch};
+        let (nats, connections, js, store) = owners_fixture(live::OWNER_TTL).await;
+        let switcher = Uuid::new_v4();
+        let first_id = Uuid::new_v4();
+        let (lost, _) = watch::channel(false);
+        let first = crate::ownership::Owner::acquire(
+            &store,
+            &nats,
+            switcher,
+            first_id,
+            lost.clone(),
+            connections.clone(),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        let (requests, mut received) = mpsc::unbounded_channel();
+        let forward = crate::ownership::spawn(
+            lost.subscribe(),
+            super::forward_obs_requests(nats.clone(), switcher, requests),
+        );
+        let (controls, mut control_rx) = mpsc::unbounded_channel();
+        let listener = crate::ownership::spawn(
+            lost.subscribe(),
+            super::listen_for_control(nats.clone(), switcher, first_id, controls),
+        );
+        // A request proves that the production forwarder has subscribed.
+        let inbox = nats.new_inbox();
+        let subject = live::obs_request_subject(switcher);
+        let mut ready = false;
+        for _ in 0..10 {
+            nats.publish_with_reply(subject.clone(), inbox.clone(), "before".into())
+                .await
+                .unwrap();
+            if tokio::time::timeout(Duration::from_millis(50), received.recv())
+                .await
+                .is_ok()
+            {
+                ready = true;
+                break;
+            }
+        }
+        assert!(ready);
+        let second_nats = nats.clone();
+        let second_store = store.clone();
+        let (second_lost, _) = watch::channel(false);
+        let second = tokio::spawn(async move {
+            crate::ownership::Owner::acquire(
+                &second_store,
+                &second_nats,
+                switcher,
+                Uuid::new_v4(),
+                second_lost,
+                connections,
+            )
+            .await
+            .unwrap()
+            .unwrap()
+        });
+        assert!(matches!(
+            tokio::time::timeout(Duration::from_secs(3), control_rx.recv())
+                .await
+                .unwrap(),
+            Some(super::Control::TakenOver)
+        ));
+        assert!(!second.is_finished(), "new owner must wait for teardown");
+        lost.send_replace(true);
+        forward.await.unwrap();
+        listener.await.unwrap();
+        nats.flush().await.unwrap();
+        first.release().await;
+        let second = second.await.unwrap();
+        while received.try_recv().is_ok() {}
+        assert!(
+            received.recv().await.is_none(),
+            "old forwarding channel must be closed"
+        );
+        let inbox = nats.new_inbox();
+        let mut replies = nats.subscribe(inbox.clone()).await.unwrap();
+        let mut new_commands = nats.subscribe(subject.clone()).await.unwrap();
+        nats.flush().await.unwrap();
+        nats.publish_with_reply(subject, inbox.clone(), "after".into())
+            .await
+            .unwrap();
+        let command = tokio::time::timeout(Duration::from_secs(2), new_commands.next())
+            .await
+            .unwrap()
+            .unwrap();
+        nats.publish(command.reply.unwrap(), "new owner".into())
+            .await
+            .unwrap();
+        assert_eq!(replies.next().await.unwrap().payload.as_ref(), b"new owner");
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), replies.next())
+                .await
+                .is_err()
+        );
+        drop(new_commands);
+        nats.flush().await.unwrap();
+        second.release().await;
+        js.delete_key_value(&store.name).await.unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires NATS with JetStream on port 4222"]
+    async fn ownership_expiry_recovers_a_crashed_owner_without_release() {
+        let (nats, connections, js, store) = owners_fixture(Duration::from_secs(1)).await;
+        let switcher = Uuid::new_v4();
+        let crashed = live::coordination::Lease::acquire(&store, &switcher.to_string(), "crashed")
+            .await
+            .unwrap()
+            .unwrap();
+        drop(crashed);
+        let (lost, _) = tokio::sync::watch::channel(false);
+        let next = crate::ownership::Owner::acquire(
+            &store,
+            &nats,
+            switcher,
+            Uuid::new_v4(),
+            lost,
+            connections,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        next.release().await;
+        js.delete_key_value(&store.name).await.unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires NATS with JetStream on port 4222"]
+    async fn ownership_backend_failure_stops_session_and_status_publication() {
+        let (nats, connections, js, store) = owners_fixture(live::OWNER_TTL).await;
+        let switcher = Uuid::new_v4();
+        let (lost, _) = tokio::sync::watch::channel(false);
+        let owner = crate::ownership::Owner::acquire(
+            &store,
+            &nats,
+            switcher,
+            Uuid::new_v4(),
+            lost.clone(),
+            connections,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        let statuses = js
+            .create_key_value(async_nats::jetstream::kv::Config {
+                bucket: format!("statuses_test_{}", Uuid::new_v4().simple()),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        let status = crate::status::StatusHandle::new(SwitcherStatus::connected(true));
+        let session = crate::ownership::spawn(
+            lost.subscribe(),
+            crate::status::publish(
+                statuses.clone(),
+                switcher,
+                Duration::from_millis(50),
+                status.subscribe(),
+            ),
+        );
+        js.delete_key_value(&store.name).await.unwrap();
+        tokio::time::timeout(Duration::from_secs(10), session)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(*lost.borrow());
+        nats.flush().await.unwrap();
+        statuses.put("barrier", "stopped".into()).await.unwrap();
+        let before = statuses
+            .entry(switcher.to_string())
+            .await
+            .unwrap()
+            .unwrap()
+            .revision;
+        status.update(|status| status.obs_connected = true);
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        assert_eq!(
+            before,
+            statuses
+                .entry(switcher.to_string())
+                .await
+                .unwrap()
+                .unwrap()
+                .revision
+        );
+        owner.release().await;
+        js.delete_key_value(&statuses.name).await.unwrap();
+    }
 }
 
 #[cfg(test)]

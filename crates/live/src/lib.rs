@@ -338,6 +338,26 @@ where
 /// while a mutating OBS action (a fix, a stream start or stop) may still be in
 /// flight. `control` claims one to refuse a second, overlapping command.
 pub const ACTIONS_BUCKET: &str = "obs-action-claims";
+pub const OWNERS_BUCKET: &str = "switcher-owners";
+pub const OWNER_TTL: Duration = Duration::from_secs(15);
+pub const OWNER_RENEW: Duration = Duration::from_secs(5);
+
+/// Opened only by obs-link, not by readers of live status.
+pub async fn owners_bucket(js: &jetstream::Context) -> Result<kv::Store, async_nats::Error> {
+    if let Ok(store) = js.get_key_value(OWNERS_BUCKET).await {
+        return Ok(store);
+    }
+    Ok(js
+        .create_key_value(kv::Config {
+            bucket: OWNERS_BUCKET.to_owned(),
+            description: "Active obs-link connection per switcher".to_owned(),
+            history: 1,
+            max_age: OWNER_TTL,
+            storage: jetstream::stream::StorageType::Memory,
+            ..Default::default()
+        })
+        .await?)
+}
 /// A claim lapses this long after it's last written, so a crashed caller's
 /// claim frees itself and a fix's media-source restarts (which outlive their
 /// replies) get a moment to settle. Callers renew it while their action runs.

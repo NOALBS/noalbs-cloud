@@ -83,6 +83,7 @@ fn reading_state(reading: Reading) -> FeedState {
 /// What a running switcher needs from its connection.
 #[derive(Clone)]
 pub struct Deps {
+    pub lost: tokio::sync::watch::Receiver<bool>,
     pub switcher_id: Uuid,
     pub db: db::DbPool,
     pub nats: async_nats::Client,
@@ -911,7 +912,7 @@ impl Runtime {
 
     /// Starts or stops BELABOX with the OBS stream (in the background: BELABOX
     /// Cloud may be slow). Failures show in the activity feed.
-    fn sync_belabox(&self, active: bool) {
+    fn sync_belabox(&mut self, active: bool) {
         let Some(belabox) = self.deps.belabox.clone() else {
             return;
         };
@@ -920,70 +921,79 @@ impl Runtime {
         }
         let (db, nats, switcher_id) = (self.deps.db.clone(), self.deps.nats.clone(), self.id());
 
-        crate::spawn(async move {
-            let command = BelaboxCommand {
-                action: if active {
-                    BelaboxAction::Start
-                } else {
-                    BelaboxAction::Stop
-                },
-                by: "the OBS stream".into(),
-            };
-            let refusal = match belabox.send(command).await {
-                Ok(()) | Err(BelaboxRefusal::AlreadyStreaming | BelaboxRefusal::NotStreaming) => {
-                    return;
+        self.stop_tasks.retain(|task| !task.is_finished());
+        self.stop_tasks.push(crate::ownership::spawn(
+            self.deps.lost.clone(),
+            async move {
+                let command = BelaboxCommand {
+                    action: if active {
+                        BelaboxAction::Start
+                    } else {
+                        BelaboxAction::Stop
+                    },
+                    by: "the OBS stream".into(),
+                };
+                let refusal = match belabox.send(command).await {
+                    Ok(())
+                    | Err(BelaboxRefusal::AlreadyStreaming | BelaboxRefusal::NotStreaming) => {
+                        return;
+                    }
+                    Err(refusal) => refusal,
+                };
+                let verb = if active { "start" } else { "stop" };
+                let detail = EventDetail::BelaboxError {
+                    message: format!("Couldn't {verb} BELABOX with the OBS stream: {refusal}"),
+                };
+                if let Err(error) = live::record_event(&db, &nats, switcher_id, detail).await {
+                    tracing::warn!(%error, "Failed to record switcher event");
                 }
-                Err(refusal) => refusal,
-            };
-            let verb = if active { "start" } else { "stop" };
-            let detail = EventDetail::BelaboxError {
-                message: format!("Couldn't {verb} BELABOX with the OBS stream: {refusal}"),
-            };
-            if let Err(error) = live::record_event(&db, &nats, switcher_id, detail).await {
-                tracing::warn!(%error, "Failed to record switcher event");
-            }
-        });
+            },
+        ));
     }
 
     /// Starts or stops Moblin's stream with the OBS stream, through its
     /// connection (which may be on another obs-link). Failures show in the
     /// activity feed.
-    fn sync_moblin(&self, active: bool) {
+    fn sync_moblin(&mut self, active: bool) {
         let (db, nats, switcher_id) = (self.deps.db.clone(), self.deps.nats.clone(), self.id());
 
-        crate::spawn(async move {
-            let command = MoblinCommand {
-                action: MoblinAction::Stream { active },
-                by: "the OBS stream".into(),
-            };
-            let reply = match serde_json::to_vec(&command) {
-                Ok(payload) => tokio::time::timeout(
-                    MOBLIN_REQUEST_TIMEOUT,
-                    nats.request(live::moblin_request_subject(switcher_id), payload.into()),
-                )
-                .await
-                .map_err(|_| MoblinRefusal::Timeout)
-                .and_then(|reply| reply.map_err(|_| MoblinRefusal::NotConnected))
-                .and_then(|message| {
-                    serde_json::from_slice::<MoblinReply>(&message.payload)
-                        .unwrap_or(Err(MoblinRefusal::Failed))
-                }),
-                Err(_) => Err(MoblinRefusal::Failed),
-            };
-            let refusal = match reply {
-                Ok(()) | Err(MoblinRefusal::AlreadyStreaming | MoblinRefusal::NotStreaming) => {
-                    return;
+        self.stop_tasks.retain(|task| !task.is_finished());
+        self.stop_tasks.push(crate::ownership::spawn(
+            self.deps.lost.clone(),
+            async move {
+                let command = MoblinCommand {
+                    action: MoblinAction::Stream { active },
+                    by: "the OBS stream".into(),
+                };
+                let reply = match serde_json::to_vec(&command) {
+                    Ok(payload) => tokio::time::timeout(
+                        MOBLIN_REQUEST_TIMEOUT,
+                        nats.request(live::moblin_request_subject(switcher_id), payload.into()),
+                    )
+                    .await
+                    .map_err(|_| MoblinRefusal::Timeout)
+                    .and_then(|reply| reply.map_err(|_| MoblinRefusal::NotConnected))
+                    .and_then(|message| {
+                        serde_json::from_slice::<MoblinReply>(&message.payload)
+                            .unwrap_or(Err(MoblinRefusal::Failed))
+                    }),
+                    Err(_) => Err(MoblinRefusal::Failed),
+                };
+                let refusal = match reply {
+                    Ok(()) | Err(MoblinRefusal::AlreadyStreaming | MoblinRefusal::NotStreaming) => {
+                        return;
+                    }
+                    Err(refusal) => refusal,
+                };
+                let verb = if active { "start" } else { "stop" };
+                let detail = EventDetail::MoblinError {
+                    message: format!("Couldn't {verb} Moblin with the OBS stream: {refusal}"),
+                };
+                if let Err(error) = live::record_event(&db, &nats, switcher_id, detail).await {
+                    tracing::warn!(%error, "Failed to record switcher event");
                 }
-                Err(refusal) => refusal,
-            };
-            let verb = if active { "start" } else { "stop" };
-            let detail = EventDetail::MoblinError {
-                message: format!("Couldn't {verb} Moblin with the OBS stream: {refusal}"),
-            };
-            if let Err(error) = live::record_event(&db, &nats, switcher_id, detail).await {
-                tracing::warn!(%error, "Failed to record switcher event");
-            }
-        });
+            },
+        ));
     }
 
     async fn on_record(&mut self, active: bool) {

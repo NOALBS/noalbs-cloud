@@ -38,6 +38,7 @@ const INTENT_TTL: Duration = Duration::from_secs(15);
 
 /// What a link needs.
 pub struct Deps {
+    pub lost: watch::Receiver<bool>,
     pub switcher_id: Uuid,
     /// BELABOX Cloud's remote endpoint.
     pub url: String,
@@ -104,6 +105,7 @@ impl Handle {
 /// A running link; dropping it stops it (use [`Link::stop`] to also clear its
 /// status).
 pub struct Link {
+    lost: watch::Receiver<bool>,
     handle: Handle,
     tasks: Vec<JoinHandle<()>>,
     switcher_id: Uuid,
@@ -120,23 +122,27 @@ impl Link {
         };
         let switcher_id = deps.switcher_id;
         let kv = deps.kv.clone();
+        let lost = deps.lost.clone();
 
         let tasks = vec![
-            crate::spawn(status::publish(
-                deps.kv.clone(),
-                switcher_id,
-                live::BELABOX_HEARTBEAT,
-                status_rx,
-            )),
-            crate::spawn(answer_requests(
-                deps.nats.clone(),
-                switcher_id,
-                handle.clone(),
-            )),
-            crate::spawn(run(deps, status_tx, commands_rx)),
+            crate::ownership::spawn(
+                deps.lost.clone(),
+                status::publish(
+                    deps.kv.clone(),
+                    switcher_id,
+                    live::BELABOX_HEARTBEAT,
+                    status_rx,
+                ),
+            ),
+            crate::ownership::spawn(
+                deps.lost.clone(),
+                answer_requests(deps.nats.clone(), switcher_id, handle.clone()),
+            ),
+            crate::ownership::spawn(deps.lost.clone(), run(deps, status_tx, commands_rx)),
         ];
 
         Self {
+            lost,
             handle,
             tasks,
             switcher_id,
@@ -150,11 +156,17 @@ impl Link {
 
     /// Stops the link; `clear` also deletes its status (not when another
     /// connection took the switcher over).
-    pub async fn stop(self, clear: bool) {
+    pub async fn stop(mut self, clear: bool) {
         for task in &self.tasks {
             task.abort();
         }
-        if clear && let Err(error) = self.kv.delete(live::status_key(self.switcher_id)).await {
+        for task in self.tasks.drain(..) {
+            let _ = task.await;
+        }
+        if clear
+            && !*self.lost.borrow()
+            && let Err(error) = self.kv.delete(live::status_key(self.switcher_id)).await
+        {
             tracing::warn!(%error, "Failed to clear the BELABOX status");
         }
     }
