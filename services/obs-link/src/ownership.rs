@@ -16,6 +16,13 @@ pub struct Owner {
     task: JoinHandle<()>,
 }
 
+#[derive(serde::Serialize)]
+struct Holder<'a> {
+    hostname: String,
+    #[serde(flatten)]
+    takeover: &'a live::Takeover,
+}
+
 impl Owner {
     pub async fn identify(
         store: &Store,
@@ -65,11 +72,10 @@ impl Owner {
         nats.flush()
             .await
             .map_err(|error| Error::Nats(error.to_string()))?;
-        let connection = takeover.connection_id;
-        let holder = format!(
-            "{}:{connection}",
-            std::env::var("HOSTNAME").unwrap_or_default()
-        );
+        let holder = serde_json::to_string(&Holder {
+            hostname: std::env::var("HOSTNAME").unwrap_or_default(),
+            takeover: &takeover,
+        })?;
         let key = switcher.to_string();
         let deadline = tokio::time::Instant::now() + live::OWNER_TTL + Duration::from_secs(3);
         loop {
@@ -98,6 +104,16 @@ impl Owner {
                 Ok(Ok(None)) => {}
                 Ok(Err(error)) => return Err(Error::Nats(error.to_string())),
                 Err(error) => return Err(Error::Nats(error.to_string())),
+            }
+            let holder = tokio::time::timeout(Duration::from_millis(200), store.get(&key))
+                .await
+                .map_err(|error| Error::Nats(error.to_string()))?
+                .map_err(|error| Error::Nats(error.to_string()))?;
+            if holder
+                .as_ref()
+                .is_some_and(|holder| supersedes(holder, &takeover))
+            {
+                return Err(Error::OwnershipSuperseded);
             }
             let payload = serde_json::to_vec(&takeover)?;
             nats.publish(live::takeover_subject(switcher), payload.into())
@@ -356,6 +372,54 @@ mod tests {
         );
         new.release().await;
         js.delete_key_value(&store.name).await.unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires NATS with JetStream on port 4222"]
+    async fn successful_newer_owner_refuses_a_late_older_waiter() {
+        let nats = async_nats::connect("nats://localhost:4222").await.unwrap();
+        let js = async_nats::jetstream::new(nats.clone());
+        let store = js
+            .create_key_value(async_nats::jetstream::kv::Config {
+                bucket: format!("owners_late_{}", Uuid::new_v4().simple()),
+                storage: async_nats::jetstream::stream::StorageType::Memory,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        let switcher = Uuid::new_v4();
+        let older = next_takeover(&store, switcher, Uuid::new_v4(), 200)
+            .await
+            .unwrap();
+        let newer = next_takeover(&store, switcher, Uuid::new_v4(), 100)
+            .await
+            .unwrap();
+        let (_generation, connections) = watch::channel(1);
+        let (lost, _) = watch::channel(false);
+        let winner = Owner::acquire(
+            &store,
+            &nats,
+            switcher,
+            newer.clone(),
+            lost,
+            connections.clone(),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        store.delete(format!("{switcher}.order")).await.unwrap();
+        let (lost, _) = watch::channel(false);
+        let result = tokio::time::timeout(
+            Duration::from_secs(1),
+            Owner::acquire(&store, &nats, switcher, older, lost, connections),
+        )
+        .await;
+        winner.release().await;
+        js.delete_key_value(&store.name).await.unwrap();
+        assert!(
+            matches!(result, Ok(Err(Error::OwnershipSuperseded))),
+            "an older late subscriber must be refused, not time out and reconnect"
+        );
     }
 
     #[tokio::test]
