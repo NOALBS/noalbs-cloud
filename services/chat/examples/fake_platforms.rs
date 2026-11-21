@@ -26,7 +26,7 @@
 //! webhooks are signed with a key made at start; `GET /public/v1/public-key` hands
 //! out its public half, like Kick does.
 //! For Kick raids it fakes Kick's site too: `GET /api/v2/channels/{slug}` (channel ID =
-//! user ID + 1000, chatroom ID = user ID + 2000) and its Pusher WebSocket at `/app/{key}`.
+//! user ID + 1000) and its Pusher WebSocket at `/app/{key}`.
 //! For YouTube: Google's `/o/oauth2/v2/auth` and `/token`, the Data API's channels,
 //! liveBroadcasts and liveChat/messages, and the `StreamList` gRPC stream (plaintext HTTP/2 on the
 //! same port). Use YouTube-like IDs with `/control/next`, e.g. `{"id":"UCkate","login":"kate"}`.
@@ -44,8 +44,8 @@
 //!   only makes a name known (for user lookups); `/control/deny` refuses the next sign-in.
 //! - `POST /control/kick/chat {"channel":"200","chatter":"77","login":"bob","text":"!bitrate","targets":["http://localhost:13000/chat/webhooks/kick"],"bad_signature":false}`
 //!   sends one signed webhook to each target (the same delivery: for de-dup tests).
-//! - `POST /control/kick/raid {"from":"200","to_name":"Bob","to_slug":"bob","on":"channel"}` raids out of
-//!   Kick channel 200 over the site WebSocket, on its `channel` topic (default), its `chatroom` one or `both`.
+//! - `POST /control/kick/raid {"from":"200","to_name":"Bob","to_slug":"bob"}` raids out of
+//!   Kick channel 200 over the site WebSocket, on its `channel` topic.
 //! - `POST /control/youtube/live {"channel":"UCkate","live":true}` starts a broadcast with a new live
 //!   chat (`false` ends it: open streams get `offlineAt`, new ones `FAILED_PRECONDITION`).
 //! - `POST /control/youtube/chat {"channel":"UCkate","chatter":"UCbob","name":"bob","text":"!bitrate","moderator":false,"member":false}`
@@ -818,7 +818,6 @@ async fn kick_site_channel(
             "id": id + 1000,
             "user_id": id,
             "slug": slug,
-            "chatroom": { "id": id + 2000, "channel_id": id + 1000 },
         })),
     )
 }
@@ -905,8 +904,6 @@ struct KickRaidInput {
     from: String,
     to_name: String,
     to_slug: String,
-    /// `channel` (default), `chatroom` or `both`: which topic(s) carry it.
-    on: Option<String>,
 }
 
 async fn control_kick_raid(
@@ -929,12 +926,6 @@ async fn control_kick_raid(
         .map(|(login, _)| login.clone())
         .unwrap_or_default();
     let channel = format!("channel.{}", from + 1000);
-    let chatroom = format!("chatrooms.{}.v2", from + 2000);
-    let topics: Vec<&str> = match input.on.as_deref() {
-        Some("chatroom") => vec![&chatroom],
-        Some("both") => vec![&channel, &chatroom],
-        _ => vec![&channel],
-    };
     let data = json!({
         "channel": { "id": from + 1000, "user_id": from, "slug": from_slug, "is_banned": false },
         "slug": input.to_slug,
@@ -950,16 +941,14 @@ async fn control_kick_raid(
     let kick = fake.kick.lock().unwrap();
     let mut delivered = 0;
     for (subscribed, tx) in kick.pusher.values() {
-        for topic in &topics {
-            if subscribed.iter().any(|known| known == topic) {
-                let frame = pusher_frame(
-                    r"App\Events\ChatMoveToSupportedChannelEvent",
-                    &data,
-                    Some(topic),
-                );
-                if tx.send(frame).is_ok() {
-                    delivered += 1;
-                }
+        if subscribed.contains(&channel) {
+            let frame = pusher_frame(
+                r"App\Events\ChatMoveToSupportedChannelEvent",
+                &data,
+                Some(&channel),
+            );
+            if tx.send(frame).is_ok() {
+                delivered += 1;
             }
         }
     }

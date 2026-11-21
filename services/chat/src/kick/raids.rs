@@ -4,7 +4,7 @@
 //! One instance at a time (the `kick-raids` lease) watches the Kick channels
 //! where a linked switcher stops the stream after raiding out
 //! ([`db::chat::raid_channels`]), re-read on every reconcile request and every
-//! [`REFRESH`]. The socket wants Kick's own channel and chatroom IDs, which the
+//! [`REFRESH`]. The socket wants Kick's own channel IDs, which the
 //! public API doesn't give, so they're looked up on Kick's site API
 //! ([`Kick::site_channel`]) and kept in memory. Channels are spread over sockets
 //! of [`CHANNELS_PER_SOCKET`], and a raid becomes a [`ChatEvent::Raid`] like
@@ -39,8 +39,7 @@ use crate::{
 const REFRESH: Duration = Duration::from_secs(60);
 /// A channel whose IDs couldn't be found is tried again after this.
 const RETRY_LOOKUP: Duration = Duration::from_secs(600);
-/// Channels per socket, two topics each. Pusher has no documented limit, but
-/// this is Kick's app and the chatroom topics carry all of their chat.
+/// Channels per socket, one topic each.
 const CHANNELS_PER_SOCKET: usize = 50;
 /// Pusher's answer to a ping, and its first frame, must come within this.
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(30);
@@ -124,7 +123,7 @@ async fn watch(state: &State, kick: &Kick, mut lease: Lease) {
 /// A Kick channel we listen to, by its broadcaster's user ID.
 struct Channel {
     slug: String,
-    topics: [String; 2],
+    topic: String,
 }
 
 struct Watcher {
@@ -166,7 +165,7 @@ impl Watcher {
                         channel = id,
                         channel_login = login,
                         slug = channel.slug,
-                        topics = ?channel.topics,
+                        topic = channel.topic,
                         "Watching a Kick channel for raids"
                     );
                     self.failed.remove(id);
@@ -187,14 +186,14 @@ impl Watcher {
             .collect();
         assign(&mut plan, &wanted, CHANNELS_PER_SOCKET);
         for (index, channels) in plan.into_iter().enumerate() {
-            let channels: BTreeMap<String, [String; 2]> = channels
+            let channels: BTreeMap<String, String> = channels
                 .into_iter()
                 .map(|id| {
-                    let topics = match self.sockets.get(index).and_then(|s| s.channels.get(&id)) {
-                        Some(topics) => topics.clone(),
-                        None => self.channels[&id].topics.clone(),
+                    let topic = match self.sockets.get(index).and_then(|s| s.channels.get(&id)) {
+                        Some(topic) => topic.clone(),
+                        None => self.channels[&id].topic.clone(),
                     };
-                    (id, topics)
+                    (id, topic)
                 })
                 .collect();
             let Some(socket) = self.sockets.get_mut(index) else {
@@ -202,18 +201,14 @@ impl Watcher {
                     .push(Socket::spawn(&self.url, channels, &self.raids));
                 continue;
             };
-            for (id, topics) in &socket.channels {
+            for (id, topic) in &socket.channels {
                 if !channels.contains_key(id) {
-                    for topic in topics {
-                        let _ = socket.commands.send(Command::Unsubscribe(topic.clone()));
-                    }
+                    let _ = socket.commands.send(Command::Unsubscribe(topic.clone()));
                 }
             }
-            for (id, topics) in &channels {
+            for (id, topic) in &channels {
                 if !socket.channels.contains_key(id) {
-                    for topic in topics {
-                        let _ = socket.commands.send(Command::Subscribe(topic.clone()));
-                    }
+                    let _ = socket.commands.send(Command::Subscribe(topic.clone()));
                 }
             }
             socket.channels = channels;
@@ -232,7 +227,7 @@ impl Watcher {
         let from = self
             .channels
             .iter()
-            .find(|(_, channel)| channel.topics.contains(&raid.topic))
+            .find(|(_, channel)| channel.topic == raid.topic)
             .or_else(|| {
                 self.channels
                     .iter()
@@ -242,7 +237,6 @@ impl Watcher {
             tracing::debug!(topic = raid.topic, "A raid from a channel we don't watch");
             return;
         };
-        // Both of a channel's topics may bring the same raid.
         let key = kv::key(&["kick-raid", from_id, &raid.to_slug]);
         if !kv::first_time(&state.buckets.seen, &key)
             .await
@@ -260,7 +254,7 @@ impl Watcher {
     }
 }
 
-/// Finds the channel and chatroom IDs of the channel of `broadcaster_user_id`.
+/// Finds the channel ID of the channel of `broadcaster_user_id`.
 async fn look_up(kick: &Kick, broadcaster_user_id: &str) -> Result<Channel> {
     let slug = kick
         .slug_of(broadcaster_user_id)
@@ -274,7 +268,7 @@ async fn look_up(kick: &Kick, broadcaster_user_id: &str) -> Result<Channel> {
         )));
     }
     Ok(Channel {
-        topics: pusher::topics(site.id, site.chatroom.id),
+        topic: pusher::topic(site.id),
         slug,
     })
 }
@@ -305,7 +299,7 @@ enum Command {
 /// One Pusher connection, run by its own task until dropped.
 struct Socket {
     /// Its channels and their topics.
-    channels: BTreeMap<String, [String; 2]>,
+    channels: BTreeMap<String, String>,
     commands: mpsc::UnboundedSender<Command>,
     task: JoinHandle<()>,
 }
@@ -317,15 +311,11 @@ impl Drop for Socket {
 }
 
 impl Socket {
-    fn spawn(
-        url: &str,
-        channels: BTreeMap<String, [String; 2]>,
-        raids: &mpsc::Sender<Raid>,
-    ) -> Self {
+    fn spawn(url: &str, channels: BTreeMap<String, String>, raids: &mpsc::Sender<Raid>) -> Self {
         let (commands, receiver) = mpsc::unbounded_channel();
         let task = tokio::spawn(connection(
             url.to_owned(),
-            channels.values().flatten().cloned().collect(),
+            channels.values().cloned().collect(),
             receiver,
             raids.clone(),
         ));

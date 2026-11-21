@@ -44,12 +44,6 @@ pub struct SiteChannel {
     /// The channel's own ID (not its broadcaster's user ID).
     pub id: u64,
     pub user_id: u64,
-    pub chatroom: SiteChatroom,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct SiteChatroom {
-    pub id: u64,
 }
 
 #[derive(Deserialize)]
@@ -272,7 +266,7 @@ impl Kick {
         Ok(channels.data.into_iter().next().map(|channel| channel.slug))
     }
 
-    /// The channel and chatroom IDs Kick's site WebSocket uses, which its public
+    /// The channel ID Kick's site WebSocket uses, which its public
     /// API doesn't give: from the site's own (unofficial) API.
     pub async fn site_channel(&self, slug: &str) -> Result<SiteChannel> {
         let response = self
