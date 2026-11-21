@@ -256,7 +256,10 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     let stores = live::Stores::open(&js)
         .await
         .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
-    let stores_keeper = tokio::spawn(live::keep_stores(js, nats_connections.clone()));
+    let rate_bucket = crate::rate_limit::open_bucket(&js)
+        .await
+        .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
+    let stores_keeper = tokio::spawn(live::keep_stores(js.clone(), nats_connections.clone()));
 
     history::spawn_upkeep(db.clone(), shutdown_handle.clone());
     crate::privacy::spawn_upkeep(db.clone(), shutdown_handle.clone());
@@ -282,7 +285,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         screenshots: std::sync::Arc::default(),
         preview_watchers: std::sync::Arc::default(),
         auth: std::sync::Arc::new(crate::auth_cache::AuthCache::new()),
-        limits: std::sync::Arc::default(),
+        limits: std::sync::Arc::new(crate::rate_limit::RateLimits::shared(rate_bucket)),
         client_ip_header: client_ip_header(&config)?,
         cookie_key: private_cookie_key(&config.cookie_secret)?,
         stopping: shutdown_handle.subscribe(),
@@ -294,7 +297,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
 
     billing::spawn_upkeep(state.clone(), shutdown_handle.clone());
     crate::metrics::spawn_refresh(state.clone(), shutdown_handle.clone());
-    crate::rate_limit::spawn_upkeep(state.limits.clone(), shutdown_handle.clone());
+    crate::rate_limit::spawn_upkeep(state.limits.clone(), js, shutdown_handle.clone());
     crate::screenshots::spawn_follow(
         state.nats.clone(),
         state.preview_watchers.clone(),

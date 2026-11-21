@@ -1,5 +1,4 @@
-//! Rate limits, in memory per API replica (a guard against floods and abuse, not
-//! an exact quota, so several replicas each allowing the full rate is fine).
+//! Shared sensitive-operation budgets, with local limits during NATS outages.
 //!
 //! | Limit | Key | Where |
 //! |---|---|---|
@@ -27,7 +26,26 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use common::shutdown::ShutdownHandler;
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
+
+pub const BUCKET: &str = "api-ratelimits";
+
+pub async fn open_bucket(
+    js: &async_nats::jetstream::Context,
+) -> Result<async_nats::jetstream::kv::Store, async_nats::Error> {
+    if let Ok(store) = js.get_key_value(BUCKET).await {
+        return Ok(store);
+    }
+    Ok(js
+        .create_key_value(async_nats::jetstream::kv::Config {
+            bucket: BUCKET.to_owned(),
+            max_age: Duration::from_secs(310),
+            storage: async_nats::jetstream::stream::StorageType::Memory,
+            ..Default::default()
+        })
+        .await?)
+}
 
 use crate::{app::ApiState, routes::ApiError};
 
@@ -35,6 +53,7 @@ use crate::{app::ApiState, routes::ApiError};
 const PRUNE_EVERY: Duration = Duration::from_secs(60);
 
 pub struct RateLimits {
+    shared: Option<async_nats::jetstream::kv::Store>,
     /// Any request: generous, so a team on one address (or a carrier's NAT)
     /// never notices; it only stops floods.
     pub requests: Limiter<IpAddr>,
@@ -49,6 +68,7 @@ pub struct RateLimits {
 impl Default for RateLimits {
     fn default() -> Self {
         Self {
+            shared: None,
             requests: Limiter::new(600, Duration::from_millis(50)),
             sign_in: Limiter::new(20, Duration::from_secs(6)),
             outbound: Limiter::new(20, Duration::from_secs(3)),
@@ -58,6 +78,43 @@ impl Default for RateLimits {
 }
 
 impl RateLimits {
+    pub fn shared(store: async_nats::jetstream::kv::Store) -> Self {
+        Self {
+            shared: Some(store),
+            ..Self::default()
+        }
+    }
+
+    async fn check<K: Hash + Eq + std::fmt::Display>(
+        &self,
+        class: &str,
+        limiter: &Limiter<K>,
+        key: K,
+    ) -> Result<(), Duration> {
+        let Some(store) = &self.shared else {
+            return limiter.check(key, Instant::now());
+        };
+        let digest = Sha256::digest(key.to_string().as_bytes());
+        let key_name = format!(
+            "{class}.{}",
+            digest
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        );
+        with_fallback(
+            live::coordination::take_token(
+                store,
+                &key_name,
+                limiter.capacity,
+                limiter.refill.mul_f64(limiter.capacity),
+                Duration::ZERO,
+            ),
+            || limiter.check(key, Instant::now()),
+            limiter.refill,
+        )
+        .await
+    }
     fn prune(&self, now: Instant) {
         self.requests.prune(now);
         self.sign_in.prune(now);
@@ -66,28 +123,47 @@ impl RateLimits {
     }
 
     /// Takes one of the user's outbound requests, or 429.
-    pub fn outbound(&self, user_id: Uuid) -> Result<(), ApiError> {
-        self.outbound
-            .check(user_id, Instant::now())
+    pub async fn outbound(&self, user_id: Uuid) -> Result<(), ApiError> {
+        self.check("outbound", &self.outbound, user_id)
+            .await
             .map_err(ApiError::rate_limited)
     }
 
     /// Takes one of the user's data exports, or 429.
-    pub fn export(&self, user_id: Uuid) -> Result<(), ApiError> {
-        self.exports
-            .check(user_id, Instant::now())
+    pub async fn export(&self, user_id: Uuid) -> Result<(), ApiError> {
+        self.check("exports", &self.exports, user_id)
+            .await
             .map_err(ApiError::rate_limited)
     }
 }
 
+async fn with_fallback(
+    global: impl Future<Output = live::coordination::Result<bool>>,
+    local: impl FnOnce() -> Result<(), Duration>,
+    refill: Duration,
+) -> Result<(), Duration> {
+    match tokio::time::timeout(Duration::from_millis(200), global).await {
+        Ok(Ok(true)) => Ok(()),
+        Ok(Ok(false)) => Err(refill),
+        _ => local(),
+    }
+}
+
 /// Forgets idle buckets now and then, so memory follows recent clients only.
-pub fn spawn_upkeep(limits: std::sync::Arc<RateLimits>, mut shutdown: ShutdownHandler) {
+pub fn spawn_upkeep(
+    limits: std::sync::Arc<RateLimits>,
+    js: async_nats::jetstream::Context,
+    mut shutdown: ShutdownHandler,
+) {
     tokio::spawn(async move {
         let mut every = tokio::time::interval(PRUNE_EVERY);
         loop {
             tokio::select! {
                 _ = shutdown.changed() => return,
-                _ = every.tick() => limits.prune(Instant::now()),
+                _ = every.tick() => {
+                    limits.prune(Instant::now());
+                    let _ = open_bucket(&js).await;
+                },
             }
         }
     });
@@ -171,7 +247,10 @@ pub async fn limit_requests(
         let now = Instant::now();
         let mut result = state.limits.requests.check(ip, now);
         if result.is_ok() && is_sign_in(path) {
-            result = state.limits.sign_in.check(ip, now);
+            result = state
+                .limits
+                .check("sign-in", &state.limits.sign_in, ip)
+                .await;
         }
         if let Err(wait) = result {
             return ApiError::rate_limited(wait).into_response();
@@ -206,6 +285,76 @@ fn is_sign_in(path: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn backend_failure_and_timeout_preserve_local_limits() {
+        let local = super::Limiter::new(1, Duration::from_secs(60));
+        for expected in [true, false] {
+            let result = super::with_fallback(
+                async { Err(live::coordination::Error::Nats("unavailable".into())) },
+                || local.check("user", Instant::now()),
+                Duration::from_secs(60),
+            )
+            .await;
+            assert_eq!(result.is_ok(), expected);
+        }
+        assert!(
+            super::with_fallback(
+                std::future::pending(),
+                || local.check("other", Instant::now()),
+                Duration::from_secs(60)
+            )
+            .await
+            .is_ok()
+        );
+        assert!(
+            super::with_fallback(
+                async { Ok(false) },
+                || panic!("shared rejection fell back"),
+                Duration::from_secs(60)
+            )
+            .await
+            .is_err()
+        );
+        assert!(
+            super::with_fallback(
+                async { Ok(true) },
+                || panic!("shared success consumed fallback"),
+                Duration::from_secs(60)
+            )
+            .await
+            .is_ok()
+        );
+    }
+
+    #[tokio::test]
+    #[ignore = "requires NATS with JetStream on port 4222"]
+    async fn replicas_share_one_budget_and_encode_ipv6_keys() {
+        let js = async_nats::jetstream::new(async_nats::connect("127.0.0.1:4222").await.unwrap());
+        let name = format!("api_limits_{}", uuid::Uuid::new_v4().simple());
+        let store = js
+            .create_key_value(async_nats::jetstream::kv::Config {
+                bucket: name.clone(),
+                storage: async_nats::jetstream::stream::StorageType::Memory,
+                max_age: Duration::from_secs(310),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        let one = super::RateLimits::shared(store.clone());
+        let two = super::RateLimits::shared(store);
+        let user = uuid::Uuid::new_v4();
+        for replica in [&one, &two, &one, &two, &one] {
+            assert!(replica.export(user).await.is_ok());
+        }
+        assert!(one.export(user).await.is_err());
+        assert!(two.export(user).await.is_err());
+        let ip: IpAddr = "2001:db8::1".parse().unwrap();
+        for replica in [&one, &two] {
+            assert!(replica.check("sign-in", &replica.sign_in, ip).await.is_ok());
+        }
+        js.delete_key_value(name).await.unwrap();
+    }
+
     use std::{
         net::IpAddr,
         time::{Duration, Instant},

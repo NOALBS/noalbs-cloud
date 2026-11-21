@@ -242,7 +242,7 @@ async fn checkout(
     let billing = enabled(&state)?;
     let catalog = Catalog::load(&state.db).await?;
     let access = authorized.into_access();
-    state.limits.outbound(access.user.id())?;
+    state.limits.outbound(access.user.id()).await?;
     let workspace_id = access.workspace_id;
 
     let mut items: Vec<(String, i32)> = Vec::new();
@@ -327,7 +327,7 @@ async fn portal(
 ) -> ApiResult<Json<RedirectDto>> {
     let billing = enabled(&state)?;
     let access = authorized.into_access();
-    state.limits.outbound(access.user.id())?;
+    state.limits.outbound(access.user.id()).await?;
     let workspace = db::workspaces::get_by_id(&state.db, access.workspace_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Workspace not found"))?;

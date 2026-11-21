@@ -426,7 +426,7 @@ async fn test_stream_server(
     Json(request): Json<TestStreamServer>,
 ) -> ApiResult<Json<StatsProbe>> {
     let access = authorized.into_access();
-    state.limits.outbound(access.workspace.user.id())?;
+    state.limits.outbound(access.workspace.user.id()).await?;
     if request.stats_url.len() > MAX_URL_LEN {
         return Err(ApiError::bad_request(
             "invalid_url",
