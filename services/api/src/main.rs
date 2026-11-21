@@ -3,6 +3,7 @@ mod auth_cache;
 mod billing;
 mod config;
 mod error;
+mod leadership;
 mod metrics;
 mod oauth;
 mod permissions;

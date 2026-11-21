@@ -19,6 +19,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ApiState {
+    pub leadership: crate::leadership::Leadership,
     pub stopping: tokio::sync::watch::Receiver<bool>,
     pub db: db::DbPool,
     pub nats: async_nats::Client,
@@ -267,6 +268,13 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
 
     let chat_environment = db::chat::environment_id(&db).await?;
     let state = ApiState {
+        leadership: crate::leadership::Leadership::start(
+            nats.clone(),
+            nats_connections.clone(),
+            shutdown_handle.clone(),
+        )
+        .await
+        .map_err(|error| crate::error::Error::Nats(error.to_string()))?,
         db,
         nats,
         nats_connections,

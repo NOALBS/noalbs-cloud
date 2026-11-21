@@ -1,5 +1,4 @@
-//! Database-wide snapshots, repeated by each API replica. Use max/last, not sum,
-//! across replicas in Grafana. Callbacks only read memory, never Postgres or NATS.
+//! Leader-only database-wide snapshots. Callbacks only read local state.
 
 use std::{
     sync::{Arc, RwLock},
@@ -25,14 +24,16 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
     if !std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok_and(|value| !value.trim().is_empty()) {
         return;
     }
-    let latest = Arc::new(RwLock::new(None::<Snapshot>));
+    let latest = Arc::new(RwLock::new(None::<(uuid::Uuid, Snapshot)>));
     let users = latest.clone();
+    let users_leader = state.leadership.clone();
     let users_gauge = telemetry::meter()
         .u64_observable_gauge("noalbs.users.active")
         .with_description("Users active in a rolling window, excluding disabled accounts")
         .with_callback(move |observer| {
             if let Ok(snapshot) = users.read()
-                && let Some(snapshot) = snapshot.as_ref()
+                && let Some((epoch, snapshot)) = snapshot.as_ref()
+                && users_leader.epoch() == Some(*epoch)
             {
                 for (index, (window, _)) in WINDOWS.iter().enumerate() {
                     observer.observe(snapshot.users[index], &[KeyValue::new("window", *window)]);
@@ -41,12 +42,14 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         })
         .build();
     let switchers = latest.clone();
+    let switchers_leader = state.leadership.clone();
     let switchers_gauge = telemetry::meter()
         .u64_observable_gauge("noalbs.switchers.active")
         .with_description("Switchers seen in a rolling window or currently connected")
         .with_callback(move |observer| {
             if let Ok(snapshot) = switchers.read()
-                && let Some(snapshot) = snapshot.as_ref()
+                && let Some((epoch, snapshot)) = snapshot.as_ref()
+                && switchers_leader.epoch() == Some(*epoch)
             {
                 for (index, (window, _)) in WINDOWS.iter().enumerate() {
                     observer.observe(
@@ -58,12 +61,14 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         })
         .build();
     let devices = latest.clone();
+    let devices_leader = state.leadership.clone();
     let devices_gauge = telemetry::meter()
         .u64_observable_gauge("noalbs.connect.devices")
         .with_description("Unrevoked Connect devices, paired or recently seen")
         .with_callback(move |observer| {
             if let Ok(snapshot) = devices.read()
-                && let Some(snapshot) = snapshot.as_ref()
+                && let Some((epoch, snapshot)) = snapshot.as_ref()
+                && devices_leader.epoch() == Some(*epoch)
             {
                 for (index, state) in ["paired", "active_1d", "active_30d"].iter().enumerate() {
                     observer.observe(snapshot.devices[index], &[KeyValue::new("state", *state)]);
@@ -73,14 +78,23 @@ pub fn spawn_refresh(state: ApiState, mut shutdown: ShutdownHandler) {
         .build();
     tokio::spawn(async move {
         let _gauges = (users_gauge, switchers_gauge, devices_gauge);
-        let mut every = tokio::time::interval(Duration::from_secs(300));
+        let mut every = tokio::time::interval(Duration::from_secs(1));
+        let mut refreshed = None;
         loop {
             tokio::select! {
                 _ = shutdown.changed() => return,
                 _ = every.tick() => {
+                    let Some(epoch) = state.leadership.epoch() else {
+                        if let Ok(mut latest) = latest.write() { *latest = None; }
+                        continue;
+                    };
+                    if refreshed.is_some_and(|(previous, at): (_, tokio::time::Instant)| previous == epoch && at.elapsed() < Duration::from_secs(300)) { continue; }
                     match refresh(&state).await {
                         Ok(snapshot) => {
-                            if let Ok(mut latest) = latest.write() { *latest = Some(snapshot); }
+                            if state.leadership.epoch() == Some(epoch) {
+                                if let Ok(mut latest) = latest.write() { *latest = Some((epoch, snapshot)); }
+                                refreshed = Some((epoch, tokio::time::Instant::now()));
+                            }
                         }
                         Err(error) => tracing::warn!(%error, "Couldn't refresh activity metrics"),
                     }
