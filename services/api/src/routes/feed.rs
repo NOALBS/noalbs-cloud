@@ -316,6 +316,10 @@ async fn live_feed(
         .take_until(reconnected)
         .map(Ok);
 
+    let mut stopping = state.stopping.clone();
+    let feed = feed.take_until(async move {
+        let _ = stopping.wait_for(|stop| *stop).await;
+    });
     Ok(Sse::new(feed).keep_alive(KeepAlive::new().interval(Duration::from_secs(15))))
 }
 
@@ -1693,6 +1697,10 @@ async fn audio_feed(
     .filter_map(|()| async { None::<Event> });
 
     let feed = stream::select(updates, demand).map(Ok);
+    let mut stopping = state.stopping.clone();
+    let feed = feed.take_until(async move {
+        let _ = stopping.wait_for(|stop| *stop).await;
+    });
     Ok(Sse::new(feed).keep_alive(KeepAlive::new().interval(Duration::from_secs(15))))
 }
 

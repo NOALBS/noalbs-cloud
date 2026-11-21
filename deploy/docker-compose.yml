@@ -52,6 +52,7 @@ services:
     restart: "no"
 
   api:
+    stop_grace_period: 45s
     image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/api:${NOALBS_TAG:-latest}
     restart: unless-stopped
     environment:
@@ -84,6 +85,7 @@ services:
         condition: service_started
 
   obs-link:
+    stop_grace_period: 45s
     image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/obs-link:${NOALBS_TAG:-latest}
     restart: unless-stopped
     environment:
@@ -101,6 +103,7 @@ services:
   # Reads Twitch, Kick and YouTube chat and runs the commands. Run as many as you like
   # (e.g. `docker compose up -d --scale chat=2`): they share the work through NATS.
   chat:
+    stop_grace_period: 45s
     image: ${NOALBS_IMAGE_PREFIX:-ghcr.io/noalbs/noalbs-cloud}/chat:${NOALBS_TAG:-latest}
     restart: unless-stopped
     environment:

@@ -5,6 +5,7 @@ use crate::error::Result;
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub health_port: u16,
 
     pub nats_url: String,
     pub nats_request_timeout: u64,
@@ -33,6 +34,7 @@ impl Default for Config {
         Self {
             host: "0.0.0.0".into(),
             port: 11000,
+            health_port: 11001,
             nats_url: "nats://localhost:4222".into(),
             nats_request_timeout: 5000,
             nats_user: None,

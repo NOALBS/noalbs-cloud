@@ -111,6 +111,17 @@ pub struct Guard {
 }
 
 impl Guard {
+    pub fn shutdown_with_timeout(self, timeout: std::time::Duration) {
+        let (done, finished) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            self.shutdown();
+            let _ = done.send(());
+        });
+        if finished.recv_timeout(timeout).is_err() {
+            eprintln!("Telemetry flush deadline reached");
+        }
+    }
+
     /// Sends what's still queued (spans first, so the logs about them follow).
     /// Blocks while it does. Flushed rather than shut down: tasks still winding
     /// down log after this, which a stopped logger would warn about on every line.

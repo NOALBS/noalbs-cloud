@@ -66,6 +66,61 @@ const MAX_MESSAGE_SIZE: usize = 4 << 20;
 /// the default (128 KiB) is kept by every open connection.
 const READ_BUFFER_SIZE: usize = 16 << 10;
 
+async fn serve_health(listener: net::TcpListener, ready: shutdown::Readiness, shared: Arc<Shared>) {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    while let Ok((mut socket, _)) = listener.accept().await {
+        let ready = ready.clone();
+        let shared = shared.clone();
+        crate::spawn(async move {
+            let mut request = [0; 1024];
+            let mut size = 0;
+            let Ok(Ok(())) = tokio::time::timeout(Duration::from_secs(1), async {
+                while size < request.len() {
+                    let read = socket.read(&mut request[size..]).await?;
+                    if read == 0 {
+                        break;
+                    }
+                    size += read;
+                    if request[..size].windows(2).any(|pair| pair == b"\r\n") {
+                        return Ok::<_, std::io::Error>(());
+                    }
+                }
+                Err(std::io::Error::from(std::io::ErrorKind::InvalidData))
+            })
+            .await
+            else {
+                return;
+            };
+            let status = match request[..size].split(|byte| *byte == b' ').nth(1) {
+                Some(b"/health") => "200 OK",
+                Some(b"/ready") => {
+                    if ready
+                        .check(
+                            shared.nats.connection_state()
+                                == async_nats::connection::State::Connected,
+                            async { shared.db.acquire().await.is_ok() },
+                        )
+                        .await
+                    {
+                        "200 OK"
+                    } else {
+                        "503 Service Unavailable"
+                    }
+                }
+                _ => "404 Not Found",
+            };
+            let response =
+                format!("HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            let _ = tokio::time::timeout(
+                Duration::from_secs(1),
+                socket.write_all(response.as_bytes()),
+            )
+            .await;
+        });
+    }
+}
+
 /// Everything connections share.
 struct Shared {
     nats: async_nats::Client,
@@ -126,6 +181,15 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         allow_private_stats_urls: config.allow_private_stats_urls,
         data_key: DataKey::from_hex(&config.data_encryption_key)?,
     });
+    let health_listener =
+        net::TcpListener::bind(format!("{}:{}", config.host, config.health_port)).await?;
+    let readiness = shutdown_handle.readiness();
+    let health = crate::spawn(serve_health(
+        health_listener,
+        readiness.clone(),
+        shared.clone(),
+    ));
+    readiness.initialized();
 
     loop {
         tokio::select! {
@@ -147,6 +211,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     }
 
     stores_keeper.abort();
+    health.abort();
     Ok(())
 }
 
@@ -233,10 +298,26 @@ async fn handle_connection(
         lost,
     };
 
-    if let Some(Err(error)) =
-        crate::ownership::guard(lost_rx, connection.run(inner_comm_rx, control_rx)).await
-    {
+    let mut stopping = connection.shutdown_handle.clone();
+    let result = tokio::select! {
+        biased;
+        _ = stopping.changed() => None,
+        result = crate::ownership::guard(lost_rx, connection.run(inner_comm_rx, control_rx)) => result,
+    };
+    if let Some(Err(error)) = result {
         tracing::warn!(%error, "Connection ended with an error");
+    }
+    if stopping.is_shutdown().await {
+        let _ = tokio::time::timeout(
+            Duration::from_secs(1),
+            connection.websocket.close(Some(
+                tokio_tungstenite::tungstenite::protocol::CloseFrame {
+                    code: tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Again,
+                    reason: "Server draining; reconnect".into(),
+                },
+            )),
+        )
+        .await;
     }
     connection.cleanup().await;
     let _ = connection.websocket.close(None).await;
@@ -491,7 +572,10 @@ impl Connection {
             tokio::select! {
                 _ = self.shutdown_handle.changed() => {
                     tracing::info!("Shutdown signal received. Closing WebSocket connection.");
-                    self.websocket.close(None).await?;
+                    self.websocket.close(Some(tokio_tungstenite::tungstenite::protocol::CloseFrame {
+                        code: tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode::Again,
+                        reason: "Server draining; reconnect".into(),
+                    })).await?;
                     return Ok(());
                 }
                 message = self.websocket.next() => {
