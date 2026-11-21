@@ -10,12 +10,9 @@ use serde_json::{Value, json};
 
 const RAID: &str = r"App\Events\ChatMoveToSupportedChannelEvent";
 
-/// A channel's topics, as NOALBS subscribes to them (raids come on one of them).
-pub fn topics(channel_id: u64, chatroom_id: u64) -> [String; 2] {
-    [
-        format!("channel.{channel_id}"),
-        format!("chatrooms.{chatroom_id}.v2"),
-    ]
+/// A channel's raid topic.
+pub fn topic(channel_id: u64) -> String {
+    format!("channel.{channel_id}")
 }
 
 pub fn subscribe(topic: &str) -> String {
@@ -120,14 +117,11 @@ pub fn decode(text: &str) -> Frame {
 mod tests {
     use std::time::Duration;
 
-    use super::{Frame, Raid, decode, subscribe, topics};
+    use super::{Frame, Raid, decode, subscribe, topic};
 
     #[test]
     fn requests_are_pusher_frames() {
-        assert_eq!(
-            topics(668, 669),
-            ["channel.668".to_owned(), "chatrooms.669.v2".to_owned()]
-        );
+        assert_eq!(topic(668), "channel.668");
         let frame: serde_json::Value = serde_json::from_str(&subscribe("channel.668")).unwrap();
         assert_eq!(
             frame,

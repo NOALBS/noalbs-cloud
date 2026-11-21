@@ -87,7 +87,7 @@ pub struct KickConfig {
     /// Kick's site WebSocket (Pusher), for raids: Kick has no webhook event for them.
     #[serde(default = "default_kick_pusher")]
     pub pusher_url: String,
-    /// Kick's site, whose unofficial API has the channel and chatroom IDs Pusher uses.
+    /// Kick's site, whose unofficial API has the channel IDs Pusher uses.
     #[serde(default = "default_kick_web")]
     pub web_base: String,
     /// PEM public key webhooks are checked against, instead of Kick's (fetched
