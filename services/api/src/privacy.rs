@@ -57,16 +57,15 @@ pub async fn delete_workspace(
 }
 
 /// Deletes expired sessions and old activity every hour. Stream history has its
-/// own upkeep (`routes::history`). Safe to run on every API replica.
-pub fn spawn_upkeep(db: db::DbPool, mut shutdown: ShutdownHandler) {
-    tokio::spawn(async move {
-        let mut every = tokio::time::interval(UPKEEP_EVERY);
-        loop {
-            tokio::select! {
-                _ = shutdown.changed() => return,
-                _ = every.tick() => upkeep(&db).await,
-            }
-        }
+/// own upkeep (`routes::history`). Runs on the API leader.
+pub fn spawn_upkeep(
+    db: db::DbPool,
+    leadership: crate::leadership::Leadership,
+    shutdown: ShutdownHandler,
+) {
+    leadership.spawn_job(UPKEEP_EVERY, shutdown, move || {
+        let db = db.clone();
+        async move { upkeep(&db).await }
     });
 }
 

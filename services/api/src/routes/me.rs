@@ -243,7 +243,7 @@ async fn export_data(
     current_user: CurrentUser,
 ) -> ApiResult<impl IntoResponse> {
     let user_id = current_user.id();
-    state.limits.export(user_id)?;
+    state.limits.export(user_id).await?;
     let data = db::export::account(&state.db, user_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Account not found"))?;
@@ -284,7 +284,7 @@ async fn export_history(
     current_user: CurrentUser,
 ) -> ApiResult<impl IntoResponse> {
     let user_id = current_user.id();
-    state.limits.export(user_id)?;
+    state.limits.export(user_id).await?;
     let about = serde_json::json!({
         "type": "about",
         "exported_at": Utc::now(),

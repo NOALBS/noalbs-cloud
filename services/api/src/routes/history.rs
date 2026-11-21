@@ -378,16 +378,15 @@ async fn stream_raw(
 }
 
 /// Closes streams whose browser source never came back and deletes history
-/// past each plan's `history_days`. Safe to run on every API replica.
-pub fn spawn_upkeep(db: db::DbPool, mut shutdown: ShutdownHandler) {
-    tokio::spawn(async move {
-        let mut every = tokio::time::interval(UPKEEP_EVERY);
-        loop {
-            tokio::select! {
-                _ = shutdown.changed() => return,
-                _ = every.tick() => upkeep(&db).await,
-            }
-        }
+/// past each plan's `history_days`, on the API leader.
+pub fn spawn_upkeep(
+    db: db::DbPool,
+    leadership: crate::leadership::Leadership,
+    shutdown: ShutdownHandler,
+) {
+    leadership.spawn_job(UPKEEP_EVERY, shutdown, move || {
+        let db = db.clone();
+        async move { upkeep(&db).await }
     });
 }
 

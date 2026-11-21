@@ -209,11 +209,28 @@ chat environment), so nobody else can send OBS requests or chat commands:
 | User | Publish | Subscribe |
 |---|---|---|
 | all three | `$JS.API.>`, `$JS.ACK.>`, `$JS.FC.>` | `_INBOX.>` |
+| api coordination | `$KV.api-ratelimits.>`, `$KV.api-leases.>` | `_INBOX.>` |
 | api | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `connect.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `switcher.*.reconnect`, `switcher.*.audio.demand`, `switcher.*.preview.watching`, `chat.*.reconcile` | `switcher.*.event`, `switcher.*.audio`, `switcher.*.preview.watching` |
 | obs-link (plus `allow_responses: true`) | `$KV.switcher-status.>`, `$KV.belabox-status.>`, `$KV.moblin-status.>`, `$KV.moblin-attempts.>`, `$KV.switcher-owners.>`, `switcher.*.stats`, `switcher.*.event`, `switcher.*.audio`, `switcher.*.takeover`, `moblin.*.request`, `moblin.*.takeover` | `obslink.*.request`, `belabox.*.request`, `belabox.*.details`, `moblin.*.request`, `moblin.*.takeover`, `connect.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.takeover`, `switcher.*.reconnect`, `switcher.*.audio.demand` |
 | chat | `$KV.<bucket>.>` for each `chat-*` bucket in `crates/live`, `obslink.*.request`, `belabox.*.request`, `moblin.*.request`, `switcher.*.config`, `switcher.*.intent`, `switcher.*.event`, `chat.>` | `switcher.*.event`, `chat.>` |
 
 ### Updating
+
+API sign-in/pairing, outbound-service and export limits share the memory-backed
+`api-ratelimits` bucket. Keys are class-prefixed SHA-256 digests; entries expire
+after 310 seconds (the longest full refill is 300 seconds). Checks never wait
+for a token and fall back to the existing per-replica budget on backend failure
+or a 200 ms deadline. The general request limiter remains local; during an outage
+the sensitive limits also become per-replica, not unlimited.
+
+One API replica holds the `platform` lease in memory-backed `api-leases`
+(15-second TTL, 5-second renewal). Only it reports platform activity gauges and
+starts history, privacy and billing upkeep. Callbacks suppress snapshots on lease
+loss, disconnect, reconnect or local expiry, and require a fresh snapshot after
+reacquisition. Upkeep runs promptly on promotion, then at its usual interval.
+An already-started upkeep run may finish after leadership loss: deletes are
+idempotent and billing serializes changes with row locks. Per-pod metrics and
+local-cache pruning are not leader-gated.
 
 API and chat expose `/health` (liveness) and `/ready` (readiness) on their HTTP
 ports. obs-link exposes the same endpoints on `OBS_LINK_HEALTH_PORT` (default

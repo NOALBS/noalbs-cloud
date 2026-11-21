@@ -470,7 +470,7 @@ async fn ignore_chatter(
     Json(request): Json<IgnoreChatter>,
 ) -> ApiResult<(StatusCode, Json<IgnoredChatterDto>)> {
     let access = authorized.into_access();
-    state.limits.outbound(access.workspace.user.id())?;
+    state.limits.outbound(access.workspace.user.id()).await?;
     let switcher_id = access.switcher.id;
     let name = request.username.trim().trim_start_matches('@');
     // YouTube handles are at most 30 characters and may hold dots.

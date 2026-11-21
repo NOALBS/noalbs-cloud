@@ -19,6 +19,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ApiState {
+    pub leadership: crate::leadership::Leadership,
     pub stopping: tokio::sync::watch::Receiver<bool>,
     pub db: db::DbPool,
     pub nats: async_nats::Client,
@@ -48,7 +49,7 @@ pub struct ApiState {
     pub preview_watchers: std::sync::Arc<crate::screenshots::Watchers>,
     /// A few seconds of memory for the session and permission lookups every request starts with.
     pub auth: std::sync::Arc<crate::auth_cache::AuthCache>,
-    /// In-memory rate limits (`crate::rate_limit`).
+    /// Shared sensitive limits and local flood/outage guards (`crate::rate_limit`).
     pub limits: std::sync::Arc<crate::rate_limit::RateLimits>,
     /// Where the visitor's IP is, behind a proxy (config `client_ip_header`).
     pub client_ip_header: Option<axum::http::HeaderName>,
@@ -256,14 +257,22 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
     let stores = live::Stores::open(&js)
         .await
         .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
-    let stores_keeper = tokio::spawn(live::keep_stores(js, nats_connections.clone()));
+    let rate_bucket = crate::rate_limit::open_bucket(&js)
+        .await
+        .map_err(|error| crate::error::Error::Nats(error.to_string()))?;
+    let stores_keeper = tokio::spawn(live::keep_stores(js.clone(), nats_connections.clone()));
 
-    history::spawn_upkeep(db.clone(), shutdown_handle.clone());
-    crate::privacy::spawn_upkeep(db.clone(), shutdown_handle.clone());
     let billing = billing(&config);
 
     let chat_environment = db::chat::environment_id(&db).await?;
     let state = ApiState {
+        leadership: crate::leadership::Leadership::start(
+            nats.clone(),
+            nats_connections.clone(),
+            shutdown_handle.clone(),
+        )
+        .await
+        .map_err(|error| crate::error::Error::Nats(error.to_string()))?,
         db,
         nats,
         nats_connections,
@@ -282,7 +291,7 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         screenshots: std::sync::Arc::default(),
         preview_watchers: std::sync::Arc::default(),
         auth: std::sync::Arc::new(crate::auth_cache::AuthCache::new()),
-        limits: std::sync::Arc::default(),
+        limits: std::sync::Arc::new(crate::rate_limit::RateLimits::shared(rate_bucket)),
         client_ip_header: client_ip_header(&config)?,
         cookie_key: private_cookie_key(&config.cookie_secret)?,
         stopping: shutdown_handle.subscribe(),
@@ -292,9 +301,19 @@ pub async fn run(config: Config, mut shutdown_handle: shutdown::ShutdownHandler)
         tracing::warn!("Dev login is enabled; never enable this in production");
     }
 
+    history::spawn_upkeep(
+        state.db.clone(),
+        state.leadership.clone(),
+        shutdown_handle.clone(),
+    );
+    crate::privacy::spawn_upkeep(
+        state.db.clone(),
+        state.leadership.clone(),
+        shutdown_handle.clone(),
+    );
     billing::spawn_upkeep(state.clone(), shutdown_handle.clone());
     crate::metrics::spawn_refresh(state.clone(), shutdown_handle.clone());
-    crate::rate_limit::spawn_upkeep(state.limits.clone(), shutdown_handle.clone());
+    crate::rate_limit::spawn_upkeep(state.limits.clone(), js, shutdown_handle.clone());
     crate::screenshots::spawn_follow(
         state.nats.clone(),
         state.preview_watchers.clone(),

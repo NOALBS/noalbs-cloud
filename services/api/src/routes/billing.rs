@@ -242,7 +242,7 @@ async fn checkout(
     let billing = enabled(&state)?;
     let catalog = Catalog::load(&state.db).await?;
     let access = authorized.into_access();
-    state.limits.outbound(access.user.id())?;
+    state.limits.outbound(access.user.id()).await?;
     let workspace_id = access.workspace_id;
 
     let mut items: Vec<(String, i32)> = Vec::new();
@@ -327,7 +327,7 @@ async fn portal(
 ) -> ApiResult<Json<RedirectDto>> {
     let billing = enabled(&state)?;
     let access = authorized.into_access();
-    state.limits.outbound(access.user.id())?;
+    state.limits.outbound(access.user.id()).await?;
     let workspace = db::workspaces::get_by_id(&state.db, access.workspace_id)
         .await?
         .ok_or_else(|| ApiError::not_found("Workspace not found"))?;
@@ -833,13 +833,11 @@ async fn apply_stripe(state: &ApiState, subscription: &stripe::Subscription) -> 
 
 /// Ends holds whose period is over (normally the renewal webhook does it first)
 /// and tells obs-link about workspaces whose plan changed.
-pub fn spawn_upkeep(state: ApiState, mut shutdown: ShutdownHandler) {
-    tokio::spawn(async move {
-        let mut every = tokio::time::interval(UPKEEP_EVERY);
-        loop {
-            tokio::select! {
-                _ = shutdown.changed() => return,
-                _ = every.tick() => match db::billing::expire_holds(&state.db).await {
+pub fn spawn_upkeep(state: ApiState, shutdown: ShutdownHandler) {
+    state.leadership.clone().spawn_job(UPKEEP_EVERY, shutdown, move || {
+        let state = state.clone();
+        async move {
+            match db::billing::expire_holds(&state.db).await {
                     Ok(changes) => {
                         for (workspace_id, change) in changes {
                             tracing::info!(%workspace_id, before = %change.before, after = %change.after, "Plan changed at the end of the period");
@@ -847,7 +845,6 @@ pub fn spawn_upkeep(state: ApiState, mut shutdown: ShutdownHandler) {
                         }
                     }
                     Err(error) => tracing::warn!(%error, "Couldn't expire billing holds"),
-                },
             }
         }
     });
