@@ -230,6 +230,7 @@ On SIGTERM each service immediately becomes not-ready, continues serving for
 `DRAIN_DELAY_SECONDS` (default `5`, capped at `10`), then stops accepting work.
 Allow a **45-second termination grace**: application shutdown has a 25-second
 deadline after that delay, with time left for telemetry and process exit.
+Compose sets `stop_grace_period: 45s` for API, obs-link and chat, matching Kubernetes.
 API closes SSE feeds and joins its HTTP server. obs-link sends WebSocket close
 code `1013` (try again), stops session work and releases ownership last. Chat
 waits up to 15 seconds for in-flight commands before cancelling them and
