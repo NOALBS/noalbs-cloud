@@ -8,6 +8,24 @@ edition = "2024"
 publish = false
 
 [workspace.dependencies]
+axum = "0.8.9"
+common = { path = "../crates/common" }
+connect-core = { path = "core" }
+nix = "0.32.0"
+objc2-app-kit = { version = "0.3.2", default-features = false }
+plist = "1.10.4"
+semver = "1.0.28"
+tauri = "2.12.7"
+tauri-build = "2.7.6"
+tauri-plugin-autostart = "2.7.0"
+tauri-plugin-dialog = "2.8.4"
+tauri-plugin-opener = "2.7.3"
+tauri-plugin-single-instance = "2.5.5"
+tauri-plugin-updater = "2.14.1"
+tempfile = "3.27.0"
+windows-sys = "0.61.2"
+winreg = "0.56.0"
+zbus = "6.5.0"
 base64 = "0.23.1"
 chrono = "0.4.45"
 directories = "6.0.0"

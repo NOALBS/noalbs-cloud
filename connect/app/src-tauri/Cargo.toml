@@ -5,27 +5,27 @@ edition.workspace = true
 publish.workspace = true
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build.workspace = true
 
 [dependencies]
-common = { path = "../../../crates/common" }
-connect-core = { path = "../../core" }
+common.workspace = true
+connect-core.workspace = true
 chrono.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-semver = "1"
-tauri = { version = "2", features = ["tray-icon"] }
-tauri-plugin-autostart = "2"
-tauri-plugin-dialog = "2"
-tauri-plugin-opener = "2"
-tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
+semver.workspace = true
+tauri = { workspace = true, features = ["tray-icon"] }
+tauri-plugin-autostart.workspace = true
+tauri-plugin-dialog.workspace = true
+tauri-plugin-opener.workspace = true
+tauri-plugin-single-instance.workspace = true
+tauri-plugin-updater.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
-zbus = "6"
+zbus.workspace = true
 
 [[bin]]
 name = "noalbs-connect"
