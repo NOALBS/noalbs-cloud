@@ -7,19 +7,19 @@ publish.workspace = true
 [dependencies]
 base64.workspace = true
 chrono.workspace = true
-common = { path = "../../crates/common" }
+common.workspace = true
 directories.workspace = true
 flate2.workspace = true
 futures-util.workspace = true
 keyring.workspace = true
-plist = "1.10.3"
+plist.workspace = true
 reqwest.workspace = true
 rustls.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 sysinfo.workspace = true
-tempfile = "3.23.0"
+tempfile.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tokio-tungstenite.workspace = true
@@ -27,16 +27,16 @@ tracing.workspace = true
 uuid.workspace = true
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.30.1", features = ["signal", "process"] }
+nix = { workspace = true, features = ["signal", "process"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { workspace = true, features = ["apple-native"] }
-objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSRunningApplication", "libc"] }
+objc2-app-kit = { workspace = true, features = ["NSRunningApplication", "libc"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading"] }
-winreg = "0.55.0"
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading"] }
+winreg.workspace = true
 
 [dev-dependencies]
-axum = "0.8.9"
-tempfile = "3.23.0"
+axum.workspace = true
+tempfile.workspace = true
