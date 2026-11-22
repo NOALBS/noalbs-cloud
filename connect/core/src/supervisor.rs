@@ -1395,7 +1395,7 @@ pub struct ProcessSnapshot {
 impl ProcessSnapshot {
     pub fn new() -> Self {
         Self {
-            system: System::new(),
+            system: System::new().expect("initialize process snapshot"),
         }
     }
 
@@ -1479,7 +1479,7 @@ impl Supervisor {
 fn any_obs_running_for_executable(executable: &Path) -> bool {
     let expected = resolve_executable(executable);
     let expected_canonical = canonical_executable(&expected);
-    let mut system = System::new();
+    let mut system = System::new().expect("initialize process snapshot");
     system.refresh_processes_specifics(ProcessesToUpdate::All, true, process_refresh_kind());
     system
         .processes()
@@ -1836,7 +1836,7 @@ fn request_graceful_close(pid: u32) {
 
 fn process_start_time(pid: u32) -> Option<u64> {
     let pid = Pid::from_u32(pid);
-    let mut system = System::new();
+    let mut system = System::new().ok()?;
     system.refresh_processes_specifics(
         ProcessesToUpdate::Some(&[pid]),
         true,
@@ -1975,11 +1975,14 @@ fn process_exited_unexpectedly(
 #[cfg(windows)]
 fn request_graceful_close(pid: u32) {
     use windows_sys::Win32::{
-        Foundation::{BOOL, HWND, LPARAM},
+        Foundation::{HWND, LPARAM},
         UI::WindowsAndMessaging::{EnumWindows, GetWindowThreadProcessId, PostMessageW, WM_CLOSE},
     };
 
-    unsafe extern "system" fn close_process_windows(hwnd: HWND, target: LPARAM) -> BOOL {
+    unsafe extern "system" fn close_process_windows(
+        hwnd: HWND,
+        target: LPARAM,
+    ) -> windows_sys::core::BOOL {
         let target_pid = unsafe { *(target as *const u32) };
         let mut process_id = 0;
         unsafe {
@@ -2786,7 +2789,7 @@ int main(int argc, char **argv) {
             "sleep 10 & child=$!; trap 'kill \"$child\"; wait \"$child\"; exit 0' TERM; wait \"$child\"",
         );
         let mut wrapper = Command::new(&script).spawn().unwrap();
-        let mut system = sysinfo::System::new();
+        let mut system = sysinfo::System::new().expect("initialize process snapshot");
         let mut descendant = None;
         for _ in 0..100 {
             system.refresh_processes_specifics(

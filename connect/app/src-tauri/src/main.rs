@@ -2053,16 +2053,18 @@ fn start_link_session(
 
 #[cfg(target_os = "linux")]
 fn tray_available() -> bool {
-    let Ok(connection) = zbus::blocking::Connection::session() else {
-        return false;
-    };
-    let Ok(proxy) = zbus::blocking::fdo::DBusProxy::new(&connection) else {
-        return false;
-    };
-    let Ok(name) = zbus::names::BusName::try_from("org.kde.StatusNotifierWatcher") else {
-        return false;
-    };
-    proxy.name_has_owner(name).unwrap_or(false)
+    tauri::async_runtime::block_on(async {
+        let Ok(connection) = zbus::Connection::session().await else {
+            return false;
+        };
+        let Ok(proxy) = zbus::fdo::DBusProxy::new(&connection).await else {
+            return false;
+        };
+        let Ok(name) = zbus::names::BusName::try_from("org.kde.StatusNotifierWatcher") else {
+            return false;
+        };
+        proxy.name_has_owner(name).await.unwrap_or(false)
+    })
 }
 
 #[cfg(not(target_os = "linux"))]
