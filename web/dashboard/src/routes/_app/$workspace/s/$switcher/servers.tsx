@@ -19,7 +19,7 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GripVertical, Info, Plus, Server } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import {
@@ -544,7 +544,7 @@ function ServerEditor({
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     update.mutate();
   };
@@ -851,7 +851,7 @@ function AddServerDialog({
 
   const create = useCreateStreamServer(path);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate(
       { name, kind, stats_url: statsUrl, details: detailsInput(details) },
