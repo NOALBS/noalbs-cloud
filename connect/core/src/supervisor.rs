@@ -308,8 +308,10 @@ pub fn enable_obs_websocket_on_port(
         let password = Uuid::new_v4().simple().to_string();
         let old_section = &ini[section.clone()];
         let newline = if ini.contains("\r\n") { "\r\n" } else { "\n" };
+        // obs-websocket 5.5.0/5.5.1 only save migrated settings on FirstLoad
+        // and keep a password that is already set.
         let mut updated = format!(
-            "FirstLoad=false{newline}ServerEnabled=true{newline}ServerPort={port}{newline}AuthRequired=true{newline}ServerPassword={password}{newline}"
+            "FirstLoad=true{newline}ServerEnabled=true{newline}ServerPort={port}{newline}AuthRequired=true{newline}ServerPassword={password}{newline}"
         );
         for line in old_section.split_inclusive('\n') {
             if !ini_entry(line).is_some_and(|(key, _)| {
@@ -2940,7 +2942,7 @@ int main(int argc, char **argv) {
         let ini = config_dir.join("global.ini");
         fs::write(
             &ini,
-            "[General]\nServerPort=4400\n[OBSWebSocket]\nFirstLoad=true\nServerEnabled=false\nServerPort=4456\nAlertsEnabled=true\n[Other]\nAuthRequired=false\n",
+            "[General]\nServerPort=4400\n[OBSWebSocket]\nFirstLoad=false\nServerEnabled=false\nServerPort=4456\nAlertsEnabled=true\n[Other]\nAuthRequired=false\n",
         )
         .unwrap();
 
@@ -2952,7 +2954,8 @@ int main(int argc, char **argv) {
         assert_eq!(config.server_password, password);
         let contents = fs::read_to_string(ini).unwrap();
         assert!(contents.starts_with("[General]\nServerPort=4400\n"));
-        assert!(contents.contains("\nFirstLoad=false\n"));
+        assert!(contents.contains("\nFirstLoad=true\n"));
+        assert!(!contents.contains("\nFirstLoad=false\n"));
         assert!(contents.ends_with("AlertsEnabled=true\n[Other]\nAuthRequired=false\n"));
         assert!(!config_dir.join("plugin_config").exists());
     }
