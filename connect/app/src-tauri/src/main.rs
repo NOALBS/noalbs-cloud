@@ -2445,6 +2445,7 @@ mod tests {
     #[tokio::test]
     async fn cloud_link_state_is_persistent_and_independent_of_obs() {
         let mut setup = Setup::new("Cloud state".into());
+        setup.obs.binary_path = Some(format!("noalbs-test-obs-{}", setup.id).into());
         setup.pairing = Some(connect_core::config::Pairing {
             device_id: uuid::Uuid::new_v4(),
             switcher_id: uuid::Uuid::new_v4(),

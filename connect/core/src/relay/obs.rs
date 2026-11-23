@@ -498,16 +498,17 @@ mod tests {
             )
             .await;
             mock_reply(&mut socket, "GetStreamStatus", Some(true)).await;
-            let _ = socket.next().await;
+            while matches!(socket.next().await, Some(Ok(_))) {}
         });
         let result = stop_outputs(port, "", Duration::from_secs(2))
             .await
             .unwrap();
         server.await.unwrap();
-        assert!(matches!(
-            result.stream,
-            Err(RelayError::ObsOutputStopTimeout)
-        ));
+        assert!(
+            matches!(result.stream, Err(RelayError::ObsOutputStopTimeout)),
+            "{:?}",
+            result.stream
+        );
         assert_eq!(result.recording.unwrap(), OutputStopOutcome::Stopped);
     }
 
