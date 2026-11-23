@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type SubmitEvent, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
@@ -239,7 +239,7 @@ function PositionForm({
     setCrop(item.crop);
   }, [layout]);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     save.mutate();
   };

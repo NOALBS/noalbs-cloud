@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { meQuery, queryKeys, workspaceBySlugQuery } from "@/api/queries";
@@ -73,7 +73,7 @@ export function ChangeWorkspaceUrl() {
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     // The dialog is a portal, but React still bubbles its events to the page.
     event.stopPropagation();

@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
@@ -53,7 +53,7 @@ export function BelaboxSettings() {
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     save.mutate({ remote_key: key.trim() });
   };
