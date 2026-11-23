@@ -553,23 +553,35 @@ pub(crate) async fn open_external_url(app: tauri::AppHandle, url: String) -> Res
 }
 
 #[tauri::command]
-async fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn start_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Start).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Start).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
-async fn stop_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn stop_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Stop).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Stop).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
-async fn restart_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn restart_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Restart).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Restart).await?;
     Ok(get_state(state))
 }
 
@@ -598,6 +610,7 @@ fn begin_obs_action(
 }
 
 async fn run_obs_action(
+    app: &tauri::AppHandle,
     state: &AppState,
     setup_id: uuid::Uuid,
     action: ObsAction,
@@ -619,8 +632,21 @@ async fn run_obs_action(
     } else {
         Ok(())
     };
-    if let Err(error) = &graceful_stop {
+    apply_obs_process_action(state, &setup, action, graceful_stop, |error| {
+        let _ = app.emit("connect-error", error);
+    })
+}
+
+fn apply_obs_process_action(
+    state: &AppState,
+    setup: &Setup,
+    action: ObsAction,
+    graceful_stop: Result<(), String>,
+    report_error: impl FnOnce(String),
+) -> Result<(), String> {
+    if let Err(error) = graceful_stop {
         tracing::warn!(setup_id = %setup.id, %error, "Couldn't stop all OBS outputs before process action");
+        report_error(error);
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
@@ -637,18 +663,18 @@ async fn run_obs_action(
         match &action {
             ObsAction::Start => {
                 supervisor
-                    .start(&setup, false, None)
+                    .start(setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
             ObsAction::Stop => {
-                supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                supervisor.stop(setup).map_err(|error| error.to_string())?;
             }
             ObsAction::Restart => {
-                if supervisor.state(&setup) != PcObsState::NotRunning {
-                    supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                if supervisor.state(setup) != PcObsState::NotRunning {
+                    supervisor.stop(setup).map_err(|error| error.to_string())?;
                 }
                 supervisor
-                    .start(&setup, false, None)
+                    .start(setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
             ObsAction::UploadLog
@@ -660,9 +686,9 @@ async fn run_obs_action(
                 return Err("This is not an OBS process action".into());
             }
         }
-        supervisor.state(&setup)
+        supervisor.state(setup)
     };
-    set_link_state(state, setup_id, process_state);
+    set_link_state(state, setup.id, process_state);
     if matches!(&action, ObsAction::Start | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Start) {
             if !programs::is_running(program)
@@ -672,10 +698,8 @@ async fn run_obs_action(
             }
         }
     }
-    set_link_programs(state, setup_id);
-    graceful_stop.map_err(|error| {
-        format!("OBS process action completed, but graceful output shutdown failed: {error}")
-    })
+    set_link_programs(state, setup.id);
+    Ok(())
 }
 
 fn set_link_programs(state: &AppState, setup_id: uuid::Uuid) {
@@ -2007,7 +2031,7 @@ fn start_link_session(
                 }
                 action => {
                     let app_state = command_app.state::<AppState>();
-                    run_obs_action(app_state.inner(), command_setup_id, action)
+                    run_obs_action(&command_app, app_state.inner(), command_setup_id, action)
                         .await
                         .map(|()| None)
                 }
@@ -2559,6 +2583,37 @@ mod tests {
             .await
             .is_err()
         );
+    }
+
+    #[test]
+    fn graceful_output_failure_does_not_fail_a_successful_obs_stop() {
+        let mut setup = Setup::default();
+        setup.obs.binary_path = Some(format!("noalbs-test-obs-{}", setup.id).into());
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup.clone()],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: ConfigStore::new(Default::default()),
+            tokens: TokenStore::new(Default::default()),
+            supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
+            link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
+        };
+        let mut reported_error = None;
+        let result = apply_obs_process_action(
+            &state,
+            &setup,
+            ObsAction::Stop,
+            Err("Could not stop recording".into()),
+            |error| reported_error = Some(error),
+        );
+        assert_eq!(result, Ok(()));
+        assert_eq!(reported_error.as_deref(), Some("Could not stop recording"));
     }
 
     #[test]
