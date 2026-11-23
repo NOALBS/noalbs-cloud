@@ -264,7 +264,12 @@ impl LocalObs {
                                     tracing::debug!(?sample, %error, "OBS sample failed");
                                 }
                             } else if let Some(reply) = raw.resolve(&value) {
+                                let refresh_scene = self.observe_raw_scene_response(&value);
                                 let _ = reply.send(value);
+                                if refresh_scene {
+                                    samples.retain(|(sample, _)| *sample != Sample::Scene);
+                                    samples.push((Sample::Scene, PendingCall::send(&mut socket, RequestKind::GetCurrentProgramScene).await?));
+                                }
                             }
                         }
                         Some(5) => {
@@ -295,6 +300,37 @@ impl LocalObs {
 
     fn event(&self, session: Uuid, value: Value) {
         let _ = self.events.send(ObsEvent { session, value });
+    }
+
+    fn observe_raw_scene_response(&self, value: &Value) -> bool {
+        if value.get("op").and_then(Value::as_u64) != Some(7)
+            || value
+                .pointer("/d/requestStatus/result")
+                .and_then(Value::as_bool)
+                != Some(true)
+        {
+            return false;
+        }
+
+        match value.pointer("/d/requestType").and_then(Value::as_str) {
+            Some("GetSceneList" | "GetCurrentProgramScene") => {
+                if let Some(scene) = value
+                    .pointer("/d/responseData/currentProgramSceneName")
+                    .and_then(Value::as_str)
+                {
+                    self.telemetry.send_if_modified(|telemetry| {
+                        if telemetry.last_program_scene.as_deref() == Some(scene) {
+                            return false;
+                        }
+                        telemetry.last_program_scene = Some(scene.to_owned());
+                        true
+                    });
+                }
+                false
+            }
+            Some("SetCurrentProgramScene") => true,
+            _ => false,
+        }
     }
 
     fn output_event(&self, value: &Value, sample: Sample) {

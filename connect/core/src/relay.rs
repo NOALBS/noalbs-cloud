@@ -1410,18 +1410,32 @@ mod tests {
         assert_raw_request_is_forwarded(RawRelayCase::AbruptReconnect).await;
     }
 
+    #[tokio::test]
+    async fn watchdog_retains_the_scene_from_a_raw_scene_list_without_an_event() {
+        assert_raw_request_is_forwarded(RawRelayCase::SceneList).await;
+    }
+
+    #[tokio::test]
+    async fn watchdog_refreshes_the_scene_after_a_successful_scene_switch_without_an_event() {
+        assert_raw_request_is_forwarded(RawRelayCase::SceneSwitch).await;
+    }
+
     #[derive(Clone, Copy)]
     enum RawRelayCase {
         Single,
         Batch,
         Reconnect,
         AbruptReconnect,
+        SceneList,
+        SceneSwitch,
     }
 
     async fn assert_raw_request_is_forwarded(case: RawRelayCase) {
         let batch = matches!(case, RawRelayCase::Batch);
         let abrupt = matches!(case, RawRelayCase::AbruptReconnect);
         let reconnect = abrupt || matches!(case, RawRelayCase::Reconnect);
+        let scene_list = matches!(case, RawRelayCase::SceneList);
+        let scene_switch = matches!(case, RawRelayCase::SceneSwitch);
         let obs_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let obs_port = obs_listener.local_addr().unwrap().port();
         let fake_obs = tokio::spawn(async move {
@@ -1517,6 +1531,12 @@ mod tests {
             let raw_reply = if batch {
                 assert_eq!(request["op"], 8);
                 json!({"op":9,"d":{"requestId":"request-1","results":[{"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}]}})
+            } else if scene_list {
+                assert_eq!(request["d"]["requestType"], "GetSceneList");
+                json!({"op":7,"d":{"requestId":"request-1","requestType":"GetSceneList","requestStatus":{"code":100,"result":true},"responseData":{"currentProgramSceneName":"BRB","scenes":[]}}})
+            } else if scene_switch {
+                assert_eq!(request["d"]["requestType"], "SetCurrentProgramScene");
+                json!({"op":7,"d":{"requestId":"request-1","requestType":"SetCurrentProgramScene","requestStatus":{"code":100,"result":true}}})
             } else {
                 json!({"op":7,"d":{"requestId":"request-1","requestStatus":{"result":true},"responseData":{"ok":true}}})
             };
@@ -1553,6 +1573,13 @@ mod tests {
                 .send(Message::Text(raw_reply.to_string().into()))
                 .await
                 .unwrap();
+            if scene_switch {
+                let frame = socket.next().await.unwrap().unwrap();
+                let refresh: serde_json::Value =
+                    serde_json::from_str(frame.to_text().unwrap()).unwrap();
+                assert_eq!(refresh["d"]["requestType"], "GetCurrentProgramScene");
+                socket.send(Message::text(json!({"op":7,"d":{"requestId":refresh["d"]["requestId"],"requestType":"GetCurrentProgramScene","requestStatus":{"code":100,"result":true},"responseData":{"currentProgramSceneName":"BRB"}}}).to_string())).await.unwrap();
+            }
             if reconnect {
                 socket
                     .send(Message::Text(
@@ -1562,6 +1589,9 @@ mod tests {
                     ))
                     .await
                     .unwrap();
+            }
+            if scene_list || scene_switch {
+                socket.close(None).await.unwrap();
             }
             while socket.next().await.is_some_and(|message| message.is_ok()) {}
         });
@@ -1593,6 +1623,10 @@ mod tests {
             }
             let raw_request = if batch {
                 json!({"op":8,"d":{"requestId":"request-1","requests":[{"requestType":"GetVersion"}]}})
+            } else if scene_list {
+                json!({"op":6,"d":{"requestType":"GetSceneList","requestId":"request-1"}})
+            } else if scene_switch {
+                json!({"op":6,"d":{"requestType":"SetCurrentProgramScene","requestId":"request-1","requestData":{"sceneUuid":"87947e62-0ba1-419f-9570-9d7b0f839701"}}})
             } else {
                 json!({"op":6,"d":{"requestType":"GetVersion","requestId":"request-1"}})
             };
@@ -1624,6 +1658,8 @@ mod tests {
                 ))
                 .await
                 .unwrap();
+            let mut saw_response = false;
+            let mut disconnected = false;
             loop {
                 let Message::Text(response) = socket.next().await.unwrap().unwrap() else {
                     continue;
@@ -1646,12 +1682,16 @@ mod tests {
                 }
                 let correlated = response.get("token").and_then(serde_json::Value::as_str)
                     == Some("upstream-request-token");
+                saw_response |= correlated;
+                disconnected |= response["obsWsConnected"] == false;
                 let finished = if reconnect {
                     assert!(
                         !correlated,
                         "reconnected OBS must not inherit stale cloud tokens"
                     );
                     response.pointer("/obsRawEvent/d/eventType") == Some(&json!("AfterStaleReply"))
+                } else if scene_list || scene_switch {
+                    saw_response && disconnected
                 } else {
                     correlated
                 };
@@ -1662,7 +1702,7 @@ mod tests {
                             response.pointer("/obsRawResponse/d/results/0/responseData/obsVersion"),
                             Some(&json!("31.0.0"))
                         );
-                    } else if !reconnect {
+                    } else if !reconnect && !scene_list && !scene_switch {
                         assert_eq!(
                             response.pointer("/obsRawResponse/d/responseData/ok"),
                             Some(&serde_json::Value::Bool(true))
@@ -1722,10 +1762,14 @@ mod tests {
         assert!(matches!(result, Err(RelayError::InvalidToken)));
         assert_eq!(
             telemetry_rx.borrow().last_program_scene.as_deref(),
-            Some("Main")
+            Some(if scene_list || scene_switch {
+                "BRB"
+            } else {
+                "Main"
+            })
         );
         assert!(telemetry_rx.borrow().stream_active);
-        if reconnect {
+        if reconnect || scene_list || scene_switch {
             assert_eq!(telemetry_rx.borrow().current_outputs_active(), None);
         } else {
             assert_eq!(telemetry_rx.borrow().current_outputs_active(), Some(true));
