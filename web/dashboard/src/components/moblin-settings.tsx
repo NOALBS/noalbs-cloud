@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
@@ -248,7 +248,7 @@ function OwnPassword({ save, saving }: { save: (change: MoblinChange) => void; s
     );
   }
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     save({ password: password.trim() });
     setPassword("");

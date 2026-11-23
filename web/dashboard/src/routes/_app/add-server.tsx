@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { meQuery, switchersQuery, workspacesQuery } from "@/api/queries";
 import { MinimalHeader } from "@/components/minimal-header";
 import { NoticeBanners } from "@/components/notice-banner";
@@ -117,7 +117,7 @@ function AddServerForm({ request }: { request: AddServerRequest }) {
 
   const host = displayHost(request.url);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (!workspace || !switcher) return;
     create.mutate(
