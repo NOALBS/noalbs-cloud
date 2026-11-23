@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { chatQuery, queryKeys } from "@/api/queries";
@@ -192,7 +192,7 @@ function ChatSettingsSection({
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     save.mutate();
   };
@@ -367,7 +367,7 @@ function CommandRow({
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submitAlias = (event: FormEvent) => {
+  const submitAlias = (event: SubmitEvent) => {
     event.preventDefault();
     if (aliasInput?.trim()) addAlias.mutate(aliasInput);
   };

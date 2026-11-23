@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell, BellOff, Info, Plus, X } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type ReactNode, type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { ApiRequestError, api, unwrap } from "@/api/client";
 import { chatBotsQuery, providersQuery, queryKeys } from "@/api/queries";
@@ -486,7 +486,7 @@ export function IgnoredSection({ ignored }: { ignored: IgnoredChatter[] | undefi
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (username.trim()) add.mutate();
   };
