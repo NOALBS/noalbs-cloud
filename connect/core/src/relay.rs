@@ -198,9 +198,10 @@ pub async fn run_link_with_programs_and_state(
     crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
     crate::install_crypto_provider();
     let local = LocalObs::new(&config);
+    let local_process = obs_state.clone();
     tokio::select! {
         result = run_cloud(config, obs_state, programs, watchdog, link_state, &local) => result,
-        () = local.run() => unreachable!("the OBS worker runs for the lifetime of the relay"),
+        () = local.run(local_process) => unreachable!("the OBS worker runs for the lifetime of the relay"),
     }
 }
 
@@ -903,10 +904,68 @@ mod tests {
         let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
         let local = super::LocalObs::new(config);
+        let local_process = state_rx.clone();
         tokio::select! {
             result = super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link, &local) => result,
-            () = local.run() => unreachable!(),
+            () = local.run(local_process) => unreachable!(),
         }
+    }
+
+    #[tokio::test]
+    async fn obs_disconnect_does_not_mark_the_next_process_unresponsive() {
+        use super::ObsHealth;
+
+        let obs = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(0);
+        config.obs_port = Some(obs.local_addr().unwrap().port());
+        let mut health = config.obs_health.subscribe();
+        let (process, process_rx) = tokio::sync::watch::channel(PcObsState::Starting);
+        let worker = tokio::spawn(async move {
+            super::LocalObs::new(&config).run(process_rx).await;
+        });
+        tokio::time::timeout(Duration::from_secs(5), async {
+            let mut socket = accept_async(obs.accept().await.unwrap().0).await.unwrap();
+            socket
+                .send(Message::text(
+                    json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}}).to_string(),
+                ))
+                .await
+                .unwrap();
+            socket.next().await.unwrap().unwrap();
+            socket
+                .send(Message::text(
+                    json!({"op":2,"d":{"negotiatedRpcVersion":1}}).to_string(),
+                ))
+                .await
+                .unwrap();
+            health
+                .wait_for(|health| *health == ObsHealth::Connected)
+                .await
+                .unwrap();
+            socket.close(None).await.unwrap();
+            health
+                .wait_for(|health| *health == ObsHealth::Disconnected)
+                .await
+                .unwrap();
+            assert_eq!(
+                health.borrow().display(*process.borrow()),
+                PcObsState::NotResponding,
+            );
+
+            process.send_replace(PcObsState::NotRunning);
+            health
+                .wait_for(|health| *health == ObsHealth::Waiting)
+                .await
+                .unwrap();
+            process.send_replace(PcObsState::Starting);
+            assert_eq!(
+                health.borrow().display(*process.borrow()),
+                PcObsState::Starting
+            );
+        })
+        .await
+        .unwrap();
+        worker.abort();
     }
 
     #[tokio::test]

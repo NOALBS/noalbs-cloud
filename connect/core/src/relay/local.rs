@@ -16,7 +16,8 @@ use tokio_tungstenite::tungstenite::Message;
 use uuid::Uuid;
 
 use super::{
-    LinkConfig, ObsHealth, ObsTelemetry, RelayError, Socket, changes_obs, collect_volume_meters,
+    LinkConfig, ObsHealth, ObsTelemetry, PcObsState, RelayError, Socket, changes_obs,
+    collect_volume_meters,
     obs::{PendingCall, REQUEST_TIMEOUT, RawRequests, connect_obs, decode_response},
     take_volume_meters,
 };
@@ -72,7 +73,31 @@ impl LocalObs {
         }
     }
 
-    pub(super) async fn run(&self) {
+    pub(super) async fn run(&self, process: watch::Receiver<PcObsState>) {
+        tokio::join!(
+            self.run_socket(&process),
+            self.watch_process(process.clone())
+        );
+    }
+
+    async fn watch_process(&self, mut process: watch::Receiver<PcObsState>) {
+        while process.changed().await.is_ok() {
+            if matches!(
+                *process.borrow_and_update(),
+                PcObsState::NotRunning | PcObsState::Crashed
+            ) {
+                self.health.send_if_modified(|health| {
+                    if *health != ObsHealth::Disconnected {
+                        return false;
+                    }
+                    *health = ObsHealth::Waiting;
+                    true
+                });
+            }
+        }
+    }
+
+    async fn run_socket(&self, process: &watch::Receiver<PcObsState>) {
         let mut credentials = self.credentials.subscribe();
         let mut delay = Duration::from_millis(500);
         loop {
@@ -103,7 +128,10 @@ impl LocalObs {
             let disconnected = self.session.send_replace(None).is_some();
             if let Some(error) = error {
                 if disconnected {
-                    self.set_health(ObsHealth::Disconnected);
+                    self.set_health(match *process.borrow() {
+                        PcObsState::NotRunning | PcObsState::Crashed => ObsHealth::Waiting,
+                        _ => ObsHealth::Disconnected,
+                    });
                 }
                 if matches!(error, RelayError::ObsAuthentication) {
                     self.set_auth_failed(true);
