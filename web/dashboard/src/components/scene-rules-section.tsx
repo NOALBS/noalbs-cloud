@@ -18,7 +18,7 @@ import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, GripVertical, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys, sceneRulesQuery } from "@/api/queries";
@@ -405,7 +405,7 @@ function RuleDialog({
         : [...draft.server_ids, id],
     });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (!valid) return;
     save.mutate(
