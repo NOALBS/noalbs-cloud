@@ -456,7 +456,13 @@ async fn connect_once(
                 send_command_result(&mut upstream, &token, result.unwrap_or_else(|_| Err(COMMAND_UNAVAILABLE.into()))).await?;
             }
             message = next_obs(&mut obs) => {
-                let message = message.transpose()?;
+                let message = match message {
+                    Some(Err(error)) => {
+                        tracing::debug!(%error, "Local OBS websocket disconnected");
+                        None
+                    }
+                    other => other.transpose()?,
+                };
                 let Some(message) = message.filter(|message| !matches!(message, Message::Close(_))) else {
                     obs = None;
                     raw_requests.clear();
@@ -1305,16 +1311,23 @@ mod tests {
         assert_raw_request_is_forwarded(RawRelayCase::Reconnect).await;
     }
 
+    #[tokio::test]
+    async fn link_returns_stop_result_after_abrupt_obs_disconnect() {
+        assert_raw_request_is_forwarded(RawRelayCase::AbruptReconnect).await;
+    }
+
     #[derive(Clone, Copy)]
     enum RawRelayCase {
         Single,
         Batch,
         Reconnect,
+        AbruptReconnect,
     }
 
     async fn assert_raw_request_is_forwarded(case: RawRelayCase) {
         let batch = matches!(case, RawRelayCase::Batch);
-        let reconnect = matches!(case, RawRelayCase::Reconnect);
+        let abrupt = matches!(case, RawRelayCase::AbruptReconnect);
+        let reconnect = abrupt || matches!(case, RawRelayCase::Reconnect);
         let obs_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let obs_port = obs_listener.local_addr().unwrap().port();
         let fake_obs = tokio::spawn(async move {
@@ -1414,7 +1427,10 @@ mod tests {
                 json!({"op":7,"d":{"requestId":"request-1","requestStatus":{"result":true},"responseData":{"ok":true}}})
             };
             if reconnect {
-                socket.close(None).await.unwrap();
+                if !abrupt {
+                    socket.close(None).await.unwrap();
+                }
+                drop(socket);
                 let (stream, _) = obs_listener.accept().await.unwrap();
                 socket = accept_async(stream).await.unwrap();
                 socket
@@ -1458,7 +1474,9 @@ mod tests {
 
         let link_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let link_port = link_listener.local_addr().unwrap().port();
+        let (allow_reply, allow_reply_rx) = tokio::sync::oneshot::channel();
         let fake_link = tokio::spawn(async move {
+            let mut allow_reply = Some(allow_reply);
             let (stream, _) = link_listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
             let Message::Text(identify) = socket.next().await.unwrap().unwrap() else {
@@ -1483,6 +1501,17 @@ mod tests {
                 ))
                 .await
                 .unwrap();
+            if abrupt {
+                socket
+                    .send(Message::text(
+                        json!({
+                            "token":"stop-token", "connectCommand":{"action":"stop"}
+                        })
+                        .to_string(),
+                    ))
+                    .await
+                    .unwrap();
+            }
             socket
                 .send(Message::Text(
                     json!({
@@ -1499,6 +1528,21 @@ mod tests {
                     continue;
                 };
                 let response: serde_json::Value = serde_json::from_str(&response).unwrap();
+                if abrupt
+                    && response["obsWsConnected"] == false
+                    && let Some(allow_reply) = allow_reply.take()
+                {
+                    allow_reply.send(()).unwrap();
+                }
+                if abrupt && response["token"] == "stop-token" {
+                    assert_eq!(response["connectCommandResult"]["ok"], true);
+                    socket
+                        .send(Message::text(json!({"identifyAck":false}).to_string()))
+                        .await
+                        .unwrap();
+                    let _ = socket.next().await;
+                    break;
+                }
                 let correlated = response.get("token").and_then(serde_json::Value::as_str)
                     == Some("upstream-request-token");
                 let finished = if reconnect {
@@ -1510,7 +1554,7 @@ mod tests {
                 } else {
                     correlated
                 };
-                if finished {
+                if finished && !abrupt {
                     if batch {
                         assert_eq!(response["obsRawResponse"]["op"], 9);
                         assert_eq!(
@@ -1539,6 +1583,16 @@ mod tests {
         let (telemetry_tx, telemetry_rx) =
             tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
+        let (commands, mut command_rx) =
+            tokio::sync::mpsc::unbounded_channel::<super::ObsCommandRequest>();
+        let consumer = tokio::spawn(async move {
+            if abrupt {
+                let command = command_rx.recv().await.unwrap();
+                assert_eq!(command.action, super::ObsAction::Stop);
+                allow_reply_rx.await.unwrap();
+                command.reply.send(Ok(None)).unwrap();
+            }
+        });
         let result = tokio::time::timeout(
             Duration::from_secs(5),
             run_link(
@@ -1553,7 +1607,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
-                    commands: tokio::sync::mpsc::unbounded_channel().0,
+                    commands,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                     activity: Arc::new(AtomicU64::new(0)),
                 },
@@ -1569,8 +1623,13 @@ mod tests {
             Some("Main")
         );
         assert!(telemetry_rx.borrow().stream_active);
+        consumer.await.unwrap();
         fake_link.await.unwrap();
-        fake_obs.await.unwrap();
+        if abrupt {
+            fake_obs.abort();
+        } else {
+            fake_obs.await.unwrap();
+        }
     }
 
     #[tokio::test]
