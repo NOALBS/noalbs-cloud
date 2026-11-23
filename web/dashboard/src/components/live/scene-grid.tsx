@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
-import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { type ReactNode, type SubmitEvent, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys } from "@/api/queries";
@@ -604,7 +604,7 @@ function NewSceneDialog({
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate();
   };

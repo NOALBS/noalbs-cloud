@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Link2, Loader2, Plus, X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { meQuery, queryKeys, slugAvailableQuery, workspacesQuery } from "@/api/queries";
 import { MinimalHeader } from "@/components/minimal-header";
@@ -96,7 +96,7 @@ function CreateWorkspace({ autoFocus }: { autoFocus: boolean }) {
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate();
   };
@@ -189,7 +189,7 @@ function JoinWorkspace({ autoFocus }: { autoFocus: boolean }) {
   const [invalid, setInvalid] = useState(false);
   const navigate = useNavigate();
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     const token = inviteTokenFrom(link);
     if (!token) {

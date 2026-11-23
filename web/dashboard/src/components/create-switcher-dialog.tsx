@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type ReactNode, type SubmitEvent, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
 import type { Workspace } from "@/api/types";
@@ -66,7 +66,7 @@ export function CreateSwitcherDialog({
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate();
   };
