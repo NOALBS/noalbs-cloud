@@ -854,7 +854,7 @@ pub struct ConnectObsCommand {
         (status = NO_CONTENT),
         (status = FORBIDDEN, description = "`connect_forbidden`", body = ErrorBody),
         (status = CONFLICT, description = "`connect_offline`, `connect_unsupported`, or `connect_refused`", body = ErrorBody),
-        (status = GATEWAY_TIMEOUT, description = "`connect_timeout` after up to 65 seconds", body = ErrorBody),
+        (status = GATEWAY_TIMEOUT, description = "`connect_timeout` after up to 105 seconds for stop/restart, or 65 seconds otherwise", body = ErrorBody),
     ))]
 async fn connect_obs_command(
     State(state): State<ApiState>,
@@ -870,20 +870,20 @@ async fn connect_obs_command(
     }
 
     let by = access.workspace.display_name(&state).await?;
-    let payload = serde_json::to_vec(&live::ConnectObsCommandRequest {
+    let command = live::ConnectObsCommandRequest {
         action: match request.action {
             ConnectObsAction::Start => common::programs::ConnectCommandAction::Start,
             ConnectObsAction::Stop => common::programs::ConnectCommandAction::Stop,
             ConnectObsAction::Restart => common::programs::ConnectCommandAction::Restart,
             ConnectObsAction::UploadLog => common::programs::ConnectCommandAction::UploadLog,
         },
-    })
-    .map_err(|_| ApiError::internal())?;
+    };
+    let payload = serde_json::to_vec(&command).map_err(|_| ApiError::internal())?;
     let response = telemetry::nats::request_with_timeout(
         &state.nats,
         live::connect_request_subject(access.switcher.id),
         payload,
-        std::time::Duration::from_secs(65),
+        command.api_timeout(),
     )
     .await
     .map_err(|error| connect_request_error(error.kind()))?;

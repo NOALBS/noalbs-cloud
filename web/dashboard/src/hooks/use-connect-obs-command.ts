@@ -9,6 +9,7 @@ export type ConnectObsAction = "start" | "stop" | "restart";
 
 const OBS_COMMAND_TIMEOUT_MS = 70_000;
 const connectObsApi = apiWithTimeout(OBS_COMMAND_TIMEOUT_MS);
+const connectObsShutdownApi = apiWithTimeout(110_000);
 
 export function useConnectObsCommand(path: { workspace_id: string; switcher_id: string }) {
   const queryClient = useQueryClient();
@@ -16,10 +17,13 @@ export function useConnectObsCommand(path: { workspace_id: string; switcher_id: 
   return useMutation({
     mutationFn: (action: ConnectObsAction) =>
       unwrap(
-        connectObsApi.POST("/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs", {
-          params: { path },
-          body: { action },
-        }),
+        (action === "start" ? connectObsApi : connectObsShutdownApi).POST(
+          "/workspaces/{workspace_id}/switchers/{switcher_id}/connect/obs",
+          {
+            params: { path },
+            body: { action },
+          },
+        ),
       ),
     onSuccess: async (_, action) => {
       await Promise.all([

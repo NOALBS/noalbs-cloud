@@ -8392,7 +8392,7 @@
             }
           },
           "504": {
-            "description": "`connect_timeout` after up to 65 seconds",
+            "description": "`connect_timeout` after up to 105 seconds for stop/restart, or 65 seconds otherwise",
             "content": {
               "application/json": {
                 "schema": {

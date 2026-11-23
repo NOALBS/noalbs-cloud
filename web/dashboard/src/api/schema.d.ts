@@ -13598,7 +13598,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description `connect_timeout` after up to 65 seconds */
+            /** @description `connect_timeout` after up to 105 seconds for stop/restart, or 65 seconds otherwise */
             504: {
                 headers: {
                     [name: string]: unknown;
