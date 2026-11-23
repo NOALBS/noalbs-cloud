@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
+import { type SubmitEvent, useId, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { obsScenesQuery, queryKeys } from "@/api/queries";
@@ -252,7 +252,7 @@ function AddExisting({ path, scene, onDone }: { path: Path; scene: string; onDon
       !(source.is_scene && source.name === sceneName) && source.name.toLowerCase().includes(needle),
   );
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (picked) add.mutate(picked);
   };
@@ -379,7 +379,7 @@ function DuplicateSource({
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     duplicate.mutate();
   };
@@ -458,7 +458,7 @@ function NewSource({ path, scene, onDone }: { path: Path; scene: string; onDone:
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate();
   };
@@ -629,7 +629,7 @@ function EditForm({
     onError: (error) => toast.error(errorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     save.mutate();
   };

@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { adminOrganizationsQuery, queryKeys } from "@/api/queries";
 import { OrganizationLimitsForm } from "@/components/admin/organization-limits-form";
@@ -139,7 +139,7 @@ function NewOrganization({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     create.mutate();
   };
