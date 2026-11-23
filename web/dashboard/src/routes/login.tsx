@@ -3,7 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import { meQuery, providersQuery } from "@/api/queries";
 import { LoginBackdrop } from "@/components/login-backdrop";
@@ -169,7 +169,7 @@ function DevLogin({ next }: { next: string }) {
     },
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     login.mutate();
   };

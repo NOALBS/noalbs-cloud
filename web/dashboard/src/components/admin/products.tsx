@@ -2,7 +2,7 @@ import { plural, t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type ReactNode, type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { queryKeys } from "@/api/queries";
@@ -139,7 +139,7 @@ export function PlanDialog({ plan, children }: { plan?: AdminPlan; children: Rea
   const isFree = plan?.code === "free";
   const set = (patch: Partial<typeof form>) => setForm((current) => ({ ...current, ...patch }));
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     const body = {
       name: form.name,
@@ -300,7 +300,7 @@ export function AddonDialog({ addon, children }: { addon?: AdminAddon; children:
   const change = useProductChange(addon ? t`${addon.name} saved` : t`Add-on created`);
   const set = (patch: Partial<typeof form>) => setForm((current) => ({ ...current, ...patch }));
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     const body = {
       name: form.name,
@@ -466,7 +466,7 @@ function PriceDialog({
   const cents = toCents(amount);
   const period = intervalWord(interval);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (cents == null) return;
     change.mutate(
@@ -564,7 +564,7 @@ function LinkPriceDialog({
   const [priceId, setPriceId] = useState("");
   const change = useProductChange(t`${name} linked to the Stripe price`);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     change.mutate(
       () =>
