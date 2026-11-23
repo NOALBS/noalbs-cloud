@@ -1940,9 +1940,9 @@ dependencies = [
  "async-trait",
  "futures-util",
  "nanoid",
+ "obs-protocol",
  "serde",
  "serde_json",
- "serde_repr",
  "telemetry",
  "thiserror",
  "tokio",
@@ -1980,6 +1980,16 @@ dependencies = [
  "tokio",
  "tokio-tungstenite 0.30.0",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "obs-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_repr",
  "uuid",
 ]
 

@@ -17,8 +17,8 @@ pub mod inputs;
 pub mod placement;
 pub mod reuse;
 pub mod sources;
-pub mod types;
 pub use error::Error;
+pub use obs_protocol as types;
 
 use error::Result;
 use serde::de;

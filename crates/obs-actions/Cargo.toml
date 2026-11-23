@@ -15,9 +15,9 @@ async-nats = { workspace = true }
 async-trait = { workspace = true }
 futures-util = { workspace = true }
 nanoid = { workspace = true }
+obs-protocol = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-serde_repr = { workspace = true }
 telemetry = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }

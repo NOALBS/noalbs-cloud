@@ -613,14 +613,14 @@ async fn run_obs_action(
         .cloned()
         .ok_or_else(|| "setup not found".to_string())?;
 
-    if matches!(action, ObsAction::Stop | ObsAction::Restart)
-        && !stop_setup_streams_with_timeout(
-            Duration::from_secs(25),
-            stop_setup_streams(&setup, state),
-        )
-        .await
-    {
-        tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
+    let graceful_stop = if matches!(action, ObsAction::Stop | ObsAction::Restart) {
+        stop_setup_streams_with_timeout(Duration::from_secs(25), stop_setup_streams(&setup, state))
+            .await
+    } else {
+        Ok(())
+    };
+    if let Err(error) = &graceful_stop {
+        tracing::warn!(setup_id = %setup.id, %error, "Couldn't stop all OBS outputs before process action");
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
@@ -673,7 +673,9 @@ async fn run_obs_action(
         }
     }
     set_link_programs(state, setup_id);
-    Ok(())
+    graceful_stop.map_err(|error| {
+        format!("OBS process action completed, but graceful output shutdown failed: {error}")
+    })
 }
 
 fn set_link_programs(state: &AppState, setup_id: uuid::Uuid) {
@@ -1064,7 +1066,7 @@ fn select_crash_report_file(
         .map(|(file, _)| file)
 }
 
-async fn stop_setup_streams(setup: &Setup, state: &AppState) {
+async fn stop_setup_streams(setup: &Setup, state: &AppState) -> Result<(), String> {
     let obs_state = state
         .supervisor
         .lock()
@@ -1074,7 +1076,7 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
         obs_state,
         PcObsState::Unknown | PcObsState::NotRunning | PcObsState::Crashed
     ) {
-        return;
+        return Ok(());
     }
     let effective = state.link_sessions.lock().ok().and_then(|sessions| {
         sessions
@@ -1088,16 +1090,30 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
             local_obs_connection(setup)
         }
     });
-    if let Some((port, password)) = connection {
-        let _ = stop_active_streams(port, &password).await;
+    let Some((port, password)) = connection else {
+        return Ok(());
+    };
+    let result = stop_active_streams(port, &password)
+        .await
+        .map_err(|error| error.to_string())?;
+    let failures = [("stream", result.stream), ("recording", result.recording)]
+        .into_iter()
+        .filter_map(|(output, outcome)| outcome.err().map(|error| format!("{output}: {error}")))
+        .collect::<Vec<_>>();
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(failures.join("; "))
     }
 }
 
-async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> bool
+async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> Result<(), String>
 where
-    F: std::future::Future<Output = ()>,
+    F: std::future::Future<Output = Result<(), String>>,
 {
-    tokio::time::timeout(deadline, future).await.is_ok()
+    tokio::time::timeout(deadline, future)
+        .await
+        .map_err(|_| "Timed out stopping OBS outputs".to_owned())?
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -1905,7 +1921,7 @@ fn start_link_session(
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding
-                                && !stop_setup_streams_with_timeout(
+                                && let Err(error) = stop_setup_streams_with_timeout(
                                     Duration::from_secs(25),
                                     stop_setup_streams(&restart_setup, &app_state),
                                 )
@@ -1913,8 +1929,9 @@ fn start_link_session(
                             {
                                 tracing::warn!(
                                     setup_id = %restart_setup.id,
-                                    "Timed out stopping streams before OBS watchdog restart"
+                                    %error, "Couldn't stop all OBS outputs before watchdog restart"
                                 );
+                                let _ = monitor_handle.emit("connect-error", error);
                             }
                             let restart_result = {
                                 let mut supervisor =
@@ -2535,11 +2552,12 @@ mod tests {
     #[tokio::test]
     async fn stream_stop_timeout_returns_when_obs_side_hangs() {
         assert!(
-            !stop_setup_streams_with_timeout(
+            stop_setup_streams_with_timeout(
                 Duration::from_millis(1),
-                std::future::pending::<()>(),
+                std::future::pending::<Result<(), String>>(),
             )
             .await
+            .is_err()
         );
     }
 
