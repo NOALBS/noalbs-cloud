@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Lock, RefreshCw, Wifi as WifiIcon } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import type {
   BelaboxDetails,
   BelaboxHotspot,
@@ -369,7 +369,7 @@ function JoinForm({
   const errors = wifiJoinErrors(ssid, password);
   const missing = secured && !password;
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (errors.ssid || errors.password || missing) return;
     config.addWifi.mutate(
@@ -418,7 +418,7 @@ function HiddenNetwork({ device, config }: { device: BelaboxWifiDevice; config: 
     );
   }
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (errors.ssid || errors.password) return;
     config.addWifi.mutate(
@@ -486,7 +486,7 @@ function HotspotSettings({
   const errors = hotspotErrors(name, password);
   const dirty = name !== hotspot.name || password !== "" || channel !== hotspot.channel;
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (errors.name || errors.password) return;
     config.hotspotConfig.mutate(
