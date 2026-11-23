@@ -82,10 +82,8 @@ impl LocalObs {
 
     async fn watch_process(&self, mut process: watch::Receiver<PcObsState>) {
         while process.changed().await.is_ok() {
-            if matches!(
-                *process.borrow_and_update(),
-                PcObsState::NotRunning | PcObsState::Crashed
-            ) {
+            let state = *process.borrow_and_update();
+            if matches!(state, PcObsState::NotRunning | PcObsState::Crashed) {
                 self.health.send_if_modified(|health| {
                     if *health != ObsHealth::Disconnected {
                         return false;
@@ -128,7 +126,8 @@ impl LocalObs {
             let disconnected = self.session.send_replace(None).is_some();
             if let Some(error) = error {
                 if disconnected {
-                    self.set_health(match *process.borrow() {
+                    let state = *process.borrow();
+                    self.set_health(match state {
                         PcObsState::NotRunning | PcObsState::Crashed => ObsHealth::Waiting,
                         _ => ObsHealth::Disconnected,
                     });

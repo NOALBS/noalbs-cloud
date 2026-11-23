@@ -947,10 +947,8 @@ mod tests {
                 .wait_for(|health| *health == ObsHealth::Disconnected)
                 .await
                 .unwrap();
-            assert_eq!(
-                health.borrow().display(*process.borrow()),
-                PcObsState::NotResponding,
-            );
+            let state = *process.borrow();
+            assert_eq!(health.borrow().display(state), PcObsState::NotResponding);
 
             process.send_replace(PcObsState::NotRunning);
             health
@@ -958,10 +956,8 @@ mod tests {
                 .await
                 .unwrap();
             process.send_replace(PcObsState::Starting);
-            assert_eq!(
-                health.borrow().display(*process.borrow()),
-                PcObsState::Starting
-            );
+            let state = *process.borrow();
+            assert_eq!(health.borrow().display(state), PcObsState::Starting);
         })
         .await
         .unwrap();

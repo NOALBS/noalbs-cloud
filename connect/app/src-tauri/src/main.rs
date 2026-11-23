@@ -58,8 +58,11 @@ struct LinkSession {
 
 impl LinkSession {
     fn active_obs_state(&self) -> Option<PcObsState> {
-        (*self.cloud_state.borrow() != CloudLinkState::TakenOver)
-            .then(|| self.obs_health.borrow().display(*self.state.borrow()))
+        let cloud = *self.cloud_state.borrow();
+        (cloud != CloudLinkState::TakenOver).then(|| {
+            let process = *self.state.borrow();
+            self.obs_health.borrow().display(process)
+        })
     }
 
     fn watchdog_restarts(&self) -> bool {
@@ -1822,10 +1825,10 @@ fn start_link_session(
                                 let idle_state = idle_app.state::<AppState>();
                                 // Any OBS activity or output since the timeout fired cancels the rest.
                                 let still_idle = || {
-                                    let telemetry = idle_telemetry.borrow();
+                                    let outputs = idle_telemetry.borrow().current_outputs_active();
                                     idle_activity.load(Ordering::Relaxed) == activity_count
                                         && *idle_health.borrow() == ObsHealth::Connected
-                                        && telemetry.current_outputs_active() == Some(false)
+                                        && outputs == Some(false)
                                 };
                                 if let Err(error) = close_idle_setup(
                                     idle_state.inner(),
