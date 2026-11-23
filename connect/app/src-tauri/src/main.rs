@@ -1614,6 +1614,7 @@ fn start_link_session(
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
+    let (obs_auth_failed, mut obs_auth_failure) = watch::channel(false);
     let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
     let (upload_tx, upload_rx) = mpsc::unbounded_channel();
     let activity = Arc::new(AtomicU64::new(0));
@@ -1628,6 +1629,7 @@ fn start_link_session(
         state_tx: state_tx.clone(),
         telemetry_tx,
         effective_obs_tx,
+        obs_auth_failed,
         commands: command_tx,
         unsolicited_uploads: upload_rx,
         activity: activity.clone(),
@@ -1696,6 +1698,14 @@ fn start_link_session(
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
+                Ok(()) = obs_auth_failure.changed() => {
+                    if *obs_auth_failure.borrow_and_update() {
+                        let _ = monitor_handle.emit(
+                            "connect-error",
+                            connect_core::relay::RelayError::ObsAuthentication.to_string(),
+                        );
+                    }
+                }
                 _ = tick.tick() => {
                     let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();

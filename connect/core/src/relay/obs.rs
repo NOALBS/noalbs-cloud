@@ -17,6 +17,7 @@ const RAW_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_RAW_REQUESTS: usize = 1024;
 const OUTPUT_STOP_TIMEOUT: Duration = Duration::from_secs(25);
 const OUTPUT_POLL_INTERVAL: Duration = Duration::from_millis(500);
+const AUTHENTICATION_FAILED_CLOSE_CODE: u16 = 4009;
 
 pub(super) async fn connect_obs(port: u16, password: &str) -> Result<Socket, RelayError> {
     connect_obs_with_subscriptions(port, password, None).await
@@ -138,6 +139,11 @@ async fn read_json(socket: &mut Socket) -> Result<Value, RelayError> {
     loop {
         match socket.next().await.ok_or(RelayError::ObsClosed)?? {
             Message::Text(text) => return Ok(serde_json::from_str(&text)?),
+            Message::Close(Some(frame))
+                if u16::from(frame.code) == AUTHENTICATION_FAILED_CLOSE_CODE =>
+            {
+                return Err(RelayError::ObsAuthentication);
+            }
             Message::Close(_) => return Err(RelayError::ObsClosed),
             _ => {}
         }
@@ -396,6 +402,38 @@ mod tests {
     use tokio_tungstenite::{WebSocketStream, accept_async};
 
     use super::*;
+
+    #[tokio::test]
+    async fn rejected_obs_password_is_reported_as_authentication_failure() {
+        use tokio_tungstenite::tungstenite::protocol::{CloseFrame, frame::coding::CloseCode};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut socket = accept_async(listener.accept().await.unwrap().0)
+                .await
+                .unwrap();
+            send_mock(
+                &mut socket,
+                json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.4.2",
+                "authentication":{"salt":"salt","challenge":"challenge"}}}),
+            )
+            .await;
+            assert_eq!(receive_mock(&mut socket).await["op"], 1);
+            socket
+                .close(Some(CloseFrame {
+                    code: CloseCode::Library(4009),
+                    reason: "Authentication failed".into(),
+                }))
+                .await
+                .unwrap();
+        });
+        assert!(matches!(
+            stop_active_streams(port, "wrong").await,
+            Err(RelayError::ObsAuthentication)
+        ));
+        server.await.unwrap();
+    }
 
     async fn send_mock(socket: &mut WebSocketStream<TcpStream>, message: Value) {
         socket

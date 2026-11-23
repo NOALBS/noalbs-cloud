@@ -83,6 +83,7 @@ pub struct LinkConfig {
     pub state_tx: watch::Sender<PcObsState>,
     pub telemetry_tx: watch::Sender<ObsTelemetry>,
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
+    pub obs_auth_failed: watch::Sender<bool>,
     pub commands: mpsc::UnboundedSender<ObsCommandRequest>,
     pub unsolicited_uploads: mpsc::UnboundedReceiver<ConnectLogUpload>,
     /// Bumped whenever OBS or the dashboard does something user-visible; the app
@@ -209,11 +210,15 @@ async fn connect_once(
     let mut obs = if let Some(port) = obs_port {
         match tokio::time::timeout(Duration::from_secs(5), connect_obs(port, &obs_password)).await {
             Ok(Ok(socket)) => {
+                config.obs_auth_failed.send_if_modified(clear_auth_failure);
                 let _ = config.state_tx.send(PcObsState::Connected);
                 config.activity.fetch_add(1, Ordering::Relaxed);
                 Some(socket)
             }
-            Ok(Err(_)) | Err(_) => {
+            failure => {
+                if matches!(failure, Ok(Err(RelayError::ObsAuthentication))) {
+                    config.obs_auth_failed.send_if_modified(set_auth_failure);
+                }
                 let _ = config.state_tx.send(PcObsState::Starting);
                 None
             }
@@ -298,23 +303,30 @@ async fn connect_once(
                 upstream.send(Message::Ping(Vec::new().into())).await?;
             }
             _ = obs_retry.tick(), if obs.is_none() && obs_port.is_some() => {
-                if let Some(port) = obs_port
-                    && let Ok(Ok(mut socket)) = tokio::time::timeout(
+                if let Some(port) = obs_port {
+                    match tokio::time::timeout(
                         Duration::from_secs(5),
                         connect_obs(port, &obs_password),
-                    ).await
-                {
-                    if let Ok(Some(version)) = get_obs_version(&mut socket).await {
-                        telemetry.obs_version = Some(version);
-                        let _ = config.telemetry_tx.send(telemetry.clone());
+                    ).await {
+                        Ok(Ok(mut socket)) => {
+                            config.obs_auth_failed.send_if_modified(clear_auth_failure);
+                            if let Ok(Some(version)) = get_obs_version(&mut socket).await {
+                                telemetry.obs_version = Some(version);
+                                let _ = config.telemetry_tx.send(telemetry.clone());
+                            }
+                            pending_samples = start_sampling(&mut socket).await?;
+                            obs = Some(socket);
+                            missed_stats = 0;
+                            send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
+                            let _ = config.state_tx.send(PcObsState::Connected);
+                            send_pc_state(&mut upstream, PcObsState::Connected).await?;
+                            config.activity.fetch_add(1, Ordering::Relaxed);
+                        }
+                        Ok(Err(RelayError::ObsAuthentication)) => {
+                            config.obs_auth_failed.send_if_modified(set_auth_failure);
+                        }
+                        _ => {}
                     }
-                    pending_samples = start_sampling(&mut socket).await?;
-                    obs = Some(socket);
-                    missed_stats = 0;
-                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
-                    let _ = config.state_tx.send(PcObsState::Connected);
-                    send_pc_state(&mut upstream, PcObsState::Connected).await?;
-                    config.activity.fetch_add(1, Ordering::Relaxed);
                 }
             }
             _ = meter_tick.tick() => {
@@ -399,6 +411,7 @@ async fn connect_once(
                     send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
                     obs_port = Some(port);
                     obs_password = password;
+                    config.obs_auth_failed.send_if_modified(clear_auth_failure);
                     let _ = config
                         .effective_obs_tx
                         .send(Some((port, obs_password.clone())));
@@ -532,6 +545,14 @@ async fn connect_once(
             }
         }
     }
+}
+
+fn set_auth_failure(failed: &mut bool) -> bool {
+    !std::mem::replace(failed, true)
+}
+
+fn clear_auth_failure(failed: &mut bool) -> bool {
+    std::mem::replace(failed, false)
 }
 
 async fn next_obs(
@@ -912,6 +933,7 @@ mod tests {
             state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
@@ -951,6 +973,7 @@ mod tests {
             state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
@@ -965,6 +988,53 @@ mod tests {
         let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
         super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link).await
+    }
+
+    #[tokio::test]
+    async fn rejected_local_password_is_reported_without_dropping_the_cloud_link() {
+        use tokio_tungstenite::tungstenite::protocol::{CloseFrame, frame::coding::CloseCode};
+
+        let obs = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let cloud = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(cloud.local_addr().unwrap().port());
+        config.obs_port = Some(obs.local_addr().unwrap().port());
+        let mut auth_failed = config.obs_auth_failed.subscribe();
+        let (link, _) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+
+        let server = async {
+            let mut obs = accept_async(obs.accept().await.unwrap().0).await.unwrap();
+            obs.send(Message::text(
+                json!({
+                    "op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.5.1",
+                        "authentication":{"salt":"salt","challenge":"challenge"}}
+                })
+                .to_string(),
+            ))
+            .await
+            .unwrap();
+            assert!(obs.next().await.unwrap().unwrap().is_text());
+            obs.close(Some(CloseFrame {
+                code: CloseCode::Library(4009),
+                reason: "Authentication failed".into(),
+            }))
+            .await
+            .unwrap();
+
+            auth_failed.changed().await.unwrap();
+            assert!(*auth_failed.borrow_and_update());
+            let mut cloud = accept_async(cloud.accept().await.unwrap().0).await.unwrap();
+            assert!(cloud.next().await.unwrap().unwrap().is_text());
+            cloud
+                .send(Message::text(json!({"identifyAck":false}).to_string()))
+                .await
+                .unwrap();
+        };
+        let (result, ()) = tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::join!(idle_connection(&mut config, &link), server)
+        })
+        .await
+        .unwrap();
+        assert!(matches!(result, Err(RelayError::InvalidToken)));
     }
 
     #[tokio::test]
@@ -1156,6 +1226,7 @@ mod tests {
             state_tx,
             telemetry_tx,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: commands_tx,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
@@ -1607,6 +1678,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
+                    obs_auth_failed: tokio::sync::watch::channel(false).0,
                     commands,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                     activity: Arc::new(AtomicU64::new(0)),
@@ -1736,6 +1808,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
+                obs_auth_failed: tokio::sync::watch::channel(false).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 activity: Arc::new(AtomicU64::new(0)),
@@ -1786,6 +1859,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
+                    obs_auth_failed: tokio::sync::watch::channel(false).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                     activity: Arc::new(AtomicU64::new(0)),
@@ -1863,6 +1937,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx,
+                obs_auth_failed: tokio::sync::watch::channel(false).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 activity: Arc::new(AtomicU64::new(0)),
