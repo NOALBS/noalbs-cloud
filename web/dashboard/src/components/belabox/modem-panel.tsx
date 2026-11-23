@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { RefreshCw } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
+import { type SubmitEvent, useId, useState } from "react";
 import type { BelaboxDetails, BelaboxModemDetails } from "@/api/types";
 import {
   AlertDialog,
@@ -86,7 +86,7 @@ function Modem({
   const choices = operatorChoices(modem);
   const status = modem.status ? modemStatusLabel(modem.status) : "";
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (!dirty || Object.keys(errors).length > 0) return;
     config.modem.mutate(
