@@ -19,8 +19,8 @@ use connect_core::{
     pairing::ConnectOs,
     programs::{self, ObsLifecycleAction},
     relay::{
-        CloudLinkState, LinkConfig, ObsAction, ObsCommandRequest, ObsTelemetry, PcObsState,
-        WatchdogMode, run_link_with_programs_and_state, stop_active_streams,
+        CloudLinkState, LinkConfig, ObsAction, ObsCommandRequest, ObsHealth, ObsTelemetry,
+        PcObsState, WatchdogMode, run_link_with_programs_and_state, stop_active_streams,
     },
     supervisor::{
         Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
@@ -46,6 +46,7 @@ use tokio::sync::{mpsc, watch};
 struct LinkSession {
     cloud_state: watch::Receiver<CloudLinkState>,
     state: watch::Sender<PcObsState>,
+    obs_health: watch::Receiver<ObsHealth>,
     programs: watch::Sender<Vec<common::programs::ProgramStatus>>,
     watchdog: watch::Receiver<WatchdogMode>,
     effective_obs: watch::Receiver<Option<(u16, String)>>,
@@ -57,7 +58,8 @@ struct LinkSession {
 
 impl LinkSession {
     fn active_obs_state(&self) -> Option<PcObsState> {
-        (*self.cloud_state.borrow() != CloudLinkState::TakenOver).then(|| *self.state.borrow())
+        (*self.cloud_state.borrow() != CloudLinkState::TakenOver)
+            .then(|| self.obs_health.borrow().display(*self.state.borrow()))
     }
 
     fn watchdog_restarts(&self) -> bool {
@@ -1357,11 +1359,6 @@ fn remove_link_session(
         session.monitor.abort();
         session.command_consumer.abort();
     }
-    state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?
-        .clear_connected(setup_id);
     Ok(())
 }
 
@@ -1385,9 +1382,6 @@ fn stop_taken_over_session(state: &AppState, setup_id: uuid::Uuid) {
         }
         session.monitor.abort();
         session.command_consumer.abort();
-    }
-    if let Ok(mut supervisor) = state.supervisor.lock() {
-        supervisor.clear_connected(setup_id);
     }
 }
 
@@ -1487,18 +1481,6 @@ fn set_link_state(state: &AppState, id: uuid::Uuid, next: PcObsState) {
     {
         let _ = session.state.send(next);
     }
-}
-
-fn should_publish_not_running(process_state: PcObsState, link_state: PcObsState) -> bool {
-    process_state == PcObsState::NotRunning
-        && matches!(
-            link_state,
-            PcObsState::Unknown
-                | PcObsState::Starting
-                | PcObsState::Connected
-                | PcObsState::NotResponding
-                | PcObsState::WaitingForInput
-        )
 }
 
 fn not_responding_incident_due(
@@ -1603,12 +1585,13 @@ fn start_link_session(
     } else {
         local_obs_connection(&setup)
     };
-    let (initial_state, obs_port, obs_password) = match &effective_obs {
-        Some((port, password)) => (PcObsState::Unknown, Some(*port), password.clone()),
-        None if setup.obs.use_dashboard_obs_settings => (PcObsState::Unknown, None, String::new()),
-        None => (PcObsState::WebsocketDisabled, None, String::new()),
+    let (initial_health, obs_port, obs_password) = match &effective_obs {
+        Some((port, password)) => (ObsHealth::Waiting, Some(*port), password.clone()),
+        None if setup.obs.use_dashboard_obs_settings => (ObsHealth::Waiting, None, String::new()),
+        None => (ObsHealth::Disabled, None, String::new()),
     };
-    let (state_tx, state_rx) = watch::channel(initial_state);
+    let (state_tx, state_rx) = watch::channel(PcObsState::Unknown);
+    let (obs_health, health_rx) = watch::channel(initial_health);
     let (cloud_tx, cloud_rx) = watch::channel(CloudLinkState::Reconnecting);
     let (programs_tx, programs_rx) = watch::channel(programs::status(&setup.programs));
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
@@ -1626,7 +1609,7 @@ fn start_link_session(
         obs_port,
         obs_password,
         use_dashboard_obs_settings: setup.obs.use_dashboard_obs_settings,
-        state_tx: state_tx.clone(),
+        obs_health,
         telemetry_tx,
         effective_obs_tx,
         obs_auth_failed,
@@ -1673,14 +1656,13 @@ fn start_link_session(
     });
     let monitor_handle = app.clone();
     let monitor_setup = setup.clone();
-    let monitor_state = state_tx.subscribe();
+    let monitor_health = health_rx.clone();
     let mut monitor_telemetry = telemetry_rx.clone();
     let mut monitor_watchdog = watchdog_rx.clone();
     let monitor_state_tx = state_tx.clone();
     let monitor_programs_tx = programs_tx.clone();
     let monitor_activity = activity.clone();
     let monitor = tauri::async_runtime::spawn(async move {
-        let monitor_state = monitor_state;
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
         let mut handled_incident = None;
@@ -1707,7 +1689,6 @@ fn start_link_session(
                     }
                 }
                 _ = tick.tick() => {
-                    let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
                     let (process_state, program_status, idle_close_minutes, idle_stop_obs) =
                         with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
@@ -1740,6 +1721,10 @@ fn start_link_session(
                                 });
                             (process_state, program_status, idle_close_minutes, idle_stop_obs)
                     });
+                    monitor_state_tx.send_if_modified(|current| {
+                        std::mem::replace(current, process_state) != process_state
+                    });
+                    let link_state = monitor_health.borrow().display(process_state);
                     if let Some(ref program_status) = program_status
                         && *monitor_programs_tx.borrow() != *program_status
                     {
@@ -1752,19 +1737,18 @@ fn start_link_session(
                         idle_closed.clear();
                         idle_obs_stop_at = None;
                     }
-                    let outputs_active = {
-                        let telemetry = monitor_telemetry.borrow();
-                        telemetry.stream_active || telemetry.record_active
-                    };
+                    let outputs = monitor_telemetry.borrow().current_outputs_active();
+                    let outputs_active = outputs == Some(true);
                     // Idle time only counts while the OBS websocket is connected;
                     // without it a quiet wire may just mean we can't see anything.
-                    let observable = state == PcObsState::Connected
+                    let observable = outputs.is_some()
+                        && link_state == PcObsState::Connected
                         && programs::obs_is_running(&process_state);
                     if !programs::obs_is_running(&process_state) {
                         // OBS's own start brings back its programs.
                         idle_stopped.clear();
                     }
-                    if !prev_outputs_active && outputs_active {
+                    if observable && !prev_outputs_active && outputs_active {
                         // Output resumed: bring back what the idle close stopped.
                         let restart = program_status
                             .iter()
@@ -1791,7 +1775,9 @@ fn start_link_session(
                             });
                         }
                     }
-                    prev_outputs_active = outputs_active;
+                    if observable {
+                        prev_outputs_active = outputs_active;
+                    }
                     if !observable || outputs_active {
                         last_obs_activity = Instant::now();
                         idle_closed.clear();
@@ -1830,6 +1816,7 @@ fn start_link_session(
                             let idle_setup = monitor_setup.clone();
                             let idle_activity = monitor_activity.clone();
                             let idle_telemetry = monitor_telemetry.clone();
+                            let idle_health = monitor_health.clone();
                             let idle_failed = idle_obs_stop_failed.clone();
                             tauri::async_runtime::spawn_blocking(move || {
                                 let idle_state = idle_app.state::<AppState>();
@@ -1837,8 +1824,8 @@ fn start_link_session(
                                 let still_idle = || {
                                     let telemetry = idle_telemetry.borrow();
                                     idle_activity.load(Ordering::Relaxed) == activity_count
-                                        && !telemetry.stream_active
-                                        && !telemetry.record_active
+                                        && *idle_health.borrow() == ObsHealth::Connected
+                                        && telemetry.current_outputs_active() == Some(false)
                                 };
                                 if let Err(error) = close_idle_setup(
                                     idle_state.inner(),
@@ -1854,16 +1841,7 @@ fn start_link_session(
                             });
                         }
                     }
-                    if process_state == PcObsState::WaitingForInput
-                        && matches!(state, PcObsState::Unknown | PcObsState::Starting)
-                    {
-                        let _ = monitor_state_tx.send(PcObsState::WaitingForInput);
-                    }
-                    if should_publish_not_running(process_state, state) {
-                        let _ = monitor_state_tx.send(PcObsState::NotRunning);
-                        state = PcObsState::NotRunning;
-                    }
-                    if state == PcObsState::NotResponding {
+                    if link_state == PcObsState::NotResponding {
                         not_responding_since.get_or_insert_with(Instant::now);
                     } else {
                         not_responding_since = None;
@@ -1871,7 +1849,7 @@ fn start_link_session(
                     let incident = if process_state == PcObsState::Crashed {
                         Some(PcObsState::Crashed)
                     } else if not_responding_incident_due(
-                        state,
+                        link_state,
                         not_responding_since,
                         Instant::now(),
                     ) {
@@ -2046,6 +2024,7 @@ fn start_link_session(
         LinkSession {
             cloud_state: cloud_rx.clone(),
             state: state_tx.clone(),
+            obs_health: health_rx.clone(),
             programs: programs_tx,
             watchdog: watchdog_rx.clone(),
             effective_obs: effective_obs_rx,
@@ -2056,11 +2035,6 @@ fn start_link_session(
         },
     );
     drop(sessions);
-    state
-        .supervisor
-        .lock()
-        .map_err(|_| "supervisor lock poisoned")?
-        .clear_connected(setup.id);
     let _ = link_start.send(());
 
     let cloud_app = app.clone();
@@ -2075,13 +2049,17 @@ fn start_link_session(
 
     let app_handle = app.clone();
     let mut state_rx = state_tx.subscribe();
+    let mut health_rx = health_rx;
     tauri::async_runtime::spawn(async move {
-        while state_rx.changed().await.is_ok() {
-            let state = app_handle.state::<AppState>();
-            if let Ok(mut supervisor) = state.supervisor.lock() {
-                let current_state = *state_rx.borrow();
-                supervisor.mark_connected(setup.id, current_state == PcObsState::Connected);
+        loop {
+            let changed = tokio::select! {
+                result = state_rx.changed() => result,
+                result = health_rx.changed() => result,
+            };
+            if changed.is_err() {
+                break;
             }
+            let state = app_handle.state::<AppState>();
             let _ = app_handle.emit("connect-state-changed", get_state(state));
             let _ = refresh_tray_menu(&app_handle);
         }
@@ -2489,6 +2467,7 @@ mod tests {
             LinkSession {
                 cloud_state,
                 state: watch::channel(PcObsState::Connected).0,
+                obs_health: watch::channel(ObsHealth::Waiting).1,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Restart).1,
                 effective_obs: watch::channel(None).1,
@@ -2669,18 +2648,18 @@ mod tests {
 
     #[test]
     fn process_exit_corrects_stale_starting_state_without_overwriting_disabled() {
-        assert!(should_publish_not_running(
-            PcObsState::NotRunning,
-            PcObsState::Starting
-        ));
-        assert!(!should_publish_not_running(
-            PcObsState::NotRunning,
+        assert_eq!(
+            ObsHealth::Disconnected.display(PcObsState::NotRunning),
+            PcObsState::NotRunning
+        );
+        assert_eq!(
+            ObsHealth::Disabled.display(PcObsState::NotRunning),
             PcObsState::WebsocketDisabled
-        ));
-        assert!(!should_publish_not_running(
-            PcObsState::Starting,
+        );
+        assert_eq!(
+            ObsHealth::Waiting.display(PcObsState::Starting),
             PcObsState::Starting
-        ));
+        );
     }
 
     #[test]
@@ -2921,6 +2900,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                obs_health: watch::channel(ObsHealth::Waiting).1,
                 cloud_state: watch::channel(CloudLinkState::Connected).1,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
@@ -2987,6 +2967,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                obs_health: watch::channel(ObsHealth::Waiting).1,
                 cloud_state: watch::channel(CloudLinkState::Connected).1,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
@@ -3064,6 +3045,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                obs_health: watch::channel(ObsHealth::Waiting).1,
                 cloud_state: watch::channel(CloudLinkState::Connected).1,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
@@ -3166,6 +3148,7 @@ mod tests {
             setup_id,
             LinkSession {
                 state: state_tx,
+                obs_health: watch::channel(ObsHealth::Waiting).1,
                 cloud_state: watch::channel(CloudLinkState::Connected).1,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Off).1,
@@ -3278,16 +3261,16 @@ mod tests {
         {
             let mut supervisor = state.supervisor.lock().unwrap();
             supervisor.start(&setup, false, None).unwrap();
-            supervisor.mark_connected(setup_id, true);
-            assert_eq!(supervisor.state(&setup), PcObsState::Connected);
+            assert_eq!(supervisor.state(&setup), PcObsState::Starting);
         }
-        let (state_tx, _) = watch::channel(PcObsState::Connected);
+        let (state_tx, _) = watch::channel(PcObsState::Starting);
         let (cloud, cloud_state) = watch::channel(CloudLinkState::Connected);
         let (_, effective_obs) = watch::channel(None);
         state.link_sessions.lock().unwrap().insert(
             setup_id,
             LinkSession {
                 state: state_tx,
+                obs_health: watch::channel(ObsHealth::Connected).1,
                 cloud_state,
                 programs: watch::channel(Vec::new()).0,
                 watchdog: watch::channel(WatchdogMode::Restart).1,

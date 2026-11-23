@@ -2,8 +2,8 @@ use std::{collections::HashMap, time::Duration};
 
 use futures_util::{SinkExt, StreamExt};
 use obs_protocol::{
-    EVENT_SUBSCRIPTION_OUTPUTS, Event, GetVersion, Identify, ObsMessage, ObsRequest, OutputStatus,
-    Request, RequestKind, RequestResponse,
+    EVENT_SUBSCRIPTION_OUTPUTS, Event, Identify, ObsMessage, ObsRequest, OutputStatus, Request,
+    RequestKind, RequestResponse,
 };
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::Value;
@@ -111,28 +111,6 @@ impl PendingCall {
 
 pub(super) fn decode_response<T: DeserializeOwned>(data: Option<Value>) -> Result<T, RelayError> {
     Ok(serde_json::from_value(data.unwrap_or(Value::Null))?)
-}
-
-pub(super) async fn request_obs(
-    socket: &mut Socket,
-    kind: RequestKind<'_>,
-) -> Result<Option<Value>, RelayError> {
-    let call = PendingCall::send(socket, kind).await?;
-    timeout_at(call.deadline, async {
-        loop {
-            let response = read_json(socket).await?;
-            if call.matches(&response) {
-                return call.complete(&response);
-            }
-        }
-    })
-    .await
-    .map_err(|_| RelayError::ObsTimeout)?
-}
-
-pub(super) async fn get_obs_version(socket: &mut Socket) -> Result<Option<String>, RelayError> {
-    let version: GetVersion = decode_response(request_obs(socket, RequestKind::GetVersion).await?)?;
-    Ok(Some(version.obs_version))
 }
 
 async fn read_json(socket: &mut Socket) -> Result<Value, RelayError> {
@@ -350,11 +328,16 @@ impl OutputShutdown {
     }
 }
 
-#[derive(Default)]
-pub(super) struct RawRequests(HashMap<(u64, String), (String, Instant)>);
+pub(super) struct RawRequests<T>(HashMap<(u64, String), (T, Instant)>);
 
-impl RawRequests {
-    pub(super) fn track(&mut self, request: &Value, token: Option<&str>) -> bool {
+impl<T> Default for RawRequests<T> {
+    fn default() -> Self {
+        Self(HashMap::new())
+    }
+}
+
+impl<T> RawRequests<T> {
+    pub(super) fn track(&mut self, request: &Value, token: Option<T>) -> bool {
         let Some((token, id)) = token.zip(extract_request_id(request)) else {
             return true;
         };
@@ -372,13 +355,13 @@ impl RawRequests {
         match self.0.entry((reply_op, id.to_owned())) {
             std::collections::hash_map::Entry::Occupied(_) => false,
             std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert((token.to_owned(), Instant::now() + RAW_REQUEST_TIMEOUT));
+                entry.insert((token, Instant::now() + RAW_REQUEST_TIMEOUT));
                 true
             }
         }
     }
 
-    pub(super) fn resolve(&mut self, reply: &Value) -> Option<String> {
+    pub(super) fn resolve(&mut self, reply: &Value) -> Option<T> {
         let op = reply.get("op")?.as_u64()?;
         let id = extract_request_id(reply)?;
         let (token, deadline) = self.0.remove(&(op, id.to_owned()))?;
@@ -388,10 +371,6 @@ impl RawRequests {
     pub(super) fn expire(&mut self) {
         let now = Instant::now();
         self.0.retain(|_, (_, deadline)| *deadline > now);
-    }
-
-    pub(super) fn clear(&mut self) {
-        self.0.clear();
     }
 }
 
@@ -552,15 +531,15 @@ mod tests {
 
     #[test]
     fn raw_requests_are_bounded_and_expired_replies_do_not_resolve() {
-        let mut pending = RawRequests::default();
+        let mut pending = RawRequests::<String>::default();
         for id in 0..MAX_RAW_REQUESTS {
             assert!(pending.track(
                 &json!({"op":6,"d":{"requestId":id.to_string()}}),
-                Some("token")
+                Some("token".into())
             ));
         }
         let overflow = json!({"op":8,"d":{"requestId":"overflow"}});
-        assert!(!pending.track(&overflow, Some("overflow")));
+        assert!(!pending.track(&overflow, Some("overflow".into())));
         for (_, deadline) in pending.0.values_mut() {
             *deadline = Instant::now();
         }
@@ -571,7 +550,7 @@ mod tests {
         );
         pending.expire();
         assert!(pending.0.is_empty());
-        assert!(pending.track(&overflow, Some("batch")));
+        assert!(pending.track(&overflow, Some("batch".into())));
         assert!(
             pending
                 .resolve(&json!({"op":7,"d":{"requestId":"overflow"}}))

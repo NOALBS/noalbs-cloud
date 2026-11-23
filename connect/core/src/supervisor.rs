@@ -662,7 +662,6 @@ pub struct Supervisor {
     children: HashMap<Uuid, StartedObs>,
     adopted: HashMap<Uuid, (Setup, u32, u64)>,
     known_setups: Vec<Setup>,
-    connected: HashSet<Uuid>,
     crashed_pending: HashSet<Uuid>,
     crashed_state: HashSet<Uuid>,
     crashed_start_times: HashMap<Uuid, u64>,
@@ -685,7 +684,6 @@ impl Supervisor {
             children: HashMap::new(),
             adopted: HashMap::new(),
             known_setups: Vec::new(),
-            connected: HashSet::new(),
             crashed_pending: HashSet::new(),
             crashed_state: HashSet::new(),
             crashed_start_times: HashMap::new(),
@@ -931,7 +929,6 @@ impl Supervisor {
                 flatpak_obs,
             },
         );
-        self.connected.remove(&setup.id);
         Ok(pid)
     }
 
@@ -976,9 +973,7 @@ impl Supervisor {
                     process_start_time_with(pid, system) == Some(start_time)
                 });
                 if obs_running {
-                    if self.connected.contains(&setup.id) {
-                        PcObsState::Connected
-                    } else if child.started.elapsed() >= self.waiting_for_input_after {
+                    if child.started.elapsed() >= self.waiting_for_input_after {
                         PcObsState::WaitingForInput
                     } else {
                         PcObsState::Starting
@@ -1007,16 +1002,12 @@ impl Supervisor {
             }
             if remove_child {
                 self.children.remove(&setup.id);
-                self.connected.remove(&setup.id);
             }
             return state;
         }
         if let Some(child) = self.children.get_mut(&setup.id) {
             match child.child.try_wait() {
                 Ok(None) => {
-                    if self.connected.contains(&setup.id) {
-                        return PcObsState::Connected;
-                    }
                     return if child.started.elapsed() >= self.waiting_for_input_after {
                         PcObsState::WaitingForInput
                     } else {
@@ -1030,7 +1021,6 @@ impl Supervisor {
                             .insert(setup.id, child.process_start_time);
                     }
                     self.children.remove(&setup.id);
-                    self.connected.remove(&setup.id);
                     if crashed {
                         self.crashed_pending.insert(setup.id);
                         self.crashed_state.insert(setup.id);
@@ -1099,18 +1089,6 @@ impl Supervisor {
                 .is_some()
     }
 
-    pub fn mark_connected(&mut self, setup_id: Uuid, connected: bool) {
-        if connected {
-            self.connected.insert(setup_id);
-        } else {
-            self.clear_connected(setup_id);
-        }
-    }
-
-    pub fn clear_connected(&mut self, setup_id: Uuid) {
-        self.connected.remove(&setup_id);
-    }
-
     pub fn forget(&mut self, setup_id: Uuid) {
         if let Some(child) = self.children.remove(&setup_id) {
             let mut child_process = child.child;
@@ -1121,7 +1099,6 @@ impl Supervisor {
         self.adopted.remove(&setup_id);
         self.crashed_pending.remove(&setup_id);
         self.crashed_state.remove(&setup_id);
-        self.connected.remove(&setup_id);
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
@@ -1138,7 +1115,6 @@ impl Supervisor {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
             None => {
                 if self.matching_obs_pids(setup).is_empty() {
-                    self.connected.remove(&setup.id);
                     self.adopted.remove(&setup.id);
                     return Ok(());
                 }
@@ -1150,7 +1126,6 @@ impl Supervisor {
                 (pid.as_u32(), start_time, None)
             }
         };
-        self.connected.remove(&setup.id);
         if process_start_time(pid) == Some(expected_start_time) {
             request_graceful_close(pid);
         }
@@ -1218,7 +1193,6 @@ impl Supervisor {
     }
 
     fn stop_flatpak_unresolved(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
-        self.connected.remove(&setup.id);
         let Some(item) = self.children.get_mut(&setup.id) else {
             return Err(SupervisorError::Unidentified);
         };
@@ -1287,7 +1261,6 @@ impl Supervisor {
             return self.stop_flatpak_unresolved(setup);
         }
 
-        self.connected.remove(&setup.id);
         let Some(item) = self.children.get_mut(&setup.id) else {
             return Err(SupervisorError::Unidentified);
         };
@@ -2629,7 +2602,7 @@ mod tests {
     }
 
     #[test]
-    fn clearing_connected_state_falls_back_to_process_state() {
+    fn supervisor_reports_child_starting_without_websocket_state() {
         let directory = tempdir().unwrap();
         let script = make_script(
             &directory.path().join("fake-obs"),
@@ -2640,14 +2613,6 @@ mod tests {
             Supervisor::with_timing(Duration::from_secs(1), Duration::from_secs(60));
 
         supervisor.start(&setup, false, None).unwrap();
-        supervisor.mark_connected(setup.id, true);
-        assert_eq!(
-            supervisor.state(&setup),
-            crate::relay::PcObsState::Connected
-        );
-
-        supervisor.clear_connected(setup.id);
-
         assert_eq!(supervisor.state(&setup), crate::relay::PcObsState::Starting);
         supervisor.stop(&setup).unwrap();
     }
@@ -3380,7 +3345,6 @@ int main(int argc, char **argv) {
         supervisor
             .adopted
             .insert(setup.id, (setup.clone(), pid, start_time));
-        supervisor.connected.insert(setup.id);
         supervisor.crashed_pending.insert(setup.id);
         supervisor.crashed_state.insert(setup.id);
 
@@ -3397,7 +3361,6 @@ int main(int argc, char **argv) {
         assert!(reaped, "forgotten child was not reaped");
         assert!(!supervisor.has_child(setup.id));
         assert!(!supervisor.adopted.contains_key(&setup.id));
-        assert!(!supervisor.connected.contains(&setup.id));
         assert!(!supervisor.crashed_pending.contains(&setup.id));
         assert!(!supervisor.crashed_state.contains(&setup.id));
         assert_eq!(process_start_time(pid), Some(start_time));

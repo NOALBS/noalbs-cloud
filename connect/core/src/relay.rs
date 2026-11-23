@@ -1,7 +1,5 @@
 use std::{
     collections::HashMap,
-    future::Future,
-    pin::Pin,
     sync::{
         Arc,
         atomic::{AtomicU64, Ordering},
@@ -12,8 +10,7 @@ use std::{
 use crate::logs::ConnectLogUpload;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use common::programs::ProgramStatus;
-use futures_util::{SinkExt, StreamExt};
-use obs_protocol::{GetCurrentProgramScene, OutputStatus, RequestKind};
+use futures_util::{StreamExt, stream::FuturesUnordered};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -25,11 +22,12 @@ use tokio::{
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
 mod cloud;
+mod local;
 mod obs;
 
 use cloud::{CloudBody, CommandResult, identify_payload, send_cloud, send_message};
+use local::{LocalObs, RawRequest};
 pub use obs::stop_active_streams;
-use obs::{PendingCall, RawRequests, connect_obs, decode_response, get_obs_version};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -61,6 +59,43 @@ pub struct ObsTelemetry {
     pub record_active: bool,
     pub last_program_scene: Option<String>,
     pub obs_version: Option<String>,
+    stream_fresh: bool,
+    record_fresh: bool,
+}
+
+impl ObsTelemetry {
+    pub fn current_outputs_active(&self) -> Option<bool> {
+        if (self.stream_fresh && self.stream_active) || (self.record_fresh && self.record_active) {
+            Some(true)
+        } else if self.stream_fresh && self.record_fresh {
+            Some(false)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ObsHealth {
+    #[default]
+    Waiting,
+    Connected,
+    Disconnected,
+    Disabled,
+}
+
+impl ObsHealth {
+    pub fn display(self, process: PcObsState) -> PcObsState {
+        match (self, process) {
+            (Self::Disabled, _) => PcObsState::WebsocketDisabled,
+            (Self::Connected, _) => PcObsState::Connected,
+            (
+                Self::Disconnected,
+                PcObsState::Starting | PcObsState::WaitingForInput | PcObsState::Unknown,
+            ) => PcObsState::NotResponding,
+            _ => process,
+        }
+    }
 }
 
 pub use common::programs::ConnectCommandAction as ObsAction;
@@ -80,7 +115,7 @@ pub struct LinkConfig {
     pub obs_port: Option<u16>,
     pub obs_password: String,
     pub use_dashboard_obs_settings: bool,
-    pub state_tx: watch::Sender<PcObsState>,
+    pub obs_health: watch::Sender<ObsHealth>,
     pub telemetry_tx: watch::Sender<ObsTelemetry>,
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
     pub obs_auth_failed: watch::Sender<bool>,
@@ -154,33 +189,68 @@ pub async fn run_link_with_programs(
 }
 
 pub async fn run_link_with_programs_and_state(
+    config: LinkConfig,
+    obs_state: watch::Receiver<PcObsState>,
+    programs: watch::Receiver<Vec<ProgramStatus>>,
+    watchdog: watch::Sender<WatchdogMode>,
+    link_state: watch::Sender<CloudLinkState>,
+) -> Result<(), RelayError> {
+    crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
+    crate::install_crypto_provider();
+    let local = LocalObs::new(&config);
+    tokio::select! {
+        result = run_cloud(config, obs_state, programs, watchdog, link_state, &local) => result,
+        () = local.run() => unreachable!("the OBS worker runs for the lifetime of the relay"),
+    }
+}
+
+const INITIAL_BACKOFF: Duration = Duration::from_millis(500);
+
+fn retry_delay(backoff: &mut Duration, identified: bool) -> Duration {
+    if identified {
+        *backoff = INITIAL_BACKOFF;
+    }
+    let delay = *backoff;
+    *backoff = (*backoff * 2).min(Duration::from_secs(10));
+    delay
+}
+
+async fn run_cloud(
     mut config: LinkConfig,
     mut obs_state: watch::Receiver<PcObsState>,
     mut programs: watch::Receiver<Vec<ProgramStatus>>,
     watchdog: watch::Sender<WatchdogMode>,
     link_state: watch::Sender<CloudLinkState>,
+    local: &LocalObs,
 ) -> Result<(), RelayError> {
-    crate::url_security::validate_link_url(&config.link_url).map_err(RelayError::UnsafeUrl)?;
-    let mut backoff = Duration::from_millis(500);
+    let mut backoff = INITIAL_BACKOFF;
     loop {
         link_state.send_replace(CloudLinkState::Reconnecting);
-        if let Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) = connect_once(
+        match connect_once(
             &mut config,
             &mut obs_state,
             &mut programs,
             &watchdog,
             &link_state,
+            local,
         )
         .await
         {
-            if matches!(error, RelayError::TakenOver) {
-                link_state.send_replace(CloudLinkState::TakenOver);
+            Err(error @ (RelayError::InvalidToken | RelayError::TakenOver)) => {
+                if matches!(error, RelayError::TakenOver) {
+                    link_state.send_replace(CloudLinkState::TakenOver);
+                }
+                return Err(error);
             }
-            return Err(error);
+            Err(error) => tracing::debug!(%error, "Cloud websocket unavailable"),
+            Ok(()) => {}
         }
+        let delay = retry_delay(
+            &mut backoff,
+            *link_state.borrow() == CloudLinkState::Connected,
+        );
         link_state.send_replace(CloudLinkState::Reconnecting);
-        tokio::time::sleep(backoff).await;
-        backoff = (backoff * 2).min(Duration::from_secs(10));
+        tokio::time::sleep(delay).await;
     }
 }
 
@@ -190,103 +260,28 @@ async fn connect_once(
     programs: &mut watch::Receiver<Vec<ProgramStatus>>,
     watchdog: &watch::Sender<WatchdogMode>,
     link_state: &watch::Sender<CloudLinkState>,
+    local: &LocalObs,
 ) -> Result<(), RelayError> {
-    crate::install_crypto_provider();
-    let mut obs_port = if config.use_dashboard_obs_settings {
-        None
-    } else {
-        config.obs_port
-    };
-    let mut obs_password = if config.use_dashboard_obs_settings {
-        String::new()
-    } else {
-        config.obs_password.clone()
-    };
-    if !config.use_dashboard_obs_settings {
-        let _ = config
-            .effective_obs_tx
-            .send(obs_port.map(|port| (port, obs_password.clone())));
-    }
-    let mut obs = if let Some(port) = obs_port {
-        match tokio::time::timeout(Duration::from_secs(5), connect_obs(port, &obs_password)).await {
-            Ok(Ok(socket)) => {
-                config.obs_auth_failed.send_if_modified(clear_auth_failure);
-                let _ = config.state_tx.send(PcObsState::Connected);
-                config.activity.fetch_add(1, Ordering::Relaxed);
-                Some(socket)
-            }
-            failure => {
-                if matches!(failure, Ok(Err(RelayError::ObsAuthentication))) {
-                    config.obs_auth_failed.send_if_modified(set_auth_failure);
-                }
-                let _ = config.state_tx.send(PcObsState::Starting);
-                None
-            }
-        }
-    } else {
-        None
-    };
-    let obs_version = if let Some(socket) = obs.as_mut() {
-        get_obs_version(socket).await.unwrap_or_default()
-    } else {
-        None
-    };
     let (mut upstream, _) =
         tokio::time::timeout(Duration::from_secs(15), connect_async(&config.link_url))
             .await
             .map_err(|_| link_timeout("upstream connection timed out"))??;
-    send_message(
-        &mut upstream,
-        identify_payload(config, obs_version.as_deref()),
-    )
-    .await?;
-    let current_state = *obs_state.borrow();
-    send_pc_state(&mut upstream, current_state).await?;
-    let current_programs = programs.borrow().clone();
+    let mut sessions = local.session.subscribe();
+    let mut health = local.health.subscribe();
+    let mut telemetry = local.telemetry.subscribe();
+    let mut events = local.events.subscribe();
+    let version = telemetry.borrow().obs_version.clone();
+    send_message(&mut upstream, identify_payload(config, version.as_deref())).await?;
+    let mut published = PublishedState::default();
+    let initial = *obs_state.borrow_and_update();
+    published
+        .send_pc_state(&mut upstream, initial, local, true)
+        .await?;
+    let current_programs = programs.borrow_and_update().clone();
     send_programs(&mut upstream, current_programs).await?;
-    if obs.is_some() {
-        send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
-        send_pc_state(&mut upstream, PcObsState::Connected).await?;
-    } else if obs_port.is_some() {
-        send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
-    }
-    let mut pending_samples = if let Some(socket) = obs.as_mut() {
-        start_sampling(socket).await?
-    } else {
-        Vec::new()
-    };
-    let mut obs_retry = tokio::time::interval_at(
-        tokio::time::Instant::now() + Duration::from_secs(2),
-        Duration::from_secs(2),
-    );
-    let mut meter_tick = tokio::time::interval(Duration::from_millis(200));
-    let mut stats_tick = tokio::time::interval_at(
-        tokio::time::Instant::now() + Duration::from_secs(5),
-        Duration::from_secs(5),
-    );
-    let mut raw_requests = RawRequests::default();
-    let mut command_replies = futures_util::stream::FuturesUnordered::<
-        Pin<
-            Box<
-                dyn Future<
-                        Output = (
-                            String,
-                            Result<
-                                Result<Option<ConnectLogUpload>, String>,
-                                oneshot::error::RecvError,
-                            >,
-                        ),
-                    > + Send,
-            >,
-        >,
-    >::new();
-    let mut pending_meters = HashMap::<String, Vec<Vec<f64>>>::new();
-    let mut missed_stats = 0_u8;
-    let mut telemetry = ObsTelemetry {
-        obs_version: obs_version.clone(),
-        ..ObsTelemetry::default()
-    };
-    let _ = config.telemetry_tx.send(telemetry.clone());
+    published.send_session(&mut upstream, local).await?;
+    let mut command_replies = FuturesUnordered::new();
+    let mut raw_replies = FuturesUnordered::new();
     let mut identified = false;
     let mut request_error_kind = None;
     let mut last_received = tokio::time::Instant::now();
@@ -300,67 +295,39 @@ async fn connect_once(
                 return Err(link_timeout("no upstream frames received for 45 seconds"));
             }
             _ = ping_tick.tick() => {
-                upstream.send(Message::Ping(Vec::new().into())).await?;
+                cloud::send_frame(&mut upstream, Message::Ping(Vec::new().into())).await?;
             }
-            _ = obs_retry.tick(), if obs.is_none() && obs_port.is_some() => {
-                if let Some(port) = obs_port {
-                    match tokio::time::timeout(
-                        Duration::from_secs(5),
-                        connect_obs(port, &obs_password),
-                    ).await {
-                        Ok(Ok(mut socket)) => {
-                            config.obs_auth_failed.send_if_modified(clear_auth_failure);
-                            if let Ok(Some(version)) = get_obs_version(&mut socket).await {
-                                telemetry.obs_version = Some(version);
-                                let _ = config.telemetry_tx.send(telemetry.clone());
-                            }
-                            pending_samples = start_sampling(&mut socket).await?;
-                            obs = Some(socket);
-                            missed_stats = 0;
-                            send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
-                            let _ = config.state_tx.send(PcObsState::Connected);
-                            send_pc_state(&mut upstream, PcObsState::Connected).await?;
-                            config.activity.fetch_add(1, Ordering::Relaxed);
-                        }
-                        Ok(Err(RelayError::ObsAuthentication)) => {
-                            config.obs_auth_failed.send_if_modified(set_auth_failure);
-                        }
-                        _ => {}
+            Ok(()) = sessions.changed() => {
+                published.send_session(&mut upstream, local).await?;
+            }
+            Ok(()) = health.changed() => {
+                let process = *obs_state.borrow();
+                published.send_pc_state(&mut upstream, process, local, false).await?;
+            }
+            Ok(()) = telemetry.changed() => {
+                let process = *obs_state.borrow();
+                published.send_pc_state(&mut upstream, process, local, false).await?;
+            }
+            Ok(()) = obs_state.changed() => {
+                let process = *obs_state.borrow_and_update();
+                published.send_pc_state(&mut upstream, process, local, false).await?;
+            }
+            event = events.recv() => {
+                match event {
+                    Ok(event) if local.session.borrow().as_ref().is_some_and(|session| session.id == event.session) => {
+                        published.send_session(&mut upstream, local).await?;
+                        send_cloud(&mut upstream, None, CloudBody::ObsRawEvent(event.value)).await?;
                     }
-                }
-            }
-            _ = meter_tick.tick() => {
-                raw_requests.expire();
-                pending_samples.retain(|(sample, call)| *sample == Sample::Stats || !call.expired());
-                if let Some(meters) = take_volume_meters(&mut pending_meters) {
-                    send_cloud(&mut upstream, None, CloudBody::ObsRawEvent(serde_json::to_value(meters)?)).await?;
-                }
-            }
-            _ = stats_tick.tick(), if obs.is_some() => {
-                if let Some(index) = pending_samples.iter().position(|(sample, _)| *sample == Sample::Stats) {
-                    if !pending_samples[index].1.expired() {
-                        continue;
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                        tracing::debug!(skipped, "Cloud websocket fell behind local OBS events");
                     }
-                    pending_samples.swap_remove(index);
-                    missed_stats = missed_stats.saturating_add(1);
-                }
-                if missed_stats >= 3 {
-                    obs = None;
-                    raw_requests.clear();
-                    pending_samples.clear();
-                    let _ = config.state_tx.send(PcObsState::NotResponding);
-                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
-                    send_pc_state(&mut upstream, PcObsState::NotResponding).await?;
-                    continue;
-                }
-                if let Some(socket) = obs.as_mut() {
-                    pending_samples.push((Sample::Stats, PendingCall::send(socket, RequestKind::GetStats).await?));
+                    _ => {}
                 }
             }
-            changed = obs_state.changed() => {
-                if changed.is_ok() {
-                    let current_state = *obs_state.borrow();
-                    send_pc_state(&mut upstream, current_state).await?;
+            Some((token, result)) = raw_replies.next() => {
+                let token: String = token;
+                if let Ok(value) = result {
+                    send_cloud(&mut upstream, Some(&token), CloudBody::ObsRawResponse(value)).await?;
                 }
             }
             changed = programs.changed() => {
@@ -380,15 +347,19 @@ async fn connect_once(
                 let Some(message) = message else { return Ok(()); };
                 let message = message?;
                 last_received = tokio::time::Instant::now();
+                if matches!(message, Message::Close(_)) {
+                    return Ok(());
+                }
                 let Message::Text(text) = message else { continue; };
                 let value: Value = serde_json::from_str(&text)?;
-                if value.get("identifyAck").and_then(Value::as_bool) == Some(true) {
+                let ack = value.get("identifyAck").or_else(|| value.get("identify_ack")).and_then(Value::as_bool);
+                if ack == Some(true) {
                     link_state.send_replace(CloudLinkState::Connected);
                 }
                 if let Some(kind) = value.pointer("/requestError/kind").and_then(Value::as_str) {
                     request_error_kind = Some(kind.to_owned());
                 }
-                if value.get("identifyAck").or_else(|| value.get("identify_ack")).and_then(Value::as_bool) == Some(false) {
+                if ack == Some(false) {
                     return Err(match request_error_kind.as_deref() {
                         Some("ALREADY_CONNECTED") => RelayError::TakenOver,
                         _ => RelayError::InvalidToken,
@@ -401,35 +372,31 @@ async fn connect_once(
                     let _ = watchdog.send(mode);
                 }
                 if config.use_dashboard_obs_settings
-                    && let Some((port, password)) = extract_obs_config(&value)
-                    && (obs_port != Some(port) || obs_password != password)
+                    && let Some(settings) = extract_obs_config(&value)
                 {
-                    obs = None;
-                    raw_requests.clear();
-                    pending_samples.clear();
-                    missed_stats = 0;
-                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
-                    obs_port = Some(port);
-                    obs_password = password;
-                    config.obs_auth_failed.send_if_modified(clear_auth_failure);
-                    let _ = config
-                        .effective_obs_tx
-                        .send(Some((port, obs_password.clone())));
-                    let _ = config.state_tx.send(PcObsState::Starting);
-                    send_pc_state(&mut upstream, PcObsState::Starting).await?;
+                    local.credentials.send_if_modified(|current| {
+                        if current.as_ref() == Some(&settings) {
+                            return false;
+                        }
+                        *current = Some(settings);
+                        true
+                    });
                 }
-                if let Some(raw) = value.get("obsRawRequest").or_else(|| value.get("obs_raw_request")) {
+                if let Some(raw) = value.get("obsRawRequest").or_else(|| value.get("obs_raw_request"))
+                    && let Some(session) = local.session.borrow().as_ref()
+                {
                     let request = match raw {
                         Value::String(text) => serde_json::from_str::<Value>(text)?,
                         other => other.clone(),
                     };
-                    if let Some(socket) = obs.as_mut()
-                        && raw_requests.track(&request, value.get("token").and_then(Value::as_str))
-                    {
-                        socket.send(Message::Text(request.to_string().into())).await?;
-                        if changes_obs(&request) {
-                            config.activity.fetch_add(1, Ordering::Relaxed);
-                        }
+                    let (reply, receiver) = oneshot::channel();
+                    let token = value.get("token").and_then(Value::as_str);
+                    if session.requests.try_send(RawRequest {
+                        value: request,
+                        reply: token.map(|_| reply),
+                    }).is_ok() && let Some(token) = token {
+                        let token = token.to_owned();
+                        raw_replies.push(async move { (token, receiver.await) });
                     }
                 }
                 if let Some(command) = value.get("connectCommand") {
@@ -440,9 +407,9 @@ async fn connect_once(
                         (Some(token), Some(action)) => {
                             let (reply, receiver) = oneshot::channel();
                             if config.commands.send(ObsCommandRequest { action, reply }).is_ok() {
-                                command_replies.push(Box::pin(async move {
+                                command_replies.push(async move {
                                     (token, receiver.await)
-                                }));
+                                });
                             } else {
                                 send_command_result(&mut upstream, &token, Err(COMMAND_UNAVAILABLE.into())).await?;
                             }
@@ -453,119 +420,68 @@ async fn connect_once(
                         _ => {}
                     }
                 }
-                if !identified
-                    && value
-                        .get("identifyAck")
-                        .or_else(|| value.get("identify_ack"))
-                        .and_then(Value::as_bool)
-                        == Some(true)
-                {
+                if !identified && ack == Some(true) {
                     identified = true;
                     let current_state = *obs_state.borrow();
-                    send_pc_state(&mut upstream, current_state).await?;
+                    published.send_pc_state(&mut upstream, current_state, local, true).await?;
                 }
             }
             Some((token, result)) = command_replies.next(), if !command_replies.is_empty() => {
                 send_command_result(&mut upstream, &token, result.unwrap_or_else(|_| Err(COMMAND_UNAVAILABLE.into()))).await?;
             }
-            message = next_obs(&mut obs) => {
-                let message = match message {
-                    Some(Err(error)) => {
-                        tracing::debug!(%error, "Local OBS websocket disconnected");
-                        None
-                    }
-                    other => other.transpose()?,
-                };
-                let Some(message) = message.filter(|message| !matches!(message, Message::Close(_))) else {
-                    obs = None;
-                    raw_requests.clear();
-                    pending_samples.clear();
-                    missed_stats = 0;
-                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
-                    let _ = config.state_tx.send(PcObsState::NotResponding);
-                    send_pc_state(&mut upstream, PcObsState::NotResponding).await?;
-                    continue;
-                };
-                let Message::Text(text) = message else { continue; };
-                let value: Value = serde_json::from_str(&text)?;
-                let op = value.get("op").and_then(Value::as_u64);
-                if matches!(op, Some(7 | 9)) {
-                    if let Some(index) = pending_samples.iter().position(|(_, call)| call.matches(&value)) {
-                        let (sample, call) = pending_samples.swap_remove(index);
-                        match call.complete(&value).and_then(|data| sample.apply(data, &mut telemetry)) {
-                            Ok(()) if sample == Sample::Stats => missed_stats = 0,
-                            Ok(()) => { let _ = config.telemetry_tx.send(telemetry.clone()); }
-                            Err(error) => {
-                                if sample == Sample::Stats {
-                                    if matches!(error, RelayError::ObsTimeout) {
-                                        missed_stats = missed_stats.saturating_add(1);
-                                    } else {
-                                        missed_stats = 0;
-                                    }
-                                }
-                                tracing::debug!(?sample, %error, "OBS sample failed");
-                            }
-                        }
-                        continue;
-                    }
-                    if let Some(token) = raw_requests.resolve(&value) {
-                        send_cloud(&mut upstream, Some(&token), CloudBody::ObsRawResponse(value)).await?;
-                    }
-                } else if op == Some(5) {
-                    let event = value.pointer("/d/eventType").and_then(Value::as_str).unwrap_or_default();
-                    if event == "InputSettingsChanged" { continue; }
-                    if event == "StreamStateChanged"
-                        && let Some(active) = value.pointer("/d/eventData/outputActive").and_then(Value::as_bool)
-                    {
-                        telemetry.stream_active = active;
-                        let _ = config.telemetry_tx.send(telemetry.clone());
-                    } else if event == "CurrentProgramSceneChanged"
-                        && let Some(scene) = value.pointer("/d/eventData/sceneName").and_then(Value::as_str)
-                    {
-                        telemetry.last_program_scene = Some(scene.to_owned());
-                        let _ = config.telemetry_tx.send(telemetry.clone());
-                    } else if event == "RecordStateChanged"
-                        && let Some(active) = value.pointer("/d/eventData/outputActive").and_then(Value::as_bool)
-                    {
-                        telemetry.record_active = active;
-                        let _ = config.telemetry_tx.send(telemetry.clone());
-                    }
-                    if event == "InputVolumeMeters" {
-                        collect_volume_meters(&mut pending_meters, &value);
-                        continue;
-                    }
-                    config.activity.fetch_add(1, Ordering::Relaxed);
-                    send_cloud(&mut upstream, None, CloudBody::ObsRawEvent(value)).await?;
-                } else if op == Some(2) {
-                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
-                    let _ = config.state_tx.send(PcObsState::Connected);
-                    send_pc_state(&mut upstream, PcObsState::Connected).await?;
-                    config.activity.fetch_add(1, Ordering::Relaxed);
-                }
-            }
         }
     }
 }
 
-fn set_auth_failure(failed: &mut bool) -> bool {
-    !std::mem::replace(failed, true)
+#[derive(Default)]
+struct PublishedState {
+    session: Option<uuid::Uuid>,
+    pc: Option<(PcObsState, Option<String>)>,
 }
 
-fn clear_auth_failure(failed: &mut bool) -> bool {
-    std::mem::replace(failed, false)
-}
-
-async fn next_obs(
-    obs: &mut Option<Socket>,
-) -> Option<Result<Message, tokio_tungstenite::tungstenite::Error>> {
-    match obs {
-        Some(socket) => socket.next().await,
-        None => std::future::pending().await,
+impl PublishedState {
+    async fn send_session(
+        &mut self,
+        socket: &mut Socket,
+        local: &LocalObs,
+    ) -> Result<(), RelayError> {
+        let current = local.session.borrow().as_ref().map(|session| session.id);
+        if self.session != current {
+            if self.session.is_some() {
+                send_cloud(socket, None, CloudBody::ObsWsConnected(false)).await?;
+            }
+            if current.is_some() {
+                send_cloud(socket, None, CloudBody::ObsWsConnected(true)).await?;
+            }
+            self.session = current;
+        }
+        Ok(())
     }
-}
 
-async fn send_pc_state(socket: &mut Socket, state: PcObsState) -> Result<(), RelayError> {
-    send_cloud(socket, None, CloudBody::PcState { obs: state }).await
+    async fn send_pc_state(
+        &mut self,
+        socket: &mut Socket,
+        process: PcObsState,
+        local: &LocalObs,
+        force: bool,
+    ) -> Result<(), RelayError> {
+        let obs = local.health.borrow().display(process);
+        let version = local.telemetry.borrow().obs_version.clone();
+        if force || !matches!(&self.pc, Some((state, known)) if obs == *state && version == *known)
+        {
+            send_cloud(
+                socket,
+                None,
+                CloudBody::PcState {
+                    obs,
+                    obs_version: version.as_deref(),
+                },
+            )
+            .await?;
+            self.pc = Some((obs, version));
+        }
+        Ok(())
+    }
 }
 
 async fn send_programs(
@@ -588,47 +504,6 @@ async fn send_command_result(
         CloudBody::ConnectCommandResult(CommandResult::from(result)),
     )
     .await
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Sample {
-    Scene,
-    Stream,
-    Record,
-    Stats,
-}
-
-impl Sample {
-    fn apply(self, data: Option<Value>, telemetry: &mut ObsTelemetry) -> Result<(), RelayError> {
-        match self {
-            Self::Scene => {
-                let scene: GetCurrentProgramScene = decode_response(data)?;
-                telemetry.last_program_scene = Some(scene.current_program_scene_name);
-            }
-            Self::Stream | Self::Record => {
-                let status: OutputStatus = decode_response(data)?;
-                if self == Self::Stream {
-                    telemetry.stream_active = status.output_active;
-                } else {
-                    telemetry.record_active = status.output_active;
-                }
-            }
-            Self::Stats => {}
-        }
-        Ok(())
-    }
-}
-
-async fn start_sampling(socket: &mut Socket) -> Result<Vec<(Sample, PendingCall)>, RelayError> {
-    let mut samples = Vec::with_capacity(4);
-    for (sample, kind) in [
-        (Sample::Scene, RequestKind::GetCurrentProgramScene),
-        (Sample::Stream, RequestKind::GetStreamStatus),
-        (Sample::Record, RequestKind::GetRecordStatus),
-    ] {
-        samples.push((sample, PendingCall::send(socket, kind).await?));
-    }
-    Ok(samples)
 }
 
 fn parse_watchdog(value: &str) -> Option<WatchdogMode> {
@@ -827,11 +702,11 @@ mod tests {
     use serde_json::json;
     use tokio_tungstenite::{accept_async, tungstenite::Message};
 
+    use super::obs::connect_obs;
     use super::{
         Arc, AtomicU64, ConnectLogUpload, Duration, LinkConfig, OutputStopOutcome, PcObsState,
-        RelayError, changes_obs, collect_volume_meters, connect_obs, extract_obs_config,
-        get_obs_version, hash_base64, identify_payload, parse_watchdog, run_link,
-        stop_active_streams, take_volume_meters,
+        RelayError, changes_obs, collect_volume_meters, extract_obs_config, hash_base64,
+        identify_payload, parse_watchdog, run_link, stop_active_streams, take_volume_meters,
     };
 
     #[test]
@@ -930,7 +805,7 @@ mod tests {
             obs_port: None,
             obs_password: String::new(),
             use_dashboard_obs_settings: false,
-            state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
+            obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -970,7 +845,7 @@ mod tests {
             obs_port: None,
             obs_password: String::new(),
             use_dashboard_obs_settings: false,
-            state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
+            obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -980,6 +855,46 @@ mod tests {
         }
     }
 
+    #[test]
+    fn cloud_backoff_resets_after_a_successful_identification() {
+        let mut backoff = super::INITIAL_BACKOFF;
+        let delay = super::retry_delay(&mut backoff, false);
+        assert_eq!(delay, Duration::from_millis(500));
+        for _ in 0..10 {
+            super::retry_delay(&mut backoff, false);
+        }
+        assert_eq!(
+            super::retry_delay(&mut backoff, false),
+            Duration::from_secs(10)
+        );
+        assert_eq!(
+            super::retry_delay(&mut backoff, true),
+            Duration::from_millis(500)
+        );
+        assert_eq!(
+            super::retry_delay(&mut backoff, false),
+            Duration::from_secs(1)
+        );
+    }
+
+    #[test]
+    fn idle_needs_fresh_output_samples_but_watchdog_keeps_the_last_stream_state() {
+        let mut telemetry = super::ObsTelemetry {
+            stream_active: true,
+            last_program_scene: Some("Main".into()),
+            ..Default::default()
+        };
+        assert!(telemetry.stream_active);
+        assert_eq!(telemetry.last_program_scene.as_deref(), Some("Main"));
+        assert_eq!(telemetry.current_outputs_active(), None);
+        telemetry.record_fresh = true;
+        assert_eq!(telemetry.current_outputs_active(), None);
+        telemetry.stream_fresh = true;
+        assert_eq!(telemetry.current_outputs_active(), Some(true));
+        telemetry.stream_active = false;
+        assert_eq!(telemetry.current_outputs_active(), Some(false));
+    }
+
     async fn idle_connection(
         config: &mut LinkConfig,
         link: &tokio::sync::watch::Sender<super::CloudLinkState>,
@@ -987,7 +902,11 @@ mod tests {
         let (_state_tx, mut state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
-        super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link).await
+        let local = super::LocalObs::new(config);
+        tokio::select! {
+            result = super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link, &local) => result,
+            () = local.run() => unreachable!(),
+        }
     }
 
     #[tokio::test]
@@ -1209,7 +1128,7 @@ mod tests {
             }
         });
 
-        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, mut watchdog_rx) =
@@ -1223,7 +1142,7 @@ mod tests {
             obs_port: None,
             obs_password: String::new(),
             use_dashboard_obs_settings: false,
-            state_tx,
+            obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
             telemetry_tx,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
             obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -1234,12 +1153,14 @@ mod tests {
         let relay = tokio::spawn(async move {
             let mut state_rx = state_rx;
             let mut config = config;
+            let local = super::LocalObs::new(&config);
             super::connect_once(
                 &mut config,
                 &mut state_rx,
                 &mut programs_rx,
                 &watchdog_tx,
                 &tokio::sync::watch::channel(super::CloudLinkState::Reconnecting).0,
+                &local,
             )
             .await
         });
@@ -1324,9 +1245,15 @@ mod tests {
     async fn obs_version_comes_from_get_version() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
+        let upstream = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(upstream.local_addr().unwrap().port());
+        config.obs_port = Some(port);
+        let (hello, wait_hello) = tokio::sync::oneshot::channel();
+        let (version, wait_version) = tokio::sync::oneshot::channel();
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
+            wait_hello.await.unwrap();
             socket
                 .send(Message::Text(
                     json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}})
@@ -1350,6 +1277,7 @@ mod tests {
             let request: serde_json::Value = serde_json::from_str(&request).unwrap();
             assert_eq!(request.pointer("/d/requestType").unwrap(), "GetVersion");
             let request_id = request.pointer("/d/requestId").unwrap().clone();
+            wait_version.await.unwrap();
             socket
                 .send(Message::Text(
                     json!({"op":7,"d":{"requestId":request_id,"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}})
@@ -1358,12 +1286,52 @@ mod tests {
                 ))
                 .await
                 .unwrap();
+            while socket.next().await.is_some_and(|message| message.is_ok()) {}
         });
-        let mut socket = connect_obs(port, "").await.unwrap();
-        assert_eq!(
-            get_obs_version(&mut socket).await.unwrap(),
-            Some("31.0.0".into())
-        );
+        let cloud = tokio::spawn(async move {
+            let mut socket = accept_async(upstream.accept().await.unwrap().0)
+                .await
+                .unwrap();
+            let identify: serde_json::Value =
+                serde_json::from_str(socket.next().await.unwrap().unwrap().to_text().unwrap())
+                    .unwrap();
+            assert_eq!(
+                identify.pointer("/identify/obsVersion"),
+                Some(&serde_json::Value::Null)
+            );
+            hello.send(()).unwrap();
+            socket
+                .send(Message::text(json!({"identifyAck":true}).to_string()))
+                .await
+                .unwrap();
+            let mut version = Some(version);
+            loop {
+                let frame: serde_json::Value =
+                    serde_json::from_str(socket.next().await.unwrap().unwrap().to_text().unwrap())
+                        .unwrap();
+                if frame["obsWsConnected"] == true
+                    && let Some(version) = version.take()
+                {
+                    version.send(()).unwrap();
+                }
+                if frame["pcState"]["obsVersion"] == "31.0.0" {
+                    assert_eq!(frame["pcState"]["obs"], "connected");
+                    socket
+                        .send(Message::text(json!({"identifyAck":false}).to_string()))
+                        .await
+                        .unwrap();
+                    break;
+                }
+            }
+        });
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (watchdog, _) = tokio::sync::watch::channel(super::WatchdogMode::Off);
+        let result =
+            tokio::time::timeout(Duration::from_secs(3), run_link(config, state_rx, watchdog))
+                .await
+                .unwrap();
+        assert!(matches!(result, Err(RelayError::InvalidToken)));
+        cloud.await.unwrap();
         server.await.unwrap();
     }
 
@@ -1540,7 +1508,7 @@ mod tests {
                     .await
                     .unwrap();
             }
-            let _ = socket.next().await;
+            while socket.next().await.is_some_and(|message| message.is_ok()) {}
         });
 
         let link_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -1555,12 +1523,19 @@ mod tests {
             };
             let identify: serde_json::Value = serde_json::from_str(&identify).unwrap();
             assert_eq!(identify.pointer("/identify/client").unwrap(), "connect");
-            assert_eq!(identify.pointer("/identify/obsVersion").unwrap(), "31.0.0");
-            let Message::Text(pc_state) = socket.next().await.unwrap().unwrap() else {
-                panic!("pcState expected");
-            };
-            let pc_state: serde_json::Value = serde_json::from_str(&pc_state).unwrap();
-            assert_eq!(pc_state.pointer("/pcState/obs").unwrap(), "connected");
+            assert!(identify.pointer("/identify/obsVersion").is_some());
+            let mut connected = false;
+            let mut version = false;
+            while !(connected && version) {
+                let frame: serde_json::Value =
+                    serde_json::from_str(socket.next().await.unwrap().unwrap().to_text().unwrap())
+                        .unwrap();
+                connected |= frame["obsWsConnected"] == true;
+                if frame["pcState"]["obsVersion"] == "31.0.0" {
+                    assert_eq!(frame["pcState"]["obs"], "connected");
+                    version = true;
+                }
+            }
             let raw_request = if batch {
                 json!({"op":8,"d":{"requestId":"request-1","requests":[{"requestType":"GetVersion"}]}})
             } else {
@@ -1650,7 +1625,7 @@ mod tests {
             }
         });
 
-        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (telemetry_tx, telemetry_rx) =
             tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
@@ -1675,7 +1650,7 @@ mod tests {
                     obs_port: Some(obs_port),
                     obs_password: String::new(),
                     use_dashboard_obs_settings: false,
-                    state_tx,
+                    obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -1695,6 +1670,11 @@ mod tests {
             Some("Main")
         );
         assert!(telemetry_rx.borrow().stream_active);
+        if reconnect {
+            assert_eq!(telemetry_rx.borrow().current_outputs_active(), None);
+        } else {
+            assert_eq!(telemetry_rx.borrow().current_outputs_active(), Some(true));
+        }
         consumer.await.unwrap();
         fake_link.await.unwrap();
         if abrupt {
@@ -1793,7 +1773,7 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
         let result = run_link(
@@ -1805,7 +1785,7 @@ mod tests {
                 obs_port: None,
                 obs_password: String::new(),
                 use_dashboard_obs_settings: false,
-                state_tx,
+                obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
                 telemetry_tx,
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
                 obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -1842,7 +1822,7 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
         let result = tokio::time::timeout(
@@ -1856,7 +1836,7 @@ mod tests {
                     obs_port: None,
                     obs_password: String::new(),
                     use_dashboard_obs_settings: false,
-                    state_tx,
+                    obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
                     obs_auth_failed: tokio::sync::watch::channel(false).0,
@@ -1920,7 +1900,7 @@ mod tests {
                 .unwrap();
             second_setting_seen_rx.await.unwrap();
         });
-        let (state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
+        let (_state_tx, state_rx) = tokio::sync::watch::channel(PcObsState::Unknown);
         let (telemetry_tx, _) = tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (effective_obs_tx, _) = tokio::sync::watch::channel(None);
         let (watchdog_tx, mut watchdog_rx) =
@@ -1934,7 +1914,7 @@ mod tests {
                 obs_port: None,
                 obs_password: String::new(),
                 use_dashboard_obs_settings: false,
-                state_tx,
+                obs_health: tokio::sync::watch::channel(super::ObsHealth::Waiting).0,
                 telemetry_tx,
                 effective_obs_tx,
                 obs_auth_failed: tokio::sync::watch::channel(false).0,
