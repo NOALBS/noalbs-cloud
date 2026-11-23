@@ -11,6 +11,7 @@ publish = false
 axum = "0.8.9"
 common = { path = "../crates/common" }
 connect-core = { path = "core" }
+obs-protocol = { path = "../crates/obs-protocol" }
 nix = "0.32.0"
 objc2-app-kit = { version = "0.3.2", default-features = false }
 plist = "1.10.4"

@@ -553,23 +553,35 @@ pub(crate) async fn open_external_url(app: tauri::AppHandle, url: String) -> Res
 }
 
 #[tauri::command]
-async fn start_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn start_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Start).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Start).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
-async fn stop_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn stop_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Stop).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Stop).await?;
     Ok(get_state(state))
 }
 
 #[tauri::command]
-async fn restart_obs(setup_id: String, state: State<'_, AppState>) -> Result<UiState, String> {
+async fn restart_obs(
+    app: tauri::AppHandle,
+    setup_id: String,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
     let id = uuid::Uuid::parse_str(&setup_id).map_err(|error| error.to_string())?;
-    run_obs_action(state.inner(), id, ObsAction::Restart).await?;
+    run_obs_action(&app, state.inner(), id, ObsAction::Restart).await?;
     Ok(get_state(state))
 }
 
@@ -598,6 +610,7 @@ fn begin_obs_action(
 }
 
 async fn run_obs_action(
+    app: &tauri::AppHandle,
     state: &AppState,
     setup_id: uuid::Uuid,
     action: ObsAction,
@@ -613,14 +626,26 @@ async fn run_obs_action(
         .cloned()
         .ok_or_else(|| "setup not found".to_string())?;
 
-    if matches!(action, ObsAction::Stop | ObsAction::Restart)
-        && !stop_setup_streams_with_timeout(
-            Duration::from_secs(25),
-            stop_setup_streams(&setup, state),
-        )
-        .await
-    {
-        tracing::warn!(setup_id = %setup.id, "Timed out stopping streams before OBS action");
+    let graceful_stop = if matches!(action, ObsAction::Stop | ObsAction::Restart) {
+        stop_setup_streams(&setup, state).await
+    } else {
+        Ok(())
+    };
+    apply_obs_process_action(state, &setup, action, graceful_stop, |error| {
+        let _ = app.emit("connect-error", error);
+    })
+}
+
+fn apply_obs_process_action(
+    state: &AppState,
+    setup: &Setup,
+    action: ObsAction,
+    graceful_stop: Result<(), String>,
+    report_error: impl FnOnce(String),
+) -> Result<(), String> {
+    if let Err(error) = graceful_stop {
+        tracing::warn!(setup_id = %setup.id, %error, "Couldn't stop all OBS outputs before process action");
+        report_error(error);
     }
     if matches!(&action, ObsAction::Stop | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Stop) {
@@ -637,18 +662,18 @@ async fn run_obs_action(
         match &action {
             ObsAction::Start => {
                 supervisor
-                    .start(&setup, false, None)
+                    .start(setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
             ObsAction::Stop => {
-                supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                supervisor.stop(setup).map_err(|error| error.to_string())?;
             }
             ObsAction::Restart => {
-                if supervisor.state(&setup) != PcObsState::NotRunning {
-                    supervisor.stop(&setup).map_err(|error| error.to_string())?;
+                if supervisor.state(setup) != PcObsState::NotRunning {
+                    supervisor.stop(setup).map_err(|error| error.to_string())?;
                 }
                 supervisor
-                    .start(&setup, false, None)
+                    .start(setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
             ObsAction::UploadLog
@@ -660,9 +685,9 @@ async fn run_obs_action(
                 return Err("This is not an OBS process action".into());
             }
         }
-        supervisor.state(&setup)
+        supervisor.state(setup)
     };
-    set_link_state(state, setup_id, process_state);
+    set_link_state(state, setup.id, process_state);
     if matches!(&action, ObsAction::Start | ObsAction::Restart) {
         for program in programs::for_obs_action(&setup.programs, ObsLifecycleAction::Start) {
             if !programs::is_running(program)
@@ -672,7 +697,7 @@ async fn run_obs_action(
             }
         }
     }
-    set_link_programs(state, setup_id);
+    set_link_programs(state, setup.id);
     Ok(())
 }
 
@@ -1064,7 +1089,7 @@ fn select_crash_report_file(
         .map(|(file, _)| file)
 }
 
-async fn stop_setup_streams(setup: &Setup, state: &AppState) {
+async fn stop_setup_streams(setup: &Setup, state: &AppState) -> Result<(), String> {
     let obs_state = state
         .supervisor
         .lock()
@@ -1074,7 +1099,7 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
         obs_state,
         PcObsState::Unknown | PcObsState::NotRunning | PcObsState::Crashed
     ) {
-        return;
+        return Ok(());
     }
     let effective = state.link_sessions.lock().ok().and_then(|sessions| {
         sessions
@@ -1088,16 +1113,21 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) {
             local_obs_connection(setup)
         }
     });
-    if let Some((port, password)) = connection {
-        let _ = stop_active_streams(port, &password).await;
+    let Some((port, password)) = connection else {
+        return Ok(());
+    };
+    let result = stop_active_streams(port, &password)
+        .await
+        .map_err(|error| error.to_string())?;
+    let failures = [("stream", result.stream), ("recording", result.recording)]
+        .into_iter()
+        .filter_map(|(output, outcome)| outcome.err().map(|error| format!("{output}: {error}")))
+        .collect::<Vec<_>>();
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(failures.join("; "))
     }
-}
-
-async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> bool
-where
-    F: std::future::Future<Output = ()>,
-{
-    tokio::time::timeout(deadline, future).await.is_ok()
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -1584,6 +1614,7 @@ fn start_link_session(
     let (watchdog_tx, watchdog_rx) = watch::channel(WatchdogMode::Restart);
     let (telemetry_tx, telemetry_rx) = watch::channel(ObsTelemetry::default());
     let (effective_obs_tx, effective_obs_rx) = watch::channel(effective_obs);
+    let (obs_auth_failed, mut obs_auth_failure) = watch::channel(false);
     let (command_tx, mut command_rx) = mpsc::unbounded_channel::<ObsCommandRequest>();
     let (upload_tx, upload_rx) = mpsc::unbounded_channel();
     let activity = Arc::new(AtomicU64::new(0));
@@ -1598,6 +1629,7 @@ fn start_link_session(
         state_tx: state_tx.clone(),
         telemetry_tx,
         effective_obs_tx,
+        obs_auth_failed,
         commands: command_tx,
         unsolicited_uploads: upload_rx,
         activity: activity.clone(),
@@ -1666,6 +1698,14 @@ fn start_link_session(
         let mut tick = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
+                Ok(()) = obs_auth_failure.changed() => {
+                    if *obs_auth_failure.borrow_and_update() {
+                        let _ = monitor_handle.emit(
+                            "connect-error",
+                            connect_core::relay::RelayError::ObsAuthentication.to_string(),
+                        );
+                    }
+                }
                 _ = tick.tick() => {
                     let mut state = *monitor_state.borrow();
                     let app_state = monitor_handle.state::<AppState>();
@@ -1905,16 +1945,14 @@ fn start_link_session(
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding
-                                && !stop_setup_streams_with_timeout(
-                                    Duration::from_secs(25),
-                                    stop_setup_streams(&restart_setup, &app_state),
-                                )
-                                .await
+                                && let Err(error) =
+                                    stop_setup_streams(&restart_setup, &app_state).await
                             {
                                 tracing::warn!(
                                     setup_id = %restart_setup.id,
-                                    "Timed out stopping streams before OBS watchdog restart"
+                                    %error, "Couldn't stop all OBS outputs before watchdog restart"
                                 );
+                                let _ = monitor_handle.emit("connect-error", error);
                             }
                             let restart_result = {
                                 let mut supervisor =
@@ -1990,7 +2028,7 @@ fn start_link_session(
                 }
                 action => {
                     let app_state = command_app.state::<AppState>();
-                    run_obs_action(app_state.inner(), command_setup_id, action)
+                    run_obs_action(&command_app, app_state.inner(), command_setup_id, action)
                         .await
                         .map(|()| None)
                 }
@@ -2417,6 +2455,7 @@ mod tests {
     #[tokio::test]
     async fn cloud_link_state_is_persistent_and_independent_of_obs() {
         let mut setup = Setup::new("Cloud state".into());
+        setup.obs.binary_path = Some(format!("noalbs-test-obs-{}", setup.id).into());
         setup.pairing = Some(connect_core::config::Pairing {
             device_id: uuid::Uuid::new_v4(),
             switcher_id: uuid::Uuid::new_v4(),
@@ -2532,15 +2571,35 @@ mod tests {
         std::fs::remove_dir_all(directory).unwrap();
     }
 
-    #[tokio::test]
-    async fn stream_stop_timeout_returns_when_obs_side_hangs() {
-        assert!(
-            !stop_setup_streams_with_timeout(
-                Duration::from_millis(1),
-                std::future::pending::<()>(),
-            )
-            .await
+    #[test]
+    fn graceful_output_failure_does_not_fail_a_successful_obs_stop() {
+        let mut setup = Setup::default();
+        setup.obs.binary_path = Some(format!("noalbs-test-obs-{}", setup.id).into());
+        let state = AppState {
+            config: Mutex::new(AppConfig {
+                setups: vec![setup.clone()],
+                ..Default::default()
+            }),
+            startup_error: None,
+            store: ConfigStore::new(Default::default()),
+            tokens: TokenStore::new(Default::default()),
+            supervisor: Mutex::new(Supervisor::default()),
+            processes: SharedProcesses::new(),
+            link_sessions: Mutex::new(HashMap::new()),
+            obs_actions_running: Mutex::new(HashSet::new()),
+            pending_verification_urls: Mutex::new(HashMap::new()),
+            updates: updates::UpdateManager::default(),
+        };
+        let mut reported_error = None;
+        let result = apply_obs_process_action(
+            &state,
+            &setup,
+            ObsAction::Stop,
+            Err("Could not stop recording".into()),
+            |error| reported_error = Some(error),
         );
+        assert_eq!(result, Ok(()));
+        assert_eq!(reported_error.as_deref(), Some("Could not stop recording"));
     }
 
     #[test]

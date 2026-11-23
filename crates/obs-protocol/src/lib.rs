@@ -136,6 +136,24 @@ pub struct RequestStatus {
     pub comment: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetVersion {
+    pub obs_version: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetCurrentProgramScene {
+    pub current_program_scene_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OutputStatus {
+    pub output_active: bool,
+}
+
 /// `GetSourceScreenshot`'s answer.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -470,6 +488,7 @@ pub struct Reidentify {
 #[serde(rename_all = "camelCase")]
 pub struct Identify {
     pub rpc_version: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub authentication: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub event_subscriptions: Option<u32>,
@@ -655,6 +674,8 @@ pub enum RequestKind<'a> {
         input_name: &'a str,
         media_action: &'a str,
     },
+    GetVersion,
+    GetCurrentProgramScene,
     GetStats,
     GetStreamStatus,
     GetRecordStatus,

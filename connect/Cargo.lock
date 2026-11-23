@@ -736,6 +736,7 @@ dependencies = [
  "keyring",
  "nix 0.32.0",
  "objc2-app-kit",
+ "obs-protocol",
  "plist",
  "reqwest",
  "rustls",
@@ -3159,6 +3160,16 @@ dependencies = [
  "objc2-app-kit",
  "objc2-core-foundation",
  "objc2-foundation",
+]
+
+[[package]]
+name = "obs-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "uuid",
 ]
 
 [[package]]

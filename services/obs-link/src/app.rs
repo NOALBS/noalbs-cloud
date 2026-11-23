@@ -46,7 +46,6 @@ use crate::{
 const APP_USER_AGENT: &str = concat!("NOALBS-Cloud/", env!("CARGO_PKG_VERSION"));
 /// Requests to the browser source not answered within this are dropped.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-const CONNECT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 const UNSOLICITED_LOG_UPLOADS_PER_HOUR: usize = 10;
 const REQUESTED_LOG_UPLOADS_PER_HOUR: usize = 30;
 const MAX_DECOMPRESSED_LOG_BYTES: u64 = MAX_CONNECT_LOG_RAW_BYTES;
@@ -441,7 +440,7 @@ fn expired_connect_commands(
 ) -> Vec<async_nats::Subject> {
     let tokens = pending
         .iter()
-        .filter(|(_, command)| command.sent.elapsed() >= CONNECT_COMMAND_TIMEOUT)
+        .filter(|(_, command)| Instant::now() >= command.deadline)
         .map(|(token, _)| token.clone())
         .collect::<Vec<_>>();
     tokens
@@ -529,7 +528,7 @@ struct Session {
 
 struct PendingConnectCommand {
     reply: async_nats::Subject,
-    sent: Instant,
+    deadline: Instant,
 }
 
 struct RunningSwitcher {
@@ -1308,6 +1307,7 @@ impl Connection {
                         return Ok(Flow::Continue);
                     }
                 }
+                let timeout = request.reply_timeout();
                 let token = Uuid::new_v4().to_string();
                 self.send_request(
                     RequestKind::ConnectCommand(request.action),
@@ -1319,7 +1319,7 @@ impl Connection {
                         token,
                         PendingConnectCommand {
                             reply,
-                            sent: Instant::now(),
+                            deadline: Instant::now() + timeout,
                         },
                     );
                 }
@@ -2215,13 +2215,12 @@ mod tests {
     use uuid::Uuid;
 
     use super::{
-        CONNECT_COMMAND_TIMEOUT, ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES,
-        ObsSettings, PendingConnectCommand, REQUESTED_LOG_UPLOADS_PER_HOUR, Request, RequestKind,
-        Response, ResponseKind, Settings, UNSOLICITED_LOG_UPLOADS_PER_HOUR,
-        allow_requested_log_upload, allow_unsolicited_log_upload, connect_command_failure,
-        decode_log_upload, expired_connect_commands, invalid_log_upload_reply, parse_config_change,
-        reconnect_device_id, reset_obs_status, set_pc_device_name, should_close_for_reconnect,
-        should_refresh_device_name,
+        ConnectSettings, Identify, MAX_DECOMPRESSED_LOG_BYTES, ObsSettings, PendingConnectCommand,
+        REQUESTED_LOG_UPLOADS_PER_HOUR, Request, RequestKind, Response, ResponseKind, Settings,
+        UNSOLICITED_LOG_UPLOADS_PER_HOUR, allow_requested_log_upload, allow_unsolicited_log_upload,
+        connect_command_failure, decode_log_upload, expired_connect_commands,
+        invalid_log_upload_reply, parse_config_change, reconnect_device_id, reset_obs_status,
+        set_pc_device_name, should_close_for_reconnect, should_refresh_device_name,
     };
 
     #[test]
@@ -2691,18 +2690,24 @@ mod tests {
     }
 
     #[test]
-    fn pending_connect_commands_expire_after_thirty_seconds() {
-        let mut pending = HashMap::from([(
-            "token".into(),
-            PendingConnectCommand {
-                reply: async_nats::Subject::from("inbox.reply"),
-                sent: Instant::now() - CONNECT_COMMAND_TIMEOUT - Duration::from_secs(1),
-            },
-        )]);
+    fn pending_connect_commands_use_action_deadlines() {
+        let now = Instant::now();
+        let elapsed = Duration::from_secs(70);
+        let command = |action| live::ConnectObsCommandRequest { action };
+        use common::programs::ConnectCommandAction::{Restart, Start, Stop};
+        let pending_command = |action, subject| PendingConnectCommand {
+            reply: async_nats::Subject::from(subject),
+            deadline: now - elapsed + command(action).reply_timeout(),
+        };
+        let mut pending = HashMap::from([
+            ("start".into(), pending_command(Start, "inbox.start")),
+            ("stop".into(), pending_command(Stop, "inbox.stop")),
+            ("restart".into(), pending_command(Restart, "inbox.restart")),
+        ]);
         assert_eq!(
             expired_connect_commands(&mut pending),
-            [async_nats::Subject::from("inbox.reply")]
+            [async_nats::Subject::from("inbox.start")]
         );
-        assert!(pending.is_empty());
+        assert_eq!(pending.len(), 2);
     }
 }

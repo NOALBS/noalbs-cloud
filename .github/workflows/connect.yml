@@ -1,14 +1,15 @@
 name: Connect
 
 # Only when something Connect is built from changes: its own workspace, and
-# crates/common, which it compiles (with the versions the root Cargo.toml gives
-# it). Not on pushes to main: the pull request already ran this, and a release
+# its shared crates, which use versions from the root Cargo.toml.
+# Not on pushes to main: the pull request already ran this, and a release
 # builds from its tag (connect-release.yml).
 on:
   pull_request:
     paths:
       - "connect/**"
       - "crates/common/**"
+      - "crates/obs-protocol/**"
       - "Cargo.toml"
       - ".github/workflows/connect.yml"
   workflow_dispatch:

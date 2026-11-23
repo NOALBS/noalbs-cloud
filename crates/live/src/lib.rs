@@ -187,6 +187,20 @@ pub struct ConnectObsCommandRequest {
     pub action: ConnectCommandAction,
 }
 
+impl ConnectObsCommandRequest {
+    pub fn reply_timeout(&self) -> Duration {
+        match self.action {
+            // Output finalization plus the Flatpak OBS and wrapper shutdown waits.
+            ConnectCommandAction::Stop | ConnectCommandAction::Restart => Duration::from_secs(100),
+            _ => Duration::from_secs(60),
+        }
+    }
+
+    pub fn api_timeout(&self) -> Duration {
+        self.reply_timeout() + Duration::from_secs(5)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 #[serde(rename_all = "snake_case")]

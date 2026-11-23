@@ -13,8 +13,9 @@ use crate::logs::ConnectLogUpload;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use common::programs::ProgramStatus;
 use futures_util::{SinkExt, StreamExt};
+use obs_protocol::{GetCurrentProgramScene, OutputStatus, RequestKind};
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 use tokio::{
@@ -22,6 +23,13 @@ use tokio::{
     sync::{mpsc, oneshot, watch},
 };
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
+
+mod cloud;
+mod obs;
+
+use cloud::{CloudBody, CommandResult, identify_payload, send_cloud, send_message};
+pub use obs::stop_active_streams;
+use obs::{PendingCall, RawRequests, connect_obs, decode_response, get_obs_version};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -75,6 +83,7 @@ pub struct LinkConfig {
     pub state_tx: watch::Sender<PcObsState>,
     pub telemetry_tx: watch::Sender<ObsTelemetry>,
     pub effective_obs_tx: watch::Sender<Option<(u16, String)>>,
+    pub obs_auth_failed: watch::Sender<bool>,
     pub commands: mpsc::UnboundedSender<ObsCommandRequest>,
     pub unsolicited_uploads: mpsc::UnboundedReceiver<ConnectLogUpload>,
     /// Bumped whenever OBS or the dashboard does something user-visible; the app
@@ -92,8 +101,20 @@ pub enum RelayError {
     InvalidToken,
     #[error("another connection took over this switcher")]
     TakenOver,
-    #[error("OBS websocket is not configured")]
-    NoObsConfig,
+    #[error("expected an OBS websocket Hello")]
+    ObsHandshake,
+    #[error("OBS websocket closed")]
+    ObsClosed,
+    #[error("OBS websocket request timed out")]
+    ObsTimeout,
+    #[error("timed out waiting for OBS output to stop")]
+    ObsOutputStopTimeout,
+    #[error("OBS rejected {request} (code {code}): {}", comment.as_deref().unwrap_or("no details"))]
+    ObsRejected {
+        request: String,
+        code: u32,
+        comment: Option<String>,
+    },
     #[error("OBS websocket authentication failed")]
     ObsAuthentication,
     #[error("{0}")]
@@ -189,11 +210,15 @@ async fn connect_once(
     let mut obs = if let Some(port) = obs_port {
         match tokio::time::timeout(Duration::from_secs(5), connect_obs(port, &obs_password)).await {
             Ok(Ok(socket)) => {
+                config.obs_auth_failed.send_if_modified(clear_auth_failure);
                 let _ = config.state_tx.send(PcObsState::Connected);
                 config.activity.fetch_add(1, Ordering::Relaxed);
                 Some(socket)
             }
-            Ok(Err(_)) | Err(_) => {
+            failure => {
+                if matches!(failure, Ok(Err(RelayError::ObsAuthentication))) {
+                    config.obs_auth_failed.send_if_modified(set_auth_failure);
+                }
                 let _ = config.state_tx.send(PcObsState::Starting);
                 None
             }
@@ -202,26 +227,7 @@ async fn connect_once(
         None
     };
     let obs_version = if let Some(socket) = obs.as_mut() {
-        tokio::time::timeout(Duration::from_secs(5), get_obs_version(socket))
-            .await
-            .ok()
-            .and_then(Result::ok)
-            .flatten()
-    } else {
-        None
-    };
-    let mut pending_scene_request = if let Some(socket) = obs.as_mut() {
-        Some(request_current_program_scene(socket).await?)
-    } else {
-        None
-    };
-    let mut pending_stream_status = if let Some(socket) = obs.as_mut() {
-        Some(request_output_status(socket, "GetStreamStatus").await?)
-    } else {
-        None
-    };
-    let mut pending_record_status = if let Some(socket) = obs.as_mut() {
-        Some(request_output_status(socket, "GetRecordStatus").await?)
+        get_obs_version(socket).await.unwrap_or_default()
     } else {
         None
     };
@@ -229,31 +235,26 @@ async fn connect_once(
         tokio::time::timeout(Duration::from_secs(15), connect_async(&config.link_url))
             .await
             .map_err(|_| link_timeout("upstream connection timed out"))??;
-    upstream
-        .send(Message::Text(
-            identify_payload(config, obs_version.as_deref())
-                .to_string()
-                .into(),
-        ))
-        .await?;
+    send_message(
+        &mut upstream,
+        identify_payload(config, obs_version.as_deref()),
+    )
+    .await?;
     let current_state = *obs_state.borrow();
     send_pc_state(&mut upstream, current_state).await?;
     let current_programs = programs.borrow().clone();
     send_programs(&mut upstream, current_programs).await?;
     if obs.is_some() {
-        upstream
-            .send(Message::Text(
-                json!({"obsWsConnected": true}).to_string().into(),
-            ))
-            .await?;
+        send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
         send_pc_state(&mut upstream, PcObsState::Connected).await?;
     } else if obs_port.is_some() {
-        upstream
-            .send(Message::Text(
-                json!({"obsWsConnected": false}).to_string().into(),
-            ))
-            .await?;
+        send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
     }
+    let mut pending_samples = if let Some(socket) = obs.as_mut() {
+        start_sampling(socket).await?
+    } else {
+        Vec::new()
+    };
     let mut obs_retry = tokio::time::interval_at(
         tokio::time::Instant::now() + Duration::from_secs(2),
         Duration::from_secs(2),
@@ -263,7 +264,7 @@ async fn connect_once(
         tokio::time::Instant::now() + Duration::from_secs(5),
         Duration::from_secs(5),
     );
-    let mut request_tokens = HashMap::<String, String>::new();
+    let mut raw_requests = RawRequests::default();
     let mut command_replies = futures_util::stream::FuturesUnordered::<
         Pin<
             Box<
@@ -280,7 +281,6 @@ async fn connect_once(
         >,
     >::new();
     let mut pending_meters = HashMap::<String, Vec<Vec<f64>>>::new();
-    let mut pending_stats: Option<(String, tokio::time::Instant)> = None;
     let mut missed_stats = 0_u8;
     let mut telemetry = ObsTelemetry {
         obs_version: obs_version.clone(),
@@ -303,85 +303,58 @@ async fn connect_once(
                 upstream.send(Message::Ping(Vec::new().into())).await?;
             }
             _ = obs_retry.tick(), if obs.is_none() && obs_port.is_some() => {
-                if let Some(port) = obs_port
-                    && let Ok(Ok(socket)) = tokio::time::timeout(
+                if let Some(port) = obs_port {
+                    match tokio::time::timeout(
                         Duration::from_secs(5),
                         connect_obs(port, &obs_password),
-                    ).await
-                {
-                    obs = Some(socket);
-                    pending_scene_request = if let Some(socket) = obs.as_mut() {
-                        if let Some(version) = tokio::time::timeout(
-                            Duration::from_secs(5),
-                            get_obs_version(socket),
-                        )
-                        .await
-                        .ok()
-                        .and_then(Result::ok)
-                        .flatten()
-                        {
-                            telemetry.obs_version = Some(version);
-                            let _ = config.telemetry_tx.send(telemetry.clone());
+                    ).await {
+                        Ok(Ok(mut socket)) => {
+                            config.obs_auth_failed.send_if_modified(clear_auth_failure);
+                            if let Ok(Some(version)) = get_obs_version(&mut socket).await {
+                                telemetry.obs_version = Some(version);
+                                let _ = config.telemetry_tx.send(telemetry.clone());
+                            }
+                            pending_samples = start_sampling(&mut socket).await?;
+                            obs = Some(socket);
+                            missed_stats = 0;
+                            send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
+                            let _ = config.state_tx.send(PcObsState::Connected);
+                            send_pc_state(&mut upstream, PcObsState::Connected).await?;
+                            config.activity.fetch_add(1, Ordering::Relaxed);
                         }
-                        Some(request_current_program_scene(socket).await?)
-                    } else {
-                        None
-                    };
-                    pending_stream_status = if let Some(socket) = obs.as_mut() {
-                        Some(request_output_status(socket, "GetStreamStatus").await?)
-                    } else {
-                        None
-                    };
-                    pending_record_status = if let Some(socket) = obs.as_mut() {
-                        Some(request_output_status(socket, "GetRecordStatus").await?)
-                    } else {
-                        None
-                    };
-                    pending_stats = None;
-                    missed_stats = 0;
-                    upstream.send(Message::Text(json!({"obsWsConnected": true}).to_string().into())).await?;
-                    let _ = config.state_tx.send(PcObsState::Connected);
-                    send_pc_state(&mut upstream, PcObsState::Connected).await?;
-                    config.activity.fetch_add(1, Ordering::Relaxed);
+                        Ok(Err(RelayError::ObsAuthentication)) => {
+                            config.obs_auth_failed.send_if_modified(set_auth_failure);
+                        }
+                        _ => {}
+                    }
                 }
             }
             _ = meter_tick.tick() => {
+                raw_requests.expire();
+                pending_samples.retain(|(sample, call)| *sample == Sample::Stats || !call.expired());
                 if let Some(meters) = take_volume_meters(&mut pending_meters) {
-                    upstream.send(Message::Text(json!({"obsRawEvent": meters}).to_string().into())).await?;
+                    send_cloud(&mut upstream, None, CloudBody::ObsRawEvent(serde_json::to_value(meters)?)).await?;
                 }
             }
             _ = stats_tick.tick(), if obs.is_some() => {
-                if pending_stats
-                    .as_ref()
-                    .is_some_and(|(_, deadline)| *deadline <= tokio::time::Instant::now())
-                {
-                    pending_stats = None;
-                    missed_stats = missed_stats.saturating_add(1);
-                    if missed_stats >= 3 {
-                        obs = None;
-                        request_tokens.clear();
-                        pending_scene_request = None;
-                        pending_stream_status = None;
-                        pending_record_status = None;
-                        pending_stats = None;
-                        let _ = config.state_tx.send(PcObsState::NotResponding);
-                        upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
-                        send_pc_state(&mut upstream, PcObsState::NotResponding).await?;
+                if let Some(index) = pending_samples.iter().position(|(sample, _)| *sample == Sample::Stats) {
+                    if !pending_samples[index].1.expired() {
                         continue;
                     }
+                    pending_samples.swap_remove(index);
+                    missed_stats = missed_stats.saturating_add(1);
                 }
-                if pending_stats.is_none()
-                    && let Some(socket) = obs.as_mut()
-                {
-                    let request_id = format!("noalbs-connect-stats-{}", uuid::Uuid::new_v4());
-                    socket.send(Message::Text(json!({
-                        "op": 6,
-                        "d": {"requestType": "GetStats", "requestId": request_id}
-                    }).to_string().into())).await?;
-                    pending_stats = Some((
-                        request_id,
-                        tokio::time::Instant::now() + Duration::from_secs(5),
-                    ));
+                if missed_stats >= 3 {
+                    obs = None;
+                    raw_requests.clear();
+                    pending_samples.clear();
+                    let _ = config.state_tx.send(PcObsState::NotResponding);
+                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
+                    send_pc_state(&mut upstream, PcObsState::NotResponding).await?;
+                    continue;
+                }
+                if let Some(socket) = obs.as_mut() {
+                    pending_samples.push((Sample::Stats, PendingCall::send(socket, RequestKind::GetStats).await?));
                 }
             }
             changed = obs_state.changed() => {
@@ -400,9 +373,7 @@ async fn connect_once(
                 if !config.unsolicited_uploads.is_closed() =>
             {
                 if let Some(upload) = upload {
-                    upstream
-                        .send(Message::Text(json!({"logUpload": upload}).to_string().into()))
-                        .await?;
+                    send_cloud(&mut upstream, None, CloudBody::LogUpload(upload)).await?;
                 }
             }
             message = upstream.next() => {
@@ -434,15 +405,13 @@ async fn connect_once(
                     && (obs_port != Some(port) || obs_password != password)
                 {
                     obs = None;
-                    request_tokens.clear();
-                    pending_scene_request = None;
-                    pending_stream_status = None;
-                    pending_record_status = None;
-                    pending_stats = None;
+                    raw_requests.clear();
+                    pending_samples.clear();
                     missed_stats = 0;
-                    upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
+                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
                     obs_port = Some(port);
                     obs_password = password;
+                    config.obs_auth_failed.send_if_modified(clear_auth_failure);
                     let _ = config
                         .effective_obs_tx
                         .send(Some((port, obs_password.clone())));
@@ -454,11 +423,9 @@ async fn connect_once(
                         Value::String(text) => serde_json::from_str::<Value>(text)?,
                         other => other.clone(),
                     };
-                    let request_id = extract_request_id(&request);
-                    if let (Some(id), Some(token)) = (request_id, value.get("token").and_then(Value::as_str)) {
-                        request_tokens.insert(id.to_owned(), token.to_owned());
-                    }
-                    if let Some(socket) = obs.as_mut() {
+                    if let Some(socket) = obs.as_mut()
+                        && raw_requests.track(&request, value.get("token").and_then(Value::as_str))
+                    {
                         socket.send(Message::Text(request.to_string().into())).await?;
                         if changes_obs(&request) {
                             config.activity.fetch_add(1, Ordering::Relaxed);
@@ -477,23 +444,11 @@ async fn connect_once(
                                     (token, receiver.await)
                                 }));
                             } else {
-                                upstream.send(Message::Text(json!({
-                                    "token": token,
-                                    "connectCommandResult": {
-                                        "ok": false,
-                                        "error": "Connect couldn't run the command"
-                                    }
-                                }).to_string().into())).await?;
+                                send_command_result(&mut upstream, &token, Err(COMMAND_UNAVAILABLE.into())).await?;
                             }
                         }
                         (Some(token), None) => {
-                            upstream.send(Message::Text(json!({
-                                "token": token,
-                                "connectCommandResult": {
-                                    "ok": false,
-                                    "error": "Unknown OBS command"
-                                }
-                            }).to_string().into())).await?;
+                            send_command_result(&mut upstream, &token, Err("Unknown OBS command".into())).await?;
                         }
                         _ => {}
                     }
@@ -511,84 +466,50 @@ async fn connect_once(
                 }
             }
             Some((token, result)) = command_replies.next(), if !command_replies.is_empty() => {
-                let response = match result {
-                    Ok(Ok(Some(log))) => json!({"ok": true, "log": log}),
-                    Ok(Ok(None)) => json!({"ok": true}),
-                    Ok(Err(error)) => json!({"ok": false, "error": error}),
-                    Err(_) => json!({
-                        "ok": false,
-                        "error": "Connect couldn't run the command"
-                    }),
-                };
-                upstream.send(Message::Text(json!({
-                    "token": token,
-                    "connectCommandResult": response
-                }).to_string().into())).await?;
+                send_command_result(&mut upstream, &token, result.unwrap_or_else(|_| Err(COMMAND_UNAVAILABLE.into()))).await?;
             }
             message = next_obs(&mut obs) => {
-                let Some(message) = message else {
+                let message = match message {
+                    Some(Err(error)) => {
+                        tracing::debug!(%error, "Local OBS websocket disconnected");
+                        None
+                    }
+                    other => other.transpose()?,
+                };
+                let Some(message) = message.filter(|message| !matches!(message, Message::Close(_))) else {
                     obs = None;
-                    request_tokens.clear();
-                    pending_scene_request = None;
-                    pending_stream_status = None;
-                    pending_record_status = None;
-                    pending_stats = None;
+                    raw_requests.clear();
+                    pending_samples.clear();
                     missed_stats = 0;
-                    upstream.send(Message::Text(json!({"obsWsConnected": false}).to_string().into())).await?;
+                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(false)).await?;
                     let _ = config.state_tx.send(PcObsState::NotResponding);
                     send_pc_state(&mut upstream, PcObsState::NotResponding).await?;
                     continue;
                 };
-                let message = message?;
                 let Message::Text(text) = message else { continue; };
                 let value: Value = serde_json::from_str(&text)?;
                 let op = value.get("op").and_then(Value::as_u64);
-                if op == Some(7) {
-                    let id = extract_request_id(&value);
-                    if id.is_some_and(|id| pending_scene_request.as_deref() == Some(id)) {
-                        pending_scene_request = None;
-                        if let Some(scene) = value
-                            .pointer("/d/responseData/currentProgramSceneName")
-                            .and_then(Value::as_str)
-                        {
-                            telemetry.last_program_scene = Some(scene.to_owned());
-                            let _ = config.telemetry_tx.send(telemetry.clone());
+                if matches!(op, Some(7 | 9)) {
+                    if let Some(index) = pending_samples.iter().position(|(_, call)| call.matches(&value)) {
+                        let (sample, call) = pending_samples.swap_remove(index);
+                        match call.complete(&value).and_then(|data| sample.apply(data, &mut telemetry)) {
+                            Ok(()) if sample == Sample::Stats => missed_stats = 0,
+                            Ok(()) => { let _ = config.telemetry_tx.send(telemetry.clone()); }
+                            Err(error) => {
+                                if sample == Sample::Stats {
+                                    if matches!(error, RelayError::ObsTimeout) {
+                                        missed_stats = missed_stats.saturating_add(1);
+                                    } else {
+                                        missed_stats = 0;
+                                    }
+                                }
+                                tracing::debug!(?sample, %error, "OBS sample failed");
+                            }
                         }
                         continue;
                     }
-                    if id.is_some_and(|id| pending_stream_status.as_deref() == Some(id)) {
-                        pending_stream_status = None;
-                        if let Some(active) = value
-                            .pointer("/d/responseData/outputActive")
-                            .and_then(Value::as_bool)
-                        {
-                            telemetry.stream_active = active;
-                            let _ = config.telemetry_tx.send(telemetry.clone());
-                        }
-                        continue;
-                    }
-                    if id.is_some_and(|id| pending_record_status.as_deref() == Some(id)) {
-                        pending_record_status = None;
-                        if let Some(active) = value
-                            .pointer("/d/responseData/outputActive")
-                            .and_then(Value::as_bool)
-                        {
-                            telemetry.record_active = active;
-                            let _ = config.telemetry_tx.send(telemetry.clone());
-                        }
-                        continue;
-                    }
-                    if id.is_some_and(|id| {
-                        pending_stats
-                            .as_ref()
-                            .is_some_and(|(pending_id, _)| pending_id == id)
-                    }) {
-                        pending_stats = None;
-                        missed_stats = 0;
-                        continue;
-                    }
-                    if let Some(token) = id.and_then(|id| request_tokens.remove(id)) {
-                        upstream.send(Message::Text(json!({"token": token, "obsRawResponse": value}).to_string().into())).await?;
+                    if let Some(token) = raw_requests.resolve(&value) {
+                        send_cloud(&mut upstream, Some(&token), CloudBody::ObsRawResponse(value)).await?;
                     }
                 } else if op == Some(5) {
                     let event = value.pointer("/d/eventType").and_then(Value::as_str).unwrap_or_default();
@@ -614,9 +535,9 @@ async fn connect_once(
                         continue;
                     }
                     config.activity.fetch_add(1, Ordering::Relaxed);
-                    upstream.send(Message::Text(json!({"obsRawEvent": value}).to_string().into())).await?;
+                    send_cloud(&mut upstream, None, CloudBody::ObsRawEvent(value)).await?;
                 } else if op == Some(2) {
-                    upstream.send(Message::Text(json!({"obsWsConnected": true}).to_string().into())).await?;
+                    send_cloud(&mut upstream, None, CloudBody::ObsWsConnected(true)).await?;
                     let _ = config.state_tx.send(PcObsState::Connected);
                     send_pc_state(&mut upstream, PcObsState::Connected).await?;
                     config.activity.fetch_add(1, Ordering::Relaxed);
@@ -624,6 +545,14 @@ async fn connect_once(
             }
         }
     }
+}
+
+fn set_auth_failure(failed: &mut bool) -> bool {
+    !std::mem::replace(failed, true)
+}
+
+fn clear_auth_failure(failed: &mut bool) -> bool {
+    std::mem::replace(failed, false)
 }
 
 async fn next_obs(
@@ -636,24 +565,70 @@ async fn next_obs(
 }
 
 async fn send_pc_state(socket: &mut Socket, state: PcObsState) -> Result<(), RelayError> {
-    socket
-        .send(Message::Text(
-            json!({"pcState": {"obs": state}}).to_string().into(),
-        ))
-        .await?;
-    Ok(())
+    send_cloud(socket, None, CloudBody::PcState { obs: state }).await
 }
 
 async fn send_programs(
     socket: &mut Socket,
     programs: Vec<ProgramStatus>,
 ) -> Result<(), RelayError> {
-    socket
-        .send(Message::Text(
-            json!({"programsState": programs}).to_string().into(),
-        ))
-        .await?;
-    Ok(())
+    send_cloud(socket, None, CloudBody::ProgramsState(programs)).await
+}
+
+const COMMAND_UNAVAILABLE: &str = "Connect couldn't run the command";
+
+async fn send_command_result(
+    socket: &mut Socket,
+    token: &str,
+    result: Result<Option<ConnectLogUpload>, String>,
+) -> Result<(), RelayError> {
+    send_cloud(
+        socket,
+        Some(token),
+        CloudBody::ConnectCommandResult(CommandResult::from(result)),
+    )
+    .await
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Sample {
+    Scene,
+    Stream,
+    Record,
+    Stats,
+}
+
+impl Sample {
+    fn apply(self, data: Option<Value>, telemetry: &mut ObsTelemetry) -> Result<(), RelayError> {
+        match self {
+            Self::Scene => {
+                let scene: GetCurrentProgramScene = decode_response(data)?;
+                telemetry.last_program_scene = Some(scene.current_program_scene_name);
+            }
+            Self::Stream | Self::Record => {
+                let status: OutputStatus = decode_response(data)?;
+                if self == Self::Stream {
+                    telemetry.stream_active = status.output_active;
+                } else {
+                    telemetry.record_active = status.output_active;
+                }
+            }
+            Self::Stats => {}
+        }
+        Ok(())
+    }
+}
+
+async fn start_sampling(socket: &mut Socket) -> Result<Vec<(Sample, PendingCall)>, RelayError> {
+    let mut samples = Vec::with_capacity(4);
+    for (sample, kind) in [
+        (Sample::Scene, RequestKind::GetCurrentProgramScene),
+        (Sample::Stream, RequestKind::GetStreamStatus),
+        (Sample::Record, RequestKind::GetRecordStatus),
+    ] {
+        samples.push((sample, PendingCall::send(socket, kind).await?));
+    }
+    Ok(samples)
 }
 
 fn parse_watchdog(value: &str) -> Option<WatchdogMode> {
@@ -758,7 +733,32 @@ fn collect_volume_meters(pending: &mut HashMap<String, Vec<Vec<f64>>>, event: &V
     }
 }
 
-fn take_volume_meters(pending: &mut HashMap<String, Vec<Vec<f64>>>) -> Option<Value> {
+#[derive(Serialize)]
+struct MeterFrame {
+    op: u8,
+    d: MeterEvent,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MeterEvent {
+    event_type: &'static str,
+    event_data: MeterInputs,
+}
+
+#[derive(Serialize)]
+struct MeterInputs {
+    inputs: Vec<MeterInput>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MeterInput {
+    input_name: String,
+    input_levels_mul: Vec<Vec<f64>>,
+}
+
+fn take_volume_meters(pending: &mut HashMap<String, Vec<Vec<f64>>>) -> Option<MeterFrame> {
     let meters = std::mem::take(pending);
     let inputs = meters
         .into_iter()
@@ -766,20 +766,26 @@ fn take_volume_meters(pending: &mut HashMap<String, Vec<Vec<f64>>>) -> Option<Va
             if !levels.iter().flatten().any(|value| *value > 0.0) {
                 return None;
             }
-            Some(json!({
-                "inputName": input_name,
-                "inputLevelsMul": levels.into_iter().map(|channel| channel.into_iter().map(round_to_three_significant_digits).collect::<Vec<_>>()).collect::<Vec<_>>()
-            }))
+            Some(MeterInput {
+                input_name,
+                input_levels_mul: levels
+                    .into_iter()
+                    .map(|channel| {
+                        channel
+                            .into_iter()
+                            .map(round_to_three_significant_digits)
+                            .collect()
+                    })
+                    .collect(),
+            })
         })
         .collect::<Vec<_>>();
-    (!inputs.is_empty()).then(|| {
-        json!({
-            "op": 5,
-            "d": {
-                "eventType": "InputVolumeMeters",
-                "eventData": { "inputs": inputs }
-            }
-        })
+    (!inputs.is_empty()).then_some(MeterFrame {
+        op: 5,
+        d: MeterEvent {
+            event_type: "InputVolumeMeters",
+            event_data: MeterInputs { inputs },
+        },
     })
 }
 
@@ -791,163 +797,16 @@ fn round_to_three_significant_digits(value: f64) -> f64 {
     (value * factor).round() / factor
 }
 
-async fn connect_obs(port: u16, password: &str) -> Result<Socket, RelayError> {
-    let (mut socket, _) = connect_async(format!("ws://127.0.0.1:{port}")).await?;
-    let hello = read_json(&mut socket).await?;
-    if let Some(auth) = hello.pointer("/d/authentication") {
-        let salt = auth.get("salt").and_then(Value::as_str).unwrap_or_default();
-        let challenge = auth
-            .get("challenge")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let secret = hash_base64(format!("{password}{salt}").as_bytes());
-        let authentication = hash_base64(format!("{secret}{challenge}").as_bytes());
-        socket
-            .send(Message::Text(
-                json!({"op":1,"d":{"rpcVersion":1,"authentication":authentication}})
-                    .to_string()
-                    .into(),
-            ))
-            .await?;
-    } else {
-        socket
-            .send(Message::Text(
-                json!({"op":1,"d":{"rpcVersion":1}}).to_string().into(),
-            ))
-            .await?;
-    }
-    let identified = read_json(&mut socket).await?;
-    if identified.get("op").and_then(Value::as_u64) != Some(2) {
-        return Err(RelayError::ObsAuthentication);
-    }
-    Ok(socket)
+#[derive(Debug, PartialEq, Eq)]
+pub enum OutputStopOutcome {
+    AlreadyInactive,
+    Stopped,
 }
 
-async fn get_obs_version(socket: &mut Socket) -> Result<Option<String>, RelayError> {
-    let request_id = "noalbs-connect-get-version";
-    socket
-        .send(Message::Text(
-            json!({
-                "op": 6,
-                "d": {
-                    "requestType": "GetVersion",
-                    "requestId": request_id
-                }
-            })
-            .to_string()
-            .into(),
-        ))
-        .await?;
-    loop {
-        let response = read_json(socket).await?;
-        if response.get("op").and_then(Value::as_u64) == Some(7)
-            && extract_request_id(&response) == Some(request_id)
-        {
-            return Ok(response
-                .pointer("/d/responseData/obsVersion")
-                .and_then(Value::as_str)
-                .map(str::to_owned));
-        }
-    }
-}
-
-async fn request_current_program_scene(socket: &mut Socket) -> Result<String, RelayError> {
-    let request_id = format!("noalbs-connect-scene-{}", uuid::Uuid::new_v4());
-    socket
-        .send(Message::Text(
-            json!({
-                "op": 6,
-                "d": {
-                    "requestType": "GetCurrentProgramScene",
-                    "requestId": request_id
-                }
-            })
-            .to_string()
-            .into(),
-        ))
-        .await?;
-    Ok(request_id)
-}
-
-async fn request_output_status(
-    socket: &mut Socket,
-    request_type: &str,
-) -> Result<String, RelayError> {
-    let request_id = format!("noalbs-connect-status-{}", uuid::Uuid::new_v4());
-    socket
-        .send(Message::Text(
-            json!({
-                "op": 6,
-                "d": {
-                    "requestType": request_type,
-                    "requestId": request_id
-                }
-            })
-            .to_string()
-            .into(),
-        ))
-        .await?;
-    Ok(request_id)
-}
-
-pub async fn stop_active_streams(port: u16, password: &str) -> Result<(), RelayError> {
-    let mut socket = tokio::time::timeout(Duration::from_secs(5), connect_obs(port, password))
-        .await
-        .map_err(|_| RelayError::NoObsConfig)??;
-    for (status_request, stop_request) in [
-        ("GetStreamStatus", "StopStream"),
-        ("GetRecordStatus", "StopRecord"),
-    ] {
-        let status = tokio::time::timeout(
-            Duration::from_secs(5),
-            request_obs(&mut socket, status_request),
-        )
-        .await
-        .map_err(|_| RelayError::NoObsConfig)??;
-        if status
-            .pointer("/d/responseData/outputActive")
-            .and_then(Value::as_bool)
-            == Some(true)
-        {
-            let _ = tokio::time::timeout(
-                Duration::from_secs(5),
-                request_obs(&mut socket, stop_request),
-            )
-            .await;
-        }
-    }
-    Ok(())
-}
-
-async fn request_obs(socket: &mut Socket, request_type: &str) -> Result<Value, RelayError> {
-    let request_id = format!("noalbs-connect-stop-{}", uuid::Uuid::new_v4());
-    socket
-        .send(Message::Text(
-            json!({
-                "op": 6,
-                "d": {"requestType": request_type, "requestId": request_id}
-            })
-            .to_string()
-            .into(),
-        ))
-        .await?;
-    loop {
-        let response = read_json(socket).await?;
-        if response.get("op").and_then(Value::as_u64) == Some(7)
-            && extract_request_id(&response) == Some(request_id.as_str())
-        {
-            return Ok(response);
-        }
-    }
-}
-
-async fn read_json(socket: &mut Socket) -> Result<Value, RelayError> {
-    loop {
-        let message = socket.next().await.ok_or(RelayError::NoObsConfig)??;
-        if let Message::Text(text) = message {
-            return Ok(serde_json::from_str(&text)?);
-        }
-    }
+#[derive(Debug)]
+pub struct StopOutputs {
+    pub stream: Result<OutputStopOutcome, RelayError>,
+    pub recording: Result<OutputStopOutcome, RelayError>,
 }
 
 fn hash_base64(value: &[u8]) -> String {
@@ -960,20 +819,6 @@ fn link_timeout(message: &str) -> RelayError {
     ))
 }
 
-fn identify_payload(config: &LinkConfig, obs_version: Option<&str>) -> Value {
-    json!({
-        "token": config.device_token,
-        "identify": {
-            "token": config.device_token,
-            "version": config.version,
-            "client": "connect",
-            "capabilities": ["obs_process", "obs_control", "obs_logs", "programs", "keepalive"],
-            "os": config.os,
-            "obsVersion": obs_version
-        }
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -983,9 +828,10 @@ mod tests {
     use tokio_tungstenite::{accept_async, tungstenite::Message};
 
     use super::{
-        Arc, AtomicU64, ConnectLogUpload, Duration, LinkConfig, PcObsState, RelayError,
-        changes_obs, collect_volume_meters, connect_obs, extract_obs_config, get_obs_version,
-        hash_base64, identify_payload, parse_watchdog, run_link, take_volume_meters,
+        Arc, AtomicU64, ConnectLogUpload, Duration, LinkConfig, OutputStopOutcome, PcObsState,
+        RelayError, changes_obs, collect_volume_meters, connect_obs, extract_obs_config,
+        get_obs_version, hash_base64, identify_payload, parse_watchdog, run_link,
+        stop_active_streams, take_volume_meters,
     };
 
     #[test]
@@ -1066,7 +912,7 @@ mod tests {
             ]}}}),
         );
         assert_eq!(
-            take_volume_meters(&mut pending).unwrap(),
+            serde_json::to_value(take_volume_meters(&mut pending).unwrap()).unwrap(),
             json!({"op":5,"d":{"eventType":"InputVolumeMeters","eventData":{
                 "inputs":[{"inputName":"Mic","inputLevelsMul":[[0.9,0.3]]}]
             }}})
@@ -1087,11 +933,12 @@ mod tests {
             state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
         };
-        let payload = identify_payload(&config, Some("31.0.0"));
+        let payload = serde_json::to_value(identify_payload(&config, Some("31.0.0"))).unwrap();
         assert_eq!(
             payload,
             json!({
@@ -1107,7 +954,9 @@ mod tests {
             })
         );
         assert_eq!(
-            identify_payload(&config, None).pointer("/identify/obsVersion"),
+            serde_json::to_value(identify_payload(&config, None))
+                .unwrap()
+                .pointer("/identify/obsVersion"),
             Some(&serde_json::Value::Null)
         );
     }
@@ -1124,6 +973,7 @@ mod tests {
             state_tx: tokio::sync::watch::channel(PcObsState::Unknown).0,
             telemetry_tx: tokio::sync::watch::channel(super::ObsTelemetry::default()).0,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: tokio::sync::mpsc::unbounded_channel().0,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
@@ -1138,6 +988,53 @@ mod tests {
         let (_programs_tx, mut programs_rx) = tokio::sync::watch::channel(Vec::new());
         let (watchdog, _watchdog_rx) = tokio::sync::watch::channel(super::WatchdogMode::Off);
         super::connect_once(config, &mut state_rx, &mut programs_rx, &watchdog, link).await
+    }
+
+    #[tokio::test]
+    async fn rejected_local_password_is_reported_without_dropping_the_cloud_link() {
+        use tokio_tungstenite::tungstenite::protocol::{CloseFrame, frame::coding::CloseCode};
+
+        let obs = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let cloud = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = idle_link_config(cloud.local_addr().unwrap().port());
+        config.obs_port = Some(obs.local_addr().unwrap().port());
+        let mut auth_failed = config.obs_auth_failed.subscribe();
+        let (link, _) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
+
+        let server = async {
+            let mut obs = accept_async(obs.accept().await.unwrap().0).await.unwrap();
+            obs.send(Message::text(
+                json!({
+                    "op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.5.1",
+                        "authentication":{"salt":"salt","challenge":"challenge"}}
+                })
+                .to_string(),
+            ))
+            .await
+            .unwrap();
+            assert!(obs.next().await.unwrap().unwrap().is_text());
+            obs.close(Some(CloseFrame {
+                code: CloseCode::Library(4009),
+                reason: "Authentication failed".into(),
+            }))
+            .await
+            .unwrap();
+
+            auth_failed.changed().await.unwrap();
+            assert!(*auth_failed.borrow_and_update());
+            let mut cloud = accept_async(cloud.accept().await.unwrap().0).await.unwrap();
+            assert!(cloud.next().await.unwrap().unwrap().is_text());
+            cloud
+                .send(Message::text(json!({"identifyAck":false}).to_string()))
+                .await
+                .unwrap();
+        };
+        let (result, ()) = tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::join!(idle_connection(&mut config, &link), server)
+        })
+        .await
+        .unwrap();
+        assert!(matches!(result, Err(RelayError::InvalidToken)));
     }
 
     #[tokio::test]
@@ -1329,6 +1226,7 @@ mod tests {
             state_tx,
             telemetry_tx,
             effective_obs_tx: tokio::sync::watch::channel(None).0,
+            obs_auth_failed: tokio::sync::watch::channel(false).0,
             commands: commands_tx,
             unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
             activity: Arc::new(AtomicU64::new(0)),
@@ -1400,7 +1298,7 @@ mod tests {
             let (stream, _) = listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
             socket.send(Message::Text(json!({
-                "op":0,"d":{"rpcVersion":1,"authentication":{"salt":"salt","challenge":"challenge"}}
+                "op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0","authentication":{"salt":"salt","challenge":"challenge"}}
             }).to_string().into())).await.unwrap();
             let Message::Text(text) = socket.next().await.unwrap().unwrap() else {
                 panic!("identify expected");
@@ -1431,7 +1329,9 @@ mod tests {
             let mut socket = accept_async(stream).await.unwrap();
             socket
                 .send(Message::Text(
-                    json!({"op":0,"d":{"rpcVersion":1}}).to_string().into(),
+                    json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}})
+                        .to_string()
+                        .into(),
                 ))
                 .await
                 .unwrap();
@@ -1452,7 +1352,7 @@ mod tests {
             let request_id = request.pointer("/d/requestId").unwrap().clone();
             socket
                 .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":request_id,"responseData":{"obsVersion":"31.0.0"}}})
+                    json!({"op":7,"d":{"requestId":request_id,"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}})
                         .to_string()
                         .into(),
                 ))
@@ -1469,6 +1369,36 @@ mod tests {
 
     #[tokio::test]
     async fn link_forwards_raw_requests_and_responses_with_the_token() {
+        assert_raw_request_is_forwarded(RawRelayCase::Single).await;
+    }
+
+    #[tokio::test]
+    async fn link_forwards_raw_batch_responses_with_the_token() {
+        assert_raw_request_is_forwarded(RawRelayCase::Batch).await;
+    }
+
+    #[tokio::test]
+    async fn link_clears_pending_raw_calls_after_obs_disconnects() {
+        assert_raw_request_is_forwarded(RawRelayCase::Reconnect).await;
+    }
+
+    #[tokio::test]
+    async fn link_returns_stop_result_after_abrupt_obs_disconnect() {
+        assert_raw_request_is_forwarded(RawRelayCase::AbruptReconnect).await;
+    }
+
+    #[derive(Clone, Copy)]
+    enum RawRelayCase {
+        Single,
+        Batch,
+        Reconnect,
+        AbruptReconnect,
+    }
+
+    async fn assert_raw_request_is_forwarded(case: RawRelayCase) {
+        let batch = matches!(case, RawRelayCase::Batch);
+        let abrupt = matches!(case, RawRelayCase::AbruptReconnect);
+        let reconnect = abrupt || matches!(case, RawRelayCase::Reconnect);
         let obs_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let obs_port = obs_listener.local_addr().unwrap().port();
         let fake_obs = tokio::spawn(async move {
@@ -1476,7 +1406,9 @@ mod tests {
             let mut socket = accept_async(stream).await.unwrap();
             socket
                 .send(Message::Text(
-                    json!({"op":0,"d":{"rpcVersion":1}}).to_string().into(),
+                    json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}})
+                        .to_string()
+                        .into(),
                 ))
                 .await
                 .unwrap();
@@ -1497,7 +1429,7 @@ mod tests {
             let version_id = version_request.pointer("/d/requestId").unwrap().clone();
             socket
                 .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":version_id,"responseData":{"obsVersion":"31.0.0"}}})
+                    json!({"op":7,"d":{"requestId":version_id,"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}})
                         .to_string()
                         .into(),
                 ))
@@ -1514,7 +1446,7 @@ mod tests {
             let scene_id = scene_request.pointer("/d/requestId").unwrap().clone();
             socket
                 .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":scene_id,"responseData":{"currentProgramSceneName":"Main"}}})
+                    json!({"op":7,"d":{"requestId":scene_id,"requestType":"GetCurrentProgramScene","requestStatus":{"code":100,"result":true},"responseData":{"currentProgramSceneName":"Main"}}})
                         .to_string()
                         .into(),
                 ))
@@ -1531,7 +1463,7 @@ mod tests {
             let stream_id = stream_request.pointer("/d/requestId").unwrap().clone();
             socket
                 .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":stream_id,"responseData":{"outputActive":true}}})
+                    json!({"op":7,"d":{"requestId":stream_id,"requestType":"GetStreamStatus","requestStatus":{"code":100,"result":true},"responseData":{"outputActive":true}}})
                         .to_string()
                         .into(),
                 ))
@@ -1548,7 +1480,7 @@ mod tests {
             let record_id = record_request.pointer("/d/requestId").unwrap().clone();
             socket
                 .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":record_id,"responseData":{"outputActive":false}}})
+                    json!({"op":7,"d":{"requestId":record_id,"requestType":"GetRecordStatus","requestStatus":{"code":100,"result":true},"responseData":{"outputActive":false}}})
                         .to_string()
                         .into(),
                 ))
@@ -1559,20 +1491,63 @@ mod tests {
             };
             let request: serde_json::Value = serde_json::from_str(&request).unwrap();
             assert_eq!(request.pointer("/d/requestId").unwrap(), "request-1");
+            let raw_reply = if batch {
+                assert_eq!(request["op"], 8);
+                json!({"op":9,"d":{"requestId":"request-1","results":[{"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}]}})
+            } else {
+                json!({"op":7,"d":{"requestId":"request-1","requestStatus":{"result":true},"responseData":{"ok":true}}})
+            };
+            if reconnect {
+                if !abrupt {
+                    socket.close(None).await.unwrap();
+                }
+                drop(socket);
+                let (stream, _) = obs_listener.accept().await.unwrap();
+                socket = accept_async(stream).await.unwrap();
+                socket
+                    .send(Message::Text(
+                        json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}})
+                            .to_string()
+                            .into(),
+                    ))
+                    .await
+                    .unwrap();
+                let _identify = socket.next().await.unwrap().unwrap();
+                socket
+                    .send(Message::Text(
+                        json!({"op":2,"d":{"negotiatedRpcVersion":1}})
+                            .to_string()
+                            .into(),
+                    ))
+                    .await
+                    .unwrap();
+                let version: serde_json::Value =
+                    serde_json::from_str(socket.next().await.unwrap().unwrap().to_text().unwrap())
+                        .unwrap();
+                socket.send(Message::Text(json!({"op":7,"d":{"requestId":version["d"]["requestId"],"requestType":"GetVersion","requestStatus":{"code":100,"result":true},"responseData":{"obsVersion":"31.0.0"}}}).to_string().into())).await.unwrap();
+            }
             socket
-                .send(Message::Text(
-                    json!({"op":7,"d":{"requestId":"request-1","requestStatus":{"result":true},"responseData":{"ok":true}}})
-                        .to_string()
-                        .into(),
-                ))
+                .send(Message::Text(raw_reply.to_string().into()))
                 .await
                 .unwrap();
+            if reconnect {
+                socket
+                    .send(Message::Text(
+                        json!({"op":5,"d":{"eventType":"AfterStaleReply"}})
+                            .to_string()
+                            .into(),
+                    ))
+                    .await
+                    .unwrap();
+            }
             let _ = socket.next().await;
         });
 
         let link_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let link_port = link_listener.local_addr().unwrap().port();
+        let (allow_reply, allow_reply_rx) = tokio::sync::oneshot::channel();
         let fake_link = tokio::spawn(async move {
+            let mut allow_reply = Some(allow_reply);
             let (stream, _) = link_listener.accept().await.unwrap();
             let mut socket = accept_async(stream).await.unwrap();
             let Message::Text(identify) = socket.next().await.unwrap().unwrap() else {
@@ -1586,17 +1561,33 @@ mod tests {
             };
             let pc_state: serde_json::Value = serde_json::from_str(&pc_state).unwrap();
             assert_eq!(pc_state.pointer("/pcState/obs").unwrap(), "connected");
+            let raw_request = if batch {
+                json!({"op":8,"d":{"requestId":"request-1","requests":[{"requestType":"GetVersion"}]}})
+            } else {
+                json!({"op":6,"d":{"requestType":"GetVersion","requestId":"request-1"}})
+            };
             socket
                 .send(Message::Text(
                     json!({"identifyAck":true}).to_string().into(),
                 ))
                 .await
                 .unwrap();
+            if abrupt {
+                socket
+                    .send(Message::text(
+                        json!({
+                            "token":"stop-token", "connectCommand":{"action":"stop"}
+                        })
+                        .to_string(),
+                    ))
+                    .await
+                    .unwrap();
+            }
             socket
                 .send(Message::Text(
                     json!({
                         "token":"upstream-request-token",
-                        "obsRawRequest":{"op":6,"d":{"requestType":"GetVersion","requestId":"request-1"}}
+                        "obsRawRequest":raw_request
                     })
                     .to_string()
                     .into(),
@@ -1608,13 +1599,45 @@ mod tests {
                     continue;
                 };
                 let response: serde_json::Value = serde_json::from_str(&response).unwrap();
-                if response.get("token").and_then(serde_json::Value::as_str)
-                    == Some("upstream-request-token")
+                if abrupt
+                    && response["obsWsConnected"] == false
+                    && let Some(allow_reply) = allow_reply.take()
                 {
-                    assert_eq!(
-                        response.pointer("/obsRawResponse/d/responseData/ok"),
-                        Some(&serde_json::Value::Bool(true))
+                    allow_reply.send(()).unwrap();
+                }
+                if abrupt && response["token"] == "stop-token" {
+                    assert_eq!(response["connectCommandResult"]["ok"], true);
+                    socket
+                        .send(Message::text(json!({"identifyAck":false}).to_string()))
+                        .await
+                        .unwrap();
+                    let _ = socket.next().await;
+                    break;
+                }
+                let correlated = response.get("token").and_then(serde_json::Value::as_str)
+                    == Some("upstream-request-token");
+                let finished = if reconnect {
+                    assert!(
+                        !correlated,
+                        "reconnected OBS must not inherit stale cloud tokens"
                     );
+                    response.pointer("/obsRawEvent/d/eventType") == Some(&json!("AfterStaleReply"))
+                } else {
+                    correlated
+                };
+                if finished && !abrupt {
+                    if batch {
+                        assert_eq!(response["obsRawResponse"]["op"], 9);
+                        assert_eq!(
+                            response.pointer("/obsRawResponse/d/results/0/responseData/obsVersion"),
+                            Some(&json!("31.0.0"))
+                        );
+                    } else if !reconnect {
+                        assert_eq!(
+                            response.pointer("/obsRawResponse/d/responseData/ok"),
+                            Some(&serde_json::Value::Bool(true))
+                        );
+                    }
                     socket
                         .send(Message::Text(
                             json!({"identifyAck":false}).to_string().into(),
@@ -1631,6 +1654,16 @@ mod tests {
         let (telemetry_tx, telemetry_rx) =
             tokio::sync::watch::channel(super::ObsTelemetry::default());
         let (watchdog_tx, _) = tokio::sync::watch::channel(super::WatchdogMode::Restart);
+        let (commands, mut command_rx) =
+            tokio::sync::mpsc::unbounded_channel::<super::ObsCommandRequest>();
+        let consumer = tokio::spawn(async move {
+            if abrupt {
+                let command = command_rx.recv().await.unwrap();
+                assert_eq!(command.action, super::ObsAction::Stop);
+                allow_reply_rx.await.unwrap();
+                command.reply.send(Ok(None)).unwrap();
+            }
+        });
         let result = tokio::time::timeout(
             Duration::from_secs(5),
             run_link(
@@ -1645,7 +1678,8 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
-                    commands: tokio::sync::mpsc::unbounded_channel().0,
+                    obs_auth_failed: tokio::sync::watch::channel(false).0,
+                    commands,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                     activity: Arc::new(AtomicU64::new(0)),
                 },
@@ -1661,8 +1695,86 @@ mod tests {
             Some("Main")
         );
         assert!(telemetry_rx.borrow().stream_active);
+        consumer.await.unwrap();
         fake_link.await.unwrap();
-        fake_obs.await.unwrap();
+        if abrupt {
+            fake_obs.abort();
+        } else {
+            fake_obs.await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn rejected_stop_stream_is_reported_and_recording_is_still_stopped() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut socket = accept_async(stream).await.unwrap();
+            socket
+                .send(Message::Text(
+                    json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(
+                    socket.next().await.unwrap().unwrap().to_text().unwrap()
+                )
+                .unwrap(),
+                json!({"op":1,"d":{"rpcVersion":1,"eventSubscriptions":64}})
+            );
+            socket
+                .send(Message::Text(
+                    json!({"op":2,"d":{"negotiatedRpcVersion":1}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
+            for (kind, code, comment, data) in [
+                (
+                    "GetStreamStatus",
+                    100,
+                    None,
+                    Some(json!({"outputActive":true})),
+                ),
+                (
+                    "GetRecordStatus",
+                    100,
+                    None,
+                    Some(json!({"outputActive":true})),
+                ),
+                ("StopStream", 501, Some("stream refused"), None),
+                ("StopRecord", 100, None, None),
+            ] {
+                let request: serde_json::Value =
+                    serde_json::from_str(socket.next().await.unwrap().unwrap().to_text().unwrap())
+                        .unwrap();
+                assert_eq!(request["d"]["requestType"], kind);
+                socket.send(Message::Text(json!({
+                    "op":7,"d":{"requestId":request["d"]["requestId"],"requestType":kind,
+                        "requestStatus":{"code":code,"result":code == 100,"comment":comment},"responseData":data}
+                }).to_string().into())).await.unwrap();
+            }
+            socket.send(Message::Text(json!({
+                "op":5,"d":{"eventType":"RecordStateChanged","eventIntent":64,
+                    "eventData":{"outputActive":false,"outputState":"OBS_WEBSOCKET_OUTPUT_STOPPED"}}
+            }).to_string().into())).await.unwrap();
+        });
+        let result = tokio::time::timeout(Duration::from_secs(5), stop_active_streams(port, ""))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(matches!(
+            result.stream,
+            Err(RelayError::ObsRejected { request, code: 501, comment: Some(comment) })
+                if request == "StopStream" && comment == "stream refused"
+        ));
+        assert_eq!(result.recording.unwrap(), OutputStopOutcome::Stopped);
+        server.await.unwrap();
     }
 
     #[tokio::test]
@@ -1696,6 +1808,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx: tokio::sync::watch::channel(None).0,
+                obs_auth_failed: tokio::sync::watch::channel(false).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 activity: Arc::new(AtomicU64::new(0)),
@@ -1746,6 +1859,7 @@ mod tests {
                     state_tx,
                     telemetry_tx,
                     effective_obs_tx: tokio::sync::watch::channel(None).0,
+                    obs_auth_failed: tokio::sync::watch::channel(false).0,
                     commands: tokio::sync::mpsc::unbounded_channel().0,
                     unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                     activity: Arc::new(AtomicU64::new(0)),
@@ -1823,6 +1937,7 @@ mod tests {
                 state_tx,
                 telemetry_tx,
                 effective_obs_tx,
+                obs_auth_failed: tokio::sync::watch::channel(false).0,
                 commands: tokio::sync::mpsc::unbounded_channel().0,
                 unsolicited_uploads: tokio::sync::mpsc::unbounded_channel().1,
                 activity: Arc::new(AtomicU64::new(0)),

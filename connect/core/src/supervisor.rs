@@ -4,6 +4,7 @@ use std::{
     ffi::OsString,
     fs,
     io::Write,
+    ops::Range,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
@@ -192,10 +193,99 @@ fn default_obs_port() -> u16 {
 }
 
 pub fn read_obs_websocket_config(config_dir: &Path) -> Result<ObsWebsocketConfig, SupervisorError> {
+    if let Some((ini, section)) = legacy_websocket_section(config_dir)? {
+        return Ok(parse_legacy_websocket(&ini[section]));
+    }
     let path = config_dir.join("plugin_config/obs-websocket/config.json");
     let data = std::fs::read(path)?;
     serde_json::from_slice(&data)
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error).into())
+}
+
+fn ini_entry(line: &str) -> Option<(&str, &str)> {
+    if line.starts_with('#') {
+        return None;
+    }
+    line.split_once('=')
+}
+
+fn legacy_websocket_section(config_dir: &Path) -> std::io::Result<Option<(String, Range<usize>)>> {
+    let ini = match fs::read_to_string(config_dir.join("global.ini")) {
+        Ok(ini) => ini,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error),
+    };
+    let mut start = None;
+    let mut end = 0;
+    for line in ini.split_inclusive('\n') {
+        let header = line.trim_start_matches('\u{feff}').trim();
+        if start.is_some() && header.starts_with('[') {
+            break;
+        }
+        end += line.len();
+        if header == "[OBSWebSocket]" {
+            start = Some(end);
+        }
+    }
+    // obs-websocket 5.5+ migrates legacy values before reading the plugin JSON.
+    let section = start.map(|start| start..end).filter(|range| {
+        ini[range.clone()]
+            .lines()
+            .filter_map(ini_entry)
+            .any(|(key, _)| {
+                matches!(
+                    key,
+                    "FirstLoad"
+                        | "ServerEnabled"
+                        | "ServerPort"
+                        | "AlertsEnabled"
+                        | "AuthRequired"
+                        | "ServerPassword"
+                )
+            })
+    });
+    Ok(section.map(|range| (ini, range)))
+}
+
+fn parse_legacy_websocket(section: &str) -> ObsWebsocketConfig {
+    fn enabled(value: &str) -> bool {
+        value.eq_ignore_ascii_case("true") || value.parse::<u64>().is_ok_and(|n| n != 0)
+    }
+
+    let mut config = ObsWebsocketConfig {
+        server_port: default_obs_port(),
+        auth_required: true,
+        ..Default::default()
+    };
+    for (key, value) in section.lines().filter_map(ini_entry) {
+        match key {
+            "ServerEnabled" => config.server_enabled = enabled(value),
+            "ServerPort" => {
+                config.server_port = value.parse().unwrap_or_else(|_| default_obs_port());
+            }
+            "AuthRequired" => config.auth_required = enabled(value),
+            "ServerPassword" => {
+                let mut chars = value.chars().peekable();
+                config.server_password.clear();
+                while let Some(ch) = chars.next() {
+                    config.server_password.push(match (ch, chars.peek()) {
+                        ('\\', Some('\\')) => chars.next().unwrap(),
+                        ('\\', Some('n')) => {
+                            chars.next();
+                            '\n'
+                        }
+                        ('\\', Some('r')) => {
+                            chars.next();
+                            '\r'
+                        }
+                        _ => ch,
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+    config
 }
 
 pub fn enable_obs_websocket(config_dir: &Path) -> Result<String, SupervisorError> {
@@ -206,6 +296,41 @@ pub fn enable_obs_websocket_on_port(
     config_dir: &Path,
     websocket_port: Option<u16>,
 ) -> Result<String, SupervisorError> {
+    if let Some((mut ini, section)) = legacy_websocket_section(config_dir)? {
+        let previous = parse_legacy_websocket(&ini[section.clone()]);
+        let port = websocket_port.unwrap_or_else(|| {
+            if previous.server_port == 0 {
+                default_obs_port()
+            } else {
+                previous.server_port
+            }
+        });
+        let password = Uuid::new_v4().simple().to_string();
+        let old_section = &ini[section.clone()];
+        let newline = if ini.contains("\r\n") { "\r\n" } else { "\n" };
+        // obs-websocket 5.5.0/5.5.1 only save migrated settings on FirstLoad
+        // and keep a password that is already set.
+        let mut updated = format!(
+            "FirstLoad=true{newline}ServerEnabled=true{newline}ServerPort={port}{newline}AuthRequired=true{newline}ServerPassword={password}{newline}"
+        );
+        for line in old_section.split_inclusive('\n') {
+            if !ini_entry(line).is_some_and(|(key, _)| {
+                matches!(
+                    key,
+                    "FirstLoad"
+                        | "ServerEnabled"
+                        | "ServerPort"
+                        | "AuthRequired"
+                        | "ServerPassword"
+                )
+            }) {
+                updated.push_str(line);
+            }
+        }
+        ini.replace_range(section, &updated);
+        write_websocket_config(&config_dir.join("global.ini"), ini.as_bytes())?;
+        return Ok(password);
+    }
     let path = config_dir.join("plugin_config/obs-websocket/config.json");
     let mut config: Value = match std::fs::read(&path) {
         Ok(bytes) => serde_json::from_slice(&bytes)
@@ -255,7 +380,12 @@ pub fn enable_obs_websocket_on_port(
     config["server_port"] = Value::from(port);
     let bytes = serde_json::to_vec_pretty(&config)
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
-    let temp = path.with_file_name(format!("config.json.tmp-{}", Uuid::new_v4()));
+    write_websocket_config(&path, &bytes)?;
+    Ok(password)
+}
+
+fn write_websocket_config(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let temp = path.with_extension(format!("tmp-{}", Uuid::new_v4()));
     let write_result = (|| {
         let mut options = fs::OpenOptions::new();
         options.write(true).create_new(true);
@@ -265,17 +395,16 @@ pub fn enable_obs_websocket_on_port(
             options.mode(0o600);
         }
         let mut file = options.open(&temp)?;
-        file.write_all(&bytes)?;
+        file.write_all(bytes)?;
         file.sync_all()?;
         drop(file);
-        fs::rename(&temp, &path)?;
+        fs::rename(&temp, path)?;
         Ok::<(), std::io::Error>(())
     })();
     if write_result.is_err() {
         let _ = fs::remove_file(&temp);
     }
-    write_result?;
-    Ok(password)
+    write_result
 }
 
 pub fn config_dir(setup: &Setup) -> PathBuf {
@@ -2778,6 +2907,57 @@ int main(int argc, char **argv) {
         super::enable_obs_websocket_on_port(&config_dir, None).unwrap();
         let config: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(config["server_port"], 4455);
+    }
+
+    #[test]
+    fn legacy_websocket_settings_take_precedence_over_stale_plugin_json() {
+        let directory = tempdir().unwrap();
+        let config_dir = directory.path();
+        let json = config_dir.join("plugin_config/obs-websocket/config.json");
+        fs::create_dir_all(json.parent().unwrap()).unwrap();
+        fs::write(&json, r#"{"server_enabled":true,"server_port":4459}"#).unwrap();
+        let ini = config_dir.join("global.ini");
+        fs::write(
+            &ini,
+            "[General]\r\nServerPort=4400\r\n[OBSWebSocket]\r\nServerEnabled=false\r\nServerPort=4456\r\nAuthRequired=1\r\nServerPassword=some\\\\value=here\r\n[Other]\r\nServerPort=4401\r\n",
+        )
+        .unwrap();
+
+        let config = super::read_obs_websocket_config(config_dir).unwrap();
+        assert!(!config.server_enabled);
+        assert_eq!(config.server_port, 4456);
+        assert!(config.auth_required);
+        assert_eq!(config.server_password, "some\\value=here");
+
+        fs::write(&ini, "[OBSWebSocket]\n\n[General]\nServerPort=4400\n").unwrap();
+        let config = super::read_obs_websocket_config(config_dir).unwrap();
+        assert!(config.server_enabled);
+        assert_eq!(config.server_port, 4459);
+    }
+
+    #[test]
+    fn enabling_websocket_updates_legacy_ini_without_touching_other_sections() {
+        let directory = tempdir().unwrap();
+        let config_dir = directory.path();
+        let ini = config_dir.join("global.ini");
+        fs::write(
+            &ini,
+            "[General]\nServerPort=4400\n[OBSWebSocket]\nFirstLoad=false\nServerEnabled=false\nServerPort=4456\nAlertsEnabled=true\n[Other]\nAuthRequired=false\n",
+        )
+        .unwrap();
+
+        let password = super::enable_obs_websocket_on_port(config_dir, None).unwrap();
+        let config = super::read_obs_websocket_config(config_dir).unwrap();
+        assert!(config.server_enabled);
+        assert!(config.auth_required);
+        assert_eq!(config.server_port, 4456);
+        assert_eq!(config.server_password, password);
+        let contents = fs::read_to_string(ini).unwrap();
+        assert!(contents.starts_with("[General]\nServerPort=4400\n"));
+        assert!(contents.contains("\nFirstLoad=true\n"));
+        assert!(!contents.contains("\nFirstLoad=false\n"));
+        assert!(contents.ends_with("AlertsEnabled=true\n[Other]\nAuthRequired=false\n"));
+        assert!(!config_dir.join("plugin_config").exists());
     }
 
     #[test]
