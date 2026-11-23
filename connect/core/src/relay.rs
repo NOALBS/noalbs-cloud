@@ -28,7 +28,8 @@ mod cloud;
 mod obs;
 
 use cloud::{CloudBody, CommandResult, identify_payload, send_cloud, send_message};
-use obs::{PendingCall, RawRequests, connect_obs, decode_response, get_obs_version, request_obs};
+pub use obs::stop_active_streams;
+use obs::{PendingCall, RawRequests, connect_obs, decode_response, get_obs_version};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -105,6 +106,8 @@ pub enum RelayError {
     ObsClosed,
     #[error("OBS websocket request timed out")]
     ObsTimeout,
+    #[error("timed out waiting for OBS output to stop")]
+    ObsOutputStopTimeout,
     #[error("OBS rejected {request} (code {code}): {}", comment.as_deref().unwrap_or("no details"))]
     ObsRejected {
         request: String,
@@ -777,38 +780,6 @@ pub enum OutputStopOutcome {
 pub struct StopOutputs {
     pub stream: Result<OutputStopOutcome, RelayError>,
     pub recording: Result<OutputStopOutcome, RelayError>,
-}
-
-pub async fn stop_active_streams(port: u16, password: &str) -> Result<StopOutputs, RelayError> {
-    let mut socket = tokio::time::timeout(obs::REQUEST_TIMEOUT, connect_obs(port, password))
-        .await
-        .map_err(|_| RelayError::ObsTimeout)??;
-    let stream = stop_output(
-        &mut socket,
-        RequestKind::GetStreamStatus,
-        RequestKind::StopStream,
-    )
-    .await;
-    let recording = stop_output(
-        &mut socket,
-        RequestKind::GetRecordStatus,
-        RequestKind::StopRecord,
-    )
-    .await;
-    Ok(StopOutputs { stream, recording })
-}
-
-async fn stop_output(
-    socket: &mut Socket,
-    status: RequestKind<'_>,
-    stop: RequestKind<'_>,
-) -> Result<OutputStopOutcome, RelayError> {
-    let status: OutputStatus = decode_response(request_obs(socket, status).await?)?;
-    if !status.output_active {
-        return Ok(OutputStopOutcome::AlreadyInactive);
-    }
-    request_obs(socket, stop).await?;
-    Ok(OutputStopOutcome::Stopped)
 }
 
 fn hash_base64(value: &[u8]) -> String {
@@ -1622,7 +1593,7 @@ mod tests {
                     socket.next().await.unwrap().unwrap().to_text().unwrap()
                 )
                 .unwrap(),
-                json!({"op":1,"d":{"rpcVersion":1}})
+                json!({"op":1,"d":{"rpcVersion":1,"eventSubscriptions":64}})
             );
             socket
                 .send(Message::Text(
@@ -1639,13 +1610,13 @@ mod tests {
                     None,
                     Some(json!({"outputActive":true})),
                 ),
-                ("StopStream", 501, Some("stream refused"), None),
                 (
                     "GetRecordStatus",
                     100,
                     None,
                     Some(json!({"outputActive":true})),
                 ),
+                ("StopStream", 501, Some("stream refused"), None),
                 ("StopRecord", 100, None, None),
             ] {
                 let request: serde_json::Value =
@@ -1657,6 +1628,10 @@ mod tests {
                         "requestStatus":{"code":code,"result":code == 100,"comment":comment},"responseData":data}
                 }).to_string().into())).await.unwrap();
             }
+            socket.send(Message::Text(json!({
+                "op":5,"d":{"eventType":"RecordStateChanged","eventIntent":64,
+                    "eventData":{"outputActive":false,"outputState":"OBS_WEBSOCKET_OUTPUT_STOPPED"}}
+            }).to_string().into())).await.unwrap();
         });
         let result = tokio::time::timeout(Duration::from_secs(5), stop_active_streams(port, ""))
             .await

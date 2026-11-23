@@ -627,8 +627,7 @@ async fn run_obs_action(
         .ok_or_else(|| "setup not found".to_string())?;
 
     let graceful_stop = if matches!(action, ObsAction::Stop | ObsAction::Restart) {
-        stop_setup_streams_with_timeout(Duration::from_secs(25), stop_setup_streams(&setup, state))
-            .await
+        stop_setup_streams(&setup, state).await
     } else {
         Ok(())
     };
@@ -1129,15 +1128,6 @@ async fn stop_setup_streams(setup: &Setup, state: &AppState) -> Result<(), Strin
     } else {
         Err(failures.join("; "))
     }
-}
-
-async fn stop_setup_streams_with_timeout<F>(deadline: Duration, future: F) -> Result<(), String>
-where
-    F: std::future::Future<Output = Result<(), String>>,
-{
-    tokio::time::timeout(deadline, future)
-        .await
-        .map_err(|_| "Timed out stopping OBS outputs".to_owned())?
 }
 
 fn local_obs_connection(setup: &Setup) -> Option<(u16, String)> {
@@ -1945,11 +1935,8 @@ fn start_link_session(
                                 })
                                 .unwrap_or_else(|_| monitor_setup.clone());
                             if incident == PcObsState::NotResponding
-                                && let Err(error) = stop_setup_streams_with_timeout(
-                                    Duration::from_secs(25),
-                                    stop_setup_streams(&restart_setup, &app_state),
-                                )
-                                .await
+                                && let Err(error) =
+                                    stop_setup_streams(&restart_setup, &app_state).await
                             {
                                 tracing::warn!(
                                     setup_id = %restart_setup.id,
@@ -2571,18 +2558,6 @@ mod tests {
         );
         assert!(select_crash_report_file(&files, None, false).is_none());
         std::fs::remove_dir_all(directory).unwrap();
-    }
-
-    #[tokio::test]
-    async fn stream_stop_timeout_returns_when_obs_side_hangs() {
-        assert!(
-            stop_setup_streams_with_timeout(
-                Duration::from_millis(1),
-                std::future::pending::<Result<(), String>>(),
-            )
-            .await
-            .is_err()
-        );
     }
 
     #[test]
