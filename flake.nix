@@ -17,10 +17,10 @@
 
         # nixpkgs lags behind Biome releases, so take upstream's static (musl)
         # binary, which runs on NixOS as is. Bump version and hash together.
-        biome = let version = "2.6.2"; in pkgs.runCommand "biome-${version}" {
+        biome = let version = "2.6.8"; in pkgs.runCommand "biome-${version}" {
             src = pkgs.fetchurl {
                 url = "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%40${version}/biome-linux-x64-musl";
-                hash = "sha256-67PQ6Ay+5QPEwZpwiR3XWJ4i6AFBJjCgytQCsZynjJM=";
+                hash = "sha256-ur0W4HJfnBvFX6CQwRys0kjCkCb2G3/Ot/PSF3MTyCI=";
             };
         } "install -Dm755 $src $out/bin/biome";
 
