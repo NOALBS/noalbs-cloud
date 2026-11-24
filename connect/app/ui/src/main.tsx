@@ -75,6 +75,7 @@ type Pairing = {
 	expires_in: number;
 	interval: number;
 };
+type PairingEvent<T> = { setup_id: string; data: T };
 type Tone = "ok" | "busy" | "bad" | "off";
 
 const SETTINGS = "settings";
@@ -187,35 +188,38 @@ function App() {
 		null,
 	);
 	const [pairingStatus, setPairingStatus] = React.useState("");
-	const [apiUrl, setApiUrl] = React.useState("");
-	const [dashboardUrl, setDashboardUrl] = React.useState("");
+	const pairingAttempt = React.useRef<{ setupId: string } | null>(null);
+	const [apiUrlDraft, setApiUrlDraft] = React.useState<string | null>(null);
+	const [dashboardUrlDraft, setDashboardUrlDraft] = React.useState<
+		string | null
+	>(null);
+	const apiUrl = apiUrlDraft ?? state?.api_url ?? "";
+	const dashboardUrl = dashboardUrlDraft ?? state?.dashboard_url ?? "";
 	const [firstRunStartAtLogin, setFirstRunStartAtLogin] = React.useState(true);
 	const [editing, setEditing] = React.useState<Setup | null>(null);
 	const [secondsLeft, setSecondsLeft] = React.useState(0);
 
-	const applyState = React.useCallback((value: State) => {
-		setState(value);
-		setApiUrl(value.api_url);
-		setDashboardUrl(value.dashboard_url ?? "");
-	}, []);
-
 	React.useEffect(() => {
 		invoke<State>("get_state")
 			.then((value) => {
-				applyState(value);
+				setState(value);
 				if (value.startup_error) setError(value.startup_error);
 			})
 			.catch((e) => setError(String(e)));
 		const unlisteners = [
-			listen<Pairing>("pairing-created", (event) => setPairing(event.payload)),
-			listen<string>("pairing-status", (event) =>
-				setPairingStatus(event.payload),
-			),
-			listen<State>("connect-state-changed", (event) => {
-				applyState(event.payload);
-				setPairing(null);
-				setPairingSetupId(null);
+			listen<PairingEvent<Pairing>>("pairing-created", ({ payload }) => {
+				if (payload.setup_id === pairingAttempt.current?.setupId) {
+					setPairing(payload.data);
+				}
 			}),
+			listen<PairingEvent<string>>("pairing-status", ({ payload }) => {
+				if (payload.setup_id === pairingAttempt.current?.setupId) {
+					setPairingStatus(payload.data);
+				}
+			}),
+			listen<State>("connect-state-changed", (event) =>
+				setState(event.payload),
+			),
 			listen<UpdateState>("connect-update-changed", (event) =>
 				setState((current) =>
 					current ? { ...current, update: event.payload } : current,
@@ -235,7 +239,7 @@ function App() {
 		return () => {
 			for (const unlisten of unlisteners) void unlisten.then((fn) => fn());
 		};
-	}, [applyState]);
+	}, []);
 
 	React.useEffect(() => {
 		if (!pairing) return;
@@ -258,7 +262,7 @@ function App() {
 		setError("");
 		try {
 			const updated = await action();
-			if (updated) applyState(updated);
+			if (updated) setState(updated);
 		} catch (e) {
 			setError(String(e));
 		}
@@ -269,10 +273,8 @@ function App() {
 		if (!trimmed) return;
 		await run(async () => {
 			if (state?.first_run)
-				await invoke("save_settings", {
+				await invoke("save_start_at_login", {
 					startAtLogin: firstRunStartAtLogin,
-					apiUrl,
-					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 				});
 			const before = new Set(state?.setups.map((s) => s.id));
 			const updated = await invoke<State>("add_setup", { name: trimmed });
@@ -304,6 +306,8 @@ function App() {
 	}
 
 	async function startPairing(id: string) {
+		const attempt = { setupId: id };
+		pairingAttempt.current = attempt;
 		setError("");
 		setPairing(null);
 		setPairingSetupId(id);
@@ -311,20 +315,50 @@ function App() {
 		try {
 			await invoke("pair_setup", { setupId: id });
 		} catch (e) {
-			setPairingSetupId(null);
-			setError(String(e));
-			setPairingStatus("");
+			if (pairingAttempt.current === attempt) setError(String(e));
+		} finally {
+			if (pairingAttempt.current === attempt) {
+				pairingAttempt.current = null;
+				setPairingSetupId(null);
+				setPairing(null);
+				setPairingStatus("");
+			}
 		}
 	}
 
-	function saveSettings(startAtLogin = state?.start_at_login ?? true) {
-		return run(() =>
-			invoke<State>("save_settings", {
+	function saveStartAtLogin(startAtLogin: boolean) {
+		return run(async () => {
+			const updated = await invoke<State>("save_start_at_login", {
 				startAtLogin,
+			});
+			setState(
+				(current) =>
+					current && { ...current, start_at_login: updated.start_at_login },
+			);
+			return undefined;
+		});
+	}
+
+	function saveUrls() {
+		return run(async () => {
+			const updated = await invoke<State>("save_urls", {
 				apiUrl,
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
-			}),
-		);
+			});
+			setApiUrlDraft((draft) => (draft === apiUrlDraft ? null : draft));
+			setDashboardUrlDraft((draft) =>
+				draft === dashboardUrlDraft ? null : draft,
+			);
+			setState(
+				(current) =>
+					current && {
+						...current,
+						api_url: updated.api_url,
+						dashboard_url: updated.dashboard_url,
+					},
+			);
+			return undefined;
+		});
 	}
 
 	async function runUpdateCommand(
@@ -332,7 +366,7 @@ function App() {
 		args?: Record<string, string>,
 	) {
 		try {
-			applyState(await invoke<State>(command, args));
+			setState(await invoke<State>(command, args));
 		} catch (e) {
 			setState((current) =>
 				current
@@ -518,7 +552,7 @@ function App() {
 								<div className="group-body">
 									<Check
 										checked={state.start_at_login}
-										onChange={(checked) => saveSettings(checked)}
+										onChange={saveStartAtLogin}
 									>
 										Start NOALBS Cloud Connect when my computer starts
 									</Check>
@@ -612,7 +646,7 @@ function App() {
 									<Field label="API URL">
 										<input
 											value={apiUrl}
-											onChange={(event) => setApiUrl(event.target.value)}
+											onChange={(event) => setApiUrlDraft(event.target.value)}
 										/>
 									</Field>
 									<Field
@@ -622,11 +656,13 @@ function App() {
 										<input
 											value={dashboardUrl}
 											placeholder="Same as the API"
-											onChange={(event) => setDashboardUrl(event.target.value)}
+											onChange={(event) =>
+												setDashboardUrlDraft(event.target.value)
+											}
 										/>
 									</Field>
 									<div className="buttons end">
-										<button type="button" onClick={() => saveSettings()}>
+										<button type="button" onClick={saveUrls}>
 											Save
 										</button>
 									</div>
@@ -655,7 +691,7 @@ function App() {
 							onSave={saveSetup}
 							onCancel={() => setEditing(null)}
 							onProgramCommand={async (command, args) => {
-								applyState(await invoke<State>(command, args));
+								setState(await invoke<State>(command, args));
 							}}
 						/>
 					) : (
