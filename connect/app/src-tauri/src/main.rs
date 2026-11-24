@@ -346,13 +346,47 @@ fn add_setup(name: String, state: State<'_, AppState>) -> Result<UiState, String
 }
 
 #[tauri::command]
-fn save_settings(
+fn save_start_at_login(
     app: tauri::AppHandle,
     start_at_login: bool,
+    state: State<'_, AppState>,
+) -> Result<UiState, String> {
+    persist_start_at_login(&state.config, &state.store, start_at_login)?;
+    let autostart = app.autolaunch();
+    if start_at_login {
+        autostart.enable().map_err(|error| error.to_string())?;
+    } else {
+        autostart.disable().map_err(|error| error.to_string())?;
+    }
+    Ok(get_state(state))
+}
+
+fn persist_start_at_login(
+    config: &Mutex<AppConfig>,
+    store: &ConfigStore,
+    start_at_login: bool,
+) -> Result<(), String> {
+    let mut config = config.lock().map_err(|_| "config lock poisoned")?;
+    config.settings.start_at_login = start_at_login;
+    store.save(&config).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn save_urls(
     api_url: String,
     dashboard_url: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
+    persist_urls(&state.config, &state.store, api_url, dashboard_url)?;
+    Ok(get_state(state))
+}
+
+fn persist_urls(
+    config: &Mutex<AppConfig>,
+    store: &ConfigStore,
+    api_url: String,
+    dashboard_url: Option<String>,
+) -> Result<(), String> {
     let dashboard_url = dashboard_url.filter(|url| !url.trim().is_empty());
     let (api_url_override, dashboard_url_override) =
         connect_core::config::AppSettings::environment_overrides();
@@ -362,27 +396,14 @@ fn save_settings(
     if let Some(url) = effective_dashboard_url {
         validate_dashboard_url(url)?;
     }
-    {
-        let mut config = state.config.lock().map_err(|_| "config lock poisoned")?;
-        config.settings.start_at_login = start_at_login;
-        if api_url_override.is_none() {
-            config.settings.api_url = api_url;
-        }
-        if dashboard_url_override.is_none() {
-            config.settings.dashboard_url = dashboard_url;
-        }
-        state
-            .store
-            .save(&config)
-            .map_err(|error| error.to_string())?;
+    let mut config = config.lock().map_err(|_| "config lock poisoned")?;
+    if api_url_override.is_none() {
+        config.settings.api_url = api_url;
     }
-    let autostart = app.autolaunch();
-    if start_at_login {
-        autostart.enable().map_err(|error| error.to_string())?;
-    } else {
-        autostart.disable().map_err(|error| error.to_string())?;
+    if dashboard_url_override.is_none() {
+        config.settings.dashboard_url = dashboard_url;
     }
-    Ok(get_state(state))
+    store.save(&config).map_err(|error| error.to_string())
 }
 
 fn default_setup_name() -> String {
@@ -2415,7 +2436,8 @@ fn main() {
             get_state,
             reconnect_link,
             add_setup,
-            save_settings,
+            save_start_at_login,
+            save_urls,
             save_setup,
             create_pairing,
             pair_setup,
@@ -2444,6 +2466,32 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn url_and_autostart_saves_preserve_each_others_changes() {
+        let test_dir =
+            std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
+        let config = Mutex::new(AppConfig::default());
+        let store = ConfigStore::new(test_dir.join("config.json"));
+        let (api_override, dashboard_override) =
+            connect_core::config::AppSettings::environment_overrides();
+
+        let api_url = "https://api.example.com";
+        let dashboard_url = "https://dashboard.example.com";
+        persist_urls(&config, &store, api_url.into(), Some(dashboard_url.into())).unwrap();
+        persist_start_at_login(&config, &store, false).unwrap();
+        let saved = store.load().unwrap().settings;
+        if api_override.is_none() {
+            assert_eq!(saved.api_url, api_url);
+        }
+        if dashboard_override.is_none() {
+            assert_eq!(saved.dashboard_url.as_deref(), Some(dashboard_url));
+        }
+
+        persist_urls(&config, &store, "https://api2.example.com".into(), None).unwrap();
+        assert!(!store.load().unwrap().settings.start_at_login);
+        std::fs::remove_dir_all(test_dir).unwrap();
+    }
 
     #[tokio::test]
     async fn cloud_link_state_is_persistent_and_independent_of_obs() {

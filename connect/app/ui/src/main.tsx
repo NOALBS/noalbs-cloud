@@ -266,10 +266,8 @@ function App() {
 		if (!trimmed) return;
 		await run(async () => {
 			if (state?.first_run)
-				await invoke("save_settings", {
+				await invoke("save_start_at_login", {
 					startAtLogin: firstRunStartAtLogin,
-					apiUrl: state.api_url,
-					dashboardUrl: state.dashboard_url,
 				});
 			const before = new Set(state?.setups.map((s) => s.id));
 			const updated = await invoke<State>("add_setup", { name: trimmed });
@@ -322,21 +320,21 @@ function App() {
 	}
 
 	function saveStartAtLogin(startAtLogin: boolean) {
-		if (!state) return;
-		return run(() =>
-			invoke<State>("save_settings", {
+		return run(async () => {
+			const updated = await invoke<State>("save_start_at_login", {
 				startAtLogin,
-				apiUrl: state.api_url,
-				dashboardUrl: state.dashboard_url,
-			}),
-		);
+			});
+			setState(
+				(current) =>
+					current && { ...current, start_at_login: updated.start_at_login },
+			);
+			return undefined;
+		});
 	}
 
 	function saveUrls() {
-		if (!state) return;
 		return run(async () => {
-			const updated = await invoke<State>("save_settings", {
-				startAtLogin: state.start_at_login,
+			const updated = await invoke<State>("save_urls", {
 				apiUrl,
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 			});
@@ -344,7 +342,15 @@ function App() {
 			setDashboardUrlDraft((draft) =>
 				draft === dashboardUrlDraft ? null : draft,
 			);
-			return updated;
+			setState(
+				(current) =>
+					current && {
+						...current,
+						api_url: updated.api_url,
+						dashboard_url: updated.dashboard_url,
+					},
+			);
+			return undefined;
 		});
 	}
 
