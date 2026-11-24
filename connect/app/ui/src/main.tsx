@@ -75,6 +75,7 @@ type Pairing = {
 	expires_in: number;
 	interval: number;
 };
+type PairingEvent<T> = { setup_id: string; data: T };
 type Tone = "ok" | "busy" | "bad" | "off";
 
 const SETTINGS = "settings";
@@ -187,7 +188,7 @@ function App() {
 		null,
 	);
 	const [pairingStatus, setPairingStatus] = React.useState("");
-	const pairingAttempt = React.useRef<symbol | null>(null);
+	const pairingAttempt = React.useRef<{ setupId: string } | null>(null);
 	const [apiUrlDraft, setApiUrlDraft] = React.useState<string | null>(null);
 	const [dashboardUrlDraft, setDashboardUrlDraft] = React.useState<
 		string | null
@@ -206,10 +207,16 @@ function App() {
 			})
 			.catch((e) => setError(String(e)));
 		const unlisteners = [
-			listen<Pairing>("pairing-created", (event) => setPairing(event.payload)),
-			listen<string>("pairing-status", (event) =>
-				setPairingStatus(event.payload),
-			),
+			listen<PairingEvent<Pairing>>("pairing-created", ({ payload }) => {
+				if (payload.setup_id === pairingAttempt.current?.setupId) {
+					setPairing(payload.data);
+				}
+			}),
+			listen<PairingEvent<string>>("pairing-status", ({ payload }) => {
+				if (payload.setup_id === pairingAttempt.current?.setupId) {
+					setPairingStatus(payload.data);
+				}
+			}),
 			listen<State>("connect-state-changed", (event) =>
 				setState(event.payload),
 			),
@@ -299,7 +306,7 @@ function App() {
 	}
 
 	async function startPairing(id: string) {
-		const attempt = Symbol();
+		const attempt = { setupId: id };
 		pairingAttempt.current = attempt;
 		setError("");
 		setPairing(null);

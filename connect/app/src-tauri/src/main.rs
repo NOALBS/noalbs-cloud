@@ -456,6 +456,12 @@ async fn create_pairing(
     Ok(pending)
 }
 
+#[derive(Clone, serde::Serialize)]
+struct PairingEvent<T> {
+    setup_id: uuid::Uuid,
+    data: T,
+}
+
 #[tauri::command]
 async fn pair_setup(
     app: tauri::AppHandle,
@@ -485,14 +491,26 @@ async fn pair_setup(
         .map_err(|_| "pending verification URL lock poisoned")?
         .insert(id, pending.verification_url.clone());
     let interval = pending.interval.max(1);
-    app.emit("pairing-created", &pending)
-        .map_err(|error| error.to_string())?;
+    app.emit(
+        "pairing-created",
+        PairingEvent {
+            setup_id: id,
+            data: &pending,
+        },
+    )
+    .map_err(|error| error.to_string())?;
     let result = client
         .poll_until_complete(
             &pending.device_code,
             Duration::from_secs(interval.into()),
             |status| {
-                let _ = app.emit("pairing-status", format!("{status:?}"));
+                let _ = app.emit(
+                    "pairing-status",
+                    PairingEvent {
+                        setup_id: id,
+                        data: format!("{status:?}"),
+                    },
+                );
             },
         )
         .await;
@@ -2474,6 +2492,19 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pairing_events_include_the_originating_setup() {
+        let setup_id = uuid::Uuid::new_v4();
+        let event = PairingEvent {
+            setup_id,
+            data: "Pending",
+        };
+        assert_eq!(
+            serde_json::to_value(event).unwrap(),
+            serde_json::json!({"setup_id": setup_id, "data": "Pending"}),
+        );
+    }
 
     #[test]
     fn url_and_autostart_saves_preserve_each_others_changes() {
