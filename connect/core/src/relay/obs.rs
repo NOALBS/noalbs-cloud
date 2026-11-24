@@ -129,13 +129,21 @@ async fn read_json(socket: &mut Socket) -> Result<Value, RelayError> {
 }
 
 pub async fn probe_obs(port: u16, password: &str) -> Result<(), RelayError> {
-    timeout_at(
-        Instant::now() + REQUEST_TIMEOUT,
-        connect_obs_with_subscriptions(port, password, Some(0)),
-    )
+    timeout_at(Instant::now() + REQUEST_TIMEOUT, async {
+        let mut socket = connect_obs_with_subscriptions(port, password, Some(0)).await?;
+        let call = PendingCall::send(&mut socket, RequestKind::GetStats).await?;
+        loop {
+            let message = read_json(&mut socket).await?;
+            if call.matches(&message) {
+                return match call.complete(&message) {
+                    Ok(_) | Err(RelayError::ObsRejected { .. }) => Ok(()),
+                    Err(error) => Err(error),
+                };
+            }
+        }
+    })
     .await
-    .map_err(|_| RelayError::ObsTimeout)??;
-    Ok(())
+    .map_err(|_| RelayError::ObsTimeout)?
 }
 
 pub async fn stop_active_streams(port: u16, password: &str) -> Result<StopOutputs, RelayError> {
@@ -410,9 +418,44 @@ mod tests {
                 json!({"op":1,"d":{"rpcVersion":1,"eventSubscriptions":0}}),
             );
             send_mock(&mut socket, json!({"op":2,"d":{"negotiatedRpcVersion":1}})).await;
+            let request = receive_mock(&mut socket).await;
+            assert_eq!(request["d"]["requestType"], "GetStats");
+            send_mock(
+                &mut socket,
+                json!({"op":7,"d":{"requestType":"GetStats","requestId":request["d"]["requestId"],"requestStatus":{"result":true,"code":100}}}),
+            )
+            .await;
             assert!(!matches!(socket.next().await, Some(Ok(Message::Text(_)))));
         });
         probe_obs(port, "").await.unwrap();
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn watchdog_probe_times_out_when_identified_obs_does_not_answer_requests() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut socket = accept_async(listener.accept().await.unwrap().0)
+                .await
+                .unwrap();
+            send_mock(
+                &mut socket,
+                json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}}),
+            )
+            .await;
+            assert_eq!(receive_mock(&mut socket).await["op"], 1);
+            send_mock(&mut socket, json!({"op":2,"d":{"negotiatedRpcVersion":1}})).await;
+            assert_eq!(
+                receive_mock(&mut socket).await["d"]["requestType"],
+                "GetStats"
+            );
+            assert!(!matches!(socket.next().await, Some(Ok(Message::Text(_)))));
+        });
+        assert!(matches!(
+            probe_obs(port, "").await,
+            Err(RelayError::ObsTimeout)
+        ));
         server.await.unwrap();
     }
 
