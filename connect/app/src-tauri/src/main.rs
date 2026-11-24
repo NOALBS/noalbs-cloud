@@ -1659,7 +1659,7 @@ fn start_link_session(
     });
     let monitor_handle = app.clone();
     let monitor_setup = setup.clone();
-    let monitor_health = health_rx.clone();
+    let mut monitor_health = health_rx.clone();
     let mut monitor_telemetry = telemetry_rx.clone();
     let mut monitor_watchdog = watchdog_rx.clone();
     let monitor_state_tx = state_tx.clone();
@@ -1686,8 +1686,20 @@ fn start_link_session(
                 Ok(()) = obs_auth_failure.changed() => {
                     if *obs_auth_failure.borrow_and_update() {
                         let _ = monitor_handle.emit(
-                            "connect-error",
-                            connect_core::relay::RelayError::ObsAuthentication.to_string(),
+                            "connect-obs-auth-error",
+                            (
+                                monitor_setup.id,
+                                Some(connect_core::relay::RelayError::ObsAuthentication.to_string()),
+                            ),
+                        );
+                    }
+                }
+                Ok(()) = monitor_health.changed() => {
+                    let health = *monitor_health.borrow_and_update();
+                    if health == ObsHealth::Connected {
+                        let _ = monitor_handle.emit(
+                            "connect-obs-auth-error",
+                            (monitor_setup.id, None::<String>),
                         );
                     }
                 }

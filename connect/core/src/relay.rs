@@ -973,42 +973,71 @@ mod tests {
         let mut config = idle_link_config(cloud.local_addr().unwrap().port());
         config.obs_port = Some(obs.local_addr().unwrap().port());
         let mut auth_failed = config.obs_auth_failed.subscribe();
+        let mut health = config.obs_health.subscribe();
         let (link, _) = tokio::sync::watch::channel(super::CloudLinkState::Reconnecting);
 
         let server = async {
-            let mut obs = accept_async(obs.accept().await.unwrap().0).await.unwrap();
-            obs.send(Message::text(
-                json!({
-                    "op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.5.1",
-                        "authentication":{"salt":"salt","challenge":"challenge"}}
-                })
-                .to_string(),
-            ))
-            .await
-            .unwrap();
-            assert!(obs.next().await.unwrap().unwrap().is_text());
-            obs.close(Some(CloseFrame {
-                code: CloseCode::Library(4009),
-                reason: "Authentication failed".into(),
-            }))
-            .await
-            .unwrap();
+            let mut rejected = accept_async(obs.accept().await.unwrap().0).await.unwrap();
+            rejected
+                .send(Message::text(
+                    json!({
+                        "op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.5.1",
+                            "authentication":{"salt":"salt","challenge":"challenge"}}
+                    })
+                    .to_string(),
+                ))
+                .await
+                .unwrap();
+            assert!(rejected.next().await.unwrap().unwrap().is_text());
+            rejected
+                .close(Some(CloseFrame {
+                    code: CloseCode::Library(4009),
+                    reason: "Authentication failed".into(),
+                }))
+                .await
+                .unwrap();
 
             auth_failed.changed().await.unwrap();
             assert!(*auth_failed.borrow_and_update());
+            let mut accepted = accept_async(obs.accept().await.unwrap().0).await.unwrap();
+            accepted
+                .send(Message::text(
+                    json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.5.1"}}).to_string(),
+                ))
+                .await
+                .unwrap();
+            assert!(accepted.next().await.unwrap().unwrap().is_text());
+            assert!(*auth_failed.borrow());
+            assert_ne!(*health.borrow(), super::ObsHealth::Connected);
+            accepted
+                .send(Message::text(
+                    json!({"op":2,"d":{"negotiatedRpcVersion":1}}).to_string(),
+                ))
+                .await
+                .unwrap();
+            health
+                .wait_for(|state| *state == super::ObsHealth::Connected)
+                .await
+                .unwrap();
+            assert!(!*auth_failed.borrow());
+
             let mut cloud = accept_async(cloud.accept().await.unwrap().0).await.unwrap();
             assert!(cloud.next().await.unwrap().unwrap().is_text());
             cloud
                 .send(Message::text(json!({"identifyAck":false}).to_string()))
                 .await
                 .unwrap();
+            while cloud.next().await.is_some_and(|message| message.is_ok()) {}
         };
         let (result, ()) = tokio::time::timeout(Duration::from_secs(5), async {
             tokio::join!(idle_connection(&mut config, &link), server)
         })
         .await
         .unwrap();
-        assert!(matches!(result, Err(RelayError::InvalidToken)));
+        assert!(
+            matches!(result, Err(RelayError::InvalidToken)),
+            "{result:?}"
+        );
     }
 
     #[tokio::test]
