@@ -667,6 +667,7 @@ struct StoppingObs {
     setup: Setup,
     process: Option<(u32, u64)>,
     launched_at: Option<Instant>,
+    forgotten: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -800,7 +801,12 @@ impl Supervisor {
         resume: bool,
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
-        if self.stopping.contains_key(&setup.id) {
+        if self.stopping.contains_key(&setup.id)
+            || self
+                .stopping
+                .values()
+                .any(|stopping| stopping.forgotten && same_process_identity(setup, &stopping.setup))
+        {
             return Err(SupervisorError::Stopping);
         }
         let crash_cleanup_pending = self.crashed_pending.contains(&setup.id);
@@ -1179,7 +1185,9 @@ impl Supervisor {
     }
 
     pub fn forget(&mut self, setup_id: Uuid) {
-        self.stopping.remove(&setup_id);
+        if let Some(stopping) = self.stopping.get_mut(&setup_id) {
+            stopping.forgotten = true;
+        }
         if let Some(child) = self.children.remove(&setup_id) {
             let mut child_process = child.child;
             std::thread::spawn(move || {
@@ -1228,6 +1236,7 @@ impl Supervisor {
                 setup: setup.clone(),
                 process,
                 launched_at,
+                forgotten: false,
             },
         );
         Ok(Shutdown {
@@ -1240,7 +1249,11 @@ impl Supervisor {
     }
 
     fn finish_shutdown(&mut self, id: Uuid, shutdown: Shutdown) {
-        if self.stopping.remove(&id).is_some() {
+        if self
+            .stopping
+            .remove(&id)
+            .is_some_and(|stopping| !stopping.forgotten)
+        {
             if shutdown.forced {
                 self.crashed_pending.insert(id);
             }
@@ -2780,6 +2793,7 @@ mod tests {
             &directory.path().join("other-obs"),
             &directory.path().join("other"),
         );
+        let replacement = make_setup(&script, &directory.path().join("config"));
         let supervisor = Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(10)));
         supervisor
             .lock()
@@ -2802,19 +2816,27 @@ mod tests {
                 .map(|mut supervisor| {
                     let other_state = supervisor.state(&other);
                     let same_setup_start = supervisor.start(&setup, false, None);
-                    (other_state, same_setup_start)
+                    supervisor.forget(setup.id);
+                    let replacement_start = supervisor.start(&replacement, false, None);
+                    (other_state, same_setup_start, replacement_start)
                 })
                 .map_err(|error| error.to_string());
             fs::write(&release, "").unwrap();
             stop.join().unwrap().unwrap();
-            let (other_state, same_setup_start) = status.unwrap();
+            let (other_state, same_setup_start, replacement_start) = status.unwrap();
             assert_eq!(other_state, PcObsState::NotRunning);
             assert!(matches!(same_setup_start, Err(SupervisorError::Stopping)));
+            assert!(matches!(replacement_start, Err(SupervisorError::Stopping)));
         });
         assert_eq!(
             supervisor.lock().unwrap().state(&setup),
             PcObsState::NotRunning
         );
+        let mut supervisor = supervisor.lock().unwrap();
+        fs::remove_file(&ready).unwrap();
+        supervisor.start(&replacement, false, None).unwrap();
+        wait_for(&ready);
+        supervisor.stop(&replacement).unwrap();
     }
 
     #[test]
