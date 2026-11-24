@@ -166,10 +166,14 @@ impl LocalObs {
         password: &str,
         delay: &mut Duration,
     ) -> RelayError {
+        let attempted_at = std::time::Instant::now();
         match time::timeout(REQUEST_TIMEOUT, connect_obs(port, password)).await {
             Ok(Ok(socket)) => {
                 *delay = Duration::from_millis(500);
                 self.set_auth_failed(false);
+                self.telemetry.send_modify(|telemetry| {
+                    telemetry.last_identified_attempt = Some(attempted_at);
+                });
                 match self.serve(socket).await {
                     Err(error) => error,
                     Ok(()) => RelayError::ObsClosed,
