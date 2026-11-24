@@ -745,6 +745,21 @@ impl Supervisor {
         (seconds > 0).then(|| UNIX_EPOCH + Duration::from_secs(seconds))
     }
 
+    pub fn obs_process_identity_with(&self, setup: &Setup, system: &System) -> Option<(u32, u64)> {
+        if let Some(child) = self.children.get(&setup.id) {
+            return Some((child.pid, child.process_start_time));
+        }
+        if let Some(process) = self.stopping.get(&setup.id).and_then(|obs| obs.process) {
+            return Some(process);
+        }
+        let pids = self.matching_obs_pids_with(setup, system);
+        if let [pid] = pids.as_slice() {
+            let pid = pid.as_u32();
+            return Some((pid, process_start_time_with(pid, system)?));
+        }
+        None
+    }
+
     fn matching_obs_pids(&self, setup: &Setup) -> Vec<Pid> {
         matching_obs_pids_for_setups(setup, &self.known_setups)
     }

@@ -1511,6 +1511,34 @@ fn not_responding_incident_due(
         && since.is_some_and(|since| now.saturating_duration_since(since) >= NOT_RESPONDING_GRACE)
 }
 
+#[derive(Default)]
+struct WatchdogResponseGrace {
+    process: Option<(u32, u64)>,
+    since: Option<Instant>,
+}
+
+impl WatchdogResponseGrace {
+    fn observe(
+        &mut self,
+        process: Option<(u32, u64)>,
+        link_state: PcObsState,
+        now: Instant,
+    ) -> bool {
+        if self.process != process || link_state != PcObsState::NotResponding {
+            self.reset();
+        }
+        self.process = process;
+        if link_state == PcObsState::NotResponding {
+            self.since.get_or_insert(now);
+        }
+        not_responding_incident_due(link_state, self.since, now)
+    }
+
+    fn reset(&mut self) {
+        self.since = None;
+    }
+}
+
 fn displayed_obs_state(process_state: PcObsState, link_state: Option<PcObsState>) -> PcObsState {
     link_state.unwrap_or(process_state)
 }
@@ -1685,7 +1713,7 @@ fn start_link_session(
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
         let mut handled_incident = None;
-        let mut not_responding_since = None;
+        let mut response_grace = WatchdogResponseGrace::default();
         let mut last_obs_activity_count = 0_u64;
         let mut last_obs_activity = Instant::now();
         // Programs already closed in this idle period, so each is closed once.
@@ -1721,15 +1749,18 @@ fn start_link_session(
                 }
                 _ = tick.tick() => {
                     let app_state = monitor_handle.state::<AppState>();
-                    let (process_state, program_status, idle_close_minutes, idle_stop_obs) =
+                    let ((process_state, process), program_status, idle_close_minutes, idle_stop_obs) =
                         with_processes(&app_state, PROCESS_SNAPSHOT_MAX_AGE, |snapshot| {
                             let process_state = app_state
                                 .supervisor
                                 .lock()
                                 .map(|mut supervisor| {
-                                    supervisor.state_with(&monitor_setup, snapshot.system())
+                                    (
+                                        supervisor.state_with(&monitor_setup, snapshot.system()),
+                                        supervisor.obs_process_identity_with(&monitor_setup, snapshot.system()),
+                                    )
                                 })
-                                .unwrap_or(PcObsState::Unknown);
+                                .unwrap_or((PcObsState::Unknown, None));
                             let configured = app_state.config.lock().ok().and_then(|config| {
                                 config
                                     .setups
@@ -1878,42 +1909,12 @@ fn start_link_session(
                             });
                         }
                     }
-                    if link_state == PcObsState::NotResponding {
-                        not_responding_since.get_or_insert_with(Instant::now);
-                    } else {
-                        not_responding_since = None;
-                    }
+                    let unresponsive =
+                        response_grace.observe(process, link_state, Instant::now());
                     let incident = if process_state == PcObsState::Crashed {
                         Some(PcObsState::Crashed)
-                    } else if not_responding_incident_due(
-                        link_state,
-                        not_responding_since,
-                        Instant::now(),
-                    ) {
-                        if handled_incident == Some(PcObsState::NotResponding) {
-                            Some(PcObsState::NotResponding)
-                        } else {
-                            let fresh_process_state =
-                                with_processes(&app_state, Duration::ZERO, |snapshot| {
-                                    app_state
-                                        .supervisor
-                                        .lock()
-                                        .map(|mut supervisor| {
-                                            supervisor.state_with(
-                                                &monitor_setup,
-                                                snapshot.system(),
-                                            )
-                                        })
-                                        .unwrap_or(PcObsState::Unknown)
-                                });
-                            if fresh_process_state == PcObsState::NotRunning {
-                                let _ = monitor_state_tx.send(PcObsState::NotRunning);
-                                not_responding_since = None;
-                                None
-                            } else {
-                                Some(PcObsState::NotResponding)
-                            }
-                        }
+                    } else if unresponsive {
+                        Some(PcObsState::NotResponding)
                     } else {
                         None
                     };
@@ -1927,8 +1928,31 @@ fn start_link_session(
                     let Some(action_guard) =
                         watchdog_action_guard(&app_state.obs_actions_running, monitor_setup.id)
                     else {
+                        response_grace.reset();
                         continue;
                     };
+                    if incident == PcObsState::NotResponding {
+                        let (fresh_state, fresh_process) =
+                            with_processes(&app_state, Duration::ZERO, |snapshot| {
+                                app_state
+                                    .supervisor
+                                    .lock()
+                                    .map(|mut supervisor| {
+                                        (
+                                            supervisor.state_with(&monitor_setup, snapshot.system()),
+                                            supervisor.obs_process_identity_with(&monitor_setup, snapshot.system()),
+                                        )
+                                    })
+                                    .unwrap_or((PcObsState::Unknown, None))
+                            });
+                        if fresh_state == PcObsState::NotRunning {
+                            let _ = monitor_state_tx.send(fresh_state);
+                        }
+                        if fresh_state == PcObsState::NotRunning || fresh_process != process {
+                            response_grace.reset();
+                            continue;
+                        }
+                    }
                     handled_incident = Some(incident);
                     if incident == PcObsState::Crashed {
                         for kind in ["crash_report", "obs_log"] {
@@ -2001,6 +2025,8 @@ fn start_link_session(
                             .and_then(|result| result);
                             if let Err(error) = restart_result {
                                 let _ = monitor_handle.emit("connect-error", error);
+                            } else {
+                                response_grace.reset();
                             }
                         }
                     }
@@ -2739,6 +2765,34 @@ mod tests {
             PcObsState::Connected,
             Some(grace_elapsed - Duration::from_secs(1)),
             now
+        ));
+    }
+
+    #[test]
+    fn watchdog_grace_restarts_after_deferral_or_process_replacement() {
+        let mut grace = WatchdogResponseGrace::default();
+        let unresponsive = PcObsState::NotResponding;
+        let original = Some((101, 1));
+        let replacement = Some((102, 1));
+        let now = Instant::now();
+        assert!(!grace.observe(original, unresponsive, now));
+        let first_deadline = now + NOT_RESPONDING_GRACE;
+        assert!(grace.observe(original, unresponsive, first_deadline));
+
+        grace.reset();
+        assert!(!grace.observe(original, unresponsive, first_deadline));
+        let second_deadline = first_deadline + NOT_RESPONDING_GRACE;
+        assert!(grace.observe(original, unresponsive, second_deadline));
+        assert!(!grace.observe(replacement, unresponsive, second_deadline));
+        assert!(!grace.observe(
+            replacement,
+            unresponsive,
+            second_deadline + NOT_RESPONDING_GRACE - Duration::from_millis(1),
+        ));
+        assert!(grace.observe(
+            replacement,
+            unresponsive,
+            second_deadline + NOT_RESPONDING_GRACE,
         ));
     }
 
