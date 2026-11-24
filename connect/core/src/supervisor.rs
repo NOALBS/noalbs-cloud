@@ -666,6 +666,13 @@ pub struct StartedObs {
 struct StoppingObs {
     setup: Setup,
     process: Option<(u32, u64)>,
+    launched_at: Option<Instant>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ObsProcessInstance {
+    pub identity: (u32, u64),
+    pub launched_at: Instant,
 }
 
 struct Shutdown {
@@ -745,17 +752,36 @@ impl Supervisor {
         (seconds > 0).then(|| UNIX_EPOCH + Duration::from_secs(seconds))
     }
 
-    pub fn obs_process_identity_with(&self, setup: &Setup, system: &System) -> Option<(u32, u64)> {
+    pub fn obs_process_instance_with(
+        &self,
+        setup: &Setup,
+        system: &System,
+    ) -> Option<ObsProcessInstance> {
         if let Some(child) = self.children.get(&setup.id) {
-            return Some((child.pid, child.process_start_time));
+            return Some(ObsProcessInstance {
+                identity: (child.pid, child.process_start_time),
+                launched_at: child.started,
+            });
         }
-        if let Some(process) = self.stopping.get(&setup.id).and_then(|obs| obs.process) {
-            return Some(process);
+        if let Some(stopping) = self.stopping.get(&setup.id)
+            && let (Some(identity), Some(launched_at)) = (stopping.process, stopping.launched_at)
+        {
+            return Some(ObsProcessInstance {
+                identity,
+                launched_at,
+            });
         }
         let pids = self.matching_obs_pids_with(setup, system);
         if let [pid] = pids.as_slice() {
             let pid = pid.as_u32();
-            return Some((pid, process_start_time_with(pid, system)?));
+            let start_time = process_start_time_with(pid, system)?;
+            let age = SystemTime::now()
+                .duration_since(UNIX_EPOCH + Duration::from_secs(start_time))
+                .unwrap_or_default();
+            return Some(ObsProcessInstance {
+                identity: (pid, start_time),
+                launched_at: Instant::now().checked_sub(age)?,
+            });
         }
         None
     }
@@ -1195,11 +1221,13 @@ impl Supervisor {
         let process = child
             .as_ref()
             .map(|item| (item.pid, item.process_start_time));
+        let launched_at = child.as_ref().map(|item| item.started);
         self.stopping.insert(
             setup.id,
             StoppingObs {
                 setup: setup.clone(),
                 process,
+                launched_at,
             },
         );
         Ok(Shutdown {

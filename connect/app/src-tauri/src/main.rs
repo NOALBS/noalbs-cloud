@@ -20,12 +20,13 @@ use connect_core::{
     programs::{self, ObsLifecycleAction},
     relay::{
         CloudLinkState, LinkConfig, ObsAction, ObsCommandRequest, ObsHealth, ObsTelemetry,
-        PcObsState, WatchdogMode, run_link_with_programs_and_state, stop_active_streams,
+        PcObsState, RelayError, WatchdogMode, probe_obs, run_link_with_programs_and_state,
+        stop_active_streams,
     },
     supervisor::{
-        Supervisor, config_dir, detected_obs_binary_for, detected_obs_install_kind,
-        read_obs_websocket_config, same_obs_binary, same_obs_identity_for_platform,
-        setup_is_portable_for_platform,
+        ObsProcessInstance, Supervisor, config_dir, detected_obs_binary_for,
+        detected_obs_install_kind, read_obs_websocket_config, same_obs_binary,
+        same_obs_identity_for_platform, setup_is_portable_for_platform,
     },
     url_security::{validate_dashboard_url, validate_verification_url},
     watchdog::{Watchdog, WatchdogAction},
@@ -100,6 +101,7 @@ impl SharedProcesses {
 
 const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
 const NOT_RESPONDING_GRACE: Duration = Duration::from_secs(10);
+const OBS_LAUNCH_GRACE: Duration = Duration::from_secs(30);
 const IDLE_OBS_STOP_RETRY: Duration = Duration::from_secs(60);
 
 fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
@@ -1515,27 +1517,50 @@ fn not_responding_incident_due(
 struct WatchdogResponseGrace {
     process: Option<(u32, u64)>,
     since: Option<Instant>,
+    deferred_at: Option<Instant>,
 }
 
 impl WatchdogResponseGrace {
     fn observe(
         &mut self,
-        process: Option<(u32, u64)>,
-        link_state: PcObsState,
+        process: Option<ObsProcessInstance>,
+        process_state: PcObsState,
+        health: ObsHealth,
+        last_identified: Option<Instant>,
         now: Instant,
     ) -> bool {
-        if self.process != process || link_state != PcObsState::NotResponding {
-            self.reset();
+        let identity = process.map(|process| process.identity);
+        if self.process != identity {
+            *self = Self {
+                process: identity,
+                ..Self::default()
+            };
         }
-        self.process = process;
+        let Some(process) = process else {
+            return false;
+        };
+        if health == ObsHealth::Disabled || !programs::obs_is_running(&process_state) {
+            self.since = None;
+            return false;
+        }
+        if last_identified.is_none_or(|at| at < process.launched_at) {
+            let since = self
+                .deferred_at
+                .map_or(process.launched_at, |at| at.max(process.launched_at));
+            return now.saturating_duration_since(since) >= OBS_LAUNCH_GRACE;
+        }
+        let link_state = health.display(process_state);
         if link_state == PcObsState::NotResponding {
             self.since.get_or_insert(now);
+        } else {
+            self.since = None;
         }
         not_responding_incident_due(link_state, self.since, now)
     }
 
-    fn reset(&mut self) {
+    fn reset(&mut self, now: Instant) {
         self.since = None;
+        self.deferred_at = Some(now);
     }
 }
 
@@ -1709,6 +1734,7 @@ fn start_link_session(
     let monitor_state_tx = state_tx.clone();
     let monitor_programs_tx = programs_tx.clone();
     let monitor_activity = activity.clone();
+    let monitor_effective_obs = effective_obs_rx.clone();
     let monitor = tauri::async_runtime::spawn(async move {
         let mut watchdog = Watchdog::default();
         let started_at = std::time::Instant::now();
@@ -1757,7 +1783,7 @@ fn start_link_session(
                                 .map(|mut supervisor| {
                                     (
                                         supervisor.state_with(&monitor_setup, snapshot.system()),
-                                        supervisor.obs_process_identity_with(&monitor_setup, snapshot.system()),
+                                        supervisor.obs_process_instance_with(&monitor_setup, snapshot.system()),
                                     )
                                 })
                                 .unwrap_or((PcObsState::Unknown, None));
@@ -1786,7 +1812,8 @@ fn start_link_session(
                     monitor_state_tx.send_if_modified(|current| {
                         std::mem::replace(current, process_state) != process_state
                     });
-                    let link_state = monitor_health.borrow().display(process_state);
+                    let health = *monitor_health.borrow();
+                    let link_state = health.display(process_state);
                     if let Some(ref program_status) = program_status
                         && *monitor_programs_tx.borrow() != *program_status
                     {
@@ -1909,8 +1936,10 @@ fn start_link_session(
                             });
                         }
                     }
-                    let unresponsive =
-                        response_grace.observe(process, link_state, Instant::now());
+                    let last_identified = monitor_telemetry.borrow().last_identified_attempt;
+                    let unresponsive = response_grace.observe(
+                        process, process_state, health, last_identified, Instant::now(),
+                    );
                     let incident = if process_state == PcObsState::Crashed {
                         Some(PcObsState::Crashed)
                     } else if unresponsive {
@@ -1928,9 +1957,10 @@ fn start_link_session(
                     let Some(action_guard) =
                         watchdog_action_guard(&app_state.obs_actions_running, monitor_setup.id)
                     else {
-                        response_grace.reset();
+                        response_grace.reset(Instant::now());
                         continue;
                     };
+                    let watchdog_mode = *monitor_watchdog.borrow();
                     if incident == PcObsState::NotResponding {
                         let (fresh_state, fresh_process) =
                             with_processes(&app_state, Duration::ZERO, |snapshot| {
@@ -1940,7 +1970,7 @@ fn start_link_session(
                                     .map(|mut supervisor| {
                                         (
                                             supervisor.state_with(&monitor_setup, snapshot.system()),
-                                            supervisor.obs_process_identity_with(&monitor_setup, snapshot.system()),
+                                            supervisor.obs_process_instance_with(&monitor_setup, snapshot.system()),
                                         )
                                     })
                                     .unwrap_or((PcObsState::Unknown, None))
@@ -1948,9 +1978,36 @@ fn start_link_session(
                         if fresh_state == PcObsState::NotRunning {
                             let _ = monitor_state_tx.send(fresh_state);
                         }
-                        if fresh_state == PcObsState::NotRunning || fresh_process != process {
-                            response_grace.reset();
+                        let fresh_health = *monitor_health.borrow();
+                        let last_identified = monitor_telemetry.borrow().last_identified_attempt;
+                        if fresh_process.map(|process| process.identity) != process.map(|process| process.identity)
+                            || !response_grace.observe(
+                                fresh_process, fresh_state, fresh_health, last_identified, Instant::now(),
+                            )
+                        {
+                            response_grace.reset(Instant::now());
                             continue;
+                        }
+                        if watchdog_mode != WatchdogMode::Off {
+                            let credentials = monitor_effective_obs.borrow().clone();
+                            let Some((port, password)) = credentials else {
+                                response_grace.reset(Instant::now());
+                                continue;
+                            };
+                            if matches!(
+                                probe_obs(port, &password).await,
+                                Ok(()) | Err(RelayError::ObsAuthentication)
+                            ) {
+                                response_grace.reset(Instant::now());
+                                continue;
+                            }
+                            let health = *monitor_health.borrow();
+                            let last_identified = monitor_telemetry.borrow().last_identified_attempt;
+                            if !response_grace.observe(
+                                fresh_process, fresh_state, health, last_identified, Instant::now(),
+                            ) {
+                                continue;
+                            }
                         }
                     }
                     handled_incident = Some(incident);
@@ -1965,7 +2022,6 @@ fn start_link_session(
                         }
                     }
                     let telemetry = monitor_telemetry.borrow().clone();
-                    let watchdog_mode = *monitor_watchdog.borrow();
                     match watchdog.decide(
                         started_at.elapsed(),
                         incident,
@@ -2026,7 +2082,7 @@ fn start_link_session(
                             if let Err(error) = restart_result {
                                 let _ = monitor_handle.emit("connect-error", error);
                             } else {
-                                response_grace.reset();
+                                response_grace.reset(Instant::now());
                             }
                         }
                     }
@@ -2771,28 +2827,49 @@ mod tests {
     #[test]
     fn watchdog_grace_restarts_after_deferral_or_process_replacement() {
         let mut grace = WatchdogResponseGrace::default();
-        let unresponsive = PcObsState::NotResponding;
-        let original = Some((101, 1));
-        let replacement = Some((102, 1));
         let now = Instant::now();
-        assert!(!grace.observe(original, unresponsive, now));
+        let original = ObsProcessInstance {
+            identity: (101, 1),
+            launched_at: now,
+        };
+        let disconnected = |grace: &mut WatchdogResponseGrace, process, at| {
+            grace.observe(
+                Some(process),
+                PcObsState::Starting,
+                ObsHealth::Disconnected,
+                Some(now),
+                at,
+            )
+        };
+        assert!(!disconnected(&mut grace, original, now));
         let first_deadline = now + NOT_RESPONDING_GRACE;
-        assert!(grace.observe(original, unresponsive, first_deadline));
+        assert!(disconnected(&mut grace, original, first_deadline));
 
-        grace.reset();
-        assert!(!grace.observe(original, unresponsive, first_deadline));
+        grace.reset(first_deadline);
+        assert!(!disconnected(&mut grace, original, first_deadline));
         let second_deadline = first_deadline + NOT_RESPONDING_GRACE;
-        assert!(grace.observe(original, unresponsive, second_deadline));
-        assert!(!grace.observe(replacement, unresponsive, second_deadline));
-        assert!(!grace.observe(
+        assert!(disconnected(&mut grace, original, second_deadline));
+        let replacement = ObsProcessInstance {
+            identity: (102, 1),
+            launched_at: second_deadline,
+        };
+        assert!(!disconnected(&mut grace, replacement, second_deadline));
+        assert!(!disconnected(
+            &mut grace,
             replacement,
-            unresponsive,
-            second_deadline + NOT_RESPONDING_GRACE - Duration::from_millis(1),
+            second_deadline + OBS_LAUNCH_GRACE - Duration::from_millis(1),
         ));
-        assert!(grace.observe(
+        assert!(disconnected(
+            &mut grace,
             replacement,
-            unresponsive,
-            second_deadline + NOT_RESPONDING_GRACE,
+            second_deadline + OBS_LAUNCH_GRACE,
+        ));
+        assert!(!grace.observe(
+            Some(replacement),
+            PcObsState::Starting,
+            ObsHealth::Connected,
+            Some(second_deadline + NOT_RESPONDING_GRACE),
+            second_deadline + OBS_LAUNCH_GRACE,
         ));
     }
 

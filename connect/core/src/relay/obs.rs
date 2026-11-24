@@ -128,6 +128,16 @@ async fn read_json(socket: &mut Socket) -> Result<Value, RelayError> {
     }
 }
 
+pub async fn probe_obs(port: u16, password: &str) -> Result<(), RelayError> {
+    timeout_at(
+        Instant::now() + REQUEST_TIMEOUT,
+        connect_obs_with_subscriptions(port, password, Some(0)),
+    )
+    .await
+    .map_err(|_| RelayError::ObsTimeout)??;
+    Ok(())
+}
+
 pub async fn stop_active_streams(port: u16, password: &str) -> Result<StopOutputs, RelayError> {
     stop_outputs(port, password, OUTPUT_STOP_TIMEOUT).await
 }
@@ -381,6 +391,30 @@ mod tests {
     use tokio_tungstenite::{WebSocketStream, accept_async};
 
     use super::*;
+
+    #[tokio::test]
+    async fn watchdog_probe_identifies_without_sending_output_commands() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut socket = accept_async(listener.accept().await.unwrap().0)
+                .await
+                .unwrap();
+            send_mock(
+                &mut socket,
+                json!({"op":0,"d":{"rpcVersion":1,"obsWebSocketVersion":"5.6.0"}}),
+            )
+            .await;
+            assert_eq!(
+                receive_mock(&mut socket).await,
+                json!({"op":1,"d":{"rpcVersion":1,"eventSubscriptions":0}}),
+            );
+            send_mock(&mut socket, json!({"op":2,"d":{"negotiatedRpcVersion":1}})).await;
+            assert!(!matches!(socket.next().await, Some(Ok(Message::Text(_)))));
+        });
+        probe_obs(port, "").await.unwrap();
+        server.await.unwrap();
+    }
 
     #[tokio::test]
     async fn rejected_obs_password_is_reported_as_authentication_failure() {

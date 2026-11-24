@@ -4,7 +4,7 @@ use std::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::logs::ConnectLogUpload;
@@ -27,7 +27,7 @@ mod obs;
 
 use cloud::{CloudBody, CommandResult, identify_payload, send_cloud, send_message};
 use local::{LocalObs, RawRequest};
-pub use obs::stop_active_streams;
+pub use obs::{probe_obs, stop_active_streams};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -59,6 +59,7 @@ pub struct ObsTelemetry {
     pub record_active: bool,
     pub last_program_scene: Option<String>,
     pub obs_version: Option<String>,
+    pub last_identified_attempt: Option<Instant>,
     stream_fresh: bool,
     record_fresh: bool,
 }
