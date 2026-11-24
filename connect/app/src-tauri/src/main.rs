@@ -377,7 +377,18 @@ fn save_urls(
     dashboard_url: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<UiState, String> {
-    persist_urls(&state.config, &state.store, api_url, dashboard_url)?;
+    let (api_url_override, dashboard_url_override) =
+        connect_core::config::AppSettings::environment_overrides();
+    persist_urls(
+        &state.config,
+        &state.store,
+        api_url,
+        dashboard_url,
+        (
+            api_url_override.as_deref(),
+            dashboard_url_override.as_deref(),
+        ),
+    )?;
     Ok(get_state(state))
 }
 
@@ -386,13 +397,10 @@ fn persist_urls(
     store: &ConfigStore,
     api_url: String,
     dashboard_url: Option<String>,
+    (api_url_override, dashboard_url_override): (Option<&str>, Option<&str>),
 ) -> Result<(), String> {
     let dashboard_url = dashboard_url.filter(|url| !url.trim().is_empty());
-    let (api_url_override, dashboard_url_override) =
-        connect_core::config::AppSettings::environment_overrides();
-    let effective_dashboard_url = dashboard_url_override
-        .as_deref()
-        .or(dashboard_url.as_deref());
+    let effective_dashboard_url = dashboard_url_override.or(dashboard_url.as_deref());
     if let Some(url) = effective_dashboard_url {
         validate_dashboard_url(url)?;
     }
@@ -2473,22 +2481,29 @@ mod tests {
             std::env::temp_dir().join(format!("noalbs-connect-test-{}", uuid::Uuid::new_v4()));
         let config = Mutex::new(AppConfig::default());
         let store = ConfigStore::new(test_dir.join("config.json"));
-        let (api_override, dashboard_override) =
-            connect_core::config::AppSettings::environment_overrides();
-
         let api_url = "https://api.example.com";
         let dashboard_url = "https://dashboard.example.com";
-        persist_urls(&config, &store, api_url.into(), Some(dashboard_url.into())).unwrap();
+        persist_urls(
+            &config,
+            &store,
+            api_url.into(),
+            Some(dashboard_url.into()),
+            (None, None),
+        )
+        .unwrap();
         persist_start_at_login(&config, &store, false).unwrap();
         let saved = store.load().unwrap().settings;
-        if api_override.is_none() {
-            assert_eq!(saved.api_url, api_url);
-        }
-        if dashboard_override.is_none() {
-            assert_eq!(saved.dashboard_url.as_deref(), Some(dashboard_url));
-        }
+        assert_eq!(saved.api_url, api_url);
+        assert_eq!(saved.dashboard_url.as_deref(), Some(dashboard_url));
 
-        persist_urls(&config, &store, "https://api2.example.com".into(), None).unwrap();
+        persist_urls(
+            &config,
+            &store,
+            "https://api2.example.com".into(),
+            None,
+            (None, None),
+        )
+        .unwrap();
         assert!(!store.load().unwrap().settings.start_at_login);
         std::fs::remove_dir_all(test_dir).unwrap();
     }
