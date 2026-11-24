@@ -101,7 +101,6 @@ impl SharedProcesses {
 
 const PROCESS_SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(1900);
 const NOT_RESPONDING_GRACE: Duration = Duration::from_secs(10);
-const OBS_LAUNCH_GRACE: Duration = Duration::from_secs(30);
 const IDLE_OBS_STOP_RETRY: Duration = Duration::from_secs(60);
 
 fn process_snapshot_needs_refresh(last_refresh: Instant, now: Instant, max_age: Duration) -> bool {
@@ -1517,7 +1516,6 @@ fn not_responding_incident_due(
 struct WatchdogResponseGrace {
     process: Option<(u32, u64)>,
     since: Option<Instant>,
-    deferred_at: Option<Instant>,
 }
 
 impl WatchdogResponseGrace {
@@ -1539,15 +1537,12 @@ impl WatchdogResponseGrace {
         let Some(process) = process else {
             return false;
         };
-        if health == ObsHealth::Disabled || !programs::obs_is_running(&process_state) {
-            self.since = None;
+        if health != ObsHealth::Disconnected
+            || !programs::obs_is_running(&process_state)
+            || last_identified.is_none_or(|at| at < process.launched_at)
+        {
+            self.reset();
             return false;
-        }
-        if last_identified.is_none_or(|at| at < process.launched_at) {
-            let since = self
-                .deferred_at
-                .map_or(process.launched_at, |at| at.max(process.launched_at));
-            return now.saturating_duration_since(since) >= OBS_LAUNCH_GRACE;
         }
         let link_state = health.display(process_state);
         if link_state == PcObsState::NotResponding {
@@ -1558,9 +1553,8 @@ impl WatchdogResponseGrace {
         not_responding_incident_due(link_state, self.since, now)
     }
 
-    fn reset(&mut self, now: Instant) {
+    fn reset(&mut self) {
         self.since = None;
-        self.deferred_at = Some(now);
     }
 }
 
@@ -1957,7 +1951,7 @@ fn start_link_session(
                     let Some(action_guard) =
                         watchdog_action_guard(&app_state.obs_actions_running, monitor_setup.id)
                     else {
-                        response_grace.reset(Instant::now());
+                        response_grace.reset();
                         continue;
                     };
                     let watchdog_mode = *monitor_watchdog.borrow();
@@ -1985,20 +1979,20 @@ fn start_link_session(
                                 fresh_process, fresh_state, fresh_health, last_identified, Instant::now(),
                             )
                         {
-                            response_grace.reset(Instant::now());
+                            response_grace.reset();
                             continue;
                         }
                         if watchdog_mode != WatchdogMode::Off {
                             let credentials = monitor_effective_obs.borrow().clone();
                             let Some((port, password)) = credentials else {
-                                response_grace.reset(Instant::now());
+                                response_grace.reset();
                                 continue;
                             };
                             if matches!(
                                 probe_obs(port, &password).await,
                                 Ok(()) | Err(RelayError::ObsAuthentication)
                             ) {
-                                response_grace.reset(Instant::now());
+                                response_grace.reset();
                                 continue;
                             }
                             let health = *monitor_health.borrow();
@@ -2082,7 +2076,7 @@ fn start_link_session(
                             if let Err(error) = restart_result {
                                 let _ = monitor_handle.emit("connect-error", error);
                             } else {
-                                response_grace.reset(Instant::now());
+                                response_grace.reset();
                             }
                         }
                     }
@@ -2845,7 +2839,7 @@ mod tests {
         let first_deadline = now + NOT_RESPONDING_GRACE;
         assert!(disconnected(&mut grace, original, first_deadline));
 
-        grace.reset(first_deadline);
+        grace.reset();
         assert!(!disconnected(&mut grace, original, first_deadline));
         let second_deadline = first_deadline + NOT_RESPONDING_GRACE;
         assert!(disconnected(&mut grace, original, second_deadline));
@@ -2857,19 +2851,37 @@ mod tests {
         assert!(!disconnected(
             &mut grace,
             replacement,
-            second_deadline + OBS_LAUNCH_GRACE - Duration::from_millis(1),
+            second_deadline + Duration::from_secs(3_600),
         ));
-        assert!(disconnected(
-            &mut grace,
-            replacement,
-            second_deadline + OBS_LAUNCH_GRACE,
-        ));
-        assert!(!grace.observe(
-            Some(replacement),
-            PcObsState::Starting,
-            ObsHealth::Connected,
-            Some(second_deadline + NOT_RESPONDING_GRACE),
-            second_deadline + OBS_LAUNCH_GRACE,
+    }
+
+    #[test]
+    fn watchdog_ignores_failed_initial_handshakes_but_detects_loss_after_identify() {
+        let mut grace = WatchdogResponseGrace::default();
+        let launched_at = Instant::now();
+        let process = Some(ObsProcessInstance {
+            identity: (101, 1),
+            launched_at,
+        });
+        let later = launched_at + Duration::from_secs(3_600);
+        let mut observe = |health, identified, now| {
+            grace.observe(
+                process,
+                PcObsState::WaitingForInput,
+                health,
+                identified,
+                now,
+            )
+        };
+        assert!(!observe(ObsHealth::Waiting, None, launched_at));
+        assert!(!observe(ObsHealth::Waiting, None, later));
+        assert!(!observe(ObsHealth::Disconnected, None, later));
+        assert!(!observe(ObsHealth::Connected, Some(later), later));
+        assert!(!observe(ObsHealth::Disconnected, Some(later), later));
+        assert!(observe(
+            ObsHealth::Disconnected,
+            Some(later),
+            later + NOT_RESPONDING_GRACE,
         ));
     }
 
