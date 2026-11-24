@@ -794,11 +794,14 @@ impl Connection {
         match response.response {
             ResponseKind::Identify(identify) => return self.identify(&identify).await,
             ResponseKind::ObsWsConnected(connected) => self.obs_connection_changed(connected).await,
-            ResponseKind::PcState { obs } => {
+            ResponseKind::PcState { obs, obs_version } => {
                 if let Some(session) = self.session.as_ref() {
                     session.status.update(|status| {
                         if let Some(pc) = &mut status.pc {
                             pc.obs = obs;
+                            if obs_version.is_some() {
+                                pc.obs_version = obs_version;
+                            }
                         }
                     });
                 }
@@ -1794,6 +1797,12 @@ enum ResponseKind {
     ObsWsConnected(bool),
     PcState {
         obs: PcObsState,
+        #[serde(
+            rename = "obsVersion",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        obs_version: Option<String>,
     },
     ProgramsState(Vec<common::programs::ProgramStatus>),
     ObsRawResponse(serde_json::Value),
@@ -2385,8 +2394,18 @@ mod tests {
         assert!(matches!(
             response.response,
             ResponseKind::PcState {
-                obs: PcObsState::Crashed
+                obs: PcObsState::Crashed,
+                obs_version: None,
             }
+        ));
+        let response: Response = serde_json::from_value(json!({
+            "pcState": { "obs": "connected", "obsVersion": "31.0" }
+        }))
+        .unwrap();
+        assert!(matches!(
+            response.response,
+            ResponseKind::PcState { obs: PcObsState::Connected, obs_version: Some(version) }
+                if version == "31.0"
         ));
     }
 

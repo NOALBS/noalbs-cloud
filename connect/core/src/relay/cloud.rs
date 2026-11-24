@@ -1,10 +1,12 @@
+use std::time::Duration;
+
 use common::programs::ProgramStatus;
 use futures_util::SinkExt;
 use serde::Serialize;
 use serde_json::Value;
 use tokio_tungstenite::tungstenite::Message;
 
-use super::{ConnectLogUpload, LinkConfig, PcObsState, RelayError, Socket};
+use super::{ConnectLogUpload, LinkConfig, PcObsState, RelayError, Socket, link_timeout};
 
 #[derive(Serialize)]
 pub(super) struct CloudMessage<'a> {
@@ -19,7 +21,11 @@ pub(super) struct CloudMessage<'a> {
 pub(super) enum CloudBody<'a> {
     Identify(Identify<'a>),
     ObsWsConnected(bool),
-    PcState { obs: PcObsState },
+    PcState {
+        obs: PcObsState,
+        #[serde(rename = "obsVersion", skip_serializing_if = "Option::is_none")]
+        obs_version: Option<&'a str>,
+    },
     ProgramsState(Vec<ProgramStatus>),
     ObsRawResponse(Value),
     ConnectCommandResult(CommandResult),
@@ -99,9 +105,17 @@ pub(super) async fn send_message(
     socket: &mut Socket,
     message: CloudMessage<'_>,
 ) -> Result<(), RelayError> {
-    socket
-        .send(Message::Text(serde_json::to_string(&message)?.into()))
-        .await?;
+    send_frame(
+        socket,
+        Message::Text(serde_json::to_string(&message)?.into()),
+    )
+    .await
+}
+
+pub(super) async fn send_frame(socket: &mut Socket, frame: Message) -> Result<(), RelayError> {
+    tokio::time::timeout(Duration::from_secs(5), socket.send(frame))
+        .await
+        .map_err(|_| link_timeout("upstream send timed out"))??;
     Ok(())
 }
 
@@ -136,8 +150,17 @@ mod tests {
                 None,
                 CloudBody::PcState {
                     obs: PcObsState::Connected,
+                    obs_version: None,
                 },
                 json!({"pcState":{"obs":"connected"}}),
+            ),
+            (
+                None,
+                CloudBody::PcState {
+                    obs: PcObsState::Connected,
+                    obs_version: Some("31.0"),
+                },
+                json!({"pcState":{"obs":"connected","obsVersion":"31.0"}}),
             ),
             (
                 None,

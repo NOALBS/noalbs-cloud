@@ -178,7 +178,10 @@ function App() {
 	const [selected, setSelected] = React.useState<string | null>(null);
 	const [name, setName] = React.useState("");
 	const [adding, setAdding] = React.useState(false);
-	const [error, setError] = React.useState("");
+	const [error, setError] = React.useState<
+		string | { setupId: string; message: string }
+	>("");
+	const errorMessage = typeof error === "string" ? error : error.message;
 	const [pairing, setPairing] = React.useState<Pairing | null>(null);
 	const [pairingSetupId, setPairingSetupId] = React.useState<string | null>(
 		null,
@@ -219,6 +222,15 @@ function App() {
 				),
 			),
 			listen<string>("connect-error", (event) => setError(event.payload)),
+			listen<[string, string | null]>("connect-obs-auth-error", (event) => {
+				const [setupId, message] = event.payload;
+				setError((current) => {
+					if (message !== null) return { setupId, message };
+					return typeof current !== "string" && current.setupId === setupId
+						? ""
+						: current;
+				});
+			}),
 		];
 		return () => {
 			for (const unlisten of unlisteners) void unlisten.then((fn) => fn());
@@ -345,7 +357,7 @@ function App() {
 	if (!state)
 		return (
 			<div className="loading">
-				{error ? <p role="alert">{error}</p> : <p>Loading…</p>}
+				{errorMessage ? <p role="alert">{errorMessage}</p> : <p>Loading…</p>}
 			</div>
 		);
 
@@ -386,9 +398,9 @@ function App() {
 							Continue
 						</button>
 					</div>
-					{error && (
+					{errorMessage && (
 						<p className="error" role="alert">
-							{error}
+							{errorMessage}
 						</p>
 					)}
 				</div>
@@ -487,9 +499,9 @@ function App() {
 					</button>
 				</nav>
 				<main className="detail">
-					{error && (
+					{errorMessage && (
 						<div className="banner" role="alert">
-							<span>{error}</span>
+							<span>{errorMessage}</span>
 							<button
 								type="button"
 								className="link"
