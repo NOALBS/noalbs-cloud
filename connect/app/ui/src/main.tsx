@@ -268,8 +268,8 @@ function App() {
 			if (state?.first_run)
 				await invoke("save_settings", {
 					startAtLogin: firstRunStartAtLogin,
-					apiUrl,
-					dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
+					apiUrl: state.api_url,
+					dashboardUrl: state.dashboard_url,
 				});
 			const before = new Set(state?.setups.map((s) => s.id));
 			const updated = await invoke<State>("add_setup", { name: trimmed });
@@ -321,10 +321,22 @@ function App() {
 		}
 	}
 
-	function saveSettings(startAtLogin = state?.start_at_login ?? true) {
+	function saveStartAtLogin(startAtLogin: boolean) {
+		if (!state) return;
+		return run(() =>
+			invoke<State>("save_settings", {
+				startAtLogin,
+				apiUrl: state.api_url,
+				dashboardUrl: state.dashboard_url,
+			}),
+		);
+	}
+
+	function saveUrls() {
+		if (!state) return;
 		return run(async () => {
 			const updated = await invoke<State>("save_settings", {
-				startAtLogin,
+				startAtLogin: state.start_at_login,
 				apiUrl,
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
 			});
@@ -527,7 +539,7 @@ function App() {
 								<div className="group-body">
 									<Check
 										checked={state.start_at_login}
-										onChange={(checked) => saveSettings(checked)}
+										onChange={saveStartAtLogin}
 									>
 										Start NOALBS Cloud Connect when my computer starts
 									</Check>
@@ -637,7 +649,7 @@ function App() {
 										/>
 									</Field>
 									<div className="buttons end">
-										<button type="button" onClick={() => saveSettings()}>
+										<button type="button" onClick={saveUrls}>
 											Save
 										</button>
 									</div>
