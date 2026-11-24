@@ -187,22 +187,21 @@ function App() {
 		null,
 	);
 	const [pairingStatus, setPairingStatus] = React.useState("");
-	const [apiUrl, setApiUrl] = React.useState("");
-	const [dashboardUrl, setDashboardUrl] = React.useState("");
+	const pairingAttempt = React.useRef<symbol | null>(null);
+	const [apiUrlDraft, setApiUrlDraft] = React.useState<string | null>(null);
+	const [dashboardUrlDraft, setDashboardUrlDraft] = React.useState<
+		string | null
+	>(null);
+	const apiUrl = apiUrlDraft ?? state?.api_url ?? "";
+	const dashboardUrl = dashboardUrlDraft ?? state?.dashboard_url ?? "";
 	const [firstRunStartAtLogin, setFirstRunStartAtLogin] = React.useState(true);
 	const [editing, setEditing] = React.useState<Setup | null>(null);
 	const [secondsLeft, setSecondsLeft] = React.useState(0);
 
-	const applyState = React.useCallback((value: State) => {
-		setState(value);
-		setApiUrl(value.api_url);
-		setDashboardUrl(value.dashboard_url ?? "");
-	}, []);
-
 	React.useEffect(() => {
 		invoke<State>("get_state")
 			.then((value) => {
-				applyState(value);
+				setState(value);
 				if (value.startup_error) setError(value.startup_error);
 			})
 			.catch((e) => setError(String(e)));
@@ -211,11 +210,9 @@ function App() {
 			listen<string>("pairing-status", (event) =>
 				setPairingStatus(event.payload),
 			),
-			listen<State>("connect-state-changed", (event) => {
-				applyState(event.payload);
-				setPairing(null);
-				setPairingSetupId(null);
-			}),
+			listen<State>("connect-state-changed", (event) =>
+				setState(event.payload),
+			),
 			listen<UpdateState>("connect-update-changed", (event) =>
 				setState((current) =>
 					current ? { ...current, update: event.payload } : current,
@@ -235,7 +232,7 @@ function App() {
 		return () => {
 			for (const unlisten of unlisteners) void unlisten.then((fn) => fn());
 		};
-	}, [applyState]);
+	}, []);
 
 	React.useEffect(() => {
 		if (!pairing) return;
@@ -258,7 +255,7 @@ function App() {
 		setError("");
 		try {
 			const updated = await action();
-			if (updated) applyState(updated);
+			if (updated) setState(updated);
 		} catch (e) {
 			setError(String(e));
 		}
@@ -304,6 +301,8 @@ function App() {
 	}
 
 	async function startPairing(id: string) {
+		const attempt = Symbol();
+		pairingAttempt.current = attempt;
 		setError("");
 		setPairing(null);
 		setPairingSetupId(id);
@@ -311,20 +310,30 @@ function App() {
 		try {
 			await invoke("pair_setup", { setupId: id });
 		} catch (e) {
-			setPairingSetupId(null);
-			setError(String(e));
-			setPairingStatus("");
+			if (pairingAttempt.current === attempt) setError(String(e));
+		} finally {
+			if (pairingAttempt.current === attempt) {
+				pairingAttempt.current = null;
+				setPairingSetupId(null);
+				setPairing(null);
+				setPairingStatus("");
+			}
 		}
 	}
 
 	function saveSettings(startAtLogin = state?.start_at_login ?? true) {
-		return run(() =>
-			invoke<State>("save_settings", {
+		return run(async () => {
+			const updated = await invoke<State>("save_settings", {
 				startAtLogin,
 				apiUrl,
 				dashboardUrl: dashboardUrl.trim() ? dashboardUrl : null,
-			}),
-		);
+			});
+			setApiUrlDraft((draft) => (draft === apiUrlDraft ? null : draft));
+			setDashboardUrlDraft((draft) =>
+				draft === dashboardUrlDraft ? null : draft,
+			);
+			return updated;
+		});
 	}
 
 	async function runUpdateCommand(
@@ -332,7 +341,7 @@ function App() {
 		args?: Record<string, string>,
 	) {
 		try {
-			applyState(await invoke<State>(command, args));
+			setState(await invoke<State>(command, args));
 		} catch (e) {
 			setState((current) =>
 				current
@@ -612,7 +621,7 @@ function App() {
 									<Field label="API URL">
 										<input
 											value={apiUrl}
-											onChange={(event) => setApiUrl(event.target.value)}
+											onChange={(event) => setApiUrlDraft(event.target.value)}
 										/>
 									</Field>
 									<Field
@@ -622,7 +631,9 @@ function App() {
 										<input
 											value={dashboardUrl}
 											placeholder="Same as the API"
-											onChange={(event) => setDashboardUrl(event.target.value)}
+											onChange={(event) =>
+												setDashboardUrlDraft(event.target.value)
+											}
 										/>
 									</Field>
 									<div className="buttons end">
@@ -655,7 +666,7 @@ function App() {
 							onSave={saveSetup}
 							onCancel={() => setEditing(null)}
 							onProgramCommand={async (command, args) => {
-								applyState(await invoke<State>(command, args));
+								setState(await invoke<State>(command, args));
 							}}
 						/>
 					) : (
