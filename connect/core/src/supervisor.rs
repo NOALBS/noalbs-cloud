@@ -7,6 +7,7 @@ use std::{
     ops::Range,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
+    sync::Mutex,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
@@ -172,6 +173,10 @@ pub enum SupervisorError {
     Unidentified,
     #[error("OBS did not exit after being force-closed")]
     DidNotExit,
+    #[error("OBS is already stopping")]
+    Stopping,
+    #[error("OBS supervisor lock poisoned")]
+    LockPoisoned,
     #[error("{0}")]
     UnsupportedPlatformConfig(&'static str),
 }
@@ -658,8 +663,22 @@ pub struct StartedObs {
     flatpak_obs: Option<(u32, u64)>,
 }
 
+struct StoppingObs {
+    setup: Setup,
+    process: Option<(u32, u64)>,
+}
+
+struct Shutdown {
+    child: Option<StartedObs>,
+    known_setups: Vec<Setup>,
+    grace: Duration,
+    forced: bool,
+    remove_adopted: bool,
+}
+
 pub struct Supervisor {
     children: HashMap<Uuid, StartedObs>,
+    stopping: HashMap<Uuid, StoppingObs>,
     adopted: HashMap<Uuid, (Setup, u32, u64)>,
     known_setups: Vec<Setup>,
     crashed_pending: HashSet<Uuid>,
@@ -682,6 +701,7 @@ impl Supervisor {
     pub fn with_shutdown_grace(shutdown_grace: std::time::Duration) -> Self {
         Self {
             children: HashMap::new(),
+            stopping: HashMap::new(),
             adopted: HashMap::new(),
             known_setups: Vec::new(),
             crashed_pending: HashSet::new(),
@@ -714,6 +734,12 @@ impl Supervisor {
             .children
             .get(&setup.id)
             .map(|child| child.process_start_time)
+            .or_else(|| {
+                self.stopping
+                    .get(&setup.id)?
+                    .process
+                    .map(|(_, start)| start)
+            })
             .or_else(|| self.adopted.get(&setup.id).map(|(_, _, start)| *start))
             .or_else(|| self.crashed_start_times.get(&setup.id).copied())?;
         (seconds > 0).then(|| UNIX_EPOCH + Duration::from_secs(seconds))
@@ -733,6 +759,9 @@ impl Supervisor {
         resume: bool,
         last_scene: Option<&str>,
     ) -> Result<u32, SupervisorError> {
+        if self.stopping.contains_key(&setup.id) {
+            return Err(SupervisorError::Stopping);
+        }
         let crash_cleanup_pending = self.crashed_pending.contains(&setup.id);
         self.crashed_state.remove(&setup.id);
         self.crashed_start_times.remove(&setup.id);
@@ -795,14 +824,17 @@ impl Supervisor {
         }
         self.adopted
             .retain(|_, (_, pid, start_time)| process_start_time(*pid) == Some(*start_time));
-        let sibling_identity = self.children.iter_mut().any(|(id, child)| {
-            *id != setup.id
-                && same_process_identity(setup, &child.setup)
-                && started_obs_is_running(child)
-        }) || self
-            .adopted
-            .iter()
-            .any(|(id, (other, _, _))| *id != setup.id && same_process_identity(setup, other));
+        let sibling_identity =
+            self.children.iter_mut().any(|(id, child)| {
+                *id != setup.id
+                    && same_process_identity(setup, &child.setup)
+                    && started_obs_is_running(child)
+            }) || self.stopping.iter().any(|(id, stopping)| {
+                *id != setup.id && same_process_identity(setup, &stopping.setup)
+            }) || self
+                .adopted
+                .iter()
+                .any(|(id, (other, _, _))| *id != setup.id && same_process_identity(setup, other));
         let existing = self.matching_obs_pids(setup);
         if !sibling_identity {
             if existing.len() == 1 {
@@ -838,7 +870,10 @@ impl Supervisor {
             *id != setup.id
                 && child.config_dir == config_dir(setup)
                 && started_obs_is_running(child)
-        });
+        }) || self
+            .stopping
+            .values()
+            .any(|stopping| config_dir(&stopping.setup) == config_dir(setup));
         if crash_cleanup_pending
             || self.crashed_pending.remove(&setup.id)
             || has_run_sentinel(setup)
@@ -851,7 +886,8 @@ impl Supervisor {
         let another_child_running = self
             .children
             .iter_mut()
-            .any(|(id, child)| *id != setup.id && started_obs_is_running(child));
+            .any(|(id, child)| *id != setup.id && started_obs_is_running(child))
+            || !self.stopping.is_empty();
         let another_portable_instance_running =
             portable && any_obs_running_for_executable(&executable);
         let multi = should_launch_multi(
@@ -938,6 +974,13 @@ impl Supervisor {
     }
 
     pub fn state_with(&mut self, setup: &Setup, system: &System) -> PcObsState {
+        if self.stopping.contains_key(&setup.id) {
+            return if self.owns_running_process_with(setup, system) {
+                PcObsState::WaitingForInput
+            } else {
+                PcObsState::NotRunning
+            };
+        }
         if self.crashed_state.contains(&setup.id) {
             if self.matching_obs_pids_with(setup, system).is_empty() {
                 return PcObsState::Crashed;
@@ -1080,6 +1123,11 @@ impl Supervisor {
         };
         child_running
             || self
+                .stopping
+                .get(&setup.id)
+                .and_then(|stopping| stopping.process)
+                .is_some_and(|(pid, start)| process_start_time_with(pid, system) == Some(start))
+            || self
                 .adopted
                 .get(&setup.id)
                 .is_some_and(|(_, pid, start_time)| {
@@ -1090,6 +1138,7 @@ impl Supervisor {
     }
 
     pub fn forget(&mut self, setup_id: Uuid) {
+        self.stopping.remove(&setup_id);
         if let Some(child) = self.children.remove(&setup_id) {
             let mut child_process = child.child;
             std::thread::spawn(move || {
@@ -1102,20 +1151,88 @@ impl Supervisor {
     }
 
     pub fn stop(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        let mut shutdown = self.prepare_shutdown(setup)?;
+        let result = shutdown.run(setup);
+        self.finish_shutdown(setup.id, shutdown);
+        result
+    }
+
+    pub fn stop_shared(supervisor: &Mutex<Self>, setup: &Setup) -> Result<(), SupervisorError> {
+        let mut shutdown = supervisor
+            .lock()
+            .map_err(|_| SupervisorError::LockPoisoned)?
+            .prepare_shutdown(setup)?;
+        let result = shutdown.run(setup);
+        supervisor
+            .lock()
+            .map_err(|_| SupervisorError::LockPoisoned)?
+            .finish_shutdown(setup.id, shutdown);
+        result
+    }
+
+    fn prepare_shutdown(&mut self, setup: &Setup) -> Result<Shutdown, SupervisorError> {
+        if self.stopping.contains_key(&setup.id) {
+            return Err(SupervisorError::Stopping);
+        }
         self.crashed_state.remove(&setup.id);
         self.crashed_start_times.remove(&setup.id);
-        if self
-            .children
-            .get(&setup.id)
-            .is_some_and(|child| child.is_flatpak)
-        {
-            return self.stop_flatpak(setup);
+        let child = self.children.remove(&setup.id);
+        let process = child
+            .as_ref()
+            .map(|item| (item.pid, item.process_start_time));
+        self.stopping.insert(
+            setup.id,
+            StoppingObs {
+                setup: setup.clone(),
+                process,
+            },
+        );
+        Ok(Shutdown {
+            child,
+            known_setups: self.known_setups.clone(),
+            grace: self.shutdown_grace,
+            forced: false,
+            remove_adopted: false,
+        })
+    }
+
+    fn finish_shutdown(&mut self, id: Uuid, shutdown: Shutdown) {
+        if self.stopping.remove(&id).is_some() {
+            if shutdown.forced {
+                self.crashed_pending.insert(id);
+            }
+            if shutdown.remove_adopted {
+                self.adopted.remove(&id);
+            }
+            if let Some(item) = shutdown.child {
+                self.children.insert(id, item);
+            }
+        } else if let Some(mut item) = shutdown.child {
+            std::thread::spawn(move || {
+                let _ = item.child.wait();
+            });
         }
-        let (pid, expected_start_time, mut child) = match self.children.remove(&setup.id) {
+    }
+
+    pub fn has_child(&self, setup_id: Uuid) -> bool {
+        self.children.contains_key(&setup_id)
+            || self
+                .stopping
+                .get(&setup_id)
+                .is_some_and(|stopping| stopping.process.is_some())
+    }
+}
+
+impl Shutdown {
+    fn run(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+        if self.child.as_ref().is_some_and(|child| child.is_flatpak) {
+            return self.stop_flatpak();
+        }
+        let (pid, expected_start_time, mut child) = match self.child.take() {
             Some(item) => (item.pid, item.process_start_time, Some(item.child)),
             None => {
-                if self.matching_obs_pids(setup).is_empty() {
-                    self.adopted.remove(&setup.id);
+                if matching_obs_pids_for_setups(setup, &self.known_setups).is_empty() {
+                    self.remove_adopted = true;
                     return Ok(());
                 }
                 let Some((pid, start_time)) =
@@ -1129,7 +1246,7 @@ impl Supervisor {
         if process_start_time(pid) == Some(expected_start_time) {
             request_graceful_close(pid);
         }
-        let deadline = Instant::now() + self.shutdown_grace;
+        let deadline = Instant::now() + self.grace;
         loop {
             let running = if matches!(setup.obs.install_kind, InstallKind::Flatpak) {
                 process_start_time(pid) == Some(expected_start_time)
@@ -1156,11 +1273,11 @@ impl Supervisor {
             {
                 std::thread::sleep(Duration::from_millis(100));
             }
-            self.crashed_pending.insert(setup.id);
+            self.forced = true;
         } else if child.is_some() && !matches!(setup.obs.install_kind, InstallKind::Flatpak) {
             let child = child.take().expect("child was checked above");
             Self::reap_child_after_kill(child)?;
-            self.crashed_pending.insert(setup.id);
+            self.forced = true;
         } else if process_is_running_for_setups(setup, pid, expected_start_time, &self.known_setups)
         {
             force_kill(pid);
@@ -1170,9 +1287,9 @@ impl Supervisor {
             {
                 std::thread::sleep(Duration::from_millis(100));
             }
-            self.crashed_pending.insert(setup.id);
+            self.forced = true;
         }
-        self.adopted.remove(&setup.id);
+        self.remove_adopted = true;
         Ok(())
     }
 
@@ -1192,8 +1309,8 @@ impl Supervisor {
         }
     }
 
-    fn stop_flatpak_unresolved(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
-        let Some(item) = self.children.get_mut(&setup.id) else {
+    fn stop_flatpak_unresolved(&mut self) -> Result<(), SupervisorError> {
+        let Some(item) = self.child.as_mut() else {
             return Err(SupervisorError::Unidentified);
         };
         let wrapper_pid = item.child.id();
@@ -1211,7 +1328,7 @@ impl Supervisor {
         {
             request_graceful_close(wrapper_pid);
         }
-        let deadline = Instant::now() + self.shutdown_grace;
+        let deadline = Instant::now() + self.grace;
         loop {
             let wrapper_running = item.child.try_wait()?.is_none();
             let descendant_running = descendants
@@ -1247,21 +1364,21 @@ impl Supervisor {
         if item.child.try_wait()?.is_none() {
             return Err(SupervisorError::Unidentified);
         }
-        self.children.remove(&setup.id);
-        self.adopted.remove(&setup.id);
+        self.child = None;
+        self.remove_adopted = true;
         Ok(())
     }
 
-    fn stop_flatpak(&mut self, setup: &Setup) -> Result<(), SupervisorError> {
+    fn stop_flatpak(&mut self) -> Result<(), SupervisorError> {
         if self
-            .children
-            .get(&setup.id)
+            .child
+            .as_ref()
             .is_some_and(|child| child.flatpak_obs.is_none())
         {
-            return self.stop_flatpak_unresolved(setup);
+            return self.stop_flatpak_unresolved();
         }
 
-        let Some(item) = self.children.get_mut(&setup.id) else {
+        let Some(item) = self.child.as_mut() else {
             return Err(SupervisorError::Unidentified);
         };
         let Some((pid, start_time)) = item.flatpak_obs else {
@@ -1274,16 +1391,16 @@ impl Supervisor {
         if process_start_time(pid) == Some(start_time) {
             request_graceful_close(pid);
         }
-        let deadline = Instant::now() + self.shutdown_grace;
+        let deadline = Instant::now() + self.grace;
         while process_start_time(pid) == Some(start_time) && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(100));
         }
         if process_start_time(pid) == Some(start_time) {
             force_kill(pid);
-            self.crashed_pending.insert(setup.id);
+            self.forced = true;
         }
 
-        let wrapper_deadline = Instant::now() + self.shutdown_grace;
+        let wrapper_deadline = Instant::now() + self.grace;
         while item.child.try_wait()?.is_none() && Instant::now() < wrapper_deadline {
             std::thread::sleep(Duration::from_millis(100));
         }
@@ -1292,7 +1409,7 @@ impl Supervisor {
                 return Err(SupervisorError::Unidentified);
             }
             request_graceful_close(wrapper_pid);
-            let terminate_deadline = Instant::now() + self.shutdown_grace;
+            let terminate_deadline = Instant::now() + self.grace;
             while item.child.try_wait()?.is_none() && Instant::now() < terminate_deadline {
                 std::thread::sleep(Duration::from_millis(100));
             }
@@ -1309,16 +1426,12 @@ impl Supervisor {
         let wrapper_reaped = item.child.try_wait()?.is_some();
         let obs_running = process_start_time(pid) == Some(start_time);
         if wrapper_reaped && !obs_running {
-            self.children.remove(&setup.id);
-            self.adopted.remove(&setup.id);
+            self.child = None;
+            self.remove_adopted = true;
         } else if !wrapper_reaped {
             return Err(SupervisorError::Unidentified);
         }
         Ok(())
-    }
-
-    pub fn has_child(&self, setup_id: Uuid) -> bool {
-        self.children.contains_key(&setup_id)
     }
 }
 
@@ -2208,10 +2321,10 @@ pub fn detected_obs_install_kind() -> InstallKind {
 
 #[cfg(all(test, unix))]
 mod tests {
-    #[cfg(target_os = "linux")]
-    use std::ffi::OsString;
     #[cfg(target_os = "macos")]
     use std::sync::OnceLock;
+    #[cfg(target_os = "linux")]
+    use std::{ffi::OsString, sync::Mutex};
     use std::{
         fs,
         os::unix::fs::PermissionsExt,
@@ -2234,6 +2347,8 @@ mod tests {
     #[cfg(target_os = "linux")]
     use super::{appimage_env_fixes, resolve_executable, wait_for_open_command};
     use crate::config::{HostPlatform, InstallKind, ObsLaunchConfig, Setup};
+    #[cfg(target_os = "linux")]
+    use crate::relay::PcObsState;
 
     #[cfg(target_os = "linux")]
     #[test]
@@ -2598,6 +2713,64 @@ mod tests {
         assert_eq!(
             supervisor.state(&setup),
             crate::relay::PcObsState::NotRunning
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn shared_stop_leaves_the_supervisor_available_during_shutdown() {
+        let directory = tempdir().unwrap();
+        let closing = directory.path().join("closing");
+        let release = directory.path().join("release");
+        let ready = directory.path().join("ready");
+        let script = make_script(
+            &directory.path().join("fake-obs"),
+            &format!(
+                "trap 'touch \"{}\"; while [ ! -e \"{}\" ]; do sleep 0.02; done; exit 0' TERM; touch '{}'; while :; do sleep 0.02; done",
+                closing.display(),
+                release.display(),
+                ready.display(),
+            ),
+        );
+        let setup = make_setup(&script, &directory.path().join("config"));
+        let other = make_setup(
+            &directory.path().join("other-obs"),
+            &directory.path().join("other"),
+        );
+        let supervisor = Mutex::new(Supervisor::with_shutdown_grace(Duration::from_secs(10)));
+        supervisor
+            .lock()
+            .unwrap()
+            .start(&setup, false, None)
+            .unwrap();
+        let wait_for = |path: &Path| {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !path.exists() && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            assert!(path.exists(), "missing {}", path.display());
+        };
+        wait_for(&ready);
+        std::thread::scope(|scope| {
+            let stop = scope.spawn(|| Supervisor::stop_shared(&supervisor, &setup));
+            wait_for(&closing);
+            let status = supervisor
+                .try_lock()
+                .map(|mut supervisor| {
+                    let other_state = supervisor.state(&other);
+                    let same_setup_start = supervisor.start(&setup, false, None);
+                    (other_state, same_setup_start)
+                })
+                .map_err(|error| error.to_string());
+            fs::write(&release, "").unwrap();
+            stop.join().unwrap().unwrap();
+            let (other_state, same_setup_start) = status.unwrap();
+            assert_eq!(other_state, PcObsState::NotRunning);
+            assert!(matches!(same_setup_start, Err(SupervisorError::Stopping)));
+        });
+        assert_eq!(
+            supervisor.lock().unwrap().state(&setup),
+            PcObsState::NotRunning
         );
     }
 

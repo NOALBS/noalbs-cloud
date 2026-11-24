@@ -79,7 +79,7 @@ struct AppState {
     // Acquire this before config, supervisor, and link_sessions locks.
     processes: SharedProcesses,
     link_sessions: Mutex<HashMap<uuid::Uuid, LinkSession>>,
-    obs_actions_running: Mutex<HashSet<uuid::Uuid>>,
+    obs_actions_running: Arc<Mutex<HashSet<uuid::Uuid>>>,
     pending_verification_urls: Mutex<HashMap<uuid::Uuid, String>>,
     updates: updates::UpdateManager,
 }
@@ -498,7 +498,9 @@ async fn pair_setup(
         .map_err(|error| error.to_string())?;
     drop(config);
     let setup = find_setup(&state, &setup_id)?;
-    if setup.obs.start_obs_with_connect {
+    if setup.obs.start_obs_with_connect
+        && let Ok(_action_guard) = begin_obs_action(&state.obs_actions_running, id)
+    {
         state
             .supervisor
             .lock()
@@ -590,12 +592,12 @@ async fn restart_obs(
     Ok(get_state(state))
 }
 
-struct ObsActionGuard<'a> {
-    running: &'a Mutex<HashSet<uuid::Uuid>>,
+struct ObsActionGuard {
+    running: Arc<Mutex<HashSet<uuid::Uuid>>>,
     setup_id: uuid::Uuid,
 }
 
-impl Drop for ObsActionGuard<'_> {
+impl Drop for ObsActionGuard {
     fn drop(&mut self) {
         if let Ok(mut running) = self.running.lock() {
             running.remove(&self.setup_id);
@@ -604,14 +606,24 @@ impl Drop for ObsActionGuard<'_> {
 }
 
 fn begin_obs_action(
-    running: &Mutex<HashSet<uuid::Uuid>>,
+    running: &Arc<Mutex<HashSet<uuid::Uuid>>>,
     setup_id: uuid::Uuid,
-) -> Result<ObsActionGuard<'_>, String> {
+) -> Result<ObsActionGuard, String> {
     let mut actions = running.lock().map_err(|_| "OBS action lock poisoned")?;
     if !actions.insert(setup_id) {
         return Err("Another OBS action is still running".into());
     }
-    Ok(ObsActionGuard { running, setup_id })
+    Ok(ObsActionGuard {
+        running: Arc::clone(running),
+        setup_id,
+    })
+}
+
+fn watchdog_action_guard(
+    running: &Arc<Mutex<HashSet<uuid::Uuid>>>,
+    setup_id: uuid::Uuid,
+) -> Option<ObsActionGuard> {
+    begin_obs_action(running, setup_id).ok()
 }
 
 async fn run_obs_action(
@@ -620,7 +632,7 @@ async fn run_obs_action(
     setup_id: uuid::Uuid,
     action: ObsAction,
 ) -> Result<(), String> {
-    let _action_guard = begin_obs_action(&state.obs_actions_running, setup_id)?;
+    let action_guard = begin_obs_action(&state.obs_actions_running, setup_id)?;
     let setup = state
         .config
         .lock()
@@ -636,9 +648,16 @@ async fn run_obs_action(
     } else {
         Ok(())
     };
-    apply_obs_process_action(state, &setup, action, graceful_stop, |error| {
-        let _ = app.emit("connect-error", error);
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let _action_guard = action_guard;
+        let state = app.state::<AppState>();
+        apply_obs_process_action(state.inner(), &setup, action, graceful_stop, |error| {
+            let _ = app.emit("connect-error", error);
+        })
     })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 fn apply_obs_process_action(
@@ -659,28 +678,29 @@ fn apply_obs_process_action(
             }
         }
     }
+    if matches!(&action, ObsAction::Stop)
+        || (matches!(&action, ObsAction::Restart)
+            && state
+                .supervisor
+                .lock()
+                .map_err(|_| "supervisor lock poisoned")?
+                .state(setup)
+                != PcObsState::NotRunning)
+    {
+        Supervisor::stop_shared(&state.supervisor, setup).map_err(|error| error.to_string())?;
+    }
     let process_state = {
         let mut supervisor = state
             .supervisor
             .lock()
             .map_err(|_| "supervisor lock poisoned")?;
         match &action {
-            ObsAction::Start => {
+            ObsAction::Start | ObsAction::Restart => {
                 supervisor
                     .start(setup, false, None)
                     .map_err(|error| error.to_string())?;
             }
-            ObsAction::Stop => {
-                supervisor.stop(setup).map_err(|error| error.to_string())?;
-            }
-            ObsAction::Restart => {
-                if supervisor.state(setup) != PcObsState::NotRunning {
-                    supervisor.stop(setup).map_err(|error| error.to_string())?;
-                }
-                supervisor
-                    .start(setup, false, None)
-                    .map_err(|error| error.to_string())?;
-            }
+            ObsAction::Stop => {}
             ObsAction::UploadLog
             | ObsAction::ProgramStart { .. }
             | ObsAction::ProgramStop { .. }
@@ -1460,19 +1480,15 @@ fn close_idle_setup(
     if !stop_obs {
         return Ok(());
     }
-    // Same guard as the Stop button, so a dashboard Start or Restart can't interleave.
-    let _action_guard = begin_obs_action(&state.obs_actions_running, setup.id)?;
     if !still_idle() {
         return cancelled();
     }
-    let process_state = {
-        let mut supervisor = state
-            .supervisor
-            .lock()
-            .map_err(|_| "supervisor lock poisoned")?;
-        supervisor.stop(setup).map_err(|error| error.to_string())?;
-        supervisor.state(setup)
-    };
+    Supervisor::stop_shared(&state.supervisor, setup).map_err(|error| error.to_string())?;
+    let process_state = state
+        .supervisor
+        .lock()
+        .map_err(|_| "supervisor lock poisoned")?
+        .state(setup);
     set_link_state(state, setup.id, process_state);
     tracing::info!(setup = %setup.name, "Stopped OBS after idle timeout");
     Ok(())
@@ -1821,6 +1837,11 @@ fn start_link_session(
                             .map(|status| status.program.clone())
                             .collect::<Vec<_>>();
                         if !due.is_empty() || stop_obs {
+                            let Ok(action_guard) =
+                                begin_obs_action(&app_state.obs_actions_running, monitor_setup.id)
+                            else {
+                                continue;
+                            };
                             if stop_obs {
                                 idle_obs_stop_at = Some(Instant::now());
                                 idle_obs_stop_failed.store(false, Ordering::Relaxed);
@@ -1834,6 +1855,7 @@ fn start_link_session(
                             let idle_health = monitor_health.clone();
                             let idle_failed = idle_obs_stop_failed.clone();
                             tauri::async_runtime::spawn_blocking(move || {
+                                let _action_guard = action_guard;
                                 let idle_state = idle_app.state::<AppState>();
                                 // Any OBS activity or output since the timeout fired cancels the rest.
                                 let still_idle = || {
@@ -1902,6 +1924,11 @@ fn start_link_session(
                     if handled_incident == Some(incident) {
                         continue;
                     }
+                    let Some(action_guard) =
+                        watchdog_action_guard(&app_state.obs_actions_running, monitor_setup.id)
+                    else {
+                        continue;
+                    };
                     handled_incident = Some(incident);
                     if incident == PcObsState::Crashed {
                         for kind in ["crash_report", "obs_log"] {
@@ -1947,30 +1974,33 @@ fn start_link_session(
                                 );
                                 let _ = monitor_handle.emit("connect-error", error);
                             }
-                            let restart_result = {
-                                let mut supervisor =
-                                    app_state.supervisor.lock().expect("supervisor lock");
-                                if incident == PcObsState::NotResponding
-                                    && let Err(error) = supervisor.stop(&restart_setup)
-                                {
-                                    Err(error)
-                                } else {
-                                    supervisor
-                                        .start(
-                                            &restart_setup,
-                                            resume,
-                                            telemetry.last_program_scene.as_deref(),
-                                        )
-                                        .map(|_| ())
+                            let restart_app = monitor_handle.clone();
+                            let restart_state_tx = monitor_state_tx.clone();
+                            let restart_result = tauri::async_runtime::spawn_blocking(move || {
+                                let _action_guard = action_guard;
+                                let state = restart_app.state::<AppState>();
+                                if incident == PcObsState::NotResponding {
+                                    Supervisor::stop_shared(&state.supervisor, &restart_setup)
+                                        .map_err(|error| error.to_string())?;
                                 }
-                            };
-                            match restart_result {
-                                Ok(()) => {
-                                    let _ = monitor_state_tx.send(PcObsState::Starting);
-                                }
-                                Err(error) => {
-                                    let _ = monitor_handle.emit("connect-error", error.to_string());
-                                }
+                                state
+                                    .supervisor
+                                    .lock()
+                                    .map_err(|_| "supervisor lock poisoned".to_owned())?
+                                    .start(
+                                        &restart_setup,
+                                        resume,
+                                        telemetry.last_program_scene.as_deref(),
+                                    )
+                                    .map_err(|error| error.to_string())?;
+                                let _ = restart_state_tx.send(PcObsState::Starting);
+                                Ok(())
+                            })
+                            .await
+                            .map_err(|error| error.to_string())
+                            .and_then(|result| result);
+                            if let Err(error) = restart_result {
+                                let _ = monitor_handle.emit("connect-error", error);
                             }
                         }
                     }
@@ -2343,7 +2373,7 @@ fn main() {
             supervisor: Mutex::new(Supervisor::default()),
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         })
@@ -2397,7 +2427,10 @@ fn main() {
                 .expect("supervisor lock")
                 .set_known_setups(&setups);
             for setup in setups {
-                if setup.obs.start_obs_with_connect {
+                if setup.obs.start_obs_with_connect
+                    && let Ok(_action_guard) =
+                        begin_obs_action(&state.obs_actions_running, setup.id)
+                {
                     let _ = state
                         .supervisor
                         .lock()
@@ -2466,7 +2499,7 @@ mod tests {
             supervisor: Mutex::new(Supervisor::default()),
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
@@ -2580,7 +2613,7 @@ mod tests {
             supervisor: Mutex::new(Supervisor::default()),
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
@@ -2771,7 +2804,7 @@ mod tests {
 
     #[test]
     fn obs_actions_are_exclusive_per_setup() {
-        let running = Mutex::new(HashSet::new());
+        let running = Arc::new(Mutex::new(HashSet::new()));
         let setup_id = uuid::Uuid::new_v4();
         let action = begin_obs_action(&running, setup_id).unwrap();
         assert!(matches!(
@@ -2780,6 +2813,18 @@ mod tests {
         ));
         drop(action);
         assert!(begin_obs_action(&running, setup_id).is_ok());
+    }
+
+    #[test]
+    fn watchdog_defers_to_a_running_action_for_the_same_setup() {
+        let running = Arc::default();
+        let setup_id = uuid::Uuid::new_v4();
+        let manual = begin_obs_action(&running, setup_id).unwrap();
+        assert!(watchdog_action_guard(&running, setup_id).is_none());
+        assert!(watchdog_action_guard(&running, uuid::Uuid::new_v4()).is_some());
+        drop(manual);
+        let _watchdog = watchdog_action_guard(&running, setup_id).unwrap();
+        assert!(begin_obs_action(&running, setup_id).is_err());
     }
 
     #[test]
@@ -2799,7 +2844,7 @@ mod tests {
             supervisor: Mutex::new(Supervisor::default()),
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
@@ -2903,7 +2948,7 @@ mod tests {
 
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
@@ -2972,7 +3017,7 @@ mod tests {
 
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
@@ -3043,7 +3088,7 @@ mod tests {
 
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
@@ -3146,7 +3191,7 @@ mod tests {
 
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::from([(
                 setup_id,
                 "verification-url".into(),
@@ -3269,7 +3314,7 @@ mod tests {
 
             processes: SharedProcesses::new(),
             link_sessions: Mutex::new(HashMap::new()),
-            obs_actions_running: Mutex::new(HashSet::new()),
+            obs_actions_running: Arc::default(),
             pending_verification_urls: Mutex::new(HashMap::new()),
             updates: updates::UpdateManager::default(),
         };
