@@ -6,6 +6,7 @@
 
 use chrono::{Duration, Utc};
 use db::chat::{ChatPlatform, StoredTokens, TokenOwner};
+use serde::Deserialize;
 
 use crate::{
     app::State,
@@ -122,10 +123,22 @@ async fn token_valid_for(state: &State, owner: TokenOwner, margin: Duration) -> 
 fn grant_refused(platform: ChatPlatform, error: &Error) -> bool {
     match error {
         Error::Platform { status, body, .. } if status.is_client_error() => {
-            platform != ChatPlatform::YouTube || body.contains("invalid_grant")
+            platform != ChatPlatform::YouTube
+                || oauth_error(body).as_deref() == Some("invalid_grant")
         }
         _ => false,
     }
+}
+
+/// The `error` code of an OAuth error answer, like `invalid_grant`.
+fn oauth_error(body: &str) -> Option<String> {
+    #[derive(Deserialize)]
+    struct Answer {
+        error: String,
+    }
+    serde_json::from_str::<Answer>(body)
+        .ok()
+        .map(|answer| answer.error)
 }
 
 fn decrypt(state: &State, stored: &[u8]) -> Result<String> {
@@ -169,5 +182,74 @@ pub async fn keep_alive(state: State) {
             Err(error) => tracing::warn!(%error, "Couldn't list tokens to refresh"),
         }
         lease.release().await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use reqwest::StatusCode;
+
+    use super::{ChatPlatform, grant_refused};
+    use crate::error::Error;
+
+    const INVALID_GRANT: &str =
+        r#"{"error": "invalid_grant", "error_description": "Token has been expired or revoked."}"#;
+
+    fn refused(status: StatusCode, body: impl Into<String>) -> Error {
+        Error::Platform {
+            platform: "YouTube",
+            status,
+            body: body.into(),
+        }
+    }
+
+    #[test]
+    fn googles_invalid_grant_revokes_the_grant() {
+        assert!(grant_refused(
+            ChatPlatform::YouTube,
+            &refused(StatusCode::BAD_REQUEST, INVALID_GRANT)
+        ));
+    }
+
+    #[test]
+    fn another_oauth_error_doesnt() {
+        assert!(!grant_refused(
+            ChatPlatform::YouTube,
+            &refused(
+                StatusCode::BAD_REQUEST,
+                r#"{"error": "invalid_client", "error_description": "The OAuth client was not found."}"#
+            )
+        ));
+    }
+
+    #[test]
+    fn invalid_grant_in_the_description_doesnt() {
+        let body = format!(
+            r#"{{"error": "invalid_request", "error_description": "{} invalid_grant"}}"#,
+            "x".repeat(600)
+        );
+        assert!(!grant_refused(
+            ChatPlatform::YouTube,
+            &refused(StatusCode::BAD_REQUEST, body)
+        ));
+    }
+
+    #[test]
+    fn a_server_error_doesnt() {
+        assert!(!grant_refused(
+            ChatPlatform::YouTube,
+            &refused(StatusCode::SERVICE_UNAVAILABLE, INVALID_GRANT)
+        ));
+    }
+
+    #[test]
+    fn other_platforms_client_errors_do() {
+        assert!(grant_refused(
+            ChatPlatform::Twitch,
+            &refused(
+                StatusCode::BAD_REQUEST,
+                r#"{"status":400,"message":"Invalid refresh token"}"#
+            )
+        ));
     }
 }
