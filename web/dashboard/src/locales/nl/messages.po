@@ -11613,10 +11613,9 @@ msgstr "YouTube gaf geen refresh-token"
 msgid "YouTube is unavailable"
 msgstr "YouTube is niet beschikbaar"
 
-#. placeholder {0}: last.message
 #: src/lib/admin.ts
-msgid "YouTube’s daily quota ran out ({0}); it resets at midnight Pacific time"
-msgstr "Het dagelijkse YouTube-quotum is op ({0}); het wordt om middernacht Pacific-tijd gereset"
+msgid "YouTube’s daily quota ran out; it resets at midnight Pacific time"
+msgstr "Het dagelijkse YouTube-quotum is op; het wordt om middernacht Pacific-tijd gereset"
 
 #: src/components/live/moblin-card.tsx
 msgid "Zoom"

@@ -236,12 +236,56 @@ pub fn is_quota(error: &Error) -> bool {
         if *status == reqwest::StatusCode::FORBIDDEN && body.contains("quotaExceeded"))
 }
 
+/// A YouTube error for Admin → Status: Google's message and reason rather than
+/// the whole JSON body it answered with.
+pub fn describe(error: &Error) -> String {
+    #[derive(Deserialize)]
+    struct Body {
+        error: Details,
+    }
+    #[derive(Deserialize)]
+    struct Details {
+        message: String,
+        #[serde(default)]
+        errors: Vec<Reason>,
+    }
+    #[derive(Deserialize)]
+    struct Reason {
+        reason: Option<String>,
+    }
+    if let Error::Platform { status, body, .. } = error
+        && let Ok(Body { error }) = serde_json::from_str(body)
+    {
+        let code = status.as_u16();
+        return match error.errors.into_iter().find_map(|e| e.reason) {
+            Some(reason) => format!("{} ({code} {reason})", error.message),
+            None => format!("{} ({code})", error.message),
+        };
+    }
+    error.to_string()
+}
+
+/// Without HTML tags (Google links words in its messages) and on one line.
+fn plain_text(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut in_tag = false;
+    for c in text.chars() {
+        match c {
+            '<' => in_tag = true,
+            '>' if in_tag => in_tag = false,
+            _ if !in_tag => out.push(c),
+            _ => {}
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 /// Keeps a YouTube error for Admin → Status ([`live::CHAT_YOUTUBE_STATUS_BUCKET`]).
 pub async fn record_error(state: &Shared, quota: bool, message: String) {
     let error = live::YouTubeLastError {
         at: Utc::now(),
         quota,
-        message,
+        message: plain_text(&message),
     };
     let Ok(value) = serde_json::to_vec(&error) else {
         return;
@@ -253,5 +297,81 @@ pub async fn record_error(state: &Shared, quota: bool, message: String) {
         .await
     {
         tracing::debug!(%error, "Couldn't keep a YouTube error");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use reqwest::StatusCode;
+
+    use super::{describe, is_quota, plain_text};
+    use crate::error::Error;
+
+    /// Google's real quota answer, escapes kept like it sends them.
+    const QUOTA_BODY: &str = r#"{
+  "error": {
+    "code": 403,
+    "message": "The request cannot be completed because you have exceeded your \u003ca href=\"/youtube/data/getting-started#quota\"\u003equota\u003c/a\u003e.",
+    "errors": [
+      {
+        "message": "The request cannot be completed because you have exceeded your \u003ca href=\"/youtube/data/getting-started#quota\"\u003equota\u003c/a\u003e.",
+        "domain": "youtube.quota",
+        "reason": "quotaExceeded"
+      }
+    ]
+  }
+}
+"#;
+
+    #[test]
+    fn quota_errors_read_like_a_sentence() {
+        let error = Error::Platform {
+            platform: "YouTube",
+            status: StatusCode::FORBIDDEN,
+            body: QUOTA_BODY.into(),
+        };
+        assert!(is_quota(&error));
+        assert_eq!(
+            plain_text(&describe(&error)),
+            "The request cannot be completed because you have exceeded your quota. (403 quotaExceeded)"
+        );
+    }
+
+    #[test]
+    fn non_json_bodies_fall_back_to_the_full_error() {
+        let error = Error::Platform {
+            platform: "YouTube",
+            status: StatusCode::BAD_GATEWAY,
+            body: "upstream\n  connect error".into(),
+        };
+        assert_eq!(
+            plain_text(&describe(&error)),
+            "YouTube answered 502 Bad Gateway: upstream connect error"
+        );
+    }
+
+    #[test]
+    fn plain_text_drops_tags() {
+        assert_eq!(
+            plain_text("exceeded your <a href=\"/youtube/v3/getting-started#quota\">quota</a>."),
+            "exceeded your quota."
+        );
+    }
+
+    #[tokio::test]
+    async fn the_error_keeps_the_whole_answer() {
+        let body = QUOTA_BODY.replace(
+            "\n    ]\n",
+            "\n    ],\n    \"status\": \"PERMISSION_DENIED\"\n",
+        );
+        assert!(body.len() > 500);
+        let response =
+            reqwest::Response::from(http::Response::builder().status(403).body(body).unwrap());
+        let error = crate::error::check("YouTube", response).await.unwrap_err();
+        assert!(is_quota(&error));
+        assert_eq!(
+            plain_text(&describe(&error)),
+            "The request cannot be completed because you have exceeded your quota. (403 quotaExceeded)"
+        );
     }
 }

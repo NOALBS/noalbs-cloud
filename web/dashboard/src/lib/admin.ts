@@ -117,7 +117,7 @@ export function statusProblems(status: AdminStatus): StatusProblem[] {
     const last = youtube.last_error;
     const age = last ? now - Date.parse(last.at) : Number.POSITIVE_INFINITY;
     if (last?.quota && age < 24 * 3_600_000) {
-      error(t`YouTube’s daily quota ran out (${last.message}); it resets at midnight Pacific time`);
+      error(t`YouTube’s daily quota ran out; it resets at midnight Pacific time`);
     } else if (last && age < 3_600_000) {
       warning(`YouTube: ${last.message}`);
     }

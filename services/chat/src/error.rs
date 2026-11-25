@@ -30,10 +30,11 @@ pub enum Error {
     Nats(String),
 
     /// A platform API answered with an error status.
-    #[error("{platform} answered {status}: {body}")]
+    #[error("{platform} answered {status}: {}", clip(.body))]
     Platform {
         platform: &'static str,
         status: reqwest::StatusCode,
+        /// The whole answer; the message shows its first [`SHOWN_BODY`] bytes.
         body: String,
     },
 
@@ -73,11 +74,51 @@ pub async fn check(
     if status.is_success() {
         return Ok(response);
     }
-    let mut body = response.text().await.unwrap_or_default();
-    body.truncate(500);
+    let body = response.text().await.unwrap_or_default();
     Err(Error::Platform {
         platform,
         status,
         body,
     })
+}
+
+/// How much of a platform's answer an error message shows.
+const SHOWN_BODY: usize = 500;
+
+/// The start of a platform's answer, cut between characters.
+fn clip(body: &str) -> &str {
+    &body[..body.floor_char_boundary(SHOWN_BODY)]
+}
+
+#[cfg(test)]
+mod tests {
+    use reqwest::StatusCode;
+
+    use super::Error;
+
+    #[test]
+    fn a_platform_error_shows_the_start_of_the_answer() {
+        let error = Error::Platform {
+            platform: "Kick",
+            status: StatusCode::BAD_GATEWAY,
+            body: "x".repeat(600),
+        };
+        assert_eq!(
+            error.to_string(),
+            format!("Kick answered 502 Bad Gateway: {}", "x".repeat(500))
+        );
+    }
+
+    #[test]
+    fn the_answer_is_cut_between_characters() {
+        let error = Error::Platform {
+            platform: "Kick",
+            status: StatusCode::BAD_GATEWAY,
+            body: format!("a{}", "é".repeat(300)),
+        };
+        assert_eq!(
+            error.to_string(),
+            format!("Kick answered 502 Bad Gateway: a{}", "é".repeat(249))
+        );
+    }
 }
