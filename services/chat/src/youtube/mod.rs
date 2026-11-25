@@ -357,4 +357,21 @@ mod tests {
             "exceeded your quota."
         );
     }
+
+    #[tokio::test]
+    async fn the_error_keeps_the_whole_answer() {
+        let body = QUOTA_BODY.replace(
+            "\n    ]\n",
+            "\n    ],\n    \"status\": \"PERMISSION_DENIED\"\n",
+        );
+        assert!(body.len() > 500);
+        let response =
+            reqwest::Response::from(http::Response::builder().status(403).body(body).unwrap());
+        let error = crate::error::check("YouTube", response).await.unwrap_err();
+        assert!(is_quota(&error));
+        assert_eq!(
+            plain_text(&describe(&error)),
+            "The request cannot be completed because you have exceeded your quota. (403 quotaExceeded)"
+        );
+    }
 }
