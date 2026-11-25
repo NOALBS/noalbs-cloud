@@ -11613,10 +11613,9 @@ msgstr "YouTube 未提供更新權杖"
 msgid "YouTube is unavailable"
 msgstr "YouTube 目前無法使用"
 
-#. placeholder {0}: last.message
 #: src/lib/admin.ts
-msgid "YouTube’s daily quota ran out ({0}); it resets at midnight Pacific time"
-msgstr "YouTube 每日配額已用完（{0}）；將於太平洋時間午夜重設"
+msgid "YouTube’s daily quota ran out; it resets at midnight Pacific time"
+msgstr "YouTube 每日配額已用完；將於太平洋時間午夜重設"
 
 #: src/components/live/moblin-card.tsx
 msgid "Zoom"

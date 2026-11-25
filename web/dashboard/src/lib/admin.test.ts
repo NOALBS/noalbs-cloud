@@ -166,13 +166,14 @@ describe("statusProblems", () => {
     status.chat.youtube.last_error = {
       at: "2026-09-25T08:00:00Z",
       quota: true,
-      message: "quotaExceeded",
+      message:
+        "The request cannot be completed because you have exceeded your quota. (403 quotaExceeded)",
     };
     status.chat.youtube.watcher = null;
     expect(statusProblems(status)).toEqual([
       {
         severity: "error",
-        text: "YouTube’s daily quota ran out (quotaExceeded); it resets at midnight Pacific time",
+        text: "YouTube’s daily quota ran out; it resets at midnight Pacific time",
       },
       {
         severity: "warning",

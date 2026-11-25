@@ -11613,10 +11613,9 @@ msgstr "YouTube yenileme token’ı vermedi"
 msgid "YouTube is unavailable"
 msgstr "YouTube kullanılamıyor"
 
-#. placeholder {0}: last.message
 #: src/lib/admin.ts
-msgid "YouTube’s daily quota ran out ({0}); it resets at midnight Pacific time"
-msgstr "YouTube’un günlük kotası doldu ({0}); Pasifik saatiyle gece yarısı sıfırlanır"
+msgid "YouTube’s daily quota ran out; it resets at midnight Pacific time"
+msgstr "YouTube’un günlük kotası doldu; Pasifik saatiyle gece yarısı sıfırlanır"
 
 #: src/components/live/moblin-card.tsx
 msgid "Zoom"

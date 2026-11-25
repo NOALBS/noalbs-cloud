@@ -23,7 +23,7 @@ use futures_util::StreamExt;
 use tokio::{sync::mpsc, task::JoinHandle, time::Instant};
 use uuid::Uuid;
 
-use super::{YouTube, chat_key, is_quota, proto, record_error};
+use super::{YouTube, chat_key, describe, is_quota, proto, record_error};
 use crate::{
     app::State,
     error::Result,
@@ -320,7 +320,7 @@ impl Watcher {
                             channel_login = watched.channel.login,
                             "Couldn't look for a YouTube live chat"
                         );
-                        record_error(state, quota, error.to_string()).await;
+                        record_error(state, quota, describe(&error)).await;
                         if quota { QUOTA_BACKOFF } else { interval }
                     }
                 };

@@ -127,7 +127,8 @@ async fn post(
             let token = tokens::access_token(state, TokenOwner::Bot(bot.id)).await?;
             let sent = youtube.send_chat(&token, &live_chat_id, &text).await;
             if let Err(error) = &sent {
-                youtube::record_error(state, youtube::is_quota(error), error.to_string()).await;
+                youtube::record_error(state, youtube::is_quota(error), youtube::describe(error))
+                    .await;
             }
             sent
         }
