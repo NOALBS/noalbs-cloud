@@ -143,8 +143,8 @@
               When you pair the Connect app on your PC with a switcher, we keep the device’s name
               (at first your computer’s name, which you can change), its operating system, the
               Connect version, who paired it and when, and when it was last connected. A device you
-              remove disappears from the switcher’s settings, but we keep its record, marked as
-              removed, until the switcher is deleted. A pairing code stops working once it’s used
+              remove disappears from the switcher’s settings at once; we keep its record, marked
+              as removed, for 30 days so its name still labels the logs it uploaded. A pairing code stops working once it’s used
               or after 10 minutes, and we delete it within the next hour.
               While Connect is connected it tells us whether OBS is running and its version, and
               lists the programs you added (their name, path and arguments) and whether they run.
@@ -232,7 +232,8 @@
               per switcher.
             </li>
             <li>
-              Paired Connect devices, including removed ones: until the switcher is deleted. Pairing
+              Paired Connect devices: until you remove them or the switcher is deleted, and removed
+              ones for 30 days more. Pairing
               codes: they expire 10 minutes after they’re created and are deleted within the next
               hour.
             </li>

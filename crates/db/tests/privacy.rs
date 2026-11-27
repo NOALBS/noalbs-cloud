@@ -185,6 +185,36 @@ async fn expired_connect_pairings_are_cleaned_up(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn connect_devices_go_30_days_after_removal(pool: PgPool) {
+    let owner = users::create(&pool).await.unwrap().id;
+    let workspace = workspaces::create(&pool, owner, "Kate", "kate")
+        .await
+        .unwrap();
+    let switcher = switchers::create(&pool, workspace.id, "Backpack", b"hash")
+        .await
+        .unwrap();
+    for (name, removed_days_ago) in [("Paired", None), ("Recent", Some(29)), ("Old", Some(31))] {
+        sqlx::query(
+            "INSERT INTO connect_devices (switcher_id, name, os, app_version, token_hash, revoked_at)
+             VALUES ($1, $2, 'linux', '1.0.0', $2, now() - make_interval(days => $3))",
+        )
+        .bind(switcher.id)
+        .bind(name)
+        .bind(removed_days_ago)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+
+    assert_eq!(db::connect::delete_removed_devices(&pool).await.unwrap(), 1);
+    let left: Vec<String> = sqlx::query_scalar("SELECT name FROM connect_devices ORDER BY name")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(left, ["Paired", "Recent"]);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn using_a_session_keeps_it_going(pool: PgPool) {
     let user = users::create(&pool).await.unwrap().id;
     sqlx::query(

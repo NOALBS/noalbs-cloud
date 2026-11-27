@@ -302,6 +302,17 @@ pub async fn revoke(pool: &PgPool, switcher_id: Uuid, device_id: Uuid) -> Result
     Ok(result.rows_affected() > 0)
 }
 
+/// Deletes devices removed more than 30 days ago. Until then their name still labels the
+/// logs they uploaded, which are kept as long.
+#[tracing::instrument(skip(pool))]
+pub async fn delete_removed_devices(pool: &PgPool) -> Result<u64> {
+    let result =
+        sqlx::query("DELETE FROM connect_devices WHERE revoked_at <= now() - interval '30 days'")
+            .execute(pool)
+            .await?;
+    Ok(result.rows_affected())
+}
+
 #[tracing::instrument(skip(pool))]
 pub async fn touch(pool: &PgPool, device_id: Uuid, os: &str, app_version: &str) -> Result<bool> {
     let result = sqlx::query(
