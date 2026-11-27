@@ -161,6 +161,60 @@ async fn old_activity_and_expired_sessions_are_cleaned_up(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn expired_connect_pairings_are_cleaned_up(pool: PgPool) {
+    let now = chrono::Utc::now();
+    // Starting a pairing clears expired ones too, so the expired one goes in last.
+    for (code, expires_at) in [
+        ("CURRENT1", now + chrono::Duration::minutes(5)),
+        ("EXPIRED1", now - chrono::Duration::minutes(1)),
+    ] {
+        db::connect::create_pairing(&pool, code, code, "PC", "linux", "1.0.0", expires_at)
+            .await
+            .unwrap();
+    }
+
+    assert_eq!(
+        db::connect::delete_expired_pairings(&pool).await.unwrap(),
+        1
+    );
+    let left: Vec<String> = sqlx::query_scalar("SELECT user_code FROM connect_pairings")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(left, ["CURRENT1"]);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
+async fn connect_devices_go_30_days_after_removal(pool: PgPool) {
+    let owner = users::create(&pool).await.unwrap().id;
+    let workspace = workspaces::create(&pool, owner, "Kate", "kate")
+        .await
+        .unwrap();
+    let switcher = switchers::create(&pool, workspace.id, "Backpack", b"hash")
+        .await
+        .unwrap();
+    for (name, removed_days_ago) in [("Paired", None), ("Recent", Some(29)), ("Old", Some(31))] {
+        sqlx::query(
+            "INSERT INTO connect_devices (switcher_id, name, os, app_version, token_hash, revoked_at)
+             VALUES ($1, $2, 'linux', '1.0.0', $2, now() - make_interval(days => $3))",
+        )
+        .bind(switcher.id)
+        .bind(name)
+        .bind(removed_days_ago)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+
+    assert_eq!(db::connect::delete_removed_devices(&pool).await.unwrap(), 1);
+    let left: Vec<String> = sqlx::query_scalar("SELECT name FROM connect_devices ORDER BY name")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(left, ["Paired", "Recent"]);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn using_a_session_keeps_it_going(pool: PgPool) {
     let user = users::create(&pool).await.unwrap().id;
     sqlx::query(

@@ -56,8 +56,8 @@ pub async fn delete_workspace(
     Ok(())
 }
 
-/// Deletes expired sessions and old activity every hour. Stream history has its
-/// own upkeep (`routes::history`). Runs on the API leader.
+/// Deletes expired sessions, old activity, and expired or removed Connect data every hour. Stream
+/// history has its own upkeep (`routes::history`). Runs on the API leader.
 pub fn spawn_upkeep(
     db: db::DbPool,
     leadership: crate::leadership::Leadership,
@@ -99,5 +99,15 @@ async fn upkeep(db: &db::DbPool) {
         Ok(0) => {}
         Ok(deleted) => tracing::info!(deleted, "Deleted expired Connect logs"),
         Err(error) => tracing::warn!(%error, "Couldn't delete expired Connect logs"),
+    }
+    match db::connect::delete_expired_pairings(db).await {
+        Ok(0) => {}
+        Ok(deleted) => tracing::info!(deleted, "Deleted expired Connect pairings"),
+        Err(error) => tracing::warn!(%error, "Couldn't delete expired Connect pairings"),
+    }
+    match db::connect::delete_removed_devices(db).await {
+        Ok(0) => {}
+        Ok(deleted) => tracing::info!(deleted, "Deleted removed Connect devices"),
+        Err(error) => tracing::warn!(%error, "Couldn't delete removed Connect devices"),
     }
 }
