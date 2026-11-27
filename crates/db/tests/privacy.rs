@@ -161,6 +161,30 @@ async fn old_activity_and_expired_sessions_are_cleaned_up(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "db::MIGRATOR")]
+async fn expired_connect_pairings_are_cleaned_up(pool: PgPool) {
+    let now = chrono::Utc::now();
+    // Starting a pairing clears expired ones too, so the expired one goes in last.
+    for (code, expires_at) in [
+        ("CURRENT1", now + chrono::Duration::minutes(5)),
+        ("EXPIRED1", now - chrono::Duration::minutes(1)),
+    ] {
+        db::connect::create_pairing(&pool, code, code, "PC", "linux", "1.0.0", expires_at)
+            .await
+            .unwrap();
+    }
+
+    assert_eq!(
+        db::connect::delete_expired_pairings(&pool).await.unwrap(),
+        1
+    );
+    let left: Vec<String> = sqlx::query_scalar("SELECT user_code FROM connect_pairings")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(left, ["CURRENT1"]);
+}
+
+#[sqlx::test(migrator = "db::MIGRATOR")]
 async fn using_a_session_keeps_it_going(pool: PgPool) {
     let user = users::create(&pool).await.unwrap().id;
     sqlx::query(

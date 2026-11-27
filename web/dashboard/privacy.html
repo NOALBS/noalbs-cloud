@@ -143,18 +143,21 @@
               When you pair the Connect app on your PC with a switcher, we keep the device’s name
               (at first your computer’s name, which you can change), its operating system, the
               Connect version, who paired it and when, and when it was last connected. A device you
-              remove stays listed as removed until the switcher is deleted. A pairing code is
-              deleted once it’s used, or after 10 minutes.
+              remove disappears from the switcher’s settings, but we keep its record, marked as
+              removed, until the switcher is deleted. A pairing code stops working once it’s used
+              or after 10 minutes, and we delete it within the next hour.
               While Connect is connected it tells us whether OBS is running and its version, and
               lists the programs you added (their name, path and arguments) and whether they run.
-              We pass this to the dashboard and keep it only in memory, for 30 seconds after the
-              last update. Starting, stopping or restarting OBS and adding, changing, starting or
-              stopping a program are logged in the activity log with who did it; a program’s path
-              and arguments are only shown to people allowed to manage programs.
+              We pass this to the dashboard and keep this live status only in memory, for 30
+              seconds after the last update. Starting, stopping or restarting OBS and adding,
+              changing, starting or stopping a program are logged in the activity log with who did
+              it; for programs that entry includes the program’s name, path and arguments, which
+              are only shown to people allowed to manage programs.
               When OBS crashes, Connect uploads the crash report and the OBS log, and anyone
               allowed can ask for the OBS log from the dashboard. These logs can contain your PC’s
               hardware and display settings, your OBS profile, scene and source names, and file
-              paths, which can include your username on the PC. We keep them 30 days. Who may see
+              paths, which can include your username on the PC. We keep them up to 30 days, and
+              only the newest 20 per switcher. Who may see
               the logs, control OBS and manage programs is set per switcher; NOALBS support never
               can. Connect’s own settings, such as where OBS is installed and its WebSocket
               password, stay on your PC.
@@ -202,7 +205,7 @@
               messages or passwords. We also record traces: which page or chat command was
               used, by which account ID, and how long each step took, so we can find what’s slow or
               broken. Logs and traces are sent to Grafana Labs and Axiom (below) to search them. To stop
-              abuse we count requests per IP address or account, in memory only, for up to five
+              abuse we count requests per IP address or account, in memory only, for up to six
               minutes. Where our servers share these counts, they hold a hash of the IP address, not
               the address itself.
               <em>Why: our legitimate interest in running a secure, working service (6(1)(f)).</em>
@@ -224,10 +227,14 @@
             <li>
               The activity log: as long as the stream history, and at least 30 days.
             </li>
-            <li>OBS logs and crash reports uploaded by Connect: 30 days.</li>
             <li>
-              Paired Connect devices, including removed ones: until the switcher is deleted. Unused
-              pairing codes: 10 minutes.
+              OBS logs and crash reports uploaded by Connect: up to 30 days, and only the newest 20
+              per switcher.
+            </li>
+            <li>
+              Paired Connect devices, including removed ones: until the switcher is deleted. Pairing
+              codes: they expire 10 minutes after they’re created and are deleted within the next
+              hour.
             </li>
             <li>Ignored chatters and linked channels: until you remove them.</li>
             <li>The support access log and past support permissions: one year.</li>
@@ -403,7 +410,8 @@
               your account, sign-ins, workspaces, switchers and their settings, billing, and the
               records that name you (invites, chat links, Connect devices you paired, support
               access, organization and staff logs), and Download stream history for the stream
-              history, stats, markers, activity log and Connect logs of your own switchers. Both are JSON. Passwords, API keys and tokens are left out.
+              history, stats, markers, activity log and Connect logs of your own switchers. Both are JSON. Passwords, API keys and tokens are left out; Connect logs are
+              included as uploaded, so they contain whatever OBS wrote in them.
               Activity logs and markers in other people’s workspaces record your display name, not
               your account, so we can’t reliably find them for you. If you think we hold something
               else about you, email <a href="mailto:support@noalbs.com">support@noalbs.com</a> and

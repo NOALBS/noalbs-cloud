@@ -98,6 +98,15 @@ pub fn normalize_user_code(code: &str) -> Option<String> {
     Some(raw.to_ascii_uppercase())
 }
 
+/// Deletes pairings whose code has expired, used or not.
+#[tracing::instrument(skip(pool))]
+pub async fn delete_expired_pairings(pool: &PgPool) -> Result<u64> {
+    let result = sqlx::query("DELETE FROM connect_pairings WHERE expires_at <= now()")
+        .execute(pool)
+        .await?;
+    Ok(result.rows_affected())
+}
+
 #[tracing::instrument(skip(pool, device_code_hash))]
 pub async fn create_pairing(
     pool: &PgPool,
